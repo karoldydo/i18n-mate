@@ -1,0 +1,204 @@
+---
+description: "Git commit message conventions based on Conventional Commits specification"
+globs: []
+alwaysApply: true
+---
+
+# Git Commit Message Conventions
+
+Always follow the Conventional Commits specification (https://www.conventionalcommits.org/en/v1.0.0/) when generating commit messages.
+
+## Commit Message Structure
+
+```text
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+## Commit Types
+
+The type MUST be one of the following:
+
+- **feat**: A new feature (correlates with MINOR in Semantic Versioning)
+- **fix**: A bug fix (correlates with PATCH in Semantic Versioning)
+- **docs**: Documentation only changes
+- **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+- **refactor**: A code change that neither fixes a bug nor adds a feature
+- **perf**: A code change that improves performance
+- **test**: Adding missing tests or correcting existing tests
+- **build**: Changes that affect the build system or external dependencies
+- **ci**: Changes to CI configuration files and scripts
+- **chore**: Other changes that don't modify src or test files
+- **revert**: Reverts a previous commit
+
+## Breaking Changes
+
+Breaking changes MUST be indicated in one of two ways:
+
+1. Add `!` immediately before the `:` in the type/scope prefix
+
+   - Example: `feat!: send email to customer when product is shipped`
+   - Example: `feat(api)!: send email to customer when product is shipped`
+
+2. Include `BREAKING CHANGE:` footer with description
+
+   - Example:
+
+     ```text
+     feat: allow provided config object to extend other configs
+
+     BREAKING CHANGE: `extends` key in config file is now used for extending other config files
+     ```
+
+Both methods correlate with MAJOR in Semantic Versioning.
+
+## Scope
+
+A scope MAY be provided after a type. A scope MUST:
+
+- Consist of a noun describing a section of the codebase
+- Be enclosed in parentheses
+
+Examples:
+
+- `feat(parser): add ability to parse arrays`
+- `fix(api): resolve timeout issue in user service`
+- `docs(readme): update installation instructions`
+
+## Description
+
+The description:
+
+- MUST immediately follow the colon and space after the type/scope prefix
+- MUST be a short summary of the code changes
+- SHOULD use imperative, present tense: "change" not "changed" nor "changes"
+- SHOULD be lowercase (after the colon)
+- MUST NOT end with a period
+- SHOULD be no more than 50 characters
+
+Examples:
+
+- ✅ `fix: resolve parsing issue when multiple spaces in string`
+- ✅ `feat: add user authentication`
+- ❌ `fix: Resolved parsing issue.` (capitalized, has period)
+- ❌ `feat: added user authentication` (past tense)
+
+## Body
+
+A longer commit body MAY be provided after the short description:
+
+- MUST begin one blank line after the description
+- Is free-form and MAY consist of any number of newline separated paragraphs
+- SHOULD provide additional contextual information about the code changes
+- SHOULD explain the motivation for the change and contrast with previous behavior
+
+Example:
+
+```text
+fix: prevent racing of requests
+
+Introduce a request id and a reference to latest request. Dismiss
+incoming responses other than from latest request.
+
+Remove timeouts which were used to mitigate the racing issue but are
+obsolete now.
+```
+
+## Footer
+
+One or more footers MAY be provided one blank line after the body:
+
+- Each footer MUST consist of a word token, followed by either a `:<space>` or `<space>#` separator
+- A footer's token MUST use `-` in place of whitespace characters (e.g., `Acked-by`)
+- Exception: `BREAKING CHANGE` MAY be used as a token
+- Footers are useful for referencing issues, reviewers, or breaking changes
+
+Example:
+
+````text
+fix: prevent racing of requests
+
+Introduce a request id and a reference to latest request. Dismiss
+incoming responses other than from latest request.
+
+Reviewed-by: John Doe
+Refs: #123
+```text
+
+## Complete Examples
+
+### Simple feature addition
+
+```text
+feat: add password reset functionality
+````
+
+### Bug fix with scope
+
+```text
+fix(auth): resolve token expiration issue
+```
+
+### Feature with breaking change (using !)
+
+```text
+feat(api)!: change response format to JSON API spec
+```
+
+### Feature with breaking change (using footer)
+
+```text
+feat: allow provided config object to extend other configs
+
+BREAKING CHANGE: `extends` key in config file is now used for extending other config files
+```
+
+### Fix with body and footer
+
+```text
+fix: prevent racing of requests
+
+Introduce a request id and a reference to latest request. Dismiss
+incoming responses other than from latest request.
+
+Remove timeouts which were used to mitigate the racing issue but are
+obsolete now.
+
+Reviewed-by: Z
+Refs: #123
+```
+
+### Documentation update
+
+```text
+docs: correct spelling of CHANGELOG
+```
+
+### Revert commit
+
+```text
+revert: let us never again speak of the noodle incident
+
+Refs: 676104e, a215868
+```
+
+## Key Rules to Remember
+
+1. Types MUST be lowercase
+2. Description MUST use imperative mood ("add" not "added" or "adds")
+3. Breaking changes MUST be clearly indicated with `!` or `BREAKING CHANGE:` footer
+4. BREAKING CHANGE MUST be uppercase when used as a footer token
+5. Scope is optional but recommended for larger projects
+6. Keep the first line (type + scope + description) under 72 characters
+7. Use the body to explain "what" and "why" vs. "how"
+
+## Benefits
+
+- Automatically generating CHANGELOGs
+- Automatically determining semantic version bumps
+- Communicating the nature of changes clearly
+- Triggering build and publish processes
+- Making it easier to explore commit history

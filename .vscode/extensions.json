@@ -1,0 +1,27 @@
+{
+  "recommendations": [
+    "nrwl.angular-console",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "angular.ng-template",
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-polish",
+    "usernamehw.errorlens",
+    "dbaeumer.vscode-eslint",
+    "codezombiech.gitignore",
+    "eamodio.gitlens",
+    "ecmel.vscode-html-css",
+    "k--kato.intellij-idea-keybindings",
+    "davidanson.vscode-markdownlint",
+    "christian-kohler.path-intellisense",
+    "bradlc.vscode-tailwindcss",
+    "meganrogge.template-string-converter",
+    "cnshenj.vscode-task-manager",
+    "mrmlnc.vscode-scss",
+    "anweber.reveal-button",
+    "formulahendry.auto-rename-tag",
+    "wix.vscode-import-cost",
+    "zignd.html-css-class-completion",
+    "narasimapandiyan.jetbrainsmonos"
+  ]
+}

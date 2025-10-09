@@ -1,0 +1,49 @@
+{
+  "cSpell.words": [
+    "formio",
+    "highcharts",
+    "mjml",
+    "ngneat",
+    "ɵcmp",
+    "Ultrathink"
+  ],
+  "css.styleSheets": [
+    "node_modules/@packages/web-components/design-system/public/all.css",
+    "node_modules/@packages/cx-components/assets/styles/design-system/public/all.css"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.formatDocument": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnPaste": false,
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "editor.formatOnType": false,
+  "editor.linkedEditing": true,
+  "eslint.debug": true,
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "explorer.confirmDelete": false,
+  "files.autoSave": "onFocusChange",
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "json.schemaDownload.enable": true,
+  "scss.scannerExclude": [],
+  "terminal.integrated.scrollback": 1000000,
+  "window.commandCenter": true,
+  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.editor.enablePreview": false,
+  "workbench.editorAssociations": {
+    "*.md": "vscode.markdown.preview.editor"
+  },
+  "workbench.iconTheme": "vscode-icons",
+  "workbench.tree.indent": 16,
+  "editor.fontLigatures": true,
+  "editor.fontFamily": "'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace",
+  "editor.fontSize": 13
+}
