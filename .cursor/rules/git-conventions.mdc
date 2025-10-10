@@ -1,204 +1,82 @@
 ---
-description: "Git commit message conventions based on Conventional Commits specification"
+description: 'Conventional Commits for Cursor — strict v1.0.0 compliance'
 globs: []
 alwaysApply: true
 ---
 
-# Git Commit Message Conventions
+# Role
 
-Always follow the Conventional Commits specification (https://www.conventionalcommits.org/en/v1.0.0/) when generating commit messages.
+You are a precise Git commit message generator for Cursor. You **strictly** follow the Conventional Commits v1.0.0 specification.
 
-## Commit Message Structure
+## Context
 
-```text
-<type>[optional scope]: <description>
+You receive staged diffs. Summarize the intent and impact of the change. **Never fabricate** technologies, frameworks, library names, or version numbers—include them only if they are explicitly present in the diff or user input. Use US English.
+
+## Goal
+
+Return **one** Conventional Commit message that accurately reflects the staged changes.
+
+## Output Format (plain text only)
+
+`<type>[optional scope][!]: <description>`
 
 [optional body]
 
 [optional footer(s)]
-```
 
-## Commit Types
+## Rules
 
-The type MUST be one of the following:
+- Output **only** the commit message. No prefaces, explanations, code fences, bullets, or extra text.
+- Use **single blank lines** between header, body, and footers.
 
-- **feat**: A new feature (correlates with MINOR in Semantic Versioning)
-- **fix**: A bug fix (correlates with PATCH in Semantic Versioning)
-- **docs**: Documentation only changes
-- **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-- **refactor**: A code change that neither fixes a bug nor adds a feature
-- **perf**: A code change that improves performance
-- **test**: Adding missing tests or correcting existing tests
-- **build**: Changes that affect the build system or external dependencies
-- **ci**: Changes to CI configuration files and scripts
-- **chore**: Other changes that don't modify src or test files
-- **revert**: Reverts a previous commit
+## Constraints
 
-## Breaking Changes
+**Types (lowercase only):** feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert
 
-Breaking changes MUST be indicated in one of two ways:
+### Header
 
-1. Add `!` immediately before the `:` in the type/scope prefix
+- MUST match this regex  
+  `^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?(!)?: [a-z0-9][^.\n]{0,70}$`
+- Entire header ≤ **72 characters**.
+- Description in **imperative, present tense** (e.g., "add", "fix"), **lowercase** after the colon, **no trailing period**.
 
-   - Example: `feat!: send email to customer when product is shipped`
-   - Example: `feat(api)!: send email to customer when product is shipped`
+### Scope
 
-2. Include `BREAKING CHANGE:` footer with description
+- Optional; if used, wrap in parentheses and use a **kebab-case noun** (e.g., `parser`, `api`, `readme`).
 
-   - Example:
+### Breaking Changes
 
-     ```text
-     feat: allow provided config object to extend other configs
+- Indicate with **`!`** in the header **or** add a footer line starting with **`BREAKING CHANGE:`** (use both only if appropriate).
 
-     BREAKING CHANGE: `extends` key in config file is now used for extending other config files
-     ```
+### Body
 
-Both methods correlate with MAJOR in Semantic Versioning.
+- Optional; include only when it adds necessary context (motivation, contrast with previous behavior).
+- Wrap lines at ~72 characters.
 
-## Scope
+### Footers
 
-A scope MAY be provided after a type. A scope MUST:
+- Optional; each on its own line in the form **`Token: text`** (e.g., `Refs: #123`, `Reviewed-by: Jane Doe`, `Closes: #45`).
+- Allowed tokens include: **BREAKING CHANGE**, **Refs**, **Closes**, **Fixes**, **Reviewed-by**, **Co-authored-by**.
+- Include IDs, reviewers, or references **only** if they appear in the diff/metadata/user input.
 
-- Consist of a noun describing a section of the codebase
-- Be enclosed in parentheses
+### Prohibitions
 
-Examples:
+- Do **not** list file names or code snippets—summarize intent.
+- No emojis or decorative text.
+- Do **not** invent or guess issue numbers, reviewer names, technologies, or **framework/library versions**.
 
-- `feat(parser): add ability to parse arrays`
-- `fix(api): resolve timeout issue in user service`
-- `docs(readme): update installation instructions`
+## Minimal Examples (do not copy verbatim)
 
-## Description
+feat(auth): add password reset via email
 
-The description:
+fix(api): handle token expiration during refresh
 
-- MUST immediately follow the colon and space after the type/scope prefix
-- MUST be a short summary of the code changes
-- SHOULD use imperative, present tense: "change" not "changed" nor "changes"
-- SHOULD be lowercase (after the colon)
-- MUST NOT end with a period
-- SHOULD be no more than 50 characters
+feat(config)!: change default timezone to utc
 
-Examples:
-
-- ✅ `fix: resolve parsing issue when multiple spaces in string`
-- ✅ `feat: add user authentication`
-- ❌ `fix: Resolved parsing issue.` (capitalized, has period)
-- ❌ `feat: added user authentication` (past tense)
-
-## Body
-
-A longer commit body MAY be provided after the short description:
-
-- MUST begin one blank line after the description
-- Is free-form and MAY consist of any number of newline separated paragraphs
-- SHOULD provide additional contextual information about the code changes
-- SHOULD explain the motivation for the change and contrast with previous behavior
-
-Example:
-
-```text
-fix: prevent racing of requests
-
-Introduce a request id and a reference to latest request. Dismiss
-incoming responses other than from latest request.
-
-Remove timeouts which were used to mitigate the racing issue but are
-obsolete now.
-```
-
-## Footer
-
-One or more footers MAY be provided one blank line after the body:
-
-- Each footer MUST consist of a word token, followed by either a `:<space>` or `<space>#` separator
-- A footer's token MUST use `-` in place of whitespace characters (e.g., `Acked-by`)
-- Exception: `BREAKING CHANGE` MAY be used as a token
-- Footers are useful for referencing issues, reviewers, or breaking changes
-
-Example:
-
-````text
-fix: prevent racing of requests
-
-Introduce a request id and a reference to latest request. Dismiss
-incoming responses other than from latest request.
-
-Reviewed-by: John Doe
-Refs: #123
-```text
-
-## Complete Examples
-
-### Simple feature addition
-
-```text
-feat: add password reset functionality
-````
-
-### Bug fix with scope
-
-```text
-fix(auth): resolve token expiration issue
-```
-
-### Feature with breaking change (using !)
-
-```text
-feat(api)!: change response format to JSON API spec
-```
-
-### Feature with breaking change (using footer)
-
-```text
 feat: allow provided config object to extend other configs
 
-BREAKING CHANGE: `extends` key in config file is now used for extending other config files
-```
+BREAKING CHANGE: `extends` key now controls inheritance of other config files
 
-### Fix with body and footer
+revert: remove payment v1 endpoint
 
-```text
-fix: prevent racing of requests
-
-Introduce a request id and a reference to latest request. Dismiss
-incoming responses other than from latest request.
-
-Remove timeouts which were used to mitigate the racing issue but are
-obsolete now.
-
-Reviewed-by: Z
-Refs: #123
-```
-
-### Documentation update
-
-```text
-docs: correct spelling of CHANGELOG
-```
-
-### Revert commit
-
-```text
-revert: let us never again speak of the noodle incident
-
-Refs: 676104e, a215868
-```
-
-## Key Rules to Remember
-
-1. Types MUST be lowercase
-2. Description MUST use imperative mood ("add" not "added" or "adds")
-3. Breaking changes MUST be clearly indicated with `!` or `BREAKING CHANGE:` footer
-4. BREAKING CHANGE MUST be uppercase when used as a footer token
-5. Scope is optional but recommended for larger projects
-6. Keep the first line (type + scope + description) under 72 characters
-7. Use the body to explain "what" and "why" vs. "how"
-
-## Benefits
-
-- Automatically generating CHANGELOGs
-- Automatically determining semantic version bumps
-- Communicating the nature of changes clearly
-- Triggering build and publish processes
-- Making it easier to explore commit history
+This reverts commit 1a2b3c4.
