@@ -8,13 +8,6 @@
     "10x-rules": {
       "url": "https://10x-rules-mcp-server.przeprogramowani.workers.dev/sse"
     },
-    "GitKraken": {
-      "args": ["mcp", "--host=cursor", "--source=gitlens", "--scheme=cursor"],
-      "command": "/home/karol/.config/Cursor/User/globalStorage/eamodio.gitlens/gk",
-      "env": {},
-      "name": "GitKraken",
-      "type": "stdio"
-    },
     "shadcn": {
       "args": ["shadcn@latest", "mcp"],
       "command": "npx"
