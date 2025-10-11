@@ -22,6 +22,8 @@
   "git.enableSmartCommit": true,
   "json.schemaDownload.enable": true,
   "terminal.integrated.scrollback": 1000000,
+  "vitest.rootConfig": "./vitest.config.ts",
+  "vitest.shellType": "terminal",
   "window.commandCenter": true,
   "workbench.colorTheme": "Default Dark Modern",
   "workbench.editor.enablePreview": false,

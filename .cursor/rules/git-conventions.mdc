@@ -1,5 +1,5 @@
 ---
-description: 'Conventional Commits for Cursor — strict v1.0.0 compliance'
+description: Conventional Commits for Cursor — strict v1.0.0 compliance
 globs: []
 alwaysApply: true
 ---
