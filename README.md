@@ -6,6 +6,12 @@ A web application for centralized management of i18n translations for frontend p
 
 - [Project Description](#project-description)
 - [Tech Stack](#tech-stack)
+  - [Frontend](#frontend)
+  - [Backend](#backend)
+  - [AI](#ai)
+  - [CI/CD and Hosting](#cicd-and-hosting)
+  - [Testing & Quality](#testing--quality)
+  - [Developer Experience](#developer-experience)
 - [Getting Started Locally](#getting-started-locally)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -56,6 +62,18 @@ Frontend developers managing i18n in their applications.
 - **GitHub Actions** - CI/CD pipeline automation for testing and deployment
 - **Vercel** - Development and staging environment with zero-config deployment and automatic preview URLs
 - **Docker + DigitalOcean** - Pre-production environment for testing deployment scripts and production-ready pipelines
+
+### Testing & Quality
+
+- **Vitest** - Unit testing framework for JavaScript and TypeScript with Vite-native DX
+- **Testing Library** - User-focused testing utilities for exercising React components
+- **@vitest/coverage-v8** - Coverage reporting powered by the V8 engine
+
+### Developer Experience
+
+- **ESLint 9 + TypeScript ESLint** - Comprehensive linting with React, accessibility, and unused-import rules
+- **Prettier (Tailwind & JSON plugins)** - Consistent formatting with Tailwind-aware sorting
+- **Husky + lint-staged** - Git hooks that enforce linting and formatting on staged files
 
 ## Getting Started Locally
 
@@ -120,6 +138,10 @@ In the project directory, you can run:
 
 Runs the app in development mode with hot module replacement (HMR).
 Open [http://localhost:5173](http://localhost:5173) to view it in your browser.
+
+### `npm run test`
+
+Executes unit tests with Vitest.
 
 ### `npm run build`
 
