@@ -10,6 +10,13 @@ export default mergeConfig(
         enabled: true,
         provider: 'v8',
         reporter: ['text-summary', 'html', 'lcov'],
+        // TODO: uncomment this when we have more tests :-)
+        // thresholds: {
+        //   branches: 90,
+        //   functions: 90,
+        //   lines: 90,
+        //   statements: 90,
+        // },
       },
       environment: 'jsdom',
       globals: true,
