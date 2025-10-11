@@ -43,6 +43,7 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/app` - app shell: bootstrap, providers, routing
 - `./src/app/routes` - route definitions (React Router v7, lazy)
 - `./src/app/errors` - global and per-route error boundaries
+- `./src/assets` - shared assets (icons, logo)
 - `./src/shared` - shared, domain-agnostic code
 - `./src/shared/ui` - shadcn/ui components and small reusable UI
 - `./src/shared/api` - API clients (Supabase/OpenRouter), TanStack Query keys
@@ -50,7 +51,6 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/shared/hooks` - generic hooks (e.g., useDebounce)
 - `./src/shared/config` - env mapping, theme, feature flags
 - `./src/shared/styles` - global styles
-- `./src/shared/assets` - shared assets (icons, logo)
 - `./src/shared/types` - generated types (e.g., Supabase)
 - `./src/features` - domain modules (feature-first)
 - `./src/features/feature` - specific feature scope

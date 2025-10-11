@@ -95,24 +95,24 @@ nvm use
 
 1. Clone the repository:
 
-```bash
-git clone https://github.com/karoldydo/i18n-mate.git
-cd i18n-mate
-```
+   ```bash
+   git clone https://github.com/karoldydo/i18n-mate.git
+   cd i18n-mate
+   ```
 
 2. Install dependencies:
 
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
 3. Set up environment variables (see [Environment Variables](#environment-variables))
 
 4. Start the development server:
 
-```bash
-npm run dev
-```
+   ```bash
+   npm run dev
+   ```
 
 5. Open your browser and navigate to `http://localhost:5173` (or the port shown in your terminal)
 
