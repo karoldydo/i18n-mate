@@ -45,10 +45,12 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/app/errors` - global and per-route error boundaries
 - `./src/assets` - shared assets (icons, logo)
 - `./src/shared` - shared, domain-agnostic code
-- `./src/shared/ui` - shadcn/ui components and small reusable UI
+- `./src/shared/components` - general shared components (alias: `@/components`)
+- `./src/shared/ui` - shadcn/ui components and small reusable UI (alias: `@/ui`)
 - `./src/shared/api` - API clients (Supabase/OpenRouter), TanStack Query keys
-- `./src/shared/lib` - utilities, validation, formatting helpers
-- `./src/shared/hooks` - generic hooks (e.g., useDebounce)
+- `./src/shared/lib` - library functions (format-date, generate-id) (alias: `@/lib`)
+- `./src/shared/utils` - utility functions (cn, clsx helpers) (alias: `@/utils`)
+- `./src/shared/hooks` - generic hooks (e.g., useDebounce) (alias: `@/hooks`)
 - `./src/shared/config` - env mapping, theme, feature flags
 - `./src/shared/styles` - global styles
 - `./src/shared/types` - generated types (e.g., Supabase)
@@ -77,6 +79,18 @@ When introducing changes to the project, always follow the directory structure b
 - `./e2e` - end-to-end tests (Playwright) (optional)
 
 When modifying the directory structure, always update this section.
+
+### Import Aliases
+
+The project uses TypeScript path aliases configured in `tsconfig.json` and `components.json`:
+
+- `@/components` → `src/shared/components` - General shared components
+- `@/ui` → `src/shared/ui` - shadcn/ui components installation directory
+- `@/lib` → `src/shared/lib` - Library functions (format-date, generate-id)
+- `@/utils` → `src/shared/utils` - Utility functions (cn, clsx helpers)
+- `@/hooks` → `src/shared/hooks` - Custom React hooks
+
+When running `npx shadcn@latest add [component]`, components will be installed in `src/shared/ui/`.
 
 ## Coding practices
 
