@@ -1,0 +1,89 @@
+---
+description: Testing best practices with React Testing Library and Vitest
+globs: **/*.test.tsx
+alwaysApply: false
+---
+
+# Testing with React Testing Library
+
+## Configuration
+
+- Do NOT use `cleanup` - it happens automatically in modern Testing Library versions
+- Co-locate tests with their source files (Component.test.tsx next to Component.tsx)
+
+## Querying Elements
+
+- Use `screen` instead of destructuring queries from `render()` for better autocomplete and maintainability
+- Use `screen.debug()` for debugging instead of destructuring `debug`
+- Follow the query priority order from "Which query should I use?":
+  1. `getByRole` (most preferred - matches accessibility tree)
+  2. `getByLabelText` (for form fields)
+  3. `getByPlaceholderText`
+  4. `getByText`
+  5. `getByDisplayValue`
+  6. `getByAltText`
+  7. `getByTitle`
+  8. `getByTestId` (last resort)
+- Query by accessible roles and names: `screen.getByRole('button', { name: /submit/i })`
+- Query by actual text content, not test IDs, to ensure translations work correctly
+- Do NOT use `container.querySelector()` - it bypasses accessibility and reduces confidence
+- Do NOT use `getByTestId` unless there's no accessible alternative
+
+## Query Variants
+
+- Use `getBy*` for elements that should be present immediately
+- Use `findBy*` for elements that appear asynchronously (instead of `waitFor` + `getBy*`)
+- Use `queryBy*` ONLY for asserting element does NOT exist: `expect(screen.queryByRole('alert')).not.toBeInTheDocument()`
+- Do NOT use `queryBy*` for positive assertions - use `getBy*` for better error messages
+
+## Assertions
+
+- Use `jest-dom` matchers for better error messages: `toBeDisabled()`, `toBeInTheDocument()`, `toHaveTextContent()`
+- Do NOT use generic assertions like `expect(button.disabled).toBe(true)` - use `expect(button).toBeDisabled()`
+- Make existence assertions explicit: `expect(screen.getByRole('alert')).toBeInTheDocument()`
+
+## User Interactions
+
+- Use `@testing-library/user-event` instead of `fireEvent` for more realistic user interactions
+- `user-event` fires all the same events a real user would (e.g., `keyDown`, `keyPress`, `keyUp`)
+- Do NOT use `fireEvent` unless `user-event` doesn't support the interaction yet
+
+## Async Testing and waitFor
+
+- Use `findBy*` queries for async elements instead of `waitFor(() => getBy*())`
+- Put only ONE assertion per `waitFor` callback for faster failure feedback
+- Do NOT pass empty callbacks to `waitFor` - wait for specific assertions
+- Do NOT perform side-effects inside `waitFor` - put them outside
+- Do NOT use snapshot assertions inside `waitFor` - take snapshots after `waitFor` completes
+
+```typescript
+// ❌ Wrong
+await waitFor(() => {});
+await waitFor(() => {
+  fireEvent.click(button);
+  expect(screen.getByRole('alert')).toBeInTheDocument();
+});
+
+// ✅ Correct
+fireEvent.click(button);
+await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+```
+
+## act() Usage
+
+- Do NOT wrap `render()` or `fireEvent` in `act()` - they're already wrapped
+- Only use `act()` when you need to manually trigger React updates outside Testing Library utilities
+- If you see act warnings, investigate the root cause instead of wrapping things in `act()`
+
+## Variable Naming
+
+- Do NOT use `wrapper` as variable name for render return value
+- Destructure what you need: `const { rerender } = render(<Example />)`
+- Or use `view` if you need the whole object: `const view = render(<Example />)`
+
+## Test Structure
+
+- Use descriptive test names that explain user behavior or component functionality
+- Follow Arrange-Act-Assert pattern
+- Test user-visible behavior, not implementation details
+- Avoid testing internal state or calling component methods directly

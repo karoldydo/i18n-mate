@@ -21,6 +21,7 @@ A web application for centralized management of i18n translations for frontend p
   - [MVP Features](#mvp-features)
   - [Out of Scope](#out-of-scope)
 - [Project Status](#project-status)
+- [Repository Guidelines](#repository-guidelines)
 - [License](#license)
 
 ## Project Description
@@ -47,6 +48,7 @@ Frontend developers managing i18n in their applications.
 - **Shadcn/ui** - Accessible React component library built on Radix UI
 - **React Router v7** - Client-side routing for SPA navigation
 - **TanStack Query** - Server state management with caching and synchronization
+- **Zod** - Data validation
 
 ### Backend
 
@@ -256,6 +258,10 @@ The project tracks the following KPIs:
 - Percentage of translations using LLM after 7 days
 - LLM translation effectiveness (success rate, average time)
 - Average autosave time
+
+## Repository Guidelines
+
+Contributors should review the concise contributor guide in [AGENTS.md](AGENTS.md) before opening pull requests or feature branches.
 
 ## License
 

@@ -7,6 +7,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       coverage: {
+        enabled: true,
         provider: 'v8',
         reporter: ['text-summary', 'html', 'lcov'],
       },

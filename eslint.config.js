@@ -1,4 +1,5 @@
 import eslint from '@eslint/js';
+import eslintPluginJestDom from 'eslint-plugin-jest-dom';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import perfectionist from 'eslint-plugin-perfectionist';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
@@ -6,6 +7,7 @@ import eslintPluginReact from 'eslint-plugin-react';
 import reactCompiler from 'eslint-plugin-react-compiler';
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import eslintPluginTestingLibrary from 'eslint-plugin-testing-library';
 import unusedImports from 'eslint-plugin-unused-imports';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
@@ -16,7 +18,6 @@ const baseConfig = defineConfig({
     eslint.configs.recommended,
     tseslint.configs.strict,
     tseslint.configs.stylistic,
-    reactRefresh.configs.vite,
     perfectionist.configs['recommended-natural'],
   ],
   files: ['**/*.{js,jsx,ts,tsx}'],
@@ -32,8 +33,8 @@ const baseConfig = defineConfig({
 });
 
 const reactConfig = defineConfig({
-  extends: [eslintPluginReact.configs.flat.recommended],
-  files: ['**/*.{js,jsx,ts,tsx}'],
+  extends: [eslintPluginReact.configs.flat.recommended, reactRefresh.configs.vite],
+  files: ['**/*.tsx'],
   languageOptions: {
     ...eslintPluginReact.configs.flat.recommended.languageOptions,
     globals: {
@@ -53,9 +54,18 @@ const reactConfig = defineConfig({
   settings: { react: { version: 'detect' } },
 });
 
+const testingConfig = defineConfig({
+  extends: [
+    eslintPluginTestingLibrary.configs['flat/react'],
+    eslintPluginTestingLibrary.configs['flat/dom'],
+    eslintPluginJestDom.configs['flat/recommended'],
+  ],
+  files: ['**/*.test.tsx'],
+});
+
 const jsxA11yConfig = defineConfig({
   extends: [jsxA11y.flatConfigs.recommended],
-  files: ['**/*.{js,jsx,ts,tsx}'],
+  files: ['**/*.tsx'],
   languageOptions: {
     ...jsxA11y.flatConfigs.recommended.languageOptions,
   },
@@ -66,5 +76,6 @@ export default defineConfig([
   baseConfig,
   reactConfig,
   jsxA11yConfig,
+  testingConfig,
   eslintPluginPrettierRecommended,
 ]);

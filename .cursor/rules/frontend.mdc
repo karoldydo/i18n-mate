@@ -1,0 +1,82 @@
+---
+description: Frontend development standards for React, React Router, TanStack Query, Tailwind CSS, and ARIA
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# Frontend
+
+## React Coding Standards
+
+- Use functional components with hooks instead of class components
+- Implement React.memo() for expensive components that render often with the same props
+- Utilize React.lazy() and Suspense for code-splitting and performance optimization
+- Use the useCallback hook for event handlers passed to child components to prevent unnecessary re-renders
+- Prefer useMemo for expensive calculations to avoid recomputation on every render
+- Implement useId() for generating unique IDs for accessibility attributes
+- Use the new use hook for data fetching in React 19+ projects
+- Leverage Server Components for project lists, key lists with translations, and language management components when using React or similar frameworks
+- Consider using the new useOptimistic hook for optimistic UI updates in forms
+- Use useTransition for non-urgent state updates to keep the UI responsive
+
+## React Router
+
+- Use createBrowserRouter instead of BrowserRouter for better data loading and error handling
+- Implement lazy loading with React.lazy() for route components to improve initial load time
+- Use the useNavigate hook instead of the navigate component prop for programmatic navigation
+- Leverage loader and action functions to handle data fetching and mutations at the route level
+- Implement error boundaries with errorElement to gracefully handle routing and data errors
+- Use relative paths with dot notation (e.g., "../parent") to maintain route hierarchy flexibility
+- Utilize the useRouteLoaderData hook to access data from parent routes
+- Implement fetchers for non-navigation data mutations
+- Use route.lazy() for route-level code splitting with automatic loading states
+- Implement shouldRevalidate functions to control when data revalidation happens after navigation
+
+## React Query (TanStack Query)
+
+- Use TanStack Query (formerly React Query) with appropriate staleTime and gcTime based on data freshness requirements
+- Implement the useInfiniteQuery hook for pagination and infinite scrolling
+- Use optimistic updates for mutations to make the UI feel more responsive
+- Leverage queryClient.setQueryDefaults to establish consistent settings for query categories
+- Use suspense mode with `<Suspense>` boundaries for a more declarative data fetching approach
+- Implement retry logic with custom backoff algorithms for transient network issues
+- Use the select option to transform and extract specific data from query results
+- Implement mutations with onMutate, onError, and onSettled for robust error handling
+- Use Query Keys structuring pattern ([entity, params]) for better organization and automatic refetching
+- Implement query invalidation strategies to keep data fresh after mutations
+
+## Tailwind CSS
+
+- Use the @layer directive to organize styles into components, utilities, and base layers
+- Implement Just-in-Time (JIT) mode for development efficiency and smaller CSS bundles
+- Use arbitrary values with square brackets (e.g., w-[123px]) for precise one-off designs
+- Leverage the @apply directive in component classes to reuse utility combinations
+- Implement the Tailwind configuration file for customizing theme, plugins, and variants
+- Use component extraction for repeated UI patterns instead of copying utility classes
+- Leverage the theme() function in CSS for accessing Tailwind theme values
+- Implement dark mode with the dark: variant
+- Use responsive variants (sm:, md:, lg:, etc.) for adaptive designs
+- Leverage state variants (hover:, focus:, active:, etc.) for interactive elements
+
+## ARIA Best Practices
+
+- Use ARIA landmarks to identify regions of the page (main, navigation, search, etc.)
+- Apply appropriate ARIA roles to custom interface elements that lack semantic HTML equivalents
+- Set aria-expanded and aria-controls for expandable content like accordions and dropdowns
+- Use aria-live regions with appropriate politeness settings for dynamic content updates
+- Implement aria-hidden to hide decorative or duplicative content from screen readers
+- Apply aria-label or aria-labelledby for elements without visible text labels
+- Use aria-describedby to associate descriptive text with form inputs or complex elements
+- Implement aria-current for indicating the current item in a set, navigation, or process
+- Avoid redundant ARIA that duplicates the semantics of native HTML elements
+- Apply aria-invalid and appropriate error messaging for form validation in registration, login, password reset, project creation with prefix validation (2-4 characters, [a-z0-9._-], unique within user scope), language addition with BCP-47 validation, and key addition with format validation ([a-z0-9._-], no double dots, no trailing dot)
+
+## Key Principles
+
+- Use functional, declarative programming. Avoid classes.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Favor named exports for components.
+- Use TypeScript for all code. Prefer interfaces over types.
+- File structure: imports, types, main component, sub-components, helpers, static content.
+- Use Zod for form validation.
+- Use Shadcn UI, Radix, and Tailwind CSS for components and styling.

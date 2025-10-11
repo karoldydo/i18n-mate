@@ -1,0 +1,92 @@
+---
+description: Project overview, tech stack, directory structure, and core coding practices
+alwaysApply: true
+---
+
+# AI Rules for i18n-mate
+
+A web application for centralized management of i18n translations for frontend projects. i18n-mate provides a unified process for creating and maintaining translation keys, separation of translations from code, fast translation using LLM, and export in a ready-to-use format compatible with i18next.
+
+## Tech Stack
+
+### Frontend
+
+- **Vite** - Fast build tool with HMR for optimal development experience
+- **React 19** - UI library for building interactive components and managing application state
+- **TypeScript 5** - Static typing for better code quality and IDE support
+- **Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
+- **Shadcn/ui** - Accessible React component library built on Radix UI
+- **React Router v7** - Client-side routing for SPA navigation
+- **TanStack Query** - Server state management with caching and synchronization
+- **Zod** - Data validation
+
+### Backend
+
+- **Supabase** - PostgreSQL database with built-in authentication, RLS policies, and realtime subscriptions
+- **Supabase Edge Functions** - Serverless functions for custom API logic when needed
+
+### AI
+
+- **OpenRouter.ai** - Gateway to multiple LLM providers (OpenAI, Anthropic, Google) with unified API and cost controls
+
+### Testing & Quality
+
+- **Vitest** - Unit testing framework for JavaScript and TypeScript with Vite-native DX
+- **@vitest/coverage-v8** - Coverage reports powered by the V8 engine
+- **Testing Library** - User-focused testing utilities for React components
+
+## Project Structure
+
+When introducing changes to the project, always follow the directory structure below:
+
+- `./src` - source code
+- `./src/app` - app shell: bootstrap, providers, routing
+- `./src/app/routes` - route definitions (React Router v7, lazy)
+- `./src/app/errors` - global and per-route error boundaries
+- `./src/shared` - shared, domain-agnostic code
+- `./src/shared/ui` - shadcn/ui components and small reusable UI
+- `./src/shared/api` - API clients (Supabase/OpenRouter), TanStack Query keys
+- `./src/shared/lib` - utilities, validation, formatting helpers
+- `./src/shared/hooks` - generic hooks (e.g., useDebounce)
+- `./src/shared/config` - env mapping, theme, feature flags
+- `./src/shared/styles` - global styles
+- `./src/shared/assets` - shared assets (icons, logo)
+- `./src/shared/types` - generated types (e.g., Supabase)
+- `./src/features` - domain modules (feature-first)
+- `./src/features/feature` - specific feature scope
+- `./src/features/feature/components` - feature UI components
+- `./src/features/feature/components/Component.css` - co-located component CSS
+- `./src/features/feature/components/Component.test.tsx` - co-located unit test
+- `./src/features/feature/api` - queries/mutations (TanStack Query)
+- `./src/features/feature/api/useThing.ts` - feature query/mutation hook
+- `./src/features/feature/api/useThing.test.ts` - co-located hook test
+- `./src/features/feature/routes` - feature pages/guards
+- `./src/features/feature/routes/Thing.tsx` - feature page
+- `./src/features/feature/routes/Thing.test.tsx` - co-located page test
+- `./src/features/feature/hooks` - feature logic and local state
+- `./src/features/feature/hooks/useThing.ts` - feature hook
+- `./src/features/feature/hooks/useThing.test.ts` - co-located hook test
+- `./src/test` - test setup only (Vitest)
+- `./public` - static files served 1:1 (favicon, manifest, robots)
+- `./supabase` - project backend infrastructure
+- `./supabase/functions` - Supabase Edge Functions
+- `./supabase/migrations` - SQL migrations
+- `./.github/workflows` - CI/CD pipelines (lint, test, build, deploy)
+- `./docker` - Dockerfile/compose for pre-production (optional)
+- `./scripts` - automation/dev scripts (optional)
+- `./e2e` - end-to-end tests (Playwright) (optional)
+
+When modifying the directory structure, always update this section.
+
+## Coding practices
+
+### Guidelines for clean code
+
+- Prioritize error handling and edge cases
+- Handle errors and edge cases at the beginning of functions.
+- Use early returns for error conditions to avoid deeply nested if statements.
+- Place the happy path last in the function for improved readability.
+- Avoid unnecessary else statements; use if-return pattern instead.
+- Use guard clauses to handle preconditions and invalid states early.
+- Implement proper error logging and user-friendly error messages.
+- Consider using custom error types or error factories for consistent error handling.
