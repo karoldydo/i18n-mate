@@ -8,15 +8,23 @@ export default mergeConfig(
     test: {
       coverage: {
         enabled: true,
+        exclude: [
+          'node_modules',
+          'dist',
+          'eslint.config.js',
+          'lint-staged.config.js',
+          'prettier.config.js',
+          'vite.config.ts',
+          'vitest.config.ts',
+        ],
         provider: 'v8',
         reporter: ['text-summary', 'html', 'lcov'],
-        // TODO: uncomment this when we have more tests :-)
-        // thresholds: {
-        //   branches: 90,
-        //   functions: 90,
-        //   lines: 90,
-        //   statements: 90,
-        // },
+        thresholds: {
+          branches: 90,
+          functions: 90,
+          lines: 90,
+          statements: 90,
+        },
       },
       environment: 'jsdom',
       globals: true,

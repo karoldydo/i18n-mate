@@ -23,6 +23,7 @@
     "wix.vscode-import-cost",
     "zignd.html-css-class-completion",
     "narasimapandiyan.jetbrainsmonos",
-    "vitest.explorer"
+    "vitest.explorer",
+    "ms-vscode.live-server"
   ]
 }

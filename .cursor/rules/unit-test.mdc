@@ -1,6 +1,6 @@
 ---
 description: Testing best practices with React Testing Library and Vitest
-globs: **/*.test.tsx
+globs: **/*.test.tsx,**/*.test.ts
 alwaysApply: false
 ---
 
@@ -9,6 +9,7 @@ alwaysApply: false
 ## Configuration
 
 - Do NOT use `cleanup` - it happens automatically in modern Testing Library versions
+- Do NOT use `any` - provide a type instead, if not possible use `as unknown as ...` or `as ...`
 - Co-locate tests with their source files (Component.test.tsx next to Component.tsx)
 
 ## Querying Elements
