@@ -10,6 +10,7 @@
     "pre-commit": "lint-staged",
     "prepare": "husky",
     "preview": "vite preview",
+    "supabase:migration": "supabase migration up",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "test": "vitest --config ./vitest.config.ts"
