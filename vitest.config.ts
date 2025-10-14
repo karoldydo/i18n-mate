@@ -16,6 +16,8 @@ export default mergeConfig(
           'prettier.config.js',
           'vite.config.ts',
           'vitest.config.ts',
+          'src/env.d.ts',
+          'src/shared/types/database.types.ts',
         ],
         provider: 'v8',
         reporter: ['text-summary', 'html', 'lcov'],

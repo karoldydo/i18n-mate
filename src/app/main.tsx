@@ -5,6 +5,7 @@ import '@/shared/styles/index.css';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
 
+import { SupabaseProvider } from './providers/SupabaseProvider';
 import router from './routes.ts';
 
 const root = document.getElementById('root');
@@ -14,8 +15,10 @@ const queryClient = new QueryClient();
 
 createRoot(root).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <SupabaseProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </SupabaseProvider>
   </StrictMode>
 );
