@@ -56,187 +56,45 @@ CREATE TYPE event_type AS ENUM (
 
 ### 1. projects
 
+[See details →](./tables/1-projects.md)
+
 Main entity for translation projects, owned by users.
-
-```sql
-CREATE TABLE projects (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name CITEXT NOT NULL,
-  description TEXT,
-  prefix VARCHAR(4) NOT NULL CHECK (
-    length(prefix) BETWEEN 2 AND 4
-    AND prefix ~ '^[a-z0-9._-]+$'
-    AND prefix NOT LIKE '%.'
-  ),
-  default_locale locale_code NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  CONSTRAINT projects_name_unique_per_owner UNIQUE (owner_user_id, name),
-  CONSTRAINT projects_prefix_unique_per_owner UNIQUE (owner_user_id, prefix)
-);
-
-COMMENT ON TABLE projects IS 'Translation projects owned by users';
-COMMENT ON COLUMN projects.prefix IS '2-4 char key prefix, unique per owner, immutable, [a-z0-9._-], no trailing dot';
-COMMENT ON COLUMN projects.default_locale IS 'Immutable default language, must exist in project_locales, cannot be deleted';
-```
 
 ### 2. project_locales
 
+[See details →](./tables/2-project_locales.md)
+
 Languages assigned to projects.
-
-```sql
-CREATE TABLE project_locales (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  locale locale_code NOT NULL,
-  label VARCHAR(64) NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  CONSTRAINT project_locales_unique_per_project UNIQUE (project_id, locale)
-);
-
-COMMENT ON TABLE project_locales IS 'Languages assigned to projects; default_locale cannot be deleted';
-COMMENT ON COLUMN project_locales.locale IS 'Normalized BCP-47 code: ll or ll-CC';
-COMMENT ON COLUMN project_locales.label IS 'Human-readable language name (editable)';
-```
 
 ### 3. keys
 
+[See details →](./tables/3-keys.md)
+
 Translation keys, created only in default language, mirrored to all locales.
-
-```sql
-CREATE TABLE keys (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  full_key VARCHAR(256) NOT NULL CHECK (
-    full_key ~ '^[a-z0-9._-]+$'
-    AND full_key NOT LIKE '%..'
-    AND full_key NOT LIKE '%.'
-  ),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  CONSTRAINT keys_unique_per_project UNIQUE (project_id, full_key)
-);
-
-COMMENT ON TABLE keys IS 'Translation keys; created only in default language; must start with project.prefix + "."';
-COMMENT ON COLUMN keys.full_key IS 'Lowercase, [a-z0-9._-], no ".." or trailing dot, unique per project';
-```
 
 ### 4. translations
 
+[See details →](./tables/4-translations.md)
+
 Translation values for each (project, key, locale) combination.
-
-```sql
-CREATE TABLE translations (
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  key_id UUID NOT NULL REFERENCES keys(id) ON DELETE CASCADE,
-  locale locale_code NOT NULL,
-  value VARCHAR(250) CHECK (value !~ '\n'),
-  is_machine_translated BOOLEAN NOT NULL DEFAULT false,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_source update_source_type NOT NULL DEFAULT 'user',
-  updated_by_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-
-  PRIMARY KEY (project_id, key_id, locale),
-  FOREIGN KEY (project_id, locale) REFERENCES project_locales(project_id, locale) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE translations IS 'Pre-materialized translation values; auto-created for each (key, locale) pair';
-COMMENT ON COLUMN translations.value IS 'NULL = missing; for default_locale: NOT NULL AND <> empty; max 250 chars, no newline; auto-trimmed';
-COMMENT ON COLUMN translations.is_machine_translated IS 'true = LLM-generated; false = manual edit';
-COMMENT ON COLUMN translations.updated_source IS 'user = manual edit; system = LLM translation';
-COMMENT ON COLUMN translations.updated_by_user_id IS 'NULL for system updates';
-```
 
 ### 5. translation_jobs
 
+[See details →](./tables/5-translation_jobs.md)
+
 LLM translation job tracking.
-
-```sql
-CREATE TABLE translation_jobs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  source_locale locale_code NOT NULL,
-  target_locale locale_code NOT NULL CHECK (target_locale <> source_locale),
-  mode translation_mode NOT NULL,
-  status job_status NOT NULL DEFAULT 'pending',
-  provider VARCHAR(64),
-  model VARCHAR(128),
-  params JSONB,
-  started_at TIMESTAMPTZ,
-  finished_at TIMESTAMPTZ,
-  total_keys INTEGER,
-  completed_keys INTEGER DEFAULT 0,
-  failed_keys INTEGER DEFAULT 0,
-  estimated_cost_usd NUMERIC(10,4),
-  actual_cost_usd NUMERIC(10,4),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-
-  -- Note: source_locale validation (must equal project's default_locale)
-  -- enforced via trigger, not CHECK constraint
-  -- (PostgreSQL doesn't allow subqueries in CHECK constraints)
-);
-
-COMMENT ON TABLE translation_jobs IS 'LLM translation jobs; only one active (pending/running) per project';
-COMMENT ON COLUMN translation_jobs.mode IS 'all = all keys; selected = specific keys; single = one key';
-COMMENT ON COLUMN translation_jobs.params IS 'LLM parameters: temperature, max_tokens, etc.';
-COMMENT ON COLUMN translation_jobs.estimated_cost_usd IS 'Estimated cost before execution';
-COMMENT ON COLUMN translation_jobs.actual_cost_usd IS 'Actual cost after completion';
-```
 
 ### 6. translation_job_items
 
+[See details →](./tables/6-translation_job_items.md)
+
 Individual keys within a translation job.
-
-```sql
-CREATE TABLE translation_job_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id UUID NOT NULL REFERENCES translation_jobs(id) ON DELETE CASCADE,
-  key_id UUID NOT NULL REFERENCES keys(id) ON DELETE CASCADE,
-  status item_status NOT NULL DEFAULT 'pending',
-  error_code VARCHAR(32),
-  error_message TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  CONSTRAINT translation_job_items_unique_per_job UNIQUE (job_id, key_id)
-);
-
-COMMENT ON TABLE translation_job_items IS 'Individual translation tasks within a job';
-COMMENT ON COLUMN translation_job_items.error_code IS 'OpenRouter error code (e.g., rate_limit, model_error)';
-```
 
 ### 7. telemetry_events (Partitioned)
 
+[See details →](./tables/7-telemetry_events.md)
+
 Application telemetry for analytics and KPIs.
-
-```sql
-CREATE TABLE telemetry_events (
-  id UUID NOT NULL DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  event_name event_type NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  properties JSONB,
-
-  PRIMARY KEY (id, created_at)
-) PARTITION BY RANGE (created_at);
-
-COMMENT ON TABLE telemetry_events IS 'Application events for KPI tracking; partitioned monthly; RLS for owner or service_role';
-COMMENT ON COLUMN telemetry_events.properties IS 'Event-specific metadata (key_count, locale, mode, etc.)';
-
--- Create initial partitions (example for 2025)
-CREATE TABLE telemetry_events_2025_01 PARTITION OF telemetry_events
-  FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
-CREATE TABLE telemetry_events_2025_02 PARTITION OF telemetry_events
-  FOR VALUES FROM ('2025-02-01') TO ('2025-03-01');
-CREATE TABLE telemetry_events_2025_03 PARTITION OF telemetry_events
-  FOR VALUES FROM ('2025-03-01') TO ('2025-04-01');
--- Additional partitions created automatically or via cron
-```
 
 ## Indexes
 
