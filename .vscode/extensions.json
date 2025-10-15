@@ -24,6 +24,7 @@
     "zignd.html-css-class-completion",
     "narasimapandiyan.jetbrainsmonos",
     "vitest.explorer",
-    "ms-vscode.live-server"
+    "ms-vscode.live-server",
+    "anthropic.claude-code"
   ]
 }
