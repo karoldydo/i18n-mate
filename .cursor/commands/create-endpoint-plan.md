@@ -12,34 +12,40 @@ Before we begin, review the following information:
 
    <related_db_resources>
    {{table}} (this value will be provided as a parameter to the command).
-   [Table Relationships](../../../.ai/database/tables/table-relationships.md)
+   [Table Relationships](../../.ai/database/tables/table-relationships.md)
    </related_db_resources>
 
 3. Type definitions:
 
    <type_definitions>
-   [Type Definitions](../../../src/shared/types/types.ts)
+   [Type Definitions](../../src/shared/types/types.ts)
    </type_definitions>
 
 4. Tech stack:
 
    <tech_stack>
-   [Tech Stack](../../../.ai/api/tech-stack.md)
+   [Tech Stack](../../.ai/tech-stack.md)
    </tech_stack>
 
 5. Implementation rules:
 
    <implementation_rules>
-   [Shared Rules for AI](../../../.cursor/rules/shared.mdc)
-   [Rules for AI for backend](../../../.cursor/rules/backend.mdc)
+   [Shared rules](../../.cursor/rules/shared.mdc)
+   [Frontend rules](../../.cursor/rules/frontend.mdc)
+   [Backend rules](../../.cursor/rules/backend.mdc)
    </implementation_rules>
+
+6. Style and format of output document:
+   <style_and_format>
+   [Style and format](../../.ai/api/plans/projects-implementation-plan.md)
+   </style_and_format>
 
 Your task is to create a comprehensive implementation plan for the REST API endpoint. Before delivering the final plan, use `<analysis>` tags to analyze the information and outline your approach. In this analysis, ensure that:
 
 1. Summarize key points of the API specification.
 2. List required and optional parameters from the API specification.
 3. List necessary DTO types and Command Models.
-4. Consider how to extract logic to a service (existing or new, if it doesn't exist).
+4. Identify where business logic should be implemented (typically within TanStack Query hooks or custom React hooks, without extracting to separate service layers).
 5. Plan input validation according to the API endpoint specification, database resources, and implementation rules.
 6. Determine how to log errors in the error table (if applicable).
 7. Identify potential security threats based on the API specification and tech stack.
@@ -97,7 +103,7 @@ The final output should be a well-organized implementation plan in markdown form
 
 ### 4. Data Flow
 
-[Description of data flow, including interactions with external services or databases]
+[Description of data flow from user interaction through React components, TanStack Query hooks (where business logic resides), to Supabase client calls and database operations, including any RPC functions or triggers]
 
 ### 5. Security Considerations
 
@@ -121,5 +127,5 @@ The final output should be a well-organized implementation plan in markdown form
 ```text
 The final output should consist solely of the implementation plan in markdown format and should not duplicate or repeat any work done in the analysis section.
 
-Remember to save your implementation plan as .ai/api/plans/[ENDPOINT-NAME]-implementation-plan.md. Ensure the plan is detailed, clear, and provides comprehensive guidance for the development team.
+Remember to save your implementation plan as a single output file: .ai/api/plans/[ENDPOINT-NAME]-implementation-plan.md. Ensure the plan is detailed, clear, and provides comprehensive guidance for the development team.
 ```
