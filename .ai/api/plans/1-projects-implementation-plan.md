@@ -331,17 +331,6 @@ Empty response body.
 
 ### 4.6 Error Responses
 
-**401 Unauthorized:**
-
-```json
-{
-  "error": {
-    "code": "unauthorized",
-    "message": "Authentication required"
-  }
-}
-```
-
 **400 Bad Request (Validation Error):**
 
 ```json
@@ -507,16 +496,6 @@ Empty response body.
 - GET responses include `owner_user_id` only for project details, not for list view
 - Sensitive fields are excluded from default SELECT statements
 
-### 6.6 Rate Limiting
-
-- Supabase provides built-in rate limiting per IP address
-- Consider implementing application-level rate limiting for expensive operations (e.g., bulk creation)
-
-### 6.7 CSRF Protection
-
-- Handled by Supabase Auth tokens
-- SameSite cookie attributes prevent CSRF attacks
-
 ## 7. Error Handling
 
 ### 7.1 Client-Side Validation Errors (400)
@@ -551,22 +530,7 @@ try {
 }
 ```
 
-### 7.2 Authentication Errors (401)
-
-**Trigger Conditions:**
-
-- Missing Authorization header
-- Expired JWT token
-- Invalid JWT signature
-- Revoked token
-
-**Handling:**
-
-- Supabase client automatically handles token refresh
-- If refresh fails, redirect user to login page
-- Display "Session expired, please log in again" message
-
-### 7.3 Authorization Errors (403/404)
+### 7.2 Authorization Errors (403/404)
 
 **Trigger Conditions:**
 
@@ -576,10 +540,10 @@ try {
 **Handling:**
 
 - Supabase returns empty result set for SELECT queries
-- Return 404 "Project not found or access denied" to avoid leaking existence
+- Return 404 "Project not found" to avoid leaking existence
 - Do not distinguish between "doesn't exist" and "access denied"
 
-### 7.4 Conflict Errors (409)
+### 7.3 Conflict Errors (409)
 
 **Trigger Conditions:**
 
@@ -610,7 +574,7 @@ if (error) {
 }
 ```
 
-### 7.5 Database Trigger Errors (400)
+### 7. Database Trigger Errors (400)
 
 **Trigger Conditions:**
 
@@ -622,7 +586,7 @@ if (error) {
 - Catch PostgreSQL RAISE EXCEPTION from trigger
 - Return 400 with message: "Cannot modify prefix after creation" or "Cannot modify default locale after creation"
 
-### 7.6 Not Found Errors (404)
+### 7.5 Not Found Errors (404)
 
 **Trigger Conditions:**
 
@@ -639,7 +603,7 @@ if (!data) {
 }
 ```
 
-### 7.7 Server Errors (500)
+### 7.6 Server Errors (500)
 
 **Trigger Conditions:**
 
@@ -650,7 +614,7 @@ if (!data) {
 
 **Handling:**
 
-- Log full error details to console (development) or error tracking service (production)
+- Log full error details to console (development)
 - Return generic message to user: "An unexpected error occurred. Please try again."
 - Do not expose internal error details to client
 
@@ -662,11 +626,6 @@ const { data, error } = await supabase.rpc('create_project_with_default_locale',
 if (error) {
   console.error('[useCreateProject] RPC error:', error);
 
-  // Send to error tracking (e.g., Sentry)
-  if (import.meta.env.PROD) {
-    trackError(error);
-  }
-
   return {
     error: {
       code: 'internal_server_error',
@@ -675,20 +634,6 @@ if (error) {
   };
 }
 ```
-
-### 7.8 Network Errors
-
-**Trigger Conditions:**
-
-- Lost internet connection
-- Supabase service unavailable
-- Request timeout
-
-**Handling:**
-
-- TanStack Query automatically retries failed requests (3 retries with exponential backoff)
-- Display network error message with retry button
-- Cache last successful data to show stale content
 
 ## 8. Performance Considerations
 
@@ -763,26 +708,12 @@ const updateMutation = useMutation({
 });
 ```
 
-### 8.4 Request Debouncing
-
-**Search/Filter:**
-
-- Debounce search input by 300ms to reduce API calls
-- Use `useDebounce` hook from `src/shared/hooks`
-
-### 8.5 Database Performance
+### 8.4 Database Performance
 
 **RPC Function Optimization:**
 
 - `list_projects_with_counts` uses efficient LEFT JOINs with COUNT
 - Indexes on foreign keys ensure fast joins
-- Materialized views could be considered for very large datasets (future optimization)
-
-### 8.6 Payload Size
-
-- Typical project list response (50 items): ~5-10 KB
-- Single project response: ~200 bytes
-- Compression (gzip) enabled by default in Supabase
 
 ## 9. Implementation Steps
 
@@ -1182,114 +1113,3 @@ Test scenarios:
 - Invalid UUID format
 - Project not found (404)
 - Verify cache invalidation
-
-### Step 6: Create Example Components
-
-**6.1 Create `src/features/projects/components/ProjectList.tsx`:**
-
-Component that uses `useProjects` hook to display paginated list with counts.
-
-**6.2 Create `src/features/projects/components/ProjectDetails.tsx`:**
-
-Component that uses `useProject` hook to display single project.
-
-**6.3 Create `src/features/projects/components/CreateProjectForm.tsx`:**
-
-Form component using `useCreateProject` mutation with validation feedback.
-
-**6.4 Create `src/features/projects/components/UpdateProjectForm.tsx`:**
-
-Form component using `useUpdateProject` mutation with optimistic updates.
-
-**6.5 Create `src/features/projects/components/DeleteProjectButton.tsx`:**
-
-Confirmation dialog component using `useDeleteProject` mutation.
-
-### Step 7: Create Route Components
-
-**7.1 Create `src/features/projects/routes/ProjectsPage.tsx`:**
-
-Page component that renders `ProjectList` with pagination controls.
-
-**7.2 Create `src/features/projects/routes/ProjectDetailPage.tsx`:**
-
-Page component that renders `ProjectDetails` with edit/delete actions.
-
-**7.3 Create `src/features/projects/routes/CreateProjectPage.tsx`:**
-
-Page component that renders `CreateProjectForm`.
-
-### Step 8: Register Routes
-
-Update `src/app/routes.ts` to include new project routes:
-
-```typescript
-{
-  path: '/projects',
-  lazy: () => import('@/features/projects/routes/ProjectsPage'),
-},
-{
-  path: '/projects/new',
-  lazy: () => import('@/features/projects/routes/CreateProjectPage'),
-},
-{
-  path: '/projects/:projectId',
-  lazy: () => import('@/features/projects/routes/ProjectDetailPage'),
-},
-```
-
-### Step 9: Add Component Tests
-
-Write tests for each component using Testing Library:
-
-- User interactions (form submission, button clicks)
-- Loading states
-- Error states
-- Success states
-- Optimistic updates
-
-### Step 10: Integration Testing
-
-Test complete user flows:
-
-1. User creates a project → sees it in the list
-2. User edits project name → sees optimistic update → confirms server update
-3. User attempts to create duplicate → sees conflict error
-4. User deletes project → confirms it's removed from list
-
-### Step 11: Documentation
-
-**11.1 Add JSDoc comments to all hooks**
-
-**11.2 Create `src/features/projects/README.md`:**
-
-Document:
-
-- Feature overview
-- Available hooks and their usage
-- Example code snippets
-- Common patterns and best practices
-
-### Step 12: Performance Audit
-
-- Verify query caching works correctly
-- Check bundle size impact
-- Test with large datasets (100+ projects)
-- Ensure pagination performs well
-
-### Step 13: Accessibility Review
-
-- Ensure all forms have proper labels and ARIA attributes
-- Test keyboard navigation
-- Verify screen reader compatibility
-- Check focus management after mutations
-
-### Step 14: Final Review and Deployment
-
-- Run `npm run lint` and fix any issues
-- Run `npm run test` and ensure 100% coverage for API layer
-- Update `.ai/api/plans/projects-implementation-plan.md` with any changes
-- Create pull request with comprehensive description
-- Request code review from team members
-- Merge and deploy to staging environment
-- Monitor error tracking for any production issues
