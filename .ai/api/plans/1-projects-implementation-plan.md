@@ -168,7 +168,7 @@ export interface PaginationMetadata {
 // Error types
 export interface ApiErrorResponse {
   error: {
-    code: string;
+    code: number;
     details?: Record<string, unknown>;
     message: string;
   };
@@ -176,7 +176,7 @@ export interface ApiErrorResponse {
 
 export interface ValidationErrorResponse extends ApiErrorResponse {
   error: {
-    code: 'validation_error';
+    code: 400;
     details: {
       constraint: string;
       field: string;
@@ -187,7 +187,7 @@ export interface ValidationErrorResponse extends ApiErrorResponse {
 
 export interface ConflictErrorResponse extends ApiErrorResponse {
   error: {
-    code: 'conflict';
+    code: 409;
     message: string;
   };
 }
@@ -336,7 +336,7 @@ Empty response body.
 ```json
 {
   "error": {
-    "code": "validation_error",
+    "code": 400,
     "details": {
       "constraint": "min_length",
       "field": "prefix"
@@ -351,7 +351,7 @@ Empty response body.
 ```json
 {
   "error": {
-    "code": "conflict",
+    "code": 409,
     "message": "Project with this name already exists"
   }
 }
@@ -362,7 +362,7 @@ Empty response body.
 ```json
 {
   "error": {
-    "code": "not_found",
+    "code": 404,
     "message": "Project not found or access denied"
   }
 }
@@ -373,7 +373,7 @@ Empty response body.
 ```json
 {
   "error": {
-    "code": "internal_server_error",
+    "code": 500,
     "message": "An unexpected error occurred"
   }
 }
@@ -518,7 +518,7 @@ try {
   if (error instanceof z.ZodError) {
     return {
       error: {
-        code: 'validation_error',
+        code: 400,
         message: error.errors[0].message,
         details: {
           field: error.errors[0].path.join('.'),
@@ -565,10 +565,10 @@ if (error) {
   if (error.code === '23505') {
     // Unique constraint violation
     if (error.message.includes('projects_name_unique_per_owner')) {
-      return { error: { code: 'conflict', message: 'Project with this name already exists' } };
+      return { error: { code: 409, message: 'Project with this name already exists' } };
     }
     if (error.message.includes('projects_prefix_unique_per_owner')) {
-      return { error: { code: 'conflict', message: 'Prefix is already in use' } };
+      return { error: { code: 409, message: 'Prefix is already in use' } };
     }
   }
 }
@@ -599,7 +599,7 @@ if (error) {
 const { data, error } = await supabase.from('projects').select('*').eq('id', projectId).maybeSingle();
 
 if (!data) {
-  return { error: { code: 'not_found', message: 'Project not found or access denied' } };
+  return { error: { code: 404, message: 'Project not found or access denied' } };
 }
 ```
 
@@ -628,7 +628,7 @@ if (error) {
 
   return {
     error: {
-      code: 'internal_server_error',
+      code: 500,
       message: 'An unexpected error occurred. Please try again.',
     },
   };
@@ -768,7 +768,7 @@ export function useProjects(params: ListProjectsParams = {}) {
         console.error('[useProjects] Query error:', error);
         throw {
           error: {
-            code: 'database_error',
+            code: 500,
             message: 'Failed to fetch projects',
             details: { original: error },
           },
@@ -811,7 +811,7 @@ export function useProject(projectId: string) {
         console.error('[useProject] Query error:', error);
         throw {
           error: {
-            code: 'database_error',
+            code: 500,
             message: 'Failed to fetch project',
             details: { original: error },
           },
@@ -821,7 +821,7 @@ export function useProject(projectId: string) {
       if (!data) {
         throw {
           error: {
-            code: 'not_found',
+            code: 404,
             message: 'Project not found or access denied',
           },
         };
@@ -864,7 +864,7 @@ export function useCreateProject() {
           if (error.message.includes('projects_name_unique_per_owner')) {
             throw {
               error: {
-                code: 'conflict',
+                code: 409,
                 message: 'Project with this name already exists',
               },
             };
@@ -872,7 +872,7 @@ export function useCreateProject() {
           if (error.message.includes('projects_prefix_unique_per_owner')) {
             throw {
               error: {
-                code: 'conflict',
+                code: 409,
                 message: 'Prefix is already in use',
               },
             };
@@ -882,7 +882,7 @@ export function useCreateProject() {
         // Generic error
         throw {
           error: {
-            code: 'internal_server_error',
+            code: 500,
             message: 'Failed to create project',
             details: { original: error },
           },
@@ -932,7 +932,7 @@ export function useUpdateProject(projectId: string) {
         if (error.code === '23505' && error.message.includes('projects_name_unique_per_owner')) {
           throw {
             error: {
-              code: 'conflict',
+              code: 409,
               message: 'Project with this name already exists',
             },
           };
@@ -942,7 +942,7 @@ export function useUpdateProject(projectId: string) {
         if (error.message.includes('prefix') || error.message.includes('default_locale')) {
           throw {
             error: {
-              code: 'validation_error',
+              code: 400,
               message: 'Cannot modify prefix or default_locale after creation',
             },
           };
@@ -950,7 +950,7 @@ export function useUpdateProject(projectId: string) {
 
         throw {
           error: {
-            code: 'internal_server_error',
+            code: 500,
             message: 'Failed to update project',
             details: { original: error },
           },
@@ -960,7 +960,7 @@ export function useUpdateProject(projectId: string) {
       if (!data) {
         throw {
           error: {
-            code: 'not_found',
+            code: 404,
             message: 'Project not found or access denied',
           },
         };
@@ -1022,7 +1022,7 @@ export function useDeleteProject() {
         console.error('[useDeleteProject] Delete error:', error);
         throw {
           error: {
-            code: 'internal_server_error',
+            code: 500,
             message: 'Failed to delete project',
             details: { original: error },
           },
@@ -1032,7 +1032,7 @@ export function useDeleteProject() {
       if (count === 0) {
         throw {
           error: {
-            code: 'not_found',
+            code: 404,
             message: 'Project not found or access denied',
           },
         };

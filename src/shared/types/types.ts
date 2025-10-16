@@ -24,7 +24,7 @@ export interface ApiError {
  */
 export interface ApiErrorResponse {
   error: {
-    code: string;
+    code: number;
     details?: Record<string, unknown>;
     message: string;
   };
@@ -57,7 +57,7 @@ export interface CancelTranslationJobRequest {
  */
 export interface ConflictErrorResponse extends ApiErrorResponse {
   error: {
-    code: 'conflict';
+    code: 409;
     message: string;
   };
 }
@@ -572,7 +572,7 @@ export type UpdateTranslationRequest = Pick<
  */
 export interface ValidationErrorResponse extends ApiErrorResponse {
   error: {
-    code: 'validation_error';
+    code: 400;
     details: {
       constraint: string;
       field: string;
