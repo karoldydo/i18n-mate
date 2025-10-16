@@ -727,16 +727,17 @@ mkdir -p src/features/projects/{api,components,routes,hooks}
 
 Create `src/features/projects/api/projects.schemas.ts` with all validation schemas defined in section 3.2.
 
-### Step 3: Create TanStack Query Hooks
+### Step 3: Create Query Keys Factory
 
-**3.1 Create `src/features/projects/api/useProjects.ts`:**
+Create `src/features/projects/api/projects.keys.ts`:
 
 ```typescript
-import { useQuery } from '@tanstack/react-query';
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { listProjectsSchema } from './projects.schemas';
-import type { ListProjectsParams, ProjectWithCounts, ApiError } from '@/shared/types';
+import type { ListProjectsParams } from '@/shared/types';
 
+/**
+ * Query key factory for projects
+ * Follows TanStack Query best practices for structured query keys
+ */
 export const projectsKeys = {
   all: ['projects'] as const,
   lists: () => [...projectsKeys.all, 'list'] as const,
@@ -744,6 +745,18 @@ export const projectsKeys = {
   details: () => [...projectsKeys.all, 'detail'] as const,
   detail: (id: string) => [...projectsKeys.details(), id] as const,
 };
+```
+
+### Step 4: Create TanStack Query Hooks
+
+**4.1 Create `src/features/projects/api/useProjects.ts`:**
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { listProjectsSchema } from './projects.schemas';
+import { projectsKeys } from './projects.keys';
+import type { ListProjectsParams, ProjectWithCounts, ApiError } from '@/shared/types';
 
 export function useProjects(params: ListProjectsParams = {}) {
   const supabase = useSupabase();
@@ -783,13 +796,13 @@ export function useProjects(params: ListProjectsParams = {}) {
 }
 ```
 
-**3.2 Create `src/features/projects/api/useProject.ts`:**
+**4.2 Create `src/features/projects/api/useProject.ts`:**
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { projectIdSchema } from './projects.schemas';
-import { projectsKeys } from './useProjects';
+import { projectsKeys } from './projects.keys';
 import type { ProjectResponse, ApiError } from '@/shared/types';
 
 export function useProject(projectId: string) {
@@ -835,13 +848,13 @@ export function useProject(projectId: string) {
 }
 ```
 
-**3.3 Create `src/features/projects/api/useCreateProject.ts`:**
+**4.3 Create `src/features/projects/api/useCreateProject.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createProjectSchema } from './projects.schemas';
-import { projectsKeys } from './useProjects';
+import { projectsKeys } from './projects.keys';
 import type { CreateProjectWithDefaultLocaleRequest, ProjectResponse, ApiError } from '@/shared/types';
 
 export function useCreateProject() {
@@ -899,13 +912,13 @@ export function useCreateProject() {
 }
 ```
 
-**3.4 Create `src/features/projects/api/useUpdateProject.ts`:**
+**4.4 Create `src/features/projects/api/useUpdateProject.ts`:**
 
 ```typescript
-import { useMutation, useQueryClient } from '@tantml:react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { updateProjectSchema, projectIdSchema } from './projects.schemas';
-import { projectsKeys } from './useProjects';
+import { projectsKeys } from './projects.keys';
 import type { UpdateProjectRequest, ProjectResponse, ApiError } from '@/shared/types';
 
 export function useUpdateProject(projectId: string) {
@@ -998,13 +1011,13 @@ export function useUpdateProject(projectId: string) {
 }
 ```
 
-**3.5 Create `src/features/projects/api/useDeleteProject.ts`:**
+**4.5 Create `src/features/projects/api/useDeleteProject.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { projectIdSchema } from './projects.schemas';
-import { projectsKeys } from './useProjects';
+import { projectsKeys } from './projects.keys';
 import type { ApiError } from '@/shared/types';
 
 export function useDeleteProject() {
@@ -1048,12 +1061,13 @@ export function useDeleteProject() {
 }
 ```
 
-### Step 4: Create API Index File
+### Step 5: Create API Index File
 
 Create `src/features/projects/api/index.ts`:
 
 ```typescript
-export { useProjects, projectsKeys } from './useProjects';
+export { projectsKeys } from './projects.keys';
+export { useProjects } from './useProjects';
 export { useProject } from './useProject';
 export { useCreateProject } from './useCreateProject';
 export { useUpdateProject } from './useUpdateProject';
@@ -1061,9 +1075,9 @@ export { useDeleteProject } from './useDeleteProject';
 export * from './projects.schemas';
 ```
 
-### Step 5: Write Unit Tests
+### Step 6: Write Unit Tests
 
-**5.1 Create `src/features/projects/api/useProjects.test.ts`:**
+**6.1 Create `src/features/projects/api/useProjects.test.ts`:**
 
 Test scenarios:
 
@@ -1073,7 +1087,7 @@ Test scenarios:
 - Validation error for invalid params (limit > 100)
 - Database error handling
 
-**5.2 Create `src/features/projects/api/useProject.test.ts`:**
+**6.2 Create `src/features/projects/api/useProject.test.ts`:**
 
 Test scenarios:
 
@@ -1082,7 +1096,7 @@ Test scenarios:
 - Project not found (404)
 - RLS access denied (appears as 404)
 
-**5.3 Create `src/features/projects/api/useCreateProject.test.ts`:**
+**6.3 Create `src/features/projects/api/useCreateProject.test.ts`:**
 
 Test scenarios:
 
@@ -1092,7 +1106,7 @@ Test scenarios:
 - Duplicate prefix conflict (409)
 - Database error
 
-**5.4 Create `src/features/projects/api/useUpdateProject.test.ts`:**
+**6.4 Create `src/features/projects/api/useUpdateProject.test.ts`:**
 
 Test scenarios:
 
@@ -1105,7 +1119,7 @@ Test scenarios:
 - Duplicate name conflict (409)
 - Project not found (404)
 
-**5.5 Create `src/features/projects/api/useDeleteProject.test.ts`:**
+**6.5 Create `src/features/projects/api/useDeleteProject.test.ts`:**
 
 Test scenarios:
 
