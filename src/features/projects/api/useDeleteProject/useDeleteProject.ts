@@ -9,6 +9,15 @@ import { createDatabaseErrorResponse } from '../projects.errors';
 import { projectsKeys } from '../projects.keys';
 import { projectIdSchema } from '../projects.schemas';
 
+/**
+ * Delete a project by ID
+ *
+ * Removes the project record. Associated data (locales, keys, translations)
+ * are handled by database constraints/triggers. On success, related caches
+ * are cleared and the project list is invalidated.
+ *
+ * @returns TanStack Query mutation hook
+ */
 export function useDeleteProject() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();

@@ -118,6 +118,18 @@ export interface Database {
         Args: { '': unknown };
         Returns: unknown;
       };
+      list_project_locales_with_default: {
+        Args: { p_project_id: string };
+        Returns: {
+          created_at: string;
+          id: string;
+          is_default: boolean;
+          label: string;
+          locale: unknown;
+          project_id: string;
+          updated_at: string;
+        }[];
+      };
       list_projects_with_counts: {
         Args: { p_limit?: number; p_offset?: number };
         Returns: {

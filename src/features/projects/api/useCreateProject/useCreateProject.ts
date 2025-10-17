@@ -9,6 +9,16 @@ import { createDatabaseErrorResponse } from '../projects.errors';
 import { projectsKeys } from '../projects.keys';
 import { createProjectSchema, projectResponseSchema } from '../projects.schemas';
 
+/**
+ * Create a new project with a default locale
+ *
+ * Uses the RPC function `create_project_with_default_locale` to create a
+ * project and its initial default locale in a single transaction. The
+ * database enforces prefix validation and uniqueness and will normalize
+ * provided values according to schema rules.
+ *
+ * @returns TanStack Query mutation hook
+ */
 export function useCreateProject() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();

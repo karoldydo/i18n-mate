@@ -37,7 +37,7 @@ Before we begin, review the following information:
 
 6. Style and format of output document:
    <style_and_format>
-   [Style and format](../../.ai/api/plans/projects-implementation-plan.md)
+   [Style and format](../../.ai/api/plans/1-projects-implementation-plan.md)
    </style_and_format>
 
 Your task is to create a comprehensive implementation plan for the REST API endpoint. Before delivering the final plan, use `<analysis>` tags to analyze the information and outline your approach. In this analysis, ensure that:
@@ -127,5 +127,5 @@ The final output should be a well-organized implementation plan in markdown form
 ```text
 The final output should consist solely of the implementation plan in markdown format and should not duplicate or repeat any work done in the analysis section.
 
-Remember to save your implementation plan as a single output file: .ai/api/plans/[ENDPOINT-NAME]-implementation-plan.md. Ensure the plan is detailed, clear, and provides comprehensive guidance for the development team.
+Remember to save your implementation plan as a single output file: .ai/api/plans/[NUMBER]-[ENDPOINT-NAME]-implementation-plan.md. Ensure the plan is detailed, clear, and provides comprehensive guidance for the development team.
 ```

@@ -9,6 +9,16 @@ import { createDatabaseErrorResponse } from '../projects.errors';
 import { projectsKeys } from '../projects.keys';
 import { listProjectsSchema, projectWithCountsSchema } from '../projects.schemas';
 
+/**
+ * Fetch a paginated list of projects with counts
+ *
+ * Uses the RPC function `list_projects_with_counts` with exact total counting
+ * enabled. Returns data items validated at runtime and pagination metadata
+ * computed from input params and result size.
+ *
+ * @param params - Optional listing parameters (limit, offset, order)
+ * @returns TanStack Query result with data and metadata
+ */
 export function useProjects(params: ListProjectsParams = {}) {
   const supabase = useSupabase();
 

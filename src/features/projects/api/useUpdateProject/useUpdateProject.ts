@@ -16,6 +16,15 @@ interface UpdateProjectContext {
   previousProject?: ProjectResponse;
 }
 
+/**
+ * Update a project's fields with optimistic UI
+ *
+ * Updates mutable project fields. Applies optimistic updates to the project
+ * detail cache with automatic rollback on error and revalidation on settle.
+ *
+ * @param projectId - UUID of the project to update
+ * @returns TanStack Query mutation hook
+ */
 export function useUpdateProject(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
