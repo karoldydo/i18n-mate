@@ -14,8 +14,9 @@ import router from './routes.ts';
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
-const DEVELOPMENT = import.meta.env.DEV;
+const DEVELOPMENT = import.meta.env.VITE_DEVELOPMENT;
 
+//TODO: Remove this once we have a proper authentication system
 if (DEVELOPMENT) {
   // Expose Supabase client in development for easy manual auth/debugging
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
