@@ -56,6 +56,7 @@ export type {
   ListProjectsParams,
   ListProjectsWithCountsArgs,
   ListTranslationJobsParams,
+  LocaleCode,
   PaginationMetadata,
   PaginationParams,
   PasswordResetRequest,

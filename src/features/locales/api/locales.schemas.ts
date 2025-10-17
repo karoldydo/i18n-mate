@@ -8,7 +8,7 @@ import type {
   UpdateProjectLocaleRequest,
 } from '@/shared/types';
 
-import { isValidLocaleFormatClient } from './locales.utils';
+import { LOCALE_ERROR_MESSAGES, LOCALE_LABEL_MAX_LENGTH, LOCALE_NORMALIZATION } from '@/shared/constants';
 
 /**
  * Locale code validation (BCP-47 format: ll or ll-CC)
@@ -23,8 +23,8 @@ import { isValidLocaleFormatClient } from './locales.utils';
  * - Valid: "en", "pl", "en-US", "pt-BR"
  * - Invalid: "ENG", "en_US", "english", "en-US-x-private"
  */
-const localeCodeSchema = z.string().refine((value) => isValidLocaleFormatClient(value), {
-  message: 'Locale must be in BCP-47 format (ll or ll-CC, max 5 chars)',
+const localeCodeSchema = z.string().refine((value) => LOCALE_NORMALIZATION.isValidFormatClient(value), {
+  message: LOCALE_ERROR_MESSAGES.INVALID_FORMAT,
 });
 
 /**
@@ -37,8 +37,8 @@ const localeCodeSchema = z.string().refine((value) => isValidLocaleFormatClient(
  */
 const localeLabelSchema = z
   .string()
-  .min(1, 'Locale label is required')
-  .max(64, 'Locale label must be at most 64 characters')
+  .min(1, LOCALE_ERROR_MESSAGES.LABEL_REQUIRED)
+  .max(LOCALE_LABEL_MAX_LENGTH, LOCALE_ERROR_MESSAGES.LABEL_TOO_LONG)
   .trim();
 
 /**
@@ -47,14 +47,37 @@ const localeLabelSchema = z
  * Used for validating parameters when fetching project locales
  */
 export const listProjectLocalesWithDefaultSchema = z.object({
-  project_id: z.string().uuid('Invalid project ID format'),
+  p_project_id: z.string().uuid('Invalid project ID format'),
 }) satisfies z.ZodType<ListProjectLocalesWithDefaultArgs>;
 
 /**
- * Create Project Locale Request Schema (DEPRECATED)
+ * Create Project Locale Request Schema
  *
- * @deprecated Use createProjectLocaleAtomicSchema instead
- * Validates input when adding a new locale to a project via simple POST
+ * ⚠️ **DEPRECATED** - Use `createProjectLocaleAtomicSchema` instead
+ *
+ * This schema validates the legacy POST endpoint for adding locales.
+ * The atomic approach is strongly recommended for production use.
+ *
+ * **Why atomic is better:**
+ * - Built-in fan-out verification ensures all translation records are created
+ * - Better error reporting with specific error codes for troubleshooting
+ * - Atomic operation (all-or-nothing) prevents partial state
+ * - Enhanced retry logic for transient failures
+ *
+ * **Migration:**
+ * ```typescript
+ * // Old way (deprecated)
+ * const result = createProjectLocaleSchema.parse(data);
+ *
+ * // New way (recommended)
+ * const result = createProjectLocaleAtomicSchema.parse({
+ *   p_label: data.label,
+ *   p_locale: data.locale,
+ *   p_project_id: data.project_id
+ * });
+ * ```
+ *
+ * @deprecated Use createProjectLocaleAtomicSchema instead - will be removed in v1.0
  */
 export const createProjectLocaleSchema = z.object({
   label: localeLabelSchema,

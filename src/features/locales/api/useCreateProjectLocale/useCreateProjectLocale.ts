@@ -7,12 +7,12 @@ import type {
 } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { LOCALE_NORMALIZATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createAtomicLocaleErrorResponse } from '../locales.errors';
 import { localesKeys } from '../locales.keys';
 import { createProjectLocaleAtomicSchema } from '../locales.schemas';
-import { normalizeLocaleCode } from '../locales.utils';
 
 /**
  * Add a new locale to a project using atomic RPC function
@@ -47,7 +47,7 @@ export function useCreateProjectLocale(projectId: string) {
   >({
     mutationFn: async (localeData) => {
       // Normalize locale code before validation
-      const normalizedLocale = normalizeLocaleCode(localeData.p_locale);
+      const normalizedLocale = LOCALE_NORMALIZATION.normalize(localeData.p_locale);
 
       // Validate input with normalized locale
       const validated = createProjectLocaleAtomicSchema.parse({

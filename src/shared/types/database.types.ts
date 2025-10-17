@@ -114,7 +114,7 @@ export interface Database {
       };
       create_project_with_default_locale: {
         Args: {
-          p_default_locale: unknown;
+          p_default_locale: string;
           p_default_locale_label: string;
           p_description?: string;
           p_name: string;
@@ -122,7 +122,7 @@ export interface Database {
         };
         Returns: {
           created_at: string;
-          default_locale: unknown;
+          default_locale: string;
           description: string;
           id: string;
           name: string;
@@ -154,6 +154,10 @@ export interface Database {
         Args: { locale_input: string };
         Returns: boolean;
       };
+      is_valid_locale_input: {
+        Args: { locale_input: string };
+        Returns: boolean;
+      };
       list_keys_default_view: {
         Args: {
           p_limit?: number;
@@ -171,23 +175,14 @@ export interface Database {
         }[];
       };
       list_keys_per_language_view: {
-        Args:
-          | {
-              p_limit?: number;
-              p_locale: string;
-              p_missing_only?: boolean;
-              p_offset?: number;
-              p_project_id: string;
-              p_search?: string;
-            }
-          | {
-              p_limit?: number;
-              p_locale: unknown;
-              p_missing_only?: boolean;
-              p_offset?: number;
-              p_project_id: string;
-              p_search?: string;
-            };
+        Args: {
+          p_limit?: number;
+          p_locale: string;
+          p_missing_only?: boolean;
+          p_offset?: number;
+          p_project_id: string;
+          p_search?: string;
+        };
         Returns: Database['public']['CompositeTypes']['key_per_language_view_type'][];
       };
       list_project_locales_with_default: {
@@ -206,7 +201,7 @@ export interface Database {
         Args: { p_limit?: number; p_offset?: number };
         Returns: {
           created_at: string;
-          default_locale: unknown;
+          default_locale: string;
           description: string;
           id: string;
           key_count: number;

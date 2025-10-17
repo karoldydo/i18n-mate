@@ -31,7 +31,7 @@ export function useProjectLocales(projectId: string) {
 
       // Call RPC function for list with is_default flag
       const { data, error } = await supabase.rpc('list_project_locales_with_default', {
-        p_project_id: validated.project_id,
+        p_project_id: validated.p_project_id,
       });
 
       if (error) {

@@ -13,6 +13,12 @@ import type { Database, Enums, Tables, TablesInsert, TablesUpdate } from './data
 // ============================================================================
 
 /**
+ * Branded type for locale codes to ensure type safety
+ * Represents a normalized BCP-47 locale code (ll or ll-CC format)
+ */
+export type LocaleCode = string & { readonly __brand: 'LocaleCode' };
+
+/**
  * API Error Response - generic error container
  * Format: { data: null, error: { code, message, details? } }
  */
@@ -98,8 +104,23 @@ export type CreateProjectLocaleAtomicResponse =
   Database['public']['Functions']['create_project_locale_atomic']['Returns'][0];
 
 /**
- * Create Project Locale Request - POST /rest/v1/project_locales (DEPRECATED)
- * @deprecated Use CreateProjectLocaleAtomicRequest instead
+ * Create Project Locale Request - POST /rest/v1/project_locales
+ *
+ * ⚠️ **DEPRECATED** - Use `CreateProjectLocaleAtomicRequest` instead
+ *
+ * This type is maintained for backward compatibility only.
+ * The atomic approach provides:
+ * - Built-in fan-out verification
+ * - Better error handling and reporting
+ * - Atomic operation (all-or-nothing)
+ * - Automatic telemetry event emission
+ *
+ * **Migration guide:**
+ * - Replace `CreateProjectLocaleRequest` with `CreateProjectLocaleAtomicRequest`
+ * - Update API calls from `POST /rest/v1/project_locales` to `POST /rest/v1/rpc/create_project_locale_atomic`
+ * - Use RPC parameter format: `p_label`, `p_locale`, `p_project_id`
+ *
+ * @deprecated Use CreateProjectLocaleAtomicRequest instead - will be removed in v1.0
  */
 export type CreateProjectLocaleRequest = Pick<ProjectLocaleInsert, 'label' | 'locale' | 'project_id'>;
 
@@ -290,7 +311,7 @@ export interface ListKeysPerLanguageViewRpcArgs {
 }
 
 export interface ListProjectLocalesWithDefaultArgs {
-  project_id: string;
+  p_project_id: string;
 }
 
 /**

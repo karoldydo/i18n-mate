@@ -24,18 +24,18 @@ The Project Locales API manages languages assigned to translation projects. It p
 ### 2.1 List Project Locales
 
 - **HTTP Method:** GET
-- **URL Structure:** `/rest/v1/rpc/list_project_locales_with_default?project_id={project_id}`
+- **URL Structure:** `/rest/v1/rpc/list_project_locales_with_default?p_project_id={project_id}`
 - **Authentication:** Required (JWT via Authorization header)
 - **Parameters:**
   - Required:
-    - `project_id` (UUID) - Project ID
+    - `p_project_id` (UUID) - Project ID
   - Optional: None
 - **Request Body:** None
 
 **Example Request:**
 
 ```http
-GET /rest/v1/rpc/list_project_locales_with_default?project_id=550e8400-e29b-41d4-a716-446655440000
+GET /rest/v1/rpc/list_project_locales_with_default?p_project_id=550e8400-e29b-41d4-a716-446655440000
 Authorization: Bearer {access_token}
 ```
 
@@ -70,7 +70,7 @@ Authorization: Bearer {access_token}
 - Enhanced retry logic for transient failures
 - Rollback on any step failure
 
-**Alternative (Legacy):** Simple `POST /rest/v1/project_locales` is still available but not recommended for production use due to lack of verification and weaker error handling.
+**Alternative (Legacy):** Simple `POST /rest/v1/project_locales` is still available but **DEPRECATED**. Use atomic approach for production due to better verification and error handling. Legacy endpoint will be removed in v1.0.
 
 ### 2.3 Update Locale Label
 
@@ -122,7 +122,7 @@ export type UpdateProjectLocaleRequest = Pick<ProjectLocaleUpdate, 'label'>;
 
 // RPC Function Arguments
 export interface ListProjectLocalesWithDefaultArgs {
-  project_id: string;
+  p_project_id: string;
 }
 
 // Error types (already defined)
@@ -160,22 +160,27 @@ Create validation schemas in `src/features/locales/api/locales.schemas.ts`:
 
 ```typescript
 import { z } from 'zod';
+import {
+  LOCALE_ERROR_MESSAGES,
+  LOCALE_LABEL_MAX_LENGTH,
+  LOCALE_NORMALIZATION,
+} from '@/shared/constants';
 
 // Locale code validation (BCP-47 format: ll or ll-CC)
-const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
-  message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
+const localeCodeSchema = z.string().refine((value) => LOCALE_NORMALIZATION.isValidFormatClient(value), {
+  message: LOCALE_ERROR_MESSAGES.INVALID_FORMAT,
 });
 
 // Locale label validation
 const localeLabelSchema = z
   .string()
-  .min(1, 'Locale label is required')
-  .max(64, 'Locale label must be at most 64 characters')
+  .min(1, LOCALE_ERROR_MESSAGES.LABEL_REQUIRED)
+  .max(LOCALE_LABEL_MAX_LENGTH, LOCALE_ERROR_MESSAGES.LABEL_TOO_LONG)
   .trim();
 
 // List Project Locales with Default Schema
 export const listProjectLocalesWithDefaultSchema = z.object({
-  project_id: z.string().uuid('Invalid project ID format'),
+  p_project_id: z.string().uuid('Invalid project ID format'),
 });
 
 // Create Project Locale Request Schema
