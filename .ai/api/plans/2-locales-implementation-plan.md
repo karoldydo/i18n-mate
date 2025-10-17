@@ -39,27 +39,38 @@ GET /rest/v1/rpc/list_project_locales_with_default?project_id=550e8400-e29b-41d4
 Authorization: Bearer {access_token}
 ```
 
-### 2.2 Add Locale to Project
+### 2.2 Add Locale to Project (Atomic - Recommended)
 
 - **HTTP Method:** POST
-- **URL Structure:** `/rest/v1/project_locales`
+- **URL Structure:** `/rest/v1/rpc/create_project_locale_atomic`
 - **Authentication:** Required
 - **Parameters:** None
 - **Request Body:**
 
 ```json
 {
-  "label": "Polski",
-  "locale": "pl",
-  "project_id": "550e8400-e29b-41d4-a716-446655440000"
+  "p_label": "Polski",
+  "p_locale": "pl",
+  "p_project_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
 **Field Validation:**
 
-- `project_id` (required, UUID) - Project ID
-- `locale` (required, string) - BCP-47 locale code (ll or ll-CC format)
-- `label` (required, string) - Human-readable locale label (max 64 characters, trimmed)
+- `p_project_id` (required, UUID) - Project ID
+- `p_locale` (required, string) - BCP-47 locale code (ll or ll-CC format, normalized automatically)
+- `p_label` (required, string) - Human-readable locale label (max 64 characters, trimmed)
+
+**Advantages of Atomic Approach:**
+
+- Built-in fan-out verification ensures all translation records are created
+- Better error reporting with specific error codes for troubleshooting
+- Atomic operation (all-or-nothing) prevents partial state
+- Automatic telemetry event emission for analytics
+- Enhanced retry logic for transient failures
+- Rollback on any step failure
+
+**Alternative (Legacy):** Simple `POST /rest/v1/project_locales` is still available but not recommended for production use due to lack of verification and weaker error handling.
 
 ### 2.3 Update Locale Label
 
@@ -230,7 +241,7 @@ export const projectLocaleWithDefaultSchema = projectLocaleResponseSchema.extend
 ]
 ```
 
-### 4.2 Add Locale to Project
+### 4.2 Add Locale to Project (Atomic)
 
 **Success Response (201 Created):**
 
@@ -242,6 +253,36 @@ export const projectLocaleWithDefaultSchema = projectLocaleResponseSchema.extend
   "locale": "pl",
   "project_id": "uuid",
   "updated_at": "2025-01-15T10:05:00Z"
+}
+```
+
+**Enhanced Error Responses (Atomic-specific):**
+
+```json
+{
+  "data": null,
+  "error": {
+    "code": 500,
+    "details": {
+      "code": "FANOUT_VERIFICATION_FAILED"
+    },
+    "message": "Failed to initialize translations for new locale"
+  }
+}
+```
+
+```json
+{
+  "data": null,
+  "error": {
+    "code": 500,
+    "details": {
+      "actual": 147,
+      "code": "FANOUT_INCOMPLETE",
+      "expected": 150
+    },
+    "message": "Incomplete translation initialization"
+  }
 }
 ```
 
@@ -373,10 +414,31 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 7. Database enforces unique constraint on `(project_id, locale)`
 8. On conflict, PostgreSQL returns unique violation error → hook returns 409
 9. If successful, database trigger `fan_out_translations_on_locale_insert_trigger` executes:
-   - Creates translation records for all existing keys in the project
-   - Sets `value = NULL` (missing translation)
-   - Sets `updated_source = 'user'`
-10. Telemetry event `language_added` is emitted with `locale` and `locale_count` properties
+
+- Creates translation records for all existing keys in the project
+- Sets `value = NULL` (missing translation)
+- Sets `updated_source = 'user'`
+
+10. Database trigger `emit_language_added_event_trigger` emits telemetry event:
+
+- Event name: `language_added`
+- Properties: `locale` (added locale code) and `locale_count` (total locales in project)
+- Used for KPI tracking: projects with 2+ languages after 7 days from creation
+
+  **Example Telemetry Event:**
+
+  ```json
+  {
+    "created_at": "2025-01-15T10:05:00Z",
+    "event_name": "language_added",
+    "project_id": "550e8400-e29b-41d4-a716-446655440000",
+    "properties": {
+      "locale": "pl",
+      "locale_count": 2
+    }
+  }
+  ```
+
 11. On success, new locale data is returned
 12. TanStack Query invalidates project locales cache
 13. Component displays success message and updated locale list

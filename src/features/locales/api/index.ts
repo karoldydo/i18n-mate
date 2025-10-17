@@ -8,13 +8,16 @@
  */
 
 // Error Utilities
-export { createDatabaseErrorResponse } from './locales.errors';
+export { createAtomicLocaleErrorResponse, createDatabaseErrorResponse } from './locales.errors';
 
 // Query Keys
 export { localesKeys } from './locales.keys';
 
 // Validation Schemas
 export * from './locales.schemas';
+
+// Utility Functions
+export { isValidLocaleFormatClient, normalizeLocaleCode } from './locales.utils';
 
 // Mutation Hooks
 export { useCreateProjectLocale } from './useCreateProjectLocale/useCreateProjectLocale';

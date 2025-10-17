@@ -27,9 +27,10 @@
 --   - provides is_default flag needed for UI
 --
 -- security:
---   - uses security definer to bypass RLS during join with projects table
+--   - uses SECURITY DEFINER to bypass RLS during join with projects table
 --   - RLS is enforced via owner_user_id = auth.uid() check in function body
 --   - function validates authentication and returns empty result for unauthorized access
+--   - consistent with other helper functions security model
 create or replace function list_project_locales_with_default(
   p_project_id uuid
 )
@@ -42,34 +43,34 @@ returns table (
   updated_at timestamptz,
   is_default boolean
 )
-security definer
-language plpgsql as $$
-declare
+SECURITY DEFINER
+LANGUAGE plpgsql AS $$
+DECLARE
   v_owner_user_id uuid;
-begin
-  -- get authenticated user id
+BEGIN
+  -- Standard authentication check pattern
   v_owner_user_id := auth.uid();
 
-  if v_owner_user_id is null then
-    raise exception 'Authentication required';
-  end if;
+  IF v_owner_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
 
-  return query
-  select
+  RETURN QUERY
+  SELECT
     pl.id,
     pl.project_id,
     pl.locale,
     pl.label,
     pl.created_at,
     pl.updated_at,
-    (pl.locale = p.default_locale) as is_default
-  from project_locales pl
-  inner join projects p on pl.project_id = p.id
-  where pl.project_id = p_project_id
-    and p.owner_user_id = v_owner_user_id
-  order by is_default desc, pl.created_at asc;
-end;
+    (pl.locale = p.default_locale) AS is_default
+  FROM project_locales pl
+  INNER JOIN projects p ON pl.project_id = p.id
+  WHERE pl.project_id = p_project_id
+    AND p.owner_user_id = v_owner_user_id
+  ORDER BY is_default DESC, pl.created_at ASC;
+END;
 $$;
 
-comment on function list_project_locales_with_default is
-  'Lists all locales for a project with is_default flag indicating the default locale';
+COMMENT ON FUNCTION list_project_locales_with_default IS
+  'Lists all locales for a project with is_default boolean flag indicating the default locale. Uses SECURITY DEFINER with explicit auth.uid() validation for RLS bypass during join operations. Returns empty result for unauthorized access or invalid project_id. Orders results by is_default DESC, created_at ASC (default locale appears first). Essential for locale management UI to distinguish default from secondary languages.';

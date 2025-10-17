@@ -1,14 +1,30 @@
 import { z } from 'zod';
 
+import type {
+  CreateProjectLocaleAtomicRequest,
+  CreateProjectLocaleRequest,
+  ListProjectLocalesWithDefaultArgs,
+  ProjectLocaleWithDefault,
+  UpdateProjectLocaleRequest,
+} from '@/shared/types';
+
+import { isValidLocaleFormatClient } from './locales.utils';
+
 /**
  * Locale code validation (BCP-47 format: ll or ll-CC)
  *
+ * Uses unified validation that matches database-level rules:
+ * - Length: 2-5 characters
+ * - Format: ll or ll-CC (language-country)
+ * - Only letters and one dash allowed
+ * - No multiple regions/scripts/variants
+ *
  * Examples:
  * - Valid: "en", "pl", "en-US", "pt-BR"
- * - Invalid: "ENG", "en_US", "english"
+ * - Invalid: "ENG", "en_US", "english", "en-US-x-private"
  */
-const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
-  message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
+const localeCodeSchema = z.string().refine((value) => isValidLocaleFormatClient(value), {
+  message: 'Locale must be in BCP-47 format (ll or ll-CC, max 5 chars)',
 });
 
 /**
@@ -32,18 +48,31 @@ const localeLabelSchema = z
  */
 export const listProjectLocalesWithDefaultSchema = z.object({
   project_id: z.string().uuid('Invalid project ID format'),
-});
+}) satisfies z.ZodType<ListProjectLocalesWithDefaultArgs>;
 
 /**
- * Create Project Locale Request Schema
+ * Create Project Locale Request Schema (DEPRECATED)
  *
- * Validates input when adding a new locale to a project
+ * @deprecated Use createProjectLocaleAtomicSchema instead
+ * Validates input when adding a new locale to a project via simple POST
  */
 export const createProjectLocaleSchema = z.object({
   label: localeLabelSchema,
   locale: localeCodeSchema,
   project_id: z.string().uuid('Invalid project ID format'),
-});
+}) satisfies z.ZodType<CreateProjectLocaleRequest>;
+
+/**
+ * Create Project Locale Atomic Request Schema
+ *
+ * Validates input for the atomic locale creation RPC function.
+ * Preferred approach with built-in fan-out verification and better error handling.
+ */
+export const createProjectLocaleAtomicSchema = z.object({
+  p_label: localeLabelSchema,
+  p_locale: localeCodeSchema,
+  p_project_id: z.string().uuid('Invalid project ID format'),
+}) satisfies z.ZodType<CreateProjectLocaleAtomicRequest>;
 
 /**
  * Update Project Locale Schema
@@ -57,7 +86,7 @@ export const updateProjectLocaleSchema = z
     // Prevent immutable field modification
     locale: z.never().optional(),
   })
-  .strict();
+  .strict() satisfies z.ZodType<UpdateProjectLocaleRequest>;
 
 /**
  * Locale ID Schema
@@ -88,4 +117,4 @@ export const projectLocaleResponseSchema = z.object({
  */
 export const projectLocaleWithDefaultSchema = projectLocaleResponseSchema.extend({
   is_default: z.boolean(),
-});
+}) satisfies z.ZodType<ProjectLocaleWithDefault>;

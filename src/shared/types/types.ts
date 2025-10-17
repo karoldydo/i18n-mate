@@ -81,7 +81,25 @@ export interface CreateKeyRpcArgs {
   p_project_id: string;
 }
 /**
- * Create Project Locale Request - POST /rest/v1/project_locales
+ * Create Project Locale Atomic Request - POST /rest/v1/rpc/create_project_locale_atomic
+ * Recommended approach with built-in fan-out verification and better error handling
+ */
+export interface CreateProjectLocaleAtomicRequest {
+  p_label: string;
+  p_locale: string;
+  p_project_id: string;
+}
+
+/**
+ * Create Project Locale Atomic Response - RPC function result
+ * Uses database generated type for consistency
+ */
+export type CreateProjectLocaleAtomicResponse =
+  Database['public']['Functions']['create_project_locale_atomic']['Returns'][0];
+
+/**
+ * Create Project Locale Request - POST /rest/v1/project_locales (DEPRECATED)
+ * @deprecated Use CreateProjectLocaleAtomicRequest instead
  */
 export type CreateProjectLocaleRequest = Pick<ProjectLocaleInsert, 'label' | 'locale' | 'project_id'>;
 
@@ -123,8 +141,15 @@ export interface CreateTranslationJobResponse {
   message: string;
   status: JobStatus;
 }
-export type EventType = Enums<'event_type'>;
+/**
+ * Delete Key RPC Arguments - for DELETE /rest/v1/keys
+ * Note: Delete uses direct table filter, not RPC, but included for completeness
+ */
+export interface DeleteKeyArgs {
+  id: string; // key UUID as filter parameter
+}
 
+export type EventType = Enums<'event_type'>;
 /**
  * Exported Translations - flat JSON object with dotted keys
  * Format: { "app.home.title": "Welcome Home", ... }
@@ -134,21 +159,33 @@ export type ExportedTranslations = Record<string, string>;
  * Export Translations Response - contains multiple locale files
  */
 export type ExportTranslationsData = Record<string, ExportedTranslations>;
-export type ItemStatus = Enums<'item_status'>;
 
 // ============================================================================
 // Enum Types
 // ============================================================================
 
+export type ItemStatus = Enums<'item_status'>;
 export type JobStatus = Enums<'job_status'>;
 /**
  * Key entity - represents a translation key
  */
 export type Key = Tables<'keys'>;
+/**
+ * Key Created Telemetry Event
+ * Emitted when a new translation key is added to a project
+ */
+export interface KeyCreatedEvent {
+  created_at: string;
+  event_name: 'key_created';
+  project_id: string;
+  properties: KeyCreatedProperties;
+}
+
 export interface KeyCreatedProperties {
   full_key: string;
   key_count: number;
 }
+
 /**
  * Key Per Language View - key with translation metadata for specific locale
  * Used by list_keys_per_language_view RPC function
@@ -164,20 +201,20 @@ export type KeyDefaultViewResponse = Database['public']['Functions']['list_keys_
 
 export type KeyInsert = TablesInsert<'keys'>;
 
-/**
- * Key Per Language View Response - uses database generated composite type
- * This ensures type safety with actual database schema
- */
-export type KeyPerLanguageViewResponse = Database['public']['CompositeTypes']['key_per_language_view_type'];
+// ============================================================================
+// Authentication DTOs (Section 2 of API Plan)
+// ============================================================================
 
 export interface KeyPerLanguageViewListResponse {
   data: KeyPerLanguageViewResponse[];
   metadata: PaginationMetadata;
 }
 
-// ============================================================================
-// Authentication DTOs (Section 2 of API Plan)
-// ============================================================================
+/**
+ * Key Per Language View Response - uses database generated composite type
+ * This ensures type safety with actual database schema
+ */
+export type KeyPerLanguageViewResponse = Database['public']['CompositeTypes']['key_per_language_view_type'];
 
 /**
  * Key Response - standard key representation
@@ -185,6 +222,17 @@ export interface KeyPerLanguageViewListResponse {
 export type KeyResponse = Key;
 
 export type KeyUpdate = TablesUpdate<'keys'>;
+
+/**
+ * Language Added Telemetry Event
+ * Emitted when a new locale is added to a project
+ */
+export interface LanguageAddedEvent {
+  created_at: string;
+  event_name: 'language_added';
+  project_id: string;
+  properties: LanguageAddedProperties;
+}
 
 export interface LanguageAddedProperties {
   locale: string;
@@ -241,14 +289,6 @@ export interface ListKeysPerLanguageViewRpcArgs {
   p_search?: string;
 }
 
-/**
- * Delete Key RPC Arguments - for DELETE /rest/v1/keys
- * Note: Delete uses direct table filter, not RPC, but included for completeness
- */
-export interface DeleteKeyArgs {
-  id: string; // key UUID as filter parameter
-}
-
 export interface ListProjectLocalesWithDefaultArgs {
   project_id: string;
 }
@@ -276,10 +316,6 @@ export interface ListTranslationJobsParams extends PaginationParams {
   status?: JobStatus | JobStatus[];
 }
 
-// ============================================================================
-// Projects DTOs (Section 3 of API Plan)
-// ============================================================================
-
 /**
  * Pagination Metadata - returned in Content-Range header
  */
@@ -304,6 +340,10 @@ export interface PasswordResetRequest {
   email: string;
 }
 
+// ============================================================================
+// Projects DTOs (Section 3 of API Plan)
+// ============================================================================
+
 /**
  * Password Reset Response
  */
@@ -316,15 +356,26 @@ export interface PasswordResetResponse {
  */
 export type Project = Tables<'projects'>;
 
-// ============================================================================
-// Project Locales DTOs (Section 4 of API Plan)
-// ============================================================================
+/**
+ * Project Created Telemetry Event
+ * Emitted when a new project is created (always includes default locale)
+ */
+export interface ProjectCreatedEvent {
+  created_at: string;
+  event_name: 'project_created';
+  project_id: string;
+  properties: ProjectCreatedProperties;
+}
 
 export interface ProjectCreatedProperties {
   locale_count: number;
 }
 
 export type ProjectInsert = TablesInsert<'projects'>;
+
+// ============================================================================
+// Project Locales DTOs (Section 4 of API Plan)
+// ============================================================================
 
 /**
  * Project List Response - list of projects with pagination metadata
@@ -340,16 +391,16 @@ export interface ProjectListResponse {
  */
 export type ProjectLocale = Tables<'project_locales'>;
 
-// ============================================================================
-// Keys DTOs (Section 5 of API Plan)
-// ============================================================================
-
 export type ProjectLocaleInsert = TablesInsert<'project_locales'>;
 
 /**
  * Project Locale Response - standard locale representation
  */
 export type ProjectLocaleResponse = ProjectLocale;
+
+// ============================================================================
+// Keys DTOs (Section 5 of API Plan)
+// ============================================================================
 
 export type ProjectLocaleUpdate = TablesUpdate<'project_locales'>;
 
@@ -370,10 +421,6 @@ export type ProjectResponse = Pick<
   'created_at' | 'default_locale' | 'description' | 'id' | 'name' | 'prefix' | 'updated_at'
 >;
 
-// ============================================================================
-// Translations DTOs (Section 6 of API Plan)
-// ============================================================================
-
 export type ProjectUpdate = TablesUpdate<'projects'>;
 
 /**
@@ -384,6 +431,10 @@ export type ProjectWithCounts = ProjectResponse & {
   key_count: number;
   locale_count: number;
 };
+
+// ============================================================================
+// Translations DTOs (Section 6 of API Plan)
+// ============================================================================
 
 /**
  * Resend Verification Email Request - POST /auth/v1/resend
@@ -399,10 +450,6 @@ export interface ResendVerificationRequest {
 export interface ResendVerificationResponse {
   message: string;
 }
-
-// ============================================================================
-// Translation Jobs DTOs (Section 7 of API Plan)
-// ============================================================================
 
 /**
  * Reset Password Request - PUT /auth/v1/user
@@ -420,6 +467,10 @@ export interface ResetPasswordResponse {
     id: string;
   };
 }
+
+// ============================================================================
+// Translation Jobs DTOs (Section 7 of API Plan)
+// ============================================================================
 
 /**
  * Sign In Request - POST /auth/v1/token?grant_type=password
@@ -465,16 +516,16 @@ export interface SignUpResponse {
   };
 }
 
-// ============================================================================
-// Telemetry DTOs (Section 9 of API Plan)
-// ============================================================================
-
 /**
  * Telemetry Event entity - represents application telemetry
  */
 export type TelemetryEvent = Tables<'telemetry_events'>;
 
 export type TelemetryEventInsert = TablesInsert<'telemetry_events'>;
+
+// ============================================================================
+// Telemetry DTOs (Section 9 of API Plan)
+// ============================================================================
 
 /**
  * Telemetry Event Properties - typed event-specific data
@@ -490,12 +541,33 @@ export type TelemetryEventProperties =
  */
 export type TelemetryEventResponse = TelemetryEvent;
 
+/**
+ * Union type for all telemetry events
+ * Used for type-safe event handling and analytics
+ */
+export type TelemetryEventUnion =
+  | KeyCreatedEvent
+  | LanguageAddedEvent
+  | ProjectCreatedEvent
+  | TranslationCompletedEvent;
+
 export type TelemetryEventUpdate = TablesUpdate<'telemetry_events'>;
 
 /**
  * Translation entity - represents a translation value for a specific key and locale
  */
 export type Translation = Tables<'translations'>;
+
+/**
+ * Translation Completed Telemetry Event
+ * Emitted when an LLM translation job is completed
+ */
+export interface TranslationCompletedEvent {
+  created_at: string;
+  event_name: 'translation_completed';
+  project_id: string;
+  properties: TranslationCompletedProperties;
+}
 
 export interface TranslationCompletedProperties {
   completed_keys: number;

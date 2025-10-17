@@ -53,6 +53,16 @@ export interface Database {
       update_source_type: 'system' | 'user';
     };
     Functions: {
+      check_fanout_completeness: {
+        Args: { p_project_id: string };
+        Returns: {
+          actual_translations: number;
+          expected_translations: number;
+          is_complete: boolean;
+          locale_code: string;
+          missing_translations: number;
+        }[];
+      };
       citext: {
         Args: { '': boolean } | { '': string } | { '': unknown };
         Returns: string;
@@ -90,6 +100,17 @@ export interface Database {
       create_next_telemetry_partition: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
+      };
+      create_project_locale_atomic: {
+        Args: { p_label: string; p_locale: string; p_project_id: string };
+        Returns: {
+          created_at: string;
+          id: string;
+          label: string;
+          locale: string;
+          project_id: string;
+          updated_at: string;
+        }[];
       };
       create_project_with_default_locale: {
         Args: {
@@ -129,6 +150,10 @@ export interface Database {
         Args: { '': unknown };
         Returns: unknown;
       };
+      is_valid_locale_format: {
+        Args: { locale_input: string };
+        Returns: boolean;
+      };
       list_keys_default_view: {
         Args: {
           p_limit?: number;
@@ -146,14 +171,23 @@ export interface Database {
         }[];
       };
       list_keys_per_language_view: {
-        Args: {
-          p_limit?: number;
-          p_locale: unknown;
-          p_missing_only?: boolean;
-          p_offset?: number;
-          p_project_id: string;
-          p_search?: string;
-        };
+        Args:
+          | {
+              p_limit?: number;
+              p_locale: string;
+              p_missing_only?: boolean;
+              p_offset?: number;
+              p_project_id: string;
+              p_search?: string;
+            }
+          | {
+              p_limit?: number;
+              p_locale: unknown;
+              p_missing_only?: boolean;
+              p_offset?: number;
+              p_project_id: string;
+              p_search?: string;
+            };
         Returns: Database['public']['CompositeTypes']['key_per_language_view_type'][];
       };
       list_project_locales_with_default: {
@@ -163,7 +197,7 @@ export interface Database {
           id: string;
           is_default: boolean;
           label: string;
-          locale: unknown;
+          locale: string;
           project_id: string;
           updated_at: string;
         }[];
