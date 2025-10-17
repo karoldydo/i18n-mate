@@ -12,6 +12,7 @@
     "prepare": "husky",
     "preview": "vite preview",
     "supabase:migration": "supabase migration up",
+    "supabase:reset": "supabase db reset --local",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:types": "supabase gen types typescript --local > src/shared/types/database.types.ts",

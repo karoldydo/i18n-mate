@@ -20,7 +20,11 @@ Definitions:
 - **Key:** `full key = prefix + "." + name`; the prefix cannot end with a dot, and the name cannot start with a dot; format `[a-z0-9._-]`, no spaces, **no consecutive dots ("..")**, no trailing dot, maximum 256 characters. **The full key is unique within the project.** **A dot is allowed inside the prefix** (not at the end).
   - **Prefix Examples:** `app`, `ui`, `web`, `api` (recommended); `app.v2` (allowed but may cause ambiguity - use sparingly)
   - **Rationale for dots in prefix:** Allows versioned or namespaced prefixes (e.g., `v2.home.title`), but developers should prefer simple prefixes to avoid confusion with dotted key notation.
-- **Translation value:** text up to 250 characters, with no newline characters. Lack of a value means missing **(with the exception of the default language — there the value cannot be empty)**.
+  - **Consecutive Dots Examples:**
+    - ✅ Valid: `app.home.title`, `app.v2.home`, `ui.button.label`
+    - ❌ Invalid: `app..home`, `app.home..title`, `app...home`, `ui.button..label`
+    - ❌ Invalid: `app.home.` (trailing dot), `app.` (prefix ending with dot)
+- **Translation value:** text up to 250 characters, with no newline characters. NULL value means missing **(with the exception of the default language — there the value cannot be NULL)**. Empty strings are automatically converted to NULL by database trigger.
 - **LLM translation process:** select the scope (a single key, selected keys, all keys), confirm the overwrite warning, and a modal presenting the translation progress, after which a toast with the result appears. **The target language cannot be the project's default language.**
 
 Dependencies and integrations:
@@ -59,17 +63,17 @@ User assumptions: no roles in the MVP; the target user is a frontend developer m
 
 - **Add/delete languages assigned to the project; edit the label only.**
 - **BCP-47 validation for the language/region pair and normalization to language lowercase / REGION UPPERCASE. Other sub-tags (script/variant/extension) are rejected.**
-- Keys **are created only in the default language and are mirrored 1:1 — see 3.4.**
+- Keys **are created only in the default language and are automatically mirrored 1:1 to all locales via database triggers (fan-out mechanism) — see 3.4.**
 - Language list: normalized locale and label in the row, default language mark, and edit/delete actions consistent with the constraints (cannot delete the default language).
 - **Navigation:** clicking a language navigates to the **key view for the selected language** (details in 3.4).
 
 ### 3.4 Keys and Translation Values
 
 - Add keys only in the default language; one at a time; no import and no rename.
-- Key format and validation: `[a-z0-9._-]`, no spaces, **no double dots (".."), no trailing dot**, maximum 256 characters; the key includes the project's prefix.
+- Key format and validation: `[a-z0-9._-]`, no spaces, **no consecutive dots ("..") anywhere in the key**, no trailing dot, maximum 256 characters; the key includes the project's prefix.
 - **Uniqueness:** the full key (prefix + "." + name) is unique within the project.
 - Delete a key only in the default language; cascades to delete values in all languages; the operation is irreversible; it is possible to immediately reuse the same name.
-- Values: limit of 250 characters, no newline, empty = missing **(in the default language the value cannot be empty)**; inline editing with autosave; character counter.
+- Values: limit of 250 characters, no newline, NULL = missing **(in the default language the value cannot be NULL)**; empty strings are automatically converted to NULL by database trigger; inline editing with autosave; character counter.
 - **Key list view modes:**
   - **Default view (default language):** the list shows keys with the prefix and **values in the default language**; each row shows the **missing** status for other languages.
   - **Per-language view:** after selecting a language in 3.3, the list shows keys with the prefix and **values in the selected language**; the **"missing" filter applies to the selected language**; search and sorting work the same as in the default view; inline editing and metadata as in 3.5.
@@ -117,8 +121,8 @@ Assumptions:
 
 - The key prefix (2–4 characters) is unique within the user scope and immutable.
 - Each project has one, immutable default language.
-- Keys are created only in the default language and are mirrored 1:1 in all project languages (no local per-language keys).
-- Value semantics: “missing” = empty string; in the default language the value cannot be empty.
+- Keys are created only in the default language and are automatically mirrored 1:1 in all project languages via database triggers (fan-out mechanism) - no local per-language keys.
+- Value semantics: "missing" = NULL value; in the default language the value cannot be NULL (empty strings are auto-converted to NULL).
 - Locale normalization limited to the language/region pair: language lowercase, REGION UPPERCASE; other sub-tags (script/variant/extension) are rejected.
 - The target language for LLM translation cannot be the project's default language.
 - Export available only from the UI; no external API; removed languages do not appear in the ZIP.
@@ -217,7 +221,7 @@ Acceptance criteria:
 
 - **Validation only for the language/region pair and normalization: language lowercase / REGION UPPERCASE; other sub-tags (script/variant/extension) are rejected.**
 - Duplicates within the project are blocked with a message.
-- After adding, all keys appear as missing.
+- After adding, all keys appear as missing (automatically created via database triggers with NULL values).
 - **Reference:** 3.3
 
 ID: US-021  
@@ -282,10 +286,10 @@ Description: As a user, I want to add a new key and value in the default languag
 Acceptance criteria:
 
 - Validation of key format and uniqueness; **the full key is unique within the project**; it includes the project prefix.
-- **Disallow `..` and a trailing dot in the key name.**
+- **Disallow consecutive dots (`..`) anywhere in the key and trailing dots.**
 - **Maximum key length: 256 characters.**
-- Value up to 250 characters, no newline; **empty not allowed in the default language**.
-- After adding, the key exists in all languages (missing outside the default).
+- Value up to 250 characters, no newline; **NULL not allowed in the default language** (empty strings are auto-converted to NULL).
+- After adding, the key exists in all languages (missing outside the default) - database triggers automatically create NULL translations for all locales.
 - **Reference:** 3.4
 
 ID: US-031  
@@ -311,7 +315,7 @@ Title: Edit a value in a non-default language
 Description: As a user, I want to edit translation values for added languages.  
 Acceptance criteria:
 
-- Limit of 250 characters, no newline, empty = missing.
+- Limit of 250 characters, no newline, NULL = missing (empty strings are auto-converted to NULL).
 - Autosave and metadata update; **set `isMachineTranslated=false`, `updatedBy=<user>`.**
 - **Reference:** 3.4, 3.5
 
@@ -320,7 +324,7 @@ Title: Missing filter
 Description: As a user, I want to filter the list by missing values in the selected language.  
 Acceptance criteria:
 
-- Enabling the filter shows only keys with an empty value.
+- Enabling the filter shows only keys with a NULL value.
 - **Reference:** 3.4
 
 ID: US-035  

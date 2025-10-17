@@ -161,13 +161,13 @@ export interface CreateKeyRequest {
 }
 
 export interface ListKeysDefaultViewParams extends PaginationParams {
-  missing_only?: boolean;
+  missing_only?: boolean; // Default: false, undefined treated as false
   project_id: string;
-  search?: string;
+  search?: string; // If omitted/empty, no search filter applied
 }
 
 export interface ListKeysPerLanguageParams extends ListKeysDefaultViewParams {
-  locale: string;
+  locale: string; // Required BCP-47 locale code
 }
 ```
 
@@ -692,6 +692,9 @@ if (error) {
 
 // The createDatabaseErrorResponse function handles the error mapping:
 // - 23505 with 'keys_unique_per_project' -> 409 'Key already exists in project'
+// - Trigger exception 'must start with project prefix' -> 400 'Key must start with project prefix'
+// - Trigger exception 'cannot be NULL or empty' -> 400 'Default locale value cannot be empty'
+// - 23514 check constraint -> 400 'Invalid field value'
 ```
 
 ### 7.4 Database Trigger Errors (400)

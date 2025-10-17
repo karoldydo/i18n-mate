@@ -37,7 +37,6 @@ export type {
   KeyDefaultViewListResponse,
   KeyDefaultViewResponse,
   KeyInsert,
-  KeyPerLanguageView,
   KeyPerLanguageViewListResponse,
   KeyPerLanguageViewResponse,
   KeyResponse,

@@ -34,7 +34,17 @@ export interface Database {
     Views: Record<never, never>;
   };
   public: {
-    CompositeTypes: Record<never, never>;
+    CompositeTypes: {
+      key_per_language_view_type: {
+        full_key: null | string;
+        is_machine_translated: boolean | null;
+        key_id: null | string;
+        updated_at: null | string;
+        updated_by_user_id: null | string;
+        updated_source: Database['public']['Enums']['update_source_type'] | null;
+        value: null | string;
+      };
+    };
     Enums: {
       event_type: 'key_created' | 'language_added' | 'project_created' | 'translation_completed';
       item_status: 'completed' | 'failed' | 'pending' | 'skipped';
@@ -144,15 +154,7 @@ export interface Database {
           p_project_id: string;
           p_search?: string;
         };
-        Returns: {
-          full_key: string;
-          is_machine_translated: boolean;
-          key_id: string;
-          updated_at: string;
-          updated_by_user_id: string;
-          updated_source: Database['public']['Enums']['update_source_type'];
-          value: string;
-        }[];
+        Returns: Database['public']['CompositeTypes']['key_per_language_view_type'][];
       };
       list_project_locales_with_default: {
         Args: { p_project_id: string };

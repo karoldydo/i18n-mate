@@ -503,7 +503,7 @@ CREATE OR REPLACE FUNCTION create_key_with_value(
   p_full_key VARCHAR(256),
   p_default_value VARCHAR(250)
 )
-RETURNS JSON
+RETURNS TABLE(key_id UUID)
 SECURITY DEFINER
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -527,11 +527,11 @@ BEGIN
   INSERT INTO translations (project_id, key_id, locale, value, updated_at, updated_source, updated_by_user_id)
   VALUES (p_project_id, v_key_id, v_default_locale, p_default_value, now(), 'user', auth.uid());
 
-  RETURN json_build_object('key_id', v_key_id);
+  RETURN QUERY SELECT v_key_id;
 END;
 $$;
 
-COMMENT ON FUNCTION create_key_with_value IS 'Creates key with default locale value and returns single object { key_id }';
+COMMENT ON FUNCTION create_key_with_value IS 'Creates key with default locale value and returns TABLE with single row { key_id }. PostgREST wraps result in array; client hooks use .single() to extract single object.';
 ```
 
 ### List Keys (Default Language View)
@@ -551,9 +551,26 @@ RETURNS TABLE (
   value VARCHAR(250),
   missing_count INT
 )
-LANGUAGE SQL
-STABLE
+SECURITY DEFINER
+LANGUAGE plpgsql
 AS $$
+DECLARE
+  v_owner_user_id uuid;
+BEGIN
+  -- Check authentication
+  v_owner_user_id := auth.uid();
+  if v_owner_user_id is null then
+    raise exception 'Authentication required';
+  end if;
+
+  -- Verify project ownership
+  if not exists (
+    select 1 from projects where id = p_project_id and owner_user_id = v_owner_user_id
+  ) then
+    raise exception 'Project not found or access denied';
+  end if;
+
+  return query
   WITH default_locale AS (
     SELECT default_locale FROM projects WHERE id = p_project_id
   )
@@ -580,13 +597,15 @@ AS $$
       ) > 0
     ))
   ORDER BY k.full_key ASC
-  LIMIT p_limit OFFSET p_offset
+  LIMIT p_limit OFFSET p_offset;
+END;
 $$;
 
 COMMENT ON FUNCTION list_keys_default_view IS
   'List keys with default-locale values and missing counts. ' ||
-  'Authorization: RLS policies on projects table enforce ownership via JOIN. ' ||
-  'Locale validation not needed: default_locale is guaranteed to exist (foreign key constraint).';
+  'Uses SECURITY DEFINER plpgsql for explicit authorization checks. ' ||
+  'Rationale: plpgsql allows explicit auth validation and error handling, ' ||
+  'providing better security and debugging compared to SQL STABLE with RLS-only approach.';
 ```
 
 ### List Keys (Per-Language View)
@@ -609,9 +628,30 @@ RETURNS TABLE (
   updated_source update_source_type,
   updated_by_user_id UUID
 )
-LANGUAGE SQL
-STABLE
+SECURITY DEFINER
+LANGUAGE plpgsql
 AS $$
+DECLARE
+  v_owner_user_id uuid;
+BEGIN
+  -- Check authentication
+  v_owner_user_id := auth.uid();
+  if v_owner_user_id is null then
+    raise exception 'Authentication required';
+  end if;
+
+  -- Verify project ownership and locale exists
+  if not exists (
+    select 1 from projects p
+    join project_locales pl on p.id = pl.project_id
+    where p.id = p_project_id
+      and p.owner_user_id = v_owner_user_id
+      and pl.locale = p_locale
+  ) then
+    raise exception 'Project not found, access denied, or locale does not exist in project';
+  end if;
+
+  return query
   SELECT
     k.id AS key_id,
     k.full_key,
@@ -629,10 +669,14 @@ AS $$
     AND (p_search IS NULL OR k.full_key ILIKE ('%' || p_search || '%'))
     AND (NOT p_missing_only OR t.value IS NULL)
   ORDER BY k.full_key ASC
-  LIMIT p_limit OFFSET p_offset
+  LIMIT p_limit OFFSET p_offset;
+END;
 $$;
 
-COMMENT ON FUNCTION list_keys_per_language_view IS 'List keys with values for selected locale and metadata';
+COMMENT ON FUNCTION list_keys_per_language_view IS
+  'List keys with values for selected locale and metadata. ' ||
+  'Uses SECURITY DEFINER plpgsql for explicit authorization and locale validation. ' ||
+  'Ensures both project ownership and locale existence before executing query.';
 ```
 
 ## Data Constraints Summary

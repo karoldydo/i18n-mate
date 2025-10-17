@@ -6,7 +6,7 @@
  * types defined in database.types.ts to ensure type safety and consistency.
  */
 
-import type { Enums, Tables, TablesInsert, TablesUpdate } from './database.types';
+import type { Database, Enums, Tables, TablesInsert, TablesUpdate } from './database.types';
 
 // ============================================================================
 // Base Entity Types
@@ -70,10 +70,9 @@ export interface CreateKeyRequest {
 }
 /**
  * Create Key Response - RPC function result
+ * Uses database generated type for consistency
  */
-export interface CreateKeyResponse {
-  key_id: string;
-}
+export type CreateKeyResponse = Database['public']['Functions']['create_key_with_value']['Returns'][0];
 
 // RPC args for create_key_with_value (with p_ prefixes)
 export interface CreateKeyRpcArgs {
@@ -160,45 +159,25 @@ export interface KeyDefaultViewListResponse {
   metadata: PaginationMetadata;
 }
 
-// Response DTOs for RPC functions (matching implementation plan)
-export interface KeyDefaultViewResponse {
-  created_at: string;
-  full_key: string;
-  id: string;
-  missing_count: number;
-  value: string;
-}
+// Response DTOs for RPC functions (using database generated types)
+export type KeyDefaultViewResponse = Database['public']['Functions']['list_keys_default_view']['Returns'][0];
 
 export type KeyInsert = TablesInsert<'keys'>;
 
-export interface KeyPerLanguageView {
-  full_key: string;
-  is_machine_translated: boolean;
-  key_id: string;
-  updated_at: string;
-  updated_by_user_id: null | string;
-  updated_source: UpdateSourceType;
-  value: null | string;
-}
+/**
+ * Key Per Language View Response - uses database generated composite type
+ * This ensures type safety with actual database schema
+ */
+export type KeyPerLanguageViewResponse = Database['public']['CompositeTypes']['key_per_language_view_type'];
 
 export interface KeyPerLanguageViewListResponse {
-  data: KeyPerLanguageView[];
+  data: KeyPerLanguageViewResponse[];
   metadata: PaginationMetadata;
 }
 
 // ============================================================================
 // Authentication DTOs (Section 2 of API Plan)
 // ============================================================================
-
-export interface KeyPerLanguageViewResponse {
-  full_key: string;
-  is_machine_translated: boolean;
-  key_id: string;
-  updated_at: string;
-  updated_by_user_id: null | string;
-  updated_source: UpdateSourceType;
-  value: null | string;
-}
 
 /**
  * Key Response - standard key representation
@@ -260,6 +239,14 @@ export interface ListKeysPerLanguageViewRpcArgs {
   p_offset?: number;
   p_project_id: string;
   p_search?: string;
+}
+
+/**
+ * Delete Key RPC Arguments - for DELETE /rest/v1/keys
+ * Note: Delete uses direct table filter, not RPC, but included for completeness
+ */
+export interface DeleteKeyArgs {
+  id: string; // key UUID as filter parameter
 }
 
 export interface ListProjectLocalesWithDefaultArgs {
