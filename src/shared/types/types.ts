@@ -13,12 +13,6 @@ import type { Database, Enums, Tables, TablesInsert, TablesUpdate } from './data
 // ============================================================================
 
 /**
- * Branded type for locale codes to ensure type safety
- * Represents a normalized BCP-47 locale code (ll or ll-CC format)
- */
-export type LocaleCode = string & { readonly __brand: 'LocaleCode' };
-
-/**
  * API Error Response - generic error container
  * Format: { data: null, error: { code, message, details? } }
  */
@@ -44,6 +38,7 @@ export interface ApiResponse<T> {
  * Result Type - union of success and error responses
  */
 export type ApiResult<T> = ApiErrorResponse | ApiResponse<T>;
+
 /**
  * Bulk Update Translations Request - used internally by translation jobs
  */
@@ -54,7 +49,6 @@ export type BulkUpdateTranslationRequest = UpdateTranslationRequest;
 export interface CancelTranslationJobRequest {
   status: 'cancelled';
 }
-
 /**
  * Conflict Error Response - used for optimistic locking and unique constraints
  * Format: { data: null, error: { code: 409, message } }
@@ -65,6 +59,7 @@ export interface ConflictErrorResponse extends ApiErrorResponse {
     message: string;
   };
 }
+
 /**
  * Create Key with Value Request - POST /rest/v1/rpc/create_key_with_value
  */
@@ -79,13 +74,13 @@ export interface CreateKeyRequest {
  * Uses database generated type for consistency
  */
 export type CreateKeyResponse = Database['public']['Functions']['create_key_with_value']['Returns'][0];
-
 // RPC args for create_key_with_value (with p_ prefixes)
 export interface CreateKeyRpcArgs {
   p_default_value: string;
   p_full_key: string;
   p_project_id: string;
 }
+
 /**
  * Create Project Locale Atomic Request - POST /rest/v1/rpc/create_project_locale_atomic
  * Recommended approach with built-in fan-out verification and better error handling
@@ -95,7 +90,6 @@ export interface CreateProjectLocaleAtomicRequest {
   p_locale: string;
   p_project_id: string;
 }
-
 /**
  * Create Project Locale Atomic Response - RPC function result
  * Uses database generated type for consistency
@@ -125,25 +119,24 @@ export type CreateProjectLocaleAtomicResponse =
 export type CreateProjectLocaleRequest = Pick<ProjectLocaleInsert, 'label' | 'locale' | 'project_id'>;
 
 /**
- * Create Project Request - POST /rest/v1/projects or RPC create_project_with_default_locale
+ * Create Project with Default Locale Request - RPC create_project_with_default_locale
+ *
+ * This is the primary and recommended interface for creating projects.
+ * Uses the atomic RPC approach that creates both project and default locale
+ * in a single transaction with proper validation and telemetry.
  */
-export interface CreateProjectRequest {
+export interface CreateProjectWithDefaultLocaleRequest {
   default_locale: string;
+  default_locale_label: string;
   description?: null | string;
   name: string;
   prefix: string;
 }
-/**
- * Create Project with Default Locale Request - RPC function
- */
-export interface CreateProjectWithDefaultLocaleRequest extends CreateProjectRequest {
-  default_locale_label: string;
-}
+
 /**
  * Create Telemetry Event Request - POST /rest/v1/telemetry_events
  */
 export type CreateTelemetryEventRequest = Pick<TelemetryEventInsert, 'event_name' | 'project_id' | 'properties'>;
-
 /**
  * Create Translation Job Request - POST /functions/v1/translate
  */
@@ -154,6 +147,7 @@ export interface CreateTranslationJobRequest {
   project_id: string;
   target_locale: string;
 }
+
 /**
  * Create Translation Job Response - Edge Function result
  */
@@ -169,8 +163,8 @@ export interface CreateTranslationJobResponse {
 export interface DeleteKeyArgs {
   id: string; // key UUID as filter parameter
 }
-
 export type EventType = Enums<'event_type'>;
+
 /**
  * Exported Translations - flat JSON object with dotted keys
  * Format: { "app.home.title": "Welcome Home", ... }
@@ -180,12 +174,12 @@ export type ExportedTranslations = Record<string, string>;
  * Export Translations Response - contains multiple locale files
  */
 export type ExportTranslationsData = Record<string, ExportedTranslations>;
+export type ItemStatus = Enums<'item_status'>;
 
 // ============================================================================
 // Enum Types
 // ============================================================================
 
-export type ItemStatus = Enums<'item_status'>;
 export type JobStatus = Enums<'job_status'>;
 /**
  * Key entity - represents a translation key
@@ -201,7 +195,6 @@ export interface KeyCreatedEvent {
   project_id: string;
   properties: KeyCreatedProperties;
 }
-
 export interface KeyCreatedProperties {
   full_key: string;
   key_count: number;
@@ -222,14 +215,14 @@ export type KeyDefaultViewResponse = Database['public']['Functions']['list_keys_
 
 export type KeyInsert = TablesInsert<'keys'>;
 
-// ============================================================================
-// Authentication DTOs (Section 2 of API Plan)
-// ============================================================================
-
 export interface KeyPerLanguageViewListResponse {
   data: KeyPerLanguageViewResponse[];
   metadata: PaginationMetadata;
 }
+
+// ============================================================================
+// Authentication DTOs (Section 2 of API Plan)
+// ============================================================================
 
 /**
  * Key Per Language View Response - uses database generated composite type
@@ -336,6 +329,12 @@ export interface ListTranslationJobsParams extends PaginationParams {
   project_id: string;
   status?: JobStatus | JobStatus[];
 }
+
+/**
+ * Branded type for locale codes to ensure type safety
+ * Represents a normalized BCP-47 locale code (ll or ll-CC format)
+ */
+export type LocaleCode = string & { readonly __brand: 'LocaleCode' };
 
 /**
  * Pagination Metadata - returned in Content-Range header
