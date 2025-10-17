@@ -18,12 +18,16 @@ export function useProjects(params: ListProjectsParams = {}) {
       // Validate parameters
       const validated = listProjectsSchema.parse(params);
 
-      // Call RPC function for list with counts
+      // Call RPC function for list with counts (enable exact total counting)
       const { count, data, error } = await supabase
-        .rpc('list_projects_with_counts', {
-          p_limit: validated.limit,
-          p_offset: validated.offset,
-        })
+        .rpc(
+          'list_projects_with_counts',
+          {
+            p_limit: validated.limit,
+            p_offset: validated.offset,
+          },
+          { count: 'exact' }
+        )
         .order(validated.order?.split('.')[0] || 'name', {
           ascending: validated.order?.endsWith('.asc') ?? true,
         });

@@ -68,10 +68,11 @@ describe('useProjects', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.rpc).toHaveBeenCalledWith('list_projects_with_counts', {
-      p_limit: 50,
-      p_offset: 0,
-    });
+    expect(mockSupabase.rpc).toHaveBeenCalledWith(
+      'list_projects_with_counts',
+      { p_limit: 50, p_offset: 0 },
+      expect.objectContaining({ count: 'exact' })
+    );
     expect(result.current.data).toEqual({
       data: mockData,
       metadata: {
@@ -116,10 +117,11 @@ describe('useProjects', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.rpc).toHaveBeenCalledWith('list_projects_with_counts', {
-      p_limit: 10,
-      p_offset: 20,
-    });
+    expect(mockSupabase.rpc).toHaveBeenCalledWith(
+      'list_projects_with_counts',
+      { p_limit: 10, p_offset: 20 },
+      expect.objectContaining({ count: 'exact' })
+    );
     expect(result.current.data).toEqual({
       data: mockData,
       metadata: {

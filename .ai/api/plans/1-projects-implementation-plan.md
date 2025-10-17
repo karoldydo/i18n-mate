@@ -304,11 +304,18 @@ export const projectWithCountsSchema = projectResponseSchema.extend({
 }
 ```
 
+Note: The `metadata.total` value is populated when the client enables counting in the request (e.g., `{ count: 'exact' }` in the Supabase client options). Without this option, `total` may be 0.
+
 ### 4.2 Get Project Details
 
 **Success Response (200 OK):**
 
-Returns array with single project (Supabase convention):
+There are two response shapes depending on how the request is made:
+
+- REST (default, without singular headers): returns an array with a single item (PostgREST convention)
+- Supabase client with `.single()`/`.maybeSingle()` or REST with singular Accept header: returns a single object
+
+Array (default REST):
 
 ```json
 [
@@ -322,6 +329,20 @@ Returns array with single project (Supabase convention):
     "updated_at": "2025-01-15T10:00:00Z"
   }
 ]
+```
+
+Single object (Supabase client `.maybeSingle()` / REST with `Accept: application/vnd.pgrst.object+json`):
+
+```json
+{
+  "created_at": "2025-01-15T10:00:00Z",
+  "default_locale": "en",
+  "description": "Main application translations",
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "My App",
+  "prefix": "app",
+  "updated_at": "2025-01-15T10:00:00Z"
+}
 ```
 
 **Note:** `owner_user_id` is excluded from all API responses since RLS policies ensure users can only access their own projects.
@@ -342,6 +363,8 @@ Returns array with single project (Supabase convention):
 }
 ```
 
+Note: This endpoint (and the corresponding `useCreateProject` hook) returns a single object representation of the project. Only list endpoints return a wrapper object with `{ data, metadata }`.
+
 **Note:** `owner_user_id` is excluded from all API responses since RLS policies ensure users can only access their own projects.
 
 ### 4.4 Update Project
@@ -359,6 +382,8 @@ Returns array with single project (Supabase convention):
   "updated_at": "2025-01-15T11:00:00Z"
 }
 ```
+
+Note: This endpoint (and the corresponding `useUpdateProject` hook) returns a single object representation of the project. Only list endpoints return a wrapper object with `{ data, metadata }`.
 
 **Note:** `owner_user_id` is excluded from all API responses since RLS policies ensure users can only access their own projects.
 
@@ -967,12 +992,16 @@ export function useProjects(params: ListProjectsParams = {}) {
       // Validate parameters
       const validated = listProjectsSchema.parse(params);
 
-      // Call RPC function for list with counts
+      // Call RPC function for list with counts (enable exact total counting)
       const { count, data, error } = await supabase
-        .rpc('list_projects_with_counts', {
-          p_limit: validated.limit,
-          p_offset: validated.offset,
-        })
+        .rpc(
+          'list_projects_with_counts',
+          {
+            p_limit: validated.limit,
+            p_offset: validated.offset,
+          },
+          { count: 'exact' }
+        )
         .order(validated.order?.split('.')[0] || 'name', {
           ascending: validated.order?.endsWith('.asc') ?? true,
         });
