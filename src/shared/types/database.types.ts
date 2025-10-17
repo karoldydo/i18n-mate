@@ -93,7 +93,6 @@ export interface Database {
           description: string;
           id: string;
           name: string;
-          owner_user_id: string;
           prefix: string;
           updated_at: string;
         }[];
