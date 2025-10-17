@@ -84,7 +84,7 @@ Authorization: Bearer {access_token}
 - `p_name` (required, CITEXT) - Project name, unique per owner
 - `p_prefix` (required, string) - 2-4 characters, `[a-z0-9._-]`, no trailing dot, unique per owner
 - `p_default_locale` (required, string) - BCP-47 locale code (ll or ll-CC)
-- `p_default_locale_label` (required, string) - Human-readable label for default locale
+- `p_default_locale_label` (required, string) - Human-readable label for default locale (max 64 characters)
 - `p_description` (optional, string) - Project description
 
 ### 2.4 Update Project
@@ -167,6 +167,7 @@ export interface PaginationMetadata {
 
 // Error types
 export interface ApiErrorResponse {
+  data: null;
   error: {
     code: number;
     details?: Record<string, unknown>;
@@ -220,28 +221,58 @@ export const listProjectsSchema = z.object({
   order: z.enum(['name.asc', 'name.desc', 'created_at.asc', 'created_at.desc']).optional().default('name.asc'),
 });
 
-// Create Project Schema
-export const createProjectSchema = z.object({
-  p_name: z.string().min(1, 'Project name is required').trim(),
-  p_prefix: prefixSchema,
-  p_default_locale: localeCodeSchema,
-  p_default_locale_label: z.string().min(1, 'Default locale label is required').trim(),
-  p_description: z.string().trim().optional().nullable(),
+// Create Project Request Schema (API input format without p_ prefix)
+export const createProjectRequestSchema = z.object({
+  default_locale: localeCodeSchema,
+  default_locale_label: z
+    .string()
+    .min(1, 'Default locale label is required')
+    .max(64, 'Default locale label must be at most 64 characters')
+    .trim(),
+  description: z.string().trim().optional().nullable(),
+  name: z.string().min(1, 'Project name is required').trim(),
+  prefix: prefixSchema,
 });
+
+// Create Project Schema with RPC parameter transformation (adds p_ prefix)
+// This schema automatically converts API request format to Supabase RPC parameter format
+export const createProjectSchema = createProjectRequestSchema.transform((data) => ({
+  p_default_locale: data.default_locale,
+  p_default_locale_label: data.default_locale_label,
+  p_description: data.description,
+  p_name: data.name,
+  p_prefix: data.prefix,
+}));
 
 // Update Project Schema
 export const updateProjectSchema = z
   .object({
-    name: z.string().min(1, 'Project name cannot be empty').trim().optional(),
+    default_locale: z.never().optional(),
     description: z.string().trim().optional().nullable(),
+    name: z.string().min(1, 'Project name cannot be empty').trim().optional(),
     // Prevent immutable fields
     prefix: z.never().optional(),
-    default_locale: z.never().optional(),
   })
   .strict();
 
 // Project ID Schema
 export const projectIdSchema = z.string().uuid('Invalid project ID format');
+
+// Response Schemas for runtime validation
+export const projectResponseSchema = z.object({
+  created_at: z.string(),
+  default_locale: z.string(),
+  description: z.string().nullable(),
+  id: z.string().uuid(),
+  name: z.string(),
+  prefix: z.string(),
+  updated_at: z.string(),
+});
+
+export const projectWithCountsSchema = projectResponseSchema.extend({
+  key_count: z.number(),
+  locale_count: z.number(),
+});
 ```
 
 ## 4. Response Details
@@ -251,24 +282,27 @@ export const projectIdSchema = z.string().uuid('Invalid project ID format');
 **Success Response (200 OK):**
 
 ```json
-[
-  {
-    "created_at": "2025-01-15T10:00:00Z",
-    "default_locale": "en",
-    "description": "Main application translations",
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "key_count": 120,
-    "locale_count": 5,
-    "name": "My App",
-    "prefix": "app",
-    "updated_at": "2025-01-15T10:00:00Z"
+{
+  "data": [
+    {
+      "created_at": "2025-01-15T10:00:00Z",
+      "default_locale": "en",
+      "description": "Main application translations",
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "key_count": 120,
+      "locale_count": 5,
+      "name": "My App",
+      "prefix": "app",
+      "updated_at": "2025-01-15T10:00:00Z"
+    }
+  ],
+  "metadata": {
+    "end": 0,
+    "start": 0,
+    "total": 120
   }
-]
+}
 ```
-
-**Headers:**
-
-- `Content-Range: 0-49/120` - Pagination info (start-end/total)
 
 ### 4.2 Get Project Details
 
@@ -284,12 +318,13 @@ Returns array with single project (Supabase convention):
     "description": "Main application translations",
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "name": "My App",
-    "owner_user_id": "user-uuid",
     "prefix": "app",
     "updated_at": "2025-01-15T10:00:00Z"
   }
 ]
 ```
+
+**Note:** `owner_user_id` is excluded from all API responses since RLS policies ensure users can only access their own projects.
 
 ### 4.3 Create Project
 
@@ -302,11 +337,12 @@ Returns array with single project (Supabase convention):
   "description": "Main application translations",
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "name": "My App",
-  "owner_user_id": "user-uuid",
   "prefix": "app",
   "updated_at": "2025-01-15T10:00:00Z"
 }
 ```
+
+**Note:** `owner_user_id` is excluded from all API responses since RLS policies ensure users can only access their own projects.
 
 ### 4.4 Update Project
 
@@ -314,6 +350,7 @@ Returns array with single project (Supabase convention):
 
 ```json
 {
+  "created_at": "2025-01-15T10:00:00Z",
   "default_locale": "en",
   "description": "Updated description",
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -323,6 +360,8 @@ Returns array with single project (Supabase convention):
 }
 ```
 
+**Note:** `owner_user_id` is excluded from all API responses since RLS policies ensure users can only access their own projects.
+
 ### 4.5 Delete Project
 
 **Success Response (204 No Content)**
@@ -331,10 +370,13 @@ Empty response body.
 
 ### 4.6 Error Responses
 
+All error responses follow the structure: `{ data: null, error: { code, message, details? } }`
+
 **400 Bad Request (Validation Error):**
 
 ```json
 {
+  "data": null,
   "error": {
     "code": 400,
     "details": {
@@ -350,6 +392,7 @@ Empty response body.
 
 ```json
 {
+  "data": null,
   "error": {
     "code": 409,
     "message": "Project with this name already exists"
@@ -361,6 +404,7 @@ Empty response body.
 
 ```json
 {
+  "data": null,
   "error": {
     "code": 404,
     "message": "Project not found or access denied"
@@ -372,6 +416,7 @@ Empty response body.
 
 ```json
 {
+  "data": null,
   "error": {
     "code": 500,
     "message": "An unexpected error occurred"
@@ -390,18 +435,19 @@ Empty response body.
 5. Client calls RPC function `list_projects_with_counts` with validated params
 6. RLS policy filters results by `owner_user_id = auth.uid()`
 7. PostgreSQL executes aggregated query with LEFT JOINs to count locales and keys
-8. Results are returned with `Content-Range` header
-9. TanStack Query caches results and provides pagination metadata
-10. Component renders project list with counts
+8. Results are returned with `count` from Supabase
+9. Hook constructs `ProjectListResponse` with data array and pagination metadata
+10. TanStack Query caches results including metadata
+11. Component renders project list with counts and pagination controls
 
 ### 5.2 Get Project Details Flow
 
 1. User navigates to project detail page with project ID in URL
 2. React Router loader or component invokes `useProject` hook with project ID
 3. Hook validates UUID format using Zod
-4. Hook calls Supabase client with `.eq('id', projectId).single()`
+4. Hook calls Supabase client with `.eq('id', projectId).maybeSingle()`
 5. RLS policy validates `owner_user_id = auth.uid()`
-6. If unauthorized, Supabase returns empty result → hook returns 404 error
+6. If unauthorized or not found, Supabase returns null → hook throws 404 error
 7. If found, project data is cached by TanStack Query
 8. Component renders project details
 
@@ -476,12 +522,15 @@ Empty response body.
   - `projects_insert_policy` - INSERT with owner_user_id = auth.uid()
   - `projects_update_policy` - UPDATE where owner_user_id = auth.uid()
   - `projects_delete_policy` - DELETE where owner_user_id = auth.uid()
+- Trigger names:
+  - `prevent_prefix_change_trigger` - Prevents modification of prefix field
+  - `prevent_default_locale_change_trigger` - Prevents modification of default_locale field
 
 ### 6.3 Input Validation
 
 - **Client-side validation:** Zod schemas validate all input before sending to backend
 - **Database-level validation:** CHECK constraints and triggers enforce data integrity
-- **Immutability enforcement:** Database triggers prevent changes to `prefix` and `default_locale`
+- **Immutability enforcement:** Database triggers (`prevent_prefix_change_trigger`, `prevent_default_locale_change_trigger`) prevent changes to `prefix` and `default_locale`
 - **Unique constraints:** Database enforces uniqueness of (owner_user_id, name) and (owner_user_id, prefix)
 
 ### 6.4 SQL Injection Prevention
@@ -492,8 +541,8 @@ Empty response body.
 
 ### 6.5 Data Exposure
 
-- `owner_user_id` is automatically set by RLS and should not be exposed in CREATE/UPDATE requests
-- GET responses include `owner_user_id` only for project details, not for list view
+- `owner_user_id` is automatically set by RLS and should not be exposed in any API responses
+- All API responses exclude `owner_user_id` since RLS policies ensure users can only access their own projects
 - Sensitive fields are excluded from default SELECT statements
 
 ## 7. Error Handling
@@ -511,24 +560,100 @@ Empty response body.
 
 **Handling:**
 
+Zod validation errors are automatically converted to ApiErrorResponse format by a global QueryClient error handler configured in `src/app/config/queryClient/queryClient.ts`. This ensures consistent error format across all queries and mutations without requiring try/catch blocks in individual hooks.
+
+**Global QueryClient Configuration:**
+
+The QueryClient is configured with global error handling in `src/app/config/queryClient/queryClient.ts`:
+
 ```typescript
-try {
-  const validatedData = createProjectSchema.parse(formData);
-} catch (error) {
-  if (error instanceof z.ZodError) {
-    return {
-      error: {
-        code: 400,
-        message: error.errors[0].message,
-        details: {
-          field: error.errors[0].path.join('.'),
-          constraint: error.errors[0].code,
-        },
+import { QueryClient } from '@tanstack/react-query';
+import { ZodError } from 'zod';
+import type { ApiErrorResponse } from '@/shared/types';
+import { createApiErrorResponse } from '@/shared/utils';
+
+/**
+ * Handle Zod validation errors and convert them to API errors
+ */
+function handleValidationError(error: ZodError, context?: string): ApiErrorResponse {
+  const logPrefix = context ? `[${context}]` : '[handleValidationError]';
+  console.error(`${logPrefix} Validation error:`, error);
+
+  const firstError = error.errors[0];
+
+  return createApiErrorResponse(400, firstError.message, {
+    constraint: firstError.code,
+    field: firstError.path.join('.'),
+  });
+}
+
+/**
+ * Check if an error is a Zod validation error
+ */
+function isZodError(error: unknown): error is ZodError {
+  return error instanceof ZodError;
+}
+
+/**
+ * Global QueryClient configuration with automatic Zod error handling
+ */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    mutations: {
+      onError: (error) => {
+        // Transform Zod validation errors to ApiError format
+        if (isZodError(error)) {
+          const apiError = handleValidationError(error);
+          // Re-throw as ApiError to maintain error chain
+          throw apiError;
+        }
       },
-    };
+    },
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry on validation errors
+        if (isZodError(error)) {
+          return false;
+        }
+        // Default retry logic for other errors (max 3 attempts)
+        return failureCount < 3;
+      },
+    },
+  },
+});
+
+export { queryClient };
+```
+
+This configuration is then imported and used in `src/app/main.tsx`:
+
+```typescript
+import { queryClient } from '@/app/config/queryClient';
+```
+
+**Result Format:**
+
+```json
+{
+  "data": null,
+  "error": {
+    "code": 400,
+    "details": {
+      "constraint": "too_small",
+      "field": "p_prefix"
+    },
+    "message": "Prefix must be at least 2 characters"
   }
 }
 ```
+
+**Benefits:**
+
+- **DRY Principle:** No try/catch duplication in hooks
+- **Consistency:** All validation errors use the same format
+- **Automatic:** Works for all queries and mutations
+- **Centralized:** Easy to extend with additional error types
+- **Performance:** No retry attempts on validation errors
 
 ### 7.2 Authorization Errors (403/404)
 
@@ -562,19 +687,15 @@ try {
 const { data, error } = await supabase.rpc('create_project_with_default_locale', validatedData);
 
 if (error) {
-  if (error.code === '23505') {
-    // Unique constraint violation
-    if (error.message.includes('projects_name_unique_per_owner')) {
-      return { error: { code: 409, message: 'Project with this name already exists' } };
-    }
-    if (error.message.includes('projects_prefix_unique_per_owner')) {
-      return { error: { code: 409, message: 'Prefix is already in use' } };
-    }
-  }
+  throw createDatabaseErrorResponse(error, 'useCreateProject', 'Failed to create project');
 }
+
+// The createDatabaseErrorResponse function handles the error mapping:
+// - 23505 with 'projects_name_unique_per_owner' -> 409 'Project with this name already exists'
+// - 23505 with 'projects_prefix_unique_per_owner' -> 409 'Prefix is already in use'
 ```
 
-### 7. Database Trigger Errors (400)
+### 7.4 Database Trigger Errors (400)
 
 **Trigger Conditions:**
 
@@ -584,7 +705,9 @@ if (error) {
 **Handling:**
 
 - Catch PostgreSQL RAISE EXCEPTION from trigger
-- Return 400 with message: "Cannot modify prefix after creation" or "Cannot modify default locale after creation"
+- Return 400 with specific message based on field:
+  - For `prefix`: "Cannot modify prefix after creation" (trigger: `prevent_prefix_change_trigger`)
+  - For `default_locale`: "Cannot modify default locale after creation" (trigger: `prevent_default_locale_change_trigger`)
 
 ### 7.5 Not Found Errors (404)
 
@@ -596,10 +719,12 @@ if (error) {
 **Handling:**
 
 ```typescript
+import { createApiErrorResponse } from '@/shared/utils';
+
 const { data, error } = await supabase.from('projects').select('*').eq('id', projectId).maybeSingle();
 
 if (!data) {
-  return { error: { code: 404, message: 'Project not found or access denied' } };
+  throw createApiErrorResponse(404, 'Project not found or access denied');
 }
 ```
 
@@ -624,15 +749,11 @@ if (!data) {
 const { data, error } = await supabase.rpc('create_project_with_default_locale', validatedData);
 
 if (error) {
-  console.error('[useCreateProject] RPC error:', error);
-
-  return {
-    error: {
-      code: 500,
-      message: 'An unexpected error occurred. Please try again.',
-    },
-  };
+  throw createDatabaseErrorResponse(error, 'useCreateProject', 'Failed to create project');
 }
+
+// The createDatabaseErrorResponse function logs the error and returns a structured ApiErrorResponse
+// For unknown errors, it returns a 500 status with the fallback message
 ```
 
 ## 8. Performance Considerations
@@ -720,12 +841,87 @@ const updateMutation = useMutation({
 ### Step 1: Create Feature Directory Structure
 
 ```bash
-mkdir -p src/features/projects/{api,components,routes,hooks}
+mkdir -p src/features/projects/{api}
 ```
 
 ### Step 2: Create Zod Validation Schemas
 
 Create `src/features/projects/api/projects.schemas.ts` with all validation schemas defined in section 3.2.
+
+### Step 2.5: Create Error Handling Utilities
+
+Create `src/features/projects/api/projects.errors.ts`:
+
+```typescript
+import type { PostgrestError } from '@supabase/supabase-js';
+import type { ApiErrorResponse } from '@/shared/types';
+import { createApiErrorResponse } from '@/shared/utils';
+
+/**
+ * Handle database errors and convert them to API errors
+ *
+ * Provides consistent error handling for PostgreSQL errors including:
+ * - Unique constraint violations (23505)
+ * - Check constraint violations (23514)
+ * - Foreign key violations (23503)
+ * - Trigger violations (immutable fields)
+ *
+ * @param error - PostgrestError from Supabase
+ * @param context - Optional context string for logging (e.g., hook name)
+ * @param fallbackMessage - Optional custom fallback message for generic errors
+ * @returns Standardized ApiErrorResponse object
+ */
+export function createDatabaseErrorResponse(
+  error: PostgrestError,
+  context?: string,
+  fallbackMessage?: string
+): ApiErrorResponse {
+  const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
+  console.error(`${logPrefix} Database error:`, error);
+
+  // Handle unique constraint violations
+  if (error.code === '23505') {
+    if (error.message.includes('projects_name_unique_per_owner')) {
+      return createApiErrorResponse(409, 'Project with this name already exists');
+    }
+    if (error.message.includes('projects_prefix_unique_per_owner')) {
+      return createApiErrorResponse(409, 'Prefix is already in use');
+    }
+  }
+
+  // Handle trigger violations (immutable fields)
+  if (error.message.includes('prefix is immutable')) {
+    return createApiErrorResponse(400, 'Cannot modify prefix after creation');
+  }
+  if (error.message.includes('default_locale is immutable')) {
+    return createApiErrorResponse(400, 'Cannot modify default locale after creation');
+  }
+
+  // Handle check constraint violations
+  if (error.code === '23514') {
+    return createApiErrorResponse(400, 'Invalid field value', { constraint: error.details });
+  }
+
+  // Handle foreign key violations
+  if (error.code === '23503') {
+    return createApiErrorResponse(404, 'Referenced resource not found');
+  }
+
+  // Generic database error (generic errors should come last, after specific checks)
+  return createApiErrorResponse(500, fallbackMessage || 'Database operation failed', { original: error });
+}
+```
+
+This module provides centralized error handling utilities used by all TanStack Query hooks.
+
+**Note:** The `createApiErrorResponse()` factory function is defined in `src/shared/utils/index.ts` as a shared utility for creating standardized API error responses across the entire application.
+
+**Benefits:**
+
+- DRY principle - no code duplication across hooks
+- Consistent error format across all endpoints
+- Single source of truth for error messages
+- Easy to extend with new error types
 
 ### Step 3: Create Query Keys Factory
 
@@ -740,76 +936,85 @@ import type { ListProjectsParams } from '@/shared/types';
  */
 export const projectsKeys = {
   all: ['projects'] as const,
-  lists: () => [...projectsKeys.all, 'list'] as const,
-  list: (params: ListProjectsParams) => [...projectsKeys.lists(), params] as const,
-  details: () => [...projectsKeys.all, 'detail'] as const,
   detail: (id: string) => [...projectsKeys.details(), id] as const,
+  details: () => [...projectsKeys.all, 'detail'] as const,
+  list: (params: ListProjectsParams) => [...projectsKeys.lists(), params] as const,
+  lists: () => [...projectsKeys.all, 'list'] as const,
 };
 ```
 
+**Note:** Properties are ordered alphabetically for consistency and easier code navigation.
+
 ### Step 4: Create TanStack Query Hooks
 
-**4.1 Create `src/features/projects/api/useProjects.ts`:**
+**4.1 Create `src/features/projects/api/useProjects/useProjects.ts`:**
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+import type { ApiErrorResponse, ListProjectsParams, ProjectListResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { listProjectsSchema } from './projects.schemas';
-import { projectsKeys } from './projects.keys';
-import type { ListProjectsParams, ProjectWithCounts, ApiError } from '@/shared/types';
+import { createDatabaseErrorResponse } from '../projects.errors';
+import { projectsKeys } from '../projects.keys';
+import { listProjectsSchema, projectWithCountsSchema } from '../projects.schemas';
 
 export function useProjects(params: ListProjectsParams = {}) {
   const supabase = useSupabase();
 
-  return useQuery<ProjectWithCounts[], ApiError>({
-    queryKey: projectsKeys.list(params),
+  return useQuery<ProjectListResponse, ApiErrorResponse>({
+    gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
       // Validate parameters
       const validated = listProjectsSchema.parse(params);
 
       // Call RPC function for list with counts
-      const { data, error, count } = await supabase
+      const { count, data, error } = await supabase
         .rpc('list_projects_with_counts', {
-          limit: validated.limit,
-          offset: validated.offset,
+          p_limit: validated.limit,
+          p_offset: validated.offset,
         })
         .order(validated.order?.split('.')[0] || 'name', {
           ascending: validated.order?.endsWith('.asc') ?? true,
         });
 
       if (error) {
-        console.error('[useProjects] Query error:', error);
-        throw {
-          error: {
-            code: 500,
-            message: 'Failed to fetch projects',
-            details: { original: error },
-          },
-        };
+        throw createDatabaseErrorResponse(error, 'useProjects', 'Failed to fetch projects');
       }
 
-      return data || [];
+      // Runtime validation of response data
+      const projects = z.array(projectWithCountsSchema).parse(data || []);
+
+      return {
+        data: projects,
+        metadata: {
+          end: (validated.offset || 0) + projects.length - 1,
+          start: validated.offset || 0,
+          total: count || 0,
+        },
+      };
     },
+    queryKey: projectsKeys.list(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 ```
 
-**4.2 Create `src/features/projects/api/useProject.ts`:**
+**4.2 Create `src/features/projects/api/useProject/useProject.ts`:**
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
+import type { ApiErrorResponse, ProjectResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { projectIdSchema } from './projects.schemas';
-import { projectsKeys } from './projects.keys';
-import type { ProjectResponse, ApiError } from '@/shared/types';
+import { createApiErrorResponse } from '@/shared/utils';
+import { createDatabaseErrorResponse } from '../projects.errors';
+import { projectsKeys } from '../projects.keys';
+import { projectIdSchema, projectResponseSchema } from '../projects.schemas';
 
 export function useProject(projectId: string) {
   const supabase = useSupabase();
 
-  return useQuery<ProjectResponse, ApiError>({
-    queryKey: projectsKeys.detail(projectId),
+  return useQuery<ProjectResponse, ApiErrorResponse>({
+    gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
       // Validate project ID
       const validatedId = projectIdSchema.parse(projectId);
@@ -821,88 +1026,64 @@ export function useProject(projectId: string) {
         .maybeSingle();
 
       if (error) {
-        console.error('[useProject] Query error:', error);
-        throw {
-          error: {
-            code: 500,
-            message: 'Failed to fetch project',
-            details: { original: error },
-          },
-        };
+        throw createDatabaseErrorResponse(error, 'useProject', 'Failed to fetch project');
       }
 
       if (!data) {
-        throw {
-          error: {
-            code: 404,
-            message: 'Project not found or access denied',
-          },
-        };
+        throw createApiErrorResponse(404, 'Project not found or access denied');
       }
 
-      return data;
+      // Runtime validation of response data
+      const validatedResponse = projectResponseSchema.parse(data);
+      return validatedResponse;
     },
+    queryKey: projectsKeys.detail(projectId),
     staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 ```
 
-**4.3 Create `src/features/projects/api/useCreateProject.ts`:**
+**4.3 Create `src/features/projects/api/useCreateProject/useCreateProject.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ApiErrorResponse, CreateProjectWithDefaultLocaleRequest, ProjectResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createProjectSchema } from './projects.schemas';
-import { projectsKeys } from './projects.keys';
-import type { CreateProjectWithDefaultLocaleRequest, ProjectResponse, ApiError } from '@/shared/types';
+import { createApiErrorResponse } from '@/shared/utils';
+import { createDatabaseErrorResponse } from '../projects.errors';
+import { projectsKeys } from '../projects.keys';
+import { createProjectSchema, projectResponseSchema } from '../projects.schemas';
 
 export function useCreateProject() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<ProjectResponse, ApiError, CreateProjectWithDefaultLocaleRequest>({
+  return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectWithDefaultLocaleRequest>({
     mutationFn: async (projectData) => {
-      // Validate input
-      const validated = createProjectSchema.parse(projectData);
+      // Validate input and transform to RPC parameter format (adds p_ prefix)
+      const rpcParams = createProjectSchema.parse(projectData);
 
       // Call RPC function to create project with default locale
-      const { data, error } = await supabase.rpc('create_project_with_default_locale', validated).single();
+      // Note: Type cast needed because Supabase generates p_description as string|undefined
+      // but SQL function accepts NULL. This is a limitation of Supabase type generation.
+      const { data, error } = await supabase
+        .rpc('create_project_with_default_locale', {
+          ...rpcParams,
+          p_description: rpcParams.p_description as unknown as string | undefined,
+        })
+        .maybeSingle();
 
       if (error) {
-        console.error('[useCreateProject] RPC error:', error);
-
-        // Handle unique constraint violations
-        if (error.code === '23505') {
-          if (error.message.includes('projects_name_unique_per_owner')) {
-            throw {
-              error: {
-                code: 409,
-                message: 'Project with this name already exists',
-              },
-            };
-          }
-          if (error.message.includes('projects_prefix_unique_per_owner')) {
-            throw {
-              error: {
-                code: 409,
-                message: 'Prefix is already in use',
-              },
-            };
-          }
-        }
-
-        // Generic error
-        throw {
-          error: {
-            code: 500,
-            message: 'Failed to create project',
-            details: { original: error },
-          },
-        };
+        throw createDatabaseErrorResponse(error, 'useCreateProject', 'Failed to create project');
       }
 
-      return data;
+      if (!data) {
+        throw createApiErrorResponse(500, 'No data returned from server');
+      }
+
+      // Runtime validation of response data
+      const validatedResponse = projectResponseSchema.parse(data);
+      return validatedResponse;
     },
     onSuccess: () => {
       // Invalidate project list cache
@@ -912,98 +1093,82 @@ export function useCreateProject() {
 }
 ```
 
-**4.4 Create `src/features/projects/api/useUpdateProject.ts`:**
+**4.4 Create `src/features/projects/api/useUpdateProject/useUpdateProject.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ApiErrorResponse, ProjectResponse, UpdateProjectRequest } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { updateProjectSchema, projectIdSchema } from './projects.schemas';
-import { projectsKeys } from './projects.keys';
-import type { UpdateProjectRequest, ProjectResponse, ApiError } from '@/shared/types';
+import { createApiErrorResponse } from '@/shared/utils';
+import { createDatabaseErrorResponse } from '../projects.errors';
+import { projectsKeys } from '../projects.keys';
+import { projectIdSchema, projectResponseSchema, updateProjectSchema } from '../projects.schemas';
+
+/**
+ * Context type for mutation callbacks
+ */
+interface UpdateProjectContext {
+  previousProject?: ProjectResponse;
+}
 
 export function useUpdateProject(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<ProjectResponse, ApiError, UpdateProjectRequest>({
+  return useMutation<ProjectResponse, ApiErrorResponse, UpdateProjectRequest, UpdateProjectContext>({
     mutationFn: async (updateData) => {
       // Validate inputs
       const validatedId = projectIdSchema.parse(projectId);
-      const validated = updateProjectSchema.parse(updateData);
+      const validatedInput = updateProjectSchema.parse(updateData);
 
       const { data, error } = await supabase
         .from('projects')
-        .update(validated)
+        .update(validatedInput)
         .eq('id', validatedId)
-        .select('id,name,description,prefix,default_locale,updated_at')
+        .select('id,name,description,prefix,default_locale,created_at,updated_at')
         .maybeSingle();
 
+      // Handle database errors
       if (error) {
-        console.error('[useUpdateProject] Update error:', error);
-
-        // Handle unique constraint violations
-        if (error.code === '23505' && error.message.includes('projects_name_unique_per_owner')) {
-          throw {
-            error: {
-              code: 409,
-              message: 'Project with this name already exists',
-            },
-          };
-        }
-
-        // Handle trigger violations
-        if (error.message.includes('prefix') || error.message.includes('default_locale')) {
-          throw {
-            error: {
-              code: 400,
-              message: 'Cannot modify prefix or default_locale after creation',
-            },
-          };
-        }
-
-        throw {
-          error: {
-            code: 500,
-            message: 'Failed to update project',
-            details: { original: error },
-          },
-        };
+        throw createDatabaseErrorResponse(error, 'useUpdateProject', 'Failed to update project');
       }
 
+      // Handle missing data (project not found or access denied)
       if (!data) {
-        throw {
-          error: {
-            code: 404,
-            message: 'Project not found or access denied',
-          },
-        };
+        throw createApiErrorResponse(404, 'Project not found or access denied');
       }
 
-      return data;
+      // Runtime validation of response data
+      const validatedResponse = projectResponseSchema.parse(data);
+      return validatedResponse;
+    },
+    onError: (_err, _newData, context) => {
+      // Rollback on error
+      if (context?.previousProject) {
+        queryClient.setQueryData(projectsKeys.detail(projectId), context.previousProject);
+      }
     },
     onMutate: async (newData) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: projectsKeys.detail(projectId) });
 
       // Snapshot previous value
-      const previousProject = queryClient.getQueryData(projectsKeys.detail(projectId));
+      const previousProject = queryClient.getQueryData<ProjectResponse>(projectsKeys.detail(projectId));
 
       // Optimistically update
-      queryClient.setQueryData(projectsKeys.detail(projectId), (old: ProjectResponse) => ({
-        ...old,
-        ...newData,
-      }));
+      queryClient.setQueryData(projectsKeys.detail(projectId), (old: ProjectResponse | undefined) => {
+        // Guard clause: prevent errors if cache is empty
+        if (!old) return old;
+        return {
+          ...old,
+          ...newData,
+        };
+      });
 
       return { previousProject };
     },
-    onError: (err, newData, context) => {
-      // Rollback on error
-      if (context?.previousProject) {
-        queryClient.setQueryData(projectsKeys.detail(projectId), context.previousProject);
-      }
-    },
-    onSuccess: () => {
-      // Invalidate related caches
+    onSettled: () => {
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: projectsKeys.detail(projectId) });
       queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
     },
@@ -1011,44 +1176,34 @@ export function useUpdateProject(projectId: string) {
 }
 ```
 
-**4.5 Create `src/features/projects/api/useDeleteProject.ts`:**
+**4.5 Create `src/features/projects/api/useDeleteProject/useDeleteProject.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ApiErrorResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { projectIdSchema } from './projects.schemas';
-import { projectsKeys } from './projects.keys';
-import type { ApiError } from '@/shared/types';
+import { createApiErrorResponse } from '@/shared/utils';
+import { createDatabaseErrorResponse } from '../projects.errors';
+import { projectsKeys } from '../projects.keys';
+import { projectIdSchema } from '../projects.schemas';
 
 export function useDeleteProject() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<void, ApiError, string>({
+  return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (projectId) => {
       // Validate project ID
       const validatedId = projectIdSchema.parse(projectId);
 
-      const { error, count } = await supabase.from('projects').delete().eq('id', validatedId);
+      const { count, error } = await supabase.from('projects').delete().eq('id', validatedId);
 
       if (error) {
-        console.error('[useDeleteProject] Delete error:', error);
-        throw {
-          error: {
-            code: 500,
-            message: 'Failed to delete project',
-            details: { original: error },
-          },
-        };
+        throw createDatabaseErrorResponse(error, 'useDeleteProject', 'Failed to delete project');
       }
 
       if (count === 0) {
-        throw {
-          error: {
-            code: 404,
-            message: 'Project not found or access denied',
-          },
-        };
+        throw createApiErrorResponse(404, 'Project not found or access denied');
       }
     },
     onSuccess: (_, projectId) => {
@@ -1066,28 +1221,59 @@ export function useDeleteProject() {
 Create `src/features/projects/api/index.ts`:
 
 ```typescript
+/**
+ * Projects API
+ *
+ * This module provides TanStack Query hooks for managing translation projects.
+ * All hooks use the shared Supabase client from context and follow React Query best practices.
+ *
+ * @module features/projects/api
+ */
+
+// Error Utilities
+export { createDatabaseErrorResponse } from './projects.errors';
+
+// Query Keys
 export { projectsKeys } from './projects.keys';
-export { useProjects } from './useProjects';
-export { useProject } from './useProject';
-export { useCreateProject } from './useCreateProject';
-export { useUpdateProject } from './useUpdateProject';
-export { useDeleteProject } from './useDeleteProject';
+
+// Validation Schemas
 export * from './projects.schemas';
+
+// Mutation Hooks
+export { useCreateProject } from './useCreateProject/useCreateProject';
+export { useDeleteProject } from './useDeleteProject/useDeleteProject';
+
+// Query Hooks
+export { useProject } from './useProject/useProject';
+export { useProjects } from './useProjects/useProjects';
+export { useUpdateProject } from './useUpdateProject/useUpdateProject';
 ```
+
+**Organization:**
+
+- Error utilities are exported first for use in other features
+- Query keys factory for cache management
+- Validation schemas for input/output validation
+- Hooks grouped by type (mutations vs queries)
+- Alphabetical order within each group for easy discovery
+- Each hook is exported from its subdirectory with full path for clarity
 
 ### Step 6: Write Unit Tests
 
-**6.1 Create `src/features/projects/api/useProjects.test.ts`:**
+**6.1 Create `src/features/projects/api/useProjects/useProjects.test.ts`:**
 
 Test scenarios:
 
-- Successful list fetch with default params
-- Successful list fetch with custom pagination
-- Successful list fetch with sorting
+- Successful list fetch with default params (verify metadata: start=0, end=0, total=1)
+- Successful list fetch with custom pagination (verify metadata: start=20, end=20, total=50)
+- Successful list fetch with sorting (asc/desc)
+- Empty results (verify metadata: start=0, end=-1, total=0)
 - Validation error for invalid params (limit > 100)
 - Database error handling
+- Pagination metadata for multiple items (verify end calculation: start + length - 1)
+- Pagination metadata for last page (verify edge case handling)
 
-**6.2 Create `src/features/projects/api/useProject.test.ts`:**
+**6.2 Create `src/features/projects/api/useProject/useProject.test.ts`:**
 
 Test scenarios:
 
@@ -1096,7 +1282,7 @@ Test scenarios:
 - Project not found (404)
 - RLS access denied (appears as 404)
 
-**6.3 Create `src/features/projects/api/useCreateProject.test.ts`:**
+**6.3 Create `src/features/projects/api/useCreateProject/useCreateProject.test.ts`:**
 
 Test scenarios:
 
@@ -1106,7 +1292,7 @@ Test scenarios:
 - Duplicate prefix conflict (409)
 - Database error
 
-**6.4 Create `src/features/projects/api/useUpdateProject.test.ts`:**
+**6.4 Create `src/features/projects/api/useUpdateProject/useUpdateProject.test.ts`:**
 
 Test scenarios:
 
@@ -1119,7 +1305,7 @@ Test scenarios:
 - Duplicate name conflict (409)
 - Project not found (404)
 
-**6.5 Create `src/features/projects/api/useDeleteProject.test.ts`:**
+**6.5 Create `src/features/projects/api/useDeleteProject/useDeleteProject.test.ts`:**
 
 Test scenarios:
 

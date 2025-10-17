@@ -13,9 +13,8 @@ export { Constants } from './database.types';
 // Re-export all DTO and Command Model types
 export type {
   // Helper Types
-  ApiError,
-  // Error Response Types
   ApiErrorResponse,
+  // Error Response Types
   ApiResponse,
   ApiResult,
   // Translation DTOs
@@ -70,6 +69,7 @@ export type {
   Project,
   ProjectCreatedProperties,
   ProjectInsert,
+  ProjectListResponse,
   ProjectLocale,
   ProjectLocaleInsert,
   ProjectLocaleResponse,
@@ -115,4 +115,4 @@ export type {
 } from './types';
 
 // Re-export type guards
-export { isActiveJob, isApiError, isApiSuccess, isFinishedJob } from './types';
+export { isActiveJob, isApiErrorResponse, isApiSuccessResponse, isFinishedJob } from './types';

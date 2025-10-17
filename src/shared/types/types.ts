@@ -13,24 +13,21 @@ import type { Enums, Tables, TablesInsert, TablesUpdate } from './database.types
 // ============================================================================
 
 /**
- * API Error Wrapper - generic error container
- */
-export interface ApiError {
-  data: null;
-  error: ApiErrorResponse;
-}
-/**
- * API Error Response - standard error format
+ * API Error Response - generic error container
+ * Format: { data: null, error: { code, message, details? } }
  */
 export interface ApiErrorResponse {
+  data: null;
   error: {
     code: number;
     details?: Record<string, unknown>;
     message: string;
   };
 }
+
 /**
- * API Response Wrapper - generic response container
+ * API Success Response - generic success container
+ * Format: { data: T, error: null }
  */
 export interface ApiResponse<T> {
   data: T;
@@ -40,7 +37,7 @@ export interface ApiResponse<T> {
 /**
  * Result Type - union of success and error responses
  */
-export type ApiResult<T> = ApiError | ApiResponse<T>;
+export type ApiResult<T> = ApiErrorResponse | ApiResponse<T>;
 /**
  * Bulk Update Translations Request - used internally by translation jobs
  */
@@ -54,6 +51,7 @@ export interface CancelTranslationJobRequest {
 
 /**
  * Conflict Error Response - used for optimistic locking and unique constraints
+ * Format: { data: null, error: { code: 409, message } }
  */
 export interface ConflictErrorResponse extends ApiErrorResponse {
   error: {
@@ -304,15 +302,24 @@ export interface ProjectCreatedProperties {
 export type ProjectInsert = TablesInsert<'projects'>;
 
 /**
+ * Project List Response - list of projects with pagination metadata
+ * Returned by useProjects hook
+ */
+export interface ProjectListResponse {
+  data: ProjectWithCounts[];
+  metadata: PaginationMetadata;
+}
+
+/**
  * Project Locale entity - represents a language assigned to a project
  */
 export type ProjectLocale = Tables<'project_locales'>;
 
-export type ProjectLocaleInsert = TablesInsert<'project_locales'>;
-
 // ============================================================================
 // Keys DTOs (Section 5 of API Plan)
 // ============================================================================
+
+export type ProjectLocaleInsert = TablesInsert<'project_locales'>;
 
 /**
  * Project Locale Response - standard locale representation
@@ -338,11 +345,11 @@ export type ProjectResponse = Pick<
   'created_at' | 'default_locale' | 'description' | 'id' | 'name' | 'prefix' | 'updated_at'
 >;
 
-export type ProjectUpdate = TablesUpdate<'projects'>;
-
 // ============================================================================
 // Translations DTOs (Section 6 of API Plan)
 // ============================================================================
+
+export type ProjectUpdate = TablesUpdate<'projects'>;
 
 /**
  * Project with Counts - enhanced project with aggregated counts
@@ -570,6 +577,10 @@ export type UpdateTranslationRequest = Pick<
 /**
  * Validation Error Response - field-specific validation errors
  */
+/**
+ * Validation Error Response - used for input validation failures
+ * Format: { data: null, error: { code: 400, message, details: { field, constraint } } }
+ */
 export interface ValidationErrorResponse extends ApiErrorResponse {
   error: {
     code: 400;
@@ -606,14 +617,14 @@ export function isActiveJob(job: TranslationJob): boolean {
 /**
  * Type guard to check if response is an error
  */
-export function isApiError<T>(result: ApiResult<T>): result is ApiError {
+export function isApiErrorResponse<T>(result: ApiResult<T>): result is ApiErrorResponse {
   return result.error !== null;
 }
 
 /**
  * Type guard to check if response is successful
  */
-export function isApiSuccess<T>(result: ApiResult<T>): result is ApiResponse<T> {
+export function isApiSuccessResponse<T>(result: ApiResult<T>): result is ApiResponse<T> {
   return result.data !== null;
 }
 

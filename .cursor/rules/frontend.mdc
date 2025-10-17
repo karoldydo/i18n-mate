@@ -1,6 +1,6 @@
 ---
 description: Frontend development standards for React, React Router, TanStack Query, Tailwind CSS, and ARIA
-globs: **/*.tsx
+globs: **/*.tsx,**/*.ts
 alwaysApply: false
 ---
 

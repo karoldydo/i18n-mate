@@ -14,6 +14,7 @@ First, carefully review the provided implementation plan:
 [Shared rules](../../.cursor/rules/shared.mdc)
 [Frontend rules](../../.cursor/rules/frontend.mdc)
 [Backend rules](../../.cursor/rules/backend.mdc)
+[Unit test rules](../../.cursor/rules/unit-test.mdc)
 </implementation_rules>
 
 <implementation_approach>

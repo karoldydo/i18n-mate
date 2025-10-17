@@ -1,5 +1,15 @@
 {
-  "cSpell.words": ["CITEXT", "duplicative", "openrouter", "Referer", "Shadcn", "Supabase", "VITE"],
+  "cSpell.words": [
+    "CITEXT",
+    "duplicative",
+    "openrouter",
+    "Postgrest",
+    "Referer",
+    "refetches",
+    "Shadcn",
+    "Supabase",
+    "VITE"
+  ],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
     "source.formatDocument": "explicit"

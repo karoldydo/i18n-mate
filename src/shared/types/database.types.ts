@@ -79,6 +79,25 @@ export interface Database {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
+      create_project_with_default_locale: {
+        Args: {
+          p_default_locale: unknown;
+          p_default_locale_label: string;
+          p_description?: string;
+          p_name: string;
+          p_prefix: string;
+        };
+        Returns: {
+          created_at: string;
+          default_locale: unknown;
+          description: string;
+          id: string;
+          name: string;
+          owner_user_id: string;
+          prefix: string;
+          updated_at: string;
+        }[];
+      };
       gtrgm_compress: {
         Args: { '': unknown };
         Returns: unknown;
@@ -98,6 +117,20 @@ export interface Database {
       gtrgm_out: {
         Args: { '': unknown };
         Returns: unknown;
+      };
+      list_projects_with_counts: {
+        Args: { p_limit?: number; p_offset?: number };
+        Returns: {
+          created_at: string;
+          default_locale: unknown;
+          description: string;
+          id: string;
+          key_count: number;
+          locale_count: number;
+          name: string;
+          prefix: string;
+          updated_at: string;
+        }[];
       };
       set_limit: {
         Args: { '': number };

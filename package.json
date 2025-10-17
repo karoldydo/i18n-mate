@@ -7,12 +7,14 @@
     "build": "tsc -b && vite build",
     "dev": "vite",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "pre-commit": "lint-staged",
     "prepare": "husky",
     "preview": "vite preview",
     "supabase:migration": "supabase migration up",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
+    "supabase:types": "supabase gen types typescript --local > src/shared/types/database.types.ts",
     "test": "vitest --config ./vitest.config.ts"
   },
   "dependencies": {
