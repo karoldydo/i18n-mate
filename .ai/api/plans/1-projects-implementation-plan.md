@@ -11,6 +11,7 @@ The Projects API provides full CRUD operations for managing translation projects
 - Atomic project creation with automatic default locale setup via RPC
 - Selective updates with immutability constraints on prefix and default_locale
 - Cascading deletion of all related data
+- **Centralized constants and validation patterns** for consistency between TypeScript and PostgreSQL constraints
 
 ### Endpoints Summary
 
@@ -198,8 +199,23 @@ export interface ConflictErrorResponse extends ApiErrorResponse {
 
 Create validation schemas in `src/features/projects/api/projects.schemas.ts`:
 
+**Note:** The implementation now uses constants from `src/shared/constants/projects.constants.ts` for validation parameters, error messages, and patterns. This ensures consistency between client-side validation and database constraints.
+
 ```typescript
 import { z } from 'zod';
+
+import {
+  PROJECT_PREFIX_PATTERN,
+  PROJECT_PREFIX_MIN_LENGTH,
+  PROJECT_PREFIX_MAX_LENGTH,
+  PROJECT_LOCALE_LABEL_MIN_LENGTH,
+  PROJECT_LOCALE_LABEL_MAX_LENGTH,
+  PROJECTS_DEFAULT_LIMIT,
+  PROJECTS_MAX_LIMIT,
+  PROJECTS_MIN_OFFSET,
+  PROJECT_SORT_OPTIONS,
+  PROJECTS_ERROR_MESSAGES,
+} from '@/shared/constants';
 
 // Locale code validation (BCP-47 format)
 const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
@@ -209,16 +225,24 @@ const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
 // Prefix validation
 const prefixSchema = z
   .string()
-  .min(2, 'Prefix must be at least 2 characters')
-  .max(4, 'Prefix must be at most 4 characters')
-  .regex(/^[a-z0-9._-]+$/, 'Prefix can only contain lowercase letters, numbers, dots, underscores, and hyphens')
-  .refine((val) => !val.endsWith('.'), 'Prefix cannot end with a dot');
+  .min(PROJECT_PREFIX_MIN_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_SHORT)
+  .max(PROJECT_PREFIX_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_LONG)
+  .regex(PROJECT_PREFIX_PATTERN, PROJECTS_ERROR_MESSAGES.PREFIX_INVALID_FORMAT)
+  .refine((val) => !val.endsWith('.'), PROJECTS_ERROR_MESSAGES.PREFIX_TRAILING_DOT);
 
 // List Projects Schema
 export const listProjectsSchema = z.object({
-  limit: z.number().int().min(1).max(100).optional().default(50),
-  offset: z.number().int().min(0).optional().default(0),
-  order: z.enum(['name.asc', 'name.desc', 'created_at.asc', 'created_at.desc']).optional().default('name.asc'),
+  limit: z.number().int().min(1).max(PROJECTS_MAX_LIMIT).optional().default(PROJECTS_DEFAULT_LIMIT),
+  offset: z.number().int().min(PROJECTS_MIN_OFFSET).optional().default(PROJECTS_MIN_OFFSET),
+  order: z
+    .enum([
+      PROJECT_SORT_OPTIONS.NAME_ASC,
+      PROJECT_SORT_OPTIONS.NAME_DESC,
+      PROJECT_SORT_OPTIONS.CREATED_AT_ASC,
+      PROJECT_SORT_OPTIONS.CREATED_AT_DESC,
+    ])
+    .optional()
+    .default(PROJECT_SORT_OPTIONS.NAME_ASC),
 });
 
 // Create Project Request Schema (API input format without p_ prefix)
@@ -869,18 +893,118 @@ const updateMutation = useMutation({
 mkdir -p src/features/projects/{api}
 ```
 
-### Step 2: Create Zod Validation Schemas
+### Step 2: Create Projects Constants
+
+Create `src/shared/constants/projects.constants.ts` with centralized constants, patterns, and utilities:
+
+```typescript
+/**
+ * Projects Constants and Validation Patterns
+ *
+ * Centralized definitions for project validation patterns to ensure consistency
+ * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
+ */
+
+// Validation patterns
+export const PROJECT_PREFIX_PATTERN = /^[a-z0-9._-]+$/;
+export const TRAILING_DOT_PATTERN = /\.$/;
+
+// Length constraints
+export const PROJECT_PREFIX_MIN_LENGTH = 2;
+export const PROJECT_PREFIX_MAX_LENGTH = 4;
+export const PROJECT_NAME_MIN_LENGTH = 1;
+export const PROJECT_NAME_MAX_LENGTH = 255;
+export const PROJECT_LOCALE_LABEL_MAX_LENGTH = 64;
+
+// Pagination defaults
+export const PROJECTS_DEFAULT_LIMIT = 50;
+export const PROJECTS_MAX_LIMIT = 100;
+export const PROJECTS_MIN_OFFSET = 0;
+
+// PostgreSQL error codes and constraints
+export const PROJECTS_PG_ERROR_CODES = {
+  CHECK_VIOLATION: '23514',
+  FOREIGN_KEY_VIOLATION: '23503',
+  UNIQUE_VIOLATION: '23505',
+} as const;
+
+export const PROJECTS_CONSTRAINTS = {
+  NAME_UNIQUE_PER_OWNER: 'projects_name_unique_per_owner',
+  PREFIX_UNIQUE_PER_OWNER: 'projects_prefix_unique_per_owner',
+} as const;
+
+// Sorting options
+export const PROJECT_SORT_OPTIONS = {
+  CREATED_AT_ASC: 'created_at.asc',
+  CREATED_AT_DESC: 'created_at.desc',
+  NAME_ASC: 'name.asc',
+  NAME_DESC: 'name.desc',
+} as const;
+
+// Centralized error messages
+export const PROJECTS_ERROR_MESSAGES = {
+  // Validation errors
+  NAME_REQUIRED: 'Project name is required',
+  PREFIX_TOO_SHORT: `Prefix must be at least ${PROJECT_PREFIX_MIN_LENGTH} characters`,
+  PREFIX_TOO_LONG: `Prefix must be at most ${PROJECT_PREFIX_MAX_LENGTH} characters`,
+  PREFIX_INVALID_FORMAT: 'Prefix can only contain lowercase letters, numbers, dots, underscores, and hyphens',
+  PREFIX_TRAILING_DOT: 'Prefix cannot end with a dot',
+  LOCALE_LABEL_REQUIRED: 'Default locale label is required',
+  LOCALE_LABEL_TOO_LONG: `Default locale label must be at most ${PROJECT_LOCALE_LABEL_MAX_LENGTH} characters`,
+
+  // Database operation errors
+  PROJECT_NAME_EXISTS: 'Project with this name already exists',
+  PREFIX_ALREADY_IN_USE: 'Prefix is already in use',
+  PREFIX_IMMUTABLE: 'Cannot modify prefix after creation',
+  DEFAULT_LOCALE_IMMUTABLE: 'Cannot modify default locale after creation',
+  PROJECT_NOT_FOUND: 'Project not found or access denied',
+
+  // Generic errors
+  DATABASE_ERROR: 'Database operation failed',
+  NO_DATA_RETURNED: 'No data returned from server',
+  INVALID_FIELD_VALUE: 'Invalid field value',
+  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
+} as const;
+
+// Validation utilities
+export const PROJECT_VALIDATION = {
+  isValidPrefixClient: (prefix: string): boolean => {
+    if (!prefix || typeof prefix !== 'string') return false;
+    if (prefix.length < PROJECT_PREFIX_MIN_LENGTH || prefix.length > PROJECT_PREFIX_MAX_LENGTH) return false;
+    if (!PROJECT_PREFIX_PATTERN.test(prefix)) return false;
+    if (TRAILING_DOT_PATTERN.test(prefix)) return false;
+    return true;
+  },
+  // ... other validation utilities
+};
+```
+
+Add to `src/shared/constants/index.ts`:
+
+```typescript
+export * from './keys.constants';
+export * from './locale.constants';
+export * from './projects.constants';
+export type { LocaleCode } from '@/shared/types';
+```
+
+### Step 3: Create Zod Validation Schemas
 
 Create `src/features/projects/api/projects.schemas.ts` with all validation schemas defined in section 3.2.
 
-### Step 2.5: Create Error Handling Utilities
+### Step 4: Create Error Handling Utilities
 
 Create `src/features/projects/api/projects.errors.ts`:
 
+**Note:** The implementation now uses constants from `src/shared/constants/projects.constants.ts` for error codes, constraint names, and error messages. This ensures consistency across the application.
+
 ```typescript
 import type { PostgrestError } from '@supabase/supabase-js';
+
 import type { ApiErrorResponse } from '@/shared/types';
+
 import { createApiErrorResponse } from '@/shared/utils';
+import { PROJECTS_PG_ERROR_CODES, PROJECTS_CONSTRAINTS, PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 
 /**
  * Handle database errors and convert them to API errors
@@ -948,7 +1072,7 @@ This module provides centralized error handling utilities used by all TanStack Q
 - Single source of truth for error messages
 - Easy to extend with new error types
 
-### Step 3: Create Query Keys Factory
+### Step 5: Create Query Keys Factory
 
 Create `src/features/projects/api/projects.keys.ts`:
 
@@ -970,9 +1094,9 @@ export const projectsKeys = {
 
 **Note:** Properties are ordered alphabetically for consistency and easier code navigation.
 
-### Step 4: Create TanStack Query Hooks
+### Step 6: Create TanStack Query Hooks
 
-**4.1 Create `src/features/projects/api/useProjects/useProjects.ts`:**
+**6.1 Create `src/features/projects/api/useProjects/useProjects.ts`:**
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
@@ -1028,7 +1152,7 @@ export function useProjects(params: ListProjectsParams = {}) {
 }
 ```
 
-**4.2 Create `src/features/projects/api/useProject/useProject.ts`:**
+**6.2 Create `src/features/projects/api/useProject/useProject.ts`:**
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
@@ -1072,7 +1196,7 @@ export function useProject(projectId: string) {
 }
 ```
 
-**4.3 Create `src/features/projects/api/useCreateProject/useCreateProject.ts`:**
+**6.3 Create `src/features/projects/api/useCreateProject/useCreateProject.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1122,7 +1246,7 @@ export function useCreateProject() {
 }
 ```
 
-**4.4 Create `src/features/projects/api/useUpdateProject/useUpdateProject.ts`:**
+**6.4 Create `src/features/projects/api/useUpdateProject/useUpdateProject.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1205,7 +1329,7 @@ export function useUpdateProject(projectId: string) {
 }
 ```
 
-**4.5 Create `src/features/projects/api/useDeleteProject/useDeleteProject.ts`:**
+**6.5 Create `src/features/projects/api/useDeleteProject/useDeleteProject.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1245,7 +1369,7 @@ export function useDeleteProject() {
 }
 ```
 
-### Step 5: Create API Index File
+### Step 7: Create API Index File
 
 Create `src/features/projects/api/index.ts`:
 
@@ -1287,9 +1411,9 @@ export { useUpdateProject } from './useUpdateProject/useUpdateProject';
 - Alphabetical order within each group for easy discovery
 - Each hook is exported from its subdirectory with full path for clarity
 
-### Step 6: Write Unit Tests
+### Step 8: Write Unit Tests
 
-**6.1 Create `src/features/projects/api/useProjects/useProjects.test.ts`:**
+**8.1 Create `src/features/projects/api/useProjects/useProjects.test.ts`:**
 
 Test scenarios:
 
@@ -1302,7 +1426,7 @@ Test scenarios:
 - Pagination metadata for multiple items (verify end calculation: start + length - 1)
 - Pagination metadata for last page (verify edge case handling)
 
-**6.2 Create `src/features/projects/api/useProject/useProject.test.ts`:**
+**8.2 Create `src/features/projects/api/useProject/useProject.test.ts`:**
 
 Test scenarios:
 
@@ -1311,7 +1435,7 @@ Test scenarios:
 - Project not found (404)
 - RLS access denied (appears as 404)
 
-**6.3 Create `src/features/projects/api/useCreateProject/useCreateProject.test.ts`:**
+**8.3 Create `src/features/projects/api/useCreateProject/useCreateProject.test.ts`:**
 
 Test scenarios:
 
@@ -1321,7 +1445,7 @@ Test scenarios:
 - Duplicate prefix conflict (409)
 - Database error
 
-**6.4 Create `src/features/projects/api/useUpdateProject/useUpdateProject.test.ts`:**
+**8.4 Create `src/features/projects/api/useUpdateProject/useUpdateProject.test.ts`:**
 
 Test scenarios:
 
@@ -1334,7 +1458,7 @@ Test scenarios:
 - Duplicate name conflict (409)
 - Project not found (404)
 
-**6.5 Create `src/features/projects/api/useDeleteProject/useDeleteProject.test.ts`:**
+**8.5 Create `src/features/projects/api/useDeleteProject/useDeleteProject.test.ts`:**
 
 Test scenarios:
 

@@ -5,6 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CreateProjectWithDefaultLocaleRequest } from '@/shared/types';
 
+import {
+  PROJECTS_CONSTRAINTS,
+  PROJECTS_ERROR_MESSAGES,
+  PROJECTS_PG_ERROR_CODES,
+} from '@/shared/constants/projects.constants';
+
 import { useCreateProject } from './useCreateProject';
 
 // Mock Supabase client
@@ -138,8 +144,8 @@ describe('useCreateProject', () => {
 
   it('should handle duplicate name conflict', async () => {
     const mockError = {
-      code: '23505',
-      message: 'duplicate key value violates unique constraint "projects_name_unique_per_owner"',
+      code: PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION,
+      message: `duplicate key value violates unique constraint "${PROJECTS_CONSTRAINTS.NAME_UNIQUE_PER_OWNER}"`,
     };
 
     mockSupabase.rpc.mockReturnValue({
@@ -168,15 +174,15 @@ describe('useCreateProject', () => {
       data: null,
       error: {
         code: 409,
-        message: 'Project with this name already exists',
+        message: PROJECTS_ERROR_MESSAGES.PROJECT_NAME_EXISTS,
       },
     });
   });
 
   it('should handle duplicate prefix conflict', async () => {
     const mockError = {
-      code: '23505',
-      message: 'duplicate key value violates unique constraint "projects_prefix_unique_per_owner"',
+      code: PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION,
+      message: `duplicate key value violates unique constraint "${PROJECTS_CONSTRAINTS.PREFIX_UNIQUE_PER_OWNER}"`,
     };
 
     mockSupabase.rpc.mockReturnValue({
@@ -205,7 +211,7 @@ describe('useCreateProject', () => {
       data: null,
       error: {
         code: 409,
-        message: 'Prefix is already in use',
+        message: PROJECTS_ERROR_MESSAGES.PREFIX_ALREADY_IN_USE,
       },
     });
   });

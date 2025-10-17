@@ -16,13 +16,13 @@ export { localesKeys } from './locales.keys';
 // Validation Schemas
 export * from './locales.schemas';
 
-// Utility Functions (re-exported from shared constants for convenience)
-export { LOCALE_NORMALIZATION } from '@/shared/constants';
-
 // Mutation Hooks
 export { useCreateProjectLocale } from './useCreateProjectLocale/useCreateProjectLocale';
+
 export { useDeleteProjectLocale } from './useDeleteProjectLocale/useDeleteProjectLocale';
 // Query Hooks
 export { useProjectLocales } from './useProjectLocales/useProjectLocales';
-
 export { useUpdateProjectLocale } from './useUpdateProjectLocale/useUpdateProjectLocale';
+
+// Utility Functions (re-exported from shared constants for convenience)
+export { LOCALE_NORMALIZATION } from '@/shared/constants';

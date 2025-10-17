@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
@@ -34,7 +35,7 @@ export function useDeleteProject() {
       }
 
       if (count === 0) {
-        throw createApiErrorResponse(404, 'Project not found or access denied');
+        throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
     },
     onSuccess: (_, projectId) => {

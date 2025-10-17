@@ -2,6 +2,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 
 import type { ApiErrorResponse } from '@/shared/types';
 
+import { PROJECTS_CONSTRAINTS, PROJECTS_ERROR_MESSAGES, PROJECTS_PG_ERROR_CODES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 /**
@@ -27,33 +28,33 @@ export function createDatabaseErrorResponse(
   console.error(`${logPrefix} Database error:`, error);
 
   // Handle unique constraint violations
-  if (error.code === '23505') {
-    if (error.message.includes('projects_name_unique_per_owner')) {
-      return createApiErrorResponse(409, 'Project with this name already exists');
+  if (error.code === PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION) {
+    if (error.message.includes(PROJECTS_CONSTRAINTS.NAME_UNIQUE_PER_OWNER)) {
+      return createApiErrorResponse(409, PROJECTS_ERROR_MESSAGES.PROJECT_NAME_EXISTS);
     }
-    if (error.message.includes('projects_prefix_unique_per_owner')) {
-      return createApiErrorResponse(409, 'Prefix is already in use');
+    if (error.message.includes(PROJECTS_CONSTRAINTS.PREFIX_UNIQUE_PER_OWNER)) {
+      return createApiErrorResponse(409, PROJECTS_ERROR_MESSAGES.PREFIX_ALREADY_IN_USE);
     }
   }
 
   // Handle trigger violations (immutable fields)
   if (error.message.includes('prefix')) {
-    return createApiErrorResponse(400, 'Cannot modify prefix after creation');
+    return createApiErrorResponse(400, PROJECTS_ERROR_MESSAGES.PREFIX_IMMUTABLE);
   }
   if (error.message.includes('default_locale')) {
-    return createApiErrorResponse(400, 'Cannot modify default locale after creation');
+    return createApiErrorResponse(400, PROJECTS_ERROR_MESSAGES.DEFAULT_LOCALE_IMMUTABLE);
   }
 
   // Handle check constraint violations
-  if (error.code === '23514') {
-    return createApiErrorResponse(400, 'Invalid field value', { constraint: error.details });
+  if (error.code === PROJECTS_PG_ERROR_CODES.CHECK_VIOLATION) {
+    return createApiErrorResponse(400, PROJECTS_ERROR_MESSAGES.INVALID_FIELD_VALUE, { constraint: error.details });
   }
 
   // Handle foreign key violations
-  if (error.code === '23503') {
-    return createApiErrorResponse(404, 'Referenced resource not found');
+  if (error.code === PROJECTS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+    return createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.REFERENCED_RESOURCE_NOT_FOUND);
   }
 
   // Generic database error (generic errors should come last, after specific checks)
-  return createApiErrorResponse(500, fallbackMessage || 'Database operation failed', { original: error });
+  return createApiErrorResponse(500, fallbackMessage || PROJECTS_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
 }

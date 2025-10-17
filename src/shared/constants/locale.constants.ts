@@ -96,24 +96,6 @@ export const LOCALE_NORMALIZATION = {
 };
 
 /**
- * Common locale codes for reference and testing
- */
-export const COMMON_LOCALE_CODES = {
-  ENGLISH: 'en',
-  ENGLISH_GB: 'en-GB',
-  ENGLISH_US: 'en-US',
-  FRENCH: 'fr',
-  FRENCH_FR: 'fr-FR',
-  GERMAN: 'de',
-  GERMAN_DE: 'de-DE',
-  POLISH: 'pl',
-  POLISH_PL: 'pl-PL',
-  SPANISH: 'es',
-  SPANISH_ES: 'es-ES',
-  SPANISH_MX: 'es-MX',
-} as const;
-
-/**
  * Error messages for locale validation
  */
 export const LOCALE_ERROR_MESSAGES = {

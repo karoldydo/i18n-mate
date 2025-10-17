@@ -7,7 +7,8 @@ First, carefully review the provided implementation plan:
 </implementation_plan>
 
 <type_definitions>
-[Type Definitions](../../src/shared/types/types.ts)
+[Database types](../../src/shared/types/database.types.ts) (check every type)
+[Type Definitions](../../src/shared/types/types.ts) (check every type)
 </type_definitions>
 
 <implementation_rules>
@@ -16,6 +17,10 @@ First, carefully review the provided implementation plan:
 [Backend rules](../../.cursor/rules/backend.mdc)
 [Unit test rules](../../.cursor/rules/unit-test.mdc)
 </implementation_rules>
+
+<current_migrations>
+[Current migrations](../../supabase/migrations/) (check every file in the migrations folder)
+</current_migrations>
 
 <implementation_approach>
 Implement a maximum of 3 steps from the implementation plan, briefly summarize what you've done, and describe the plan for the next 3 actions - stop work at this point and wait for my feedback.

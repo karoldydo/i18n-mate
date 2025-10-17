@@ -52,6 +52,7 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/shared/utils` - utility functions (cn, clsx helpers) (alias: `@/utils`)
 - `./src/shared/hooks` - generic hooks (e.g., useDebounce) (alias: `@/hooks`)
 - `./src/shared/config` - env mapping, theme, feature flags
+- `./src/shared/constants` - centralized constants, validation patterns, and error messages
 - `./src/shared/styles` - global styles
 - `./src/shared/types` - generated types (e.g., Supabase)
 - `./src/features` - domain modules (feature-first)

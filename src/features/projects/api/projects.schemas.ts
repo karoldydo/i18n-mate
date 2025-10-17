@@ -1,5 +1,18 @@
 import { z } from 'zod';
 
+import {
+  PROJECT_LOCALE_LABEL_MAX_LENGTH,
+  PROJECT_LOCALE_LABEL_MIN_LENGTH,
+  PROJECT_PREFIX_MAX_LENGTH,
+  PROJECT_PREFIX_MIN_LENGTH,
+  PROJECT_PREFIX_PATTERN,
+  PROJECT_SORT_OPTIONS,
+  PROJECTS_DEFAULT_LIMIT,
+  PROJECTS_ERROR_MESSAGES,
+  PROJECTS_MAX_LIMIT,
+  PROJECTS_MIN_OFFSET,
+} from '@/shared/constants';
+
 // Locale code validation (BCP-47 format)
 const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
   message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
@@ -8,24 +21,36 @@ const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
 // Prefix validation
 const prefixSchema = z
   .string()
-  .min(2, 'Prefix must be at least 2 characters')
-  .max(4, 'Prefix must be at most 4 characters')
-  .regex(/^[a-z0-9._-]+$/, 'Prefix can only contain lowercase letters, numbers, dots, underscores, and hyphens')
-  .refine((val) => !val.endsWith('.'), 'Prefix cannot end with a dot');
+  .min(PROJECT_PREFIX_MIN_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_SHORT)
+  .max(PROJECT_PREFIX_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_LONG)
+  .regex(PROJECT_PREFIX_PATTERN, PROJECTS_ERROR_MESSAGES.PREFIX_INVALID_FORMAT)
+  .refine((val) => !val.endsWith('.'), PROJECTS_ERROR_MESSAGES.PREFIX_TRAILING_DOT);
 
 // List Projects Schema
 export const listProjectsSchema = z.object({
-  limit: z.number().int().min(1).max(100).optional().default(50),
-  offset: z.number().int().min(0).optional().default(0),
-  order: z.enum(['name.asc', 'name.desc', 'created_at.asc', 'created_at.desc']).optional().default('name.asc'),
+  limit: z.number().int().min(1).max(PROJECTS_MAX_LIMIT).optional().default(PROJECTS_DEFAULT_LIMIT),
+  offset: z.number().int().min(PROJECTS_MIN_OFFSET).optional().default(PROJECTS_MIN_OFFSET),
+  order: z
+    .enum([
+      PROJECT_SORT_OPTIONS.NAME_ASC,
+      PROJECT_SORT_OPTIONS.NAME_DESC,
+      PROJECT_SORT_OPTIONS.CREATED_AT_ASC,
+      PROJECT_SORT_OPTIONS.CREATED_AT_DESC,
+    ])
+    .optional()
+    .default(PROJECT_SORT_OPTIONS.NAME_ASC),
 });
 
 // Create Project Request Schema (API input format without p_ prefix)
 export const createProjectRequestSchema = z.object({
   default_locale: localeCodeSchema,
-  default_locale_label: z.string().min(1, 'Default locale label is required').trim(),
+  default_locale_label: z
+    .string()
+    .min(PROJECT_LOCALE_LABEL_MIN_LENGTH, PROJECTS_ERROR_MESSAGES.LOCALE_LABEL_REQUIRED)
+    .max(PROJECT_LOCALE_LABEL_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.LOCALE_LABEL_TOO_LONG)
+    .trim(),
   description: z.string().trim().optional().nullable(),
-  name: z.string().min(1, 'Project name is required').trim(),
+  name: z.string().min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED).trim(),
   prefix: prefixSchema,
 });
 
@@ -43,7 +68,7 @@ export const updateProjectSchema = z
   .object({
     default_locale: z.never().optional(),
     description: z.string().trim().optional().nullable(),
-    name: z.string().min(1, 'Project name cannot be empty').trim().optional(),
+    name: z.string().min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED).trim().optional(),
     // Prevent immutable fields
     prefix: z.never().optional(),
   })

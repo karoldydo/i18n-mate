@@ -3,6 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants/projects.constants';
+
 import { useDeleteProject } from './useDeleteProject';
 
 // Mock Supabase client
@@ -82,7 +84,7 @@ describe('useDeleteProject', () => {
       data: null,
       error: {
         code: 404,
-        message: 'Project not found or access denied',
+        message: PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND,
       },
     });
   });
@@ -109,7 +111,7 @@ describe('useDeleteProject', () => {
       data: null,
       error: {
         code: 404,
-        message: 'Project not found or access denied',
+        message: PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND,
       },
     });
   });

@@ -5,6 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { UpdateProjectRequest } from '@/shared/types';
 
+import {
+  PROJECTS_CONSTRAINTS,
+  PROJECTS_ERROR_MESSAGES,
+  PROJECTS_PG_ERROR_CODES,
+} from '@/shared/constants/projects.constants';
+
 import { useUpdateProject } from './useUpdateProject';
 
 // Mock Supabase client
@@ -163,8 +169,8 @@ describe('useUpdateProject', () => {
 
   it('should handle duplicate name conflict', async () => {
     const mockError = {
-      code: '23505',
-      message: 'duplicate key value violates unique constraint "projects_name_unique_per_owner"',
+      code: PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION,
+      message: `duplicate key value violates unique constraint "${PROJECTS_CONSTRAINTS.NAME_UNIQUE_PER_OWNER}"`,
     };
 
     mockSupabase.from.mockReturnValue({
@@ -196,7 +202,7 @@ describe('useUpdateProject', () => {
       data: null,
       error: {
         code: 409,
-        message: 'Project with this name already exists',
+        message: PROJECTS_ERROR_MESSAGES.PROJECT_NAME_EXISTS,
       },
     });
   });
@@ -261,7 +267,7 @@ describe('useUpdateProject', () => {
       data: null,
       error: {
         code: 404,
-        message: 'Project not found or access denied',
+        message: PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND,
       },
     });
   });
@@ -331,7 +337,7 @@ describe('useUpdateProject', () => {
       data: null,
       error: {
         code: 400,
-        message: 'Cannot modify prefix after creation',
+        message: PROJECTS_ERROR_MESSAGES.PREFIX_IMMUTABLE,
       },
     });
   });

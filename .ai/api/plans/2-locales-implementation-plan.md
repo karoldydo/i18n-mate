@@ -158,13 +158,11 @@ export interface ConflictErrorResponse extends ApiErrorResponse {
 
 Create validation schemas in `src/features/locales/api/locales.schemas.ts`:
 
+**Note:** The implementation now uses constants from `src/shared/constants/locale.constants.ts` for validation parameters, error messages, and patterns. This ensures consistency between client-side validation and database constraints.
+
 ```typescript
 import { z } from 'zod';
-import {
-  LOCALE_ERROR_MESSAGES,
-  LOCALE_LABEL_MAX_LENGTH,
-  LOCALE_NORMALIZATION,
-} from '@/shared/constants';
+import { LOCALE_ERROR_MESSAGES, LOCALE_LABEL_MAX_LENGTH, LOCALE_NORMALIZATION } from '@/shared/constants';
 
 // Locale code validation (BCP-47 format: ll or ll-CC)
 const localeCodeSchema = z.string().refine((value) => LOCALE_NORMALIZATION.isValidFormatClient(value), {
@@ -743,18 +741,249 @@ const updateMutation = useMutation({
 mkdir -p src/features/locales/api
 ```
 
-### Step 2: Create Zod Validation Schemas
+### Step 2: Create Locales Constants
+
+Create `src/shared/constants/locale.constants.ts` with centralized constants, patterns, and utilities:
+
+```typescript
+/**
+ * Locale Constants and Validation Patterns
+ *
+ * Centralized definitions for locale validation patterns to ensure consistency
+ * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
+ *
+ * All patterns follow BCP-47 subset: ll or ll-CC format only.
+ */
+
+import type { LocaleCode } from '@/shared/types';
+
+/**
+ * BCP-47 locale pattern - matches ll or ll-CC format only
+ * Examples: en, en-US, pl, pl-PL, es, es-ES
+ *
+ * Pattern breakdown:
+ * - ^[a-z]{2} : exactly 2 lowercase letters (language code)
+ * - (-[A-Z]{2})? : optionally followed by dash and 2 uppercase letters (country code)
+ * - $ : end of string
+ *
+ * Note: This pattern expects normalized input (language lowercase, country uppercase)
+ */
+export const LOCALE_CODE_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
+
+/**
+ * Raw locale pattern for input validation (before normalization)
+ * Accepts mixed case input that will be normalized by database triggers
+ * Examples: en, EN, en-us, EN-US, En-Us
+ */
+export const LOCALE_CODE_INPUT_PATTERN = /^[a-zA-Z]{2}(-[a-zA-Z]{2})?$/;
+
+/**
+ * PostgreSQL domain constraint pattern (used in migrations)
+ * Must match LOCALE_CODE_PATTERN exactly for consistency
+ */
+export const LOCALE_CODE_DOMAIN_PATTERN = '^[a-z]{2}(-[A-Z]{2})?$';
+
+/**
+ * Maximum length for locale code (BCP-47 ll-CC format)
+ */
+export const LOCALE_CODE_MAX_LENGTH = 5;
+
+/**
+ * Maximum length for locale label (human-readable name)
+ */
+export const LOCALE_LABEL_MAX_LENGTH = 64;
+
+/**
+ * PostgreSQL error codes relevant to locales operations
+ */
+export const LOCALES_PG_ERROR_CODES = {
+  /** Check constraint violation */
+  CHECK_VIOLATION: '23514',
+  /** Foreign key violation */
+  FOREIGN_KEY_VIOLATION: '23503',
+  /** Unique constraint violation */
+  UNIQUE_VIOLATION: '23505',
+} as const;
+
+/**
+ * Database constraint names for locales
+ */
+export const LOCALES_CONSTRAINTS = {
+  PROJECT_ID_FKEY: 'project_locales_project_id_fkey',
+  UNIQUE_PER_PROJECT: 'project_locales_unique_per_project',
+} as const;
+
+/**
+ * Locale normalization patterns and utilities
+ */
+export const LOCALE_NORMALIZATION = {
+  /**
+   * Client-side locale validation (matches database rules)
+   * Use for immediate feedback, but always verify server-side for critical operations
+   *
+   * Rules implemented:
+   * - Must be 2-5 characters long
+   * - Format: ll or ll-CC (language-country)
+   * - Only letters and one dash allowed
+   * - Maximum one dash (no multiple regions)
+   */
+  isValidFormatClient: (locale: string): boolean => {
+    if (!locale || typeof locale !== 'string') return false;
+    if (locale.length > LOCALE_CODE_MAX_LENGTH) return false;
+    if (!LOCALE_CODE_INPUT_PATTERN.test(locale)) return false;
+    if (/.*-.*-.*/.test(locale)) return false; // Max one dash
+    return true;
+  },
+
+  /** Pattern for language-country format (needs normalization) */
+  LANGUAGE_COUNTRY: /^([a-zA-Z]{2})-([a-zA-Z]{2})$/,
+
+  /** Pattern for language-only format */
+  LANGUAGE_ONLY: /^[a-zA-Z]{2}$/,
+
+  /**
+   * Normalize function (TypeScript implementation)
+   * Converts locale to database format: language lowercase, region uppercase
+   * Examples: "en-us" -> "en-US", "PL" -> "pl", "EN-GB" -> "en-GB"
+   */
+  normalize: (locale: string): string => {
+    if (!locale) return locale;
+
+    if (LOCALE_NORMALIZATION.LANGUAGE_COUNTRY.test(locale)) {
+      const match = locale.match(LOCALE_NORMALIZATION.LANGUAGE_COUNTRY);
+      if (match) {
+        const [, lang, country] = match;
+        return `${lang.toLowerCase()}-${country.toUpperCase()}`;
+      }
+    }
+    if (LOCALE_NORMALIZATION.LANGUAGE_ONLY.test(locale)) {
+      return locale.toLowerCase();
+    }
+    return locale; // Return as-is if doesn't match expected patterns
+  },
+};
+
+/**
+ * Error messages for locale validation
+ */
+export const LOCALE_ERROR_MESSAGES = {
+  ALREADY_EXISTS: 'Locale already exists for this project',
+  INVALID_FORMAT: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
+  LABEL_REQUIRED: 'Locale label is required',
+  LABEL_TOO_LONG: `Locale label must be at most ${LOCALE_LABEL_MAX_LENGTH} characters`,
+  TOO_LONG: `Locale code must be at most ${LOCALE_CODE_MAX_LENGTH} characters`,
+
+  // Database operation errors
+  PROJECT_NOT_FOUND: 'Project not found or access denied',
+  LOCALE_NOT_FOUND: 'Locale not found or access denied',
+  DEFAULT_LOCALE_IMMUTABLE: 'Cannot delete default locale',
+
+  // Generic errors
+  DATABASE_ERROR: 'Database operation failed',
+  NO_DATA_RETURNED: 'No data returned from server',
+  INVALID_FIELD_VALUE: 'Invalid field value',
+  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
+} as const;
+
+/**
+ * Locale validation patterns and utilities
+ */
+export const LOCALE_VALIDATION = {
+  /**
+   * Validate locale label format
+   * Checks length constraints
+   */
+  isValidLocaleLabel: (label: string): boolean => {
+    if (!label || typeof label !== 'string') return false;
+    const trimmed = label.trim();
+    if (trimmed.length < 1 || trimmed.length > LOCALE_LABEL_MAX_LENGTH) return false;
+    return true;
+  },
+
+  /**
+   * Check if locale code is valid (normalized format)
+   */
+  isValidLocaleCode: (locale: string): boolean => {
+    return LOCALE_CODE_PATTERN.test(locale) && locale.length <= LOCALE_CODE_MAX_LENGTH;
+  },
+};
+
+/**
+ * Creates a branded LocaleCode from a string with validation
+ * Throws error if locale is invalid
+ */
+export function createLocaleCode(locale: string): LocaleCode {
+  const normalized = LOCALE_NORMALIZATION.normalize(locale);
+  if (!LOCALE_VALIDATION.isValidLocaleCode(normalized)) {
+    throw new Error(LOCALE_ERROR_MESSAGES.INVALID_FORMAT);
+  }
+  return normalized as LocaleCode;
+}
+
+/**
+ * Type guard that also serves as type assertion for LocaleCode
+ */
+export function isLocaleCode(locale: string): locale is LocaleCode {
+  return LOCALE_VALIDATION.isValidLocaleCode(locale);
+}
+
+/**
+ * Type guard to check if string is a valid locale code
+ */
+export function isValidLocaleCode(locale: string): boolean {
+  return LOCALE_VALIDATION.isValidLocaleCode(locale);
+}
+
+/**
+ * Type guard to check if string could be a valid locale code (before normalization)
+ */
+export function isValidLocaleInput(locale: string): boolean {
+  return LOCALE_CODE_INPUT_PATTERN.test(locale) && locale.length <= LOCALE_CODE_MAX_LENGTH;
+}
+
+/**
+ * Sanitize and normalize locale label
+ * Trims whitespace and ensures valid format
+ */
+export function normalizeLocaleLabel(label: string): string {
+  if (!label || typeof label !== 'string') {
+    throw new Error(LOCALE_ERROR_MESSAGES.LABEL_REQUIRED);
+  }
+
+  const normalized = label.trim();
+
+  if (!LOCALE_VALIDATION.isValidLocaleLabel(normalized)) {
+    throw new Error(LOCALE_ERROR_MESSAGES.LABEL_TOO_LONG);
+  }
+
+  return normalized;
+}
+```
+
+Add to `src/shared/constants/index.ts`:
+
+```typescript
+export * from './locale.constants';
+export * from './keys.constants';
+export * from './projects.constants';
+export type { LocaleCode } from '@/shared/types';
+```
+
+### Step 3: Create Zod Validation Schemas
 
 Create `src/features/locales/api/locales.schemas.ts` with all validation schemas defined in section 3.2.
 
-### Step 2.5: Create Error Handling Utilities
+### Step 4: Create Error Handling Utilities
 
 Create `src/features/locales/api/locales.errors.ts`:
+
+**Note:** The implementation now uses constants from `src/shared/constants/locale.constants.ts` for error codes, constraint names, and error messages. This ensures consistency across the application.
 
 ```typescript
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ApiErrorResponse } from '@/shared/types';
 import { createApiErrorResponse } from '@/shared/utils';
+import { LOCALES_PG_ERROR_CODES, LOCALES_CONSTRAINTS, LOCALE_ERROR_MESSAGES } from '@/shared/constants';
 
 /**
  * Handle database errors and convert them to API errors
@@ -779,33 +1008,33 @@ export function createDatabaseErrorResponse(
   console.error(`${logPrefix} Database error:`, error);
 
   // Handle unique constraint violations
-  if (error.code === '23505') {
-    if (error.message.includes('project_locales_unique_per_project')) {
-      return createApiErrorResponse(409, 'Locale already exists for this project');
+  if (error.code === LOCALES_PG_ERROR_CODES.UNIQUE_VIOLATION) {
+    if (error.message.includes(LOCALES_CONSTRAINTS.UNIQUE_PER_PROJECT)) {
+      return createApiErrorResponse(409, LOCALE_ERROR_MESSAGES.ALREADY_EXISTS);
     }
   }
 
   // Handle trigger violations (default locale deletion)
   if (error.message.includes('Cannot delete default_locale')) {
-    return createApiErrorResponse(400, 'Cannot delete default locale');
+    return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.DEFAULT_LOCALE_IMMUTABLE);
   }
 
   // Handle check constraint violations
-  if (error.code === '23514') {
-    return createApiErrorResponse(400, 'Invalid field value', { constraint: error.details });
+  if (error.code === LOCALES_PG_ERROR_CODES.CHECK_VIOLATION) {
+    return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.INVALID_FIELD_VALUE, { constraint: error.details });
   }
 
   // Handle foreign key violations
-  if (error.code === '23503') {
-    return createApiErrorResponse(404, 'Project not found');
+  if (error.code === LOCALES_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+    return createApiErrorResponse(404, LOCALE_ERROR_MESSAGES.PROJECT_NOT_FOUND);
   }
 
   // Generic database error
-  return createApiErrorResponse(500, fallbackMessage || 'Database operation failed', { original: error });
+  return createApiErrorResponse(500, fallbackMessage || LOCALE_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
 }
 ```
 
-### Step 3: Create Query Keys Factory
+### Step 5: Create Query Keys Factory
 
 Create `src/features/locales/api/locales.keys.ts`:
 
@@ -825,9 +1054,9 @@ export const localesKeys = {
 
 **Note:** Properties are ordered alphabetically for consistency and easier code navigation.
 
-### Step 4: Create TanStack Query Hooks
+### Step 6: Create TanStack Query Hooks
 
-**4.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.ts`:**
+**6.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.ts`:**
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
@@ -872,7 +1101,7 @@ export function useProjectLocales(projectId: string) {
 }
 ```
 
-**4.2 Create `src/features/locales/api/useCreateProjectLocale/useCreateProjectLocale.ts`:**
+**6.2 Create `src/features/locales/api/useCreateProjectLocale/useCreateProjectLocale.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -915,7 +1144,7 @@ export function useCreateProjectLocale(projectId: string) {
 }
 ```
 
-**4.3 Create `src/features/locales/api/useUpdateProjectLocale/useUpdateProjectLocale.ts`:**
+**6.3 Create `src/features/locales/api/useUpdateProjectLocale/useUpdateProjectLocale.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -999,7 +1228,7 @@ export function useUpdateProjectLocale(projectId: string, localeId: string) {
 }
 ```
 
-**4.4 Create `src/features/locales/api/useDeleteProjectLocale/useDeleteProjectLocale.ts`:**
+**6.4 Create `src/features/locales/api/useDeleteProjectLocale/useDeleteProjectLocale.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1033,7 +1262,7 @@ export function useDeleteProjectLocale(projectId: string) {
 }
 ```
 
-### Step 5: Create API Index File
+### Step 7: Create API Index File
 
 Create `src/features/locales/api/index.ts`:
 
@@ -1074,9 +1303,9 @@ export { useProjectLocales } from './useProjectLocales/useProjectLocales';
 - Alphabetical order within each group for easy discovery
 - Each hook is exported from its subdirectory with full path for clarity
 
-### Step 6: Write Unit Tests
+### Step 8: Write Unit Tests
 
-**6.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.test.ts`:**
+**8.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.test.ts`:**
 
 Test scenarios:
 
@@ -1087,7 +1316,7 @@ Test scenarios:
 - Multiple locales with correct is_default flags
 - RLS access denied (appears as database error)
 
-**6.2 Create `src/features/locales/api/useCreateProjectLocale/useCreateProjectLocale.test.ts`:**
+**8.2 Create `src/features/locales/api/useCreateProjectLocale/useCreateProjectLocale.test.ts`:**
 
 Test scenarios:
 
@@ -1099,7 +1328,7 @@ Test scenarios:
 - Database error (project not found)
 - Fan-out trigger execution (verify translations created)
 
-**6.3 Create `src/features/locales/api/useUpdateProjectLocale/useUpdateProjectLocale.test.ts`:**
+**8.3 Create `src/features/locales/api/useUpdateProjectLocale/useUpdateProjectLocale.test.ts`:**
 
 Test scenarios:
 
@@ -1110,7 +1339,7 @@ Test scenarios:
 - Empty label (400)
 - Label too long > 64 chars (400)
 
-**6.4 Create `src/features/locales/api/useDeleteProjectLocale/useDeleteProjectLocale.test.ts`:**
+**8.4 Create `src/features/locales/api/useDeleteProjectLocale/useDeleteProjectLocale.test.ts`:**
 
 Test scenarios:
 

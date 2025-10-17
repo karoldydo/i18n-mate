@@ -64,6 +64,7 @@ The codebase follows a feature-first architecture where domain modules live in `
   - `hooks/`: Generic hooks (useDebounce, etc.)
   - `types/`: Generated types (database.types.ts from Supabase)
   - `config/`: Environment mapping, theme, feature flags
+  - `constants/`: Centralized constants, validation patterns, and error messages
   - `styles/`: Global styles
 - **`src/features/`**: Domain modules (feature-first organization)
   - `feature/components/`: Feature UI components with co-located `.test.tsx` and `.css`
@@ -148,6 +149,8 @@ Migrations are versioned and follow a strict order (extensions → tables → in
 
 - Use Zod for all form validation
 - Validate data exchanged with backend using Zod schemas
+- Use centralized constants from `src/shared/constants/` for validation patterns, error messages, and constraints
+- This ensures consistency between TypeScript validation and PostgreSQL domain constraints
 
 ### Testing
 

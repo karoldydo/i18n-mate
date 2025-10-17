@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ListProjectsParams } from '@/shared/types';
 
+import { PROJECTS_DEFAULT_LIMIT, PROJECTS_MAX_LIMIT } from '@/shared/constants/projects.constants';
+
 import { useProjects } from './useProjects';
 
 // Mock Supabase client
@@ -70,7 +72,7 @@ describe('useProjects', () => {
 
     expect(mockSupabase.rpc).toHaveBeenCalledWith(
       'list_projects_with_counts',
-      { p_limit: 50, p_offset: 0 },
+      { p_limit: PROJECTS_DEFAULT_LIMIT, p_offset: 0 },
       expect.objectContaining({ count: 'exact' })
     );
     expect(result.current.data).toEqual({
@@ -280,7 +282,7 @@ describe('useProjects', () => {
 
   it('should validate limit max value', async () => {
     const params: ListProjectsParams = {
-      limit: 150, // Over max of 100
+      limit: PROJECTS_MAX_LIMIT + 50, // Over max
     };
 
     const { result } = renderHook(() => useProjects(params), {

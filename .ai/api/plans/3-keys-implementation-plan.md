@@ -12,6 +12,7 @@ The Keys API provides operations for managing translation keys within projects. 
 - Atomic key creation with automatic fan-out to all locales via triggers
 - Cascading deletion of all translations
 - Strict validation of key format and prefix requirements
+- **Centralized constants and validation patterns** for consistency between TypeScript and PostgreSQL constraints
 
 ### Endpoints Summary
 
@@ -175,24 +176,38 @@ export interface ListKeysPerLanguageParams extends ListKeysDefaultViewParams {
 
 Create validation schemas in `src/features/keys/api/keys.schemas.ts`:
 
+**Note:** The implementation now uses constants from `src/shared/constants/keys.constants.ts` for validation parameters, error messages, and patterns. This ensures consistency between client-side validation and database constraints.
+
 ```typescript
 import { z } from 'zod';
+
+import {
+  KEY_FORMAT_PATTERN,
+  KEY_NAME_MAX_LENGTH,
+  KEY_NAME_MIN_LENGTH,
+  KEYS_DEFAULT_LIMIT,
+  KEYS_MAX_LIMIT,
+  KEYS_MIN_OFFSET,
+  TRANSLATION_VALUE_MAX_LENGTH,
+  TRANSLATION_VALUE_MIN_LENGTH,
+  KEYS_ERROR_MESSAGES,
+} from '@/shared/constants';
 
 // Full key validation
 const fullKeySchema = z
   .string()
-  .min(1, 'Key name is required')
-  .max(256, 'Key name must be at most 256 characters')
-  .regex(/^[a-z0-9._-]+$/, 'Key can only contain lowercase letters, numbers, dots, underscores, and hyphens')
-  .refine((val) => !val.includes('..'), 'Key cannot contain consecutive dots')
-  .refine((val) => !val.endsWith('.'), 'Key cannot end with a dot');
+  .min(KEY_NAME_MIN_LENGTH, KEYS_ERROR_MESSAGES.KEY_REQUIRED)
+  .max(KEY_NAME_MAX_LENGTH, KEYS_ERROR_MESSAGES.KEY_TOO_LONG)
+  .regex(KEY_FORMAT_PATTERN, KEYS_ERROR_MESSAGES.KEY_INVALID_FORMAT)
+  .refine((val) => !val.includes('..'), KEYS_ERROR_MESSAGES.KEY_CONSECUTIVE_DOTS)
+  .refine((val) => !val.endsWith('.'), KEYS_ERROR_MESSAGES.KEY_TRAILING_DOT);
 
 // Translation value validation
 const translationValueSchema = z
   .string()
-  .min(1, 'Value cannot be empty')
-  .max(250, 'Value must be at most 250 characters')
-  .refine((val) => !val.includes('\n'), 'Value cannot contain newlines')
+  .min(TRANSLATION_VALUE_MIN_LENGTH, KEYS_ERROR_MESSAGES.VALUE_REQUIRED)
+  .max(TRANSLATION_VALUE_MAX_LENGTH, KEYS_ERROR_MESSAGES.VALUE_TOO_LONG)
+  .refine((val) => !val.includes('\n'), KEYS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
   .transform((val) => val.trim());
 
 // Locale code validation (BCP-47 format)
@@ -208,9 +223,9 @@ const keyIdSchema = z.string().uuid('Invalid key ID format');
 
 // List Keys Default View Schema
 export const listKeysDefaultViewSchema = z.object({
-  limit: z.number().int().min(1).max(100).optional().default(50),
-  missing_only: z.boolean().optional(),
-  offset: z.number().int().min(0).optional().default(0),
+  limit: z.number().int().min(1).max(KEYS_MAX_LIMIT).optional().default(KEYS_DEFAULT_LIMIT),
+  missing_only: z.boolean().optional().default(KEYS_DEFAULT_PARAMS.MISSING_ONLY),
+  offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_DEFAULT_PARAMS.OFFSET),
   project_id: projectIdSchema,
   search: z.string().optional(),
 });
@@ -849,18 +864,143 @@ gcTime: 10 * 60 * 1000,
 mkdir -p src/features/keys/{api}
 ```
 
-### Step 2: Create Zod Validation Schemas
+### Step 2: Create Keys Constants
+
+Create `src/shared/constants/keys.constants.ts` with centralized constants, patterns, and utilities:
+
+```typescript
+/**
+ * Keys Constants and Validation Patterns
+ *
+ * Centralized definitions for key validation patterns to ensure consistency
+ * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
+ */
+
+// Validation patterns
+export const KEY_FORMAT_PATTERN = /^[a-z0-9._-]+$/;
+export const CONSECUTIVE_DOTS_PATTERN = /\.\./;
+export const TRAILING_DOT_PATTERN = /\.$/;
+
+// Length constraints
+export const KEY_NAME_MAX_LENGTH = 256;
+export const KEY_NAME_MIN_LENGTH = 1;
+export const TRANSLATION_VALUE_MAX_LENGTH = 250;
+export const TRANSLATION_VALUE_MIN_LENGTH = 1;
+
+// Pagination defaults
+export const KEYS_DEFAULT_LIMIT = 50;
+export const KEYS_MAX_LIMIT = 100;
+export const KEYS_MIN_OFFSET = 0;
+
+// PostgreSQL error codes and constraints
+export const KEYS_PG_ERROR_CODES = {
+  CHECK_VIOLATION: '23514',
+  FOREIGN_KEY_VIOLATION: '23503',
+  UNIQUE_VIOLATION: '23505',
+} as const;
+
+export const KEYS_CONSTRAINTS = {
+  PROJECT_ID_FKEY: 'keys_project_id_fkey',
+  UNIQUE_PER_PROJECT: 'keys_unique_per_project',
+} as const;
+
+// Centralized error messages
+export const KEYS_ERROR_MESSAGES = {
+  // Validation errors
+  KEY_REQUIRED: 'Key name is required',
+  KEY_TOO_LONG: `Key name must be at most ${KEY_NAME_MAX_LENGTH} characters`,
+  KEY_INVALID_FORMAT: 'Key can only contain lowercase letters, numbers, dots, underscores, and hyphens',
+  KEY_CONSECUTIVE_DOTS: 'Key cannot contain consecutive dots',
+  KEY_TRAILING_DOT: 'Key cannot end with a dot',
+
+  VALUE_REQUIRED: 'Value cannot be empty',
+  VALUE_TOO_LONG: `Value must be at most ${TRANSLATION_VALUE_MAX_LENGTH} characters`,
+  VALUE_NO_NEWLINES: 'Value cannot contain newlines',
+
+  // Database operation errors
+  KEY_ALREADY_EXISTS: 'Key already exists in project',
+  KEY_INVALID_PREFIX: 'Key must start with project prefix',
+  DEFAULT_VALUE_EMPTY: 'Default locale value cannot be empty',
+  INVALID_PROJECT_ID: 'Invalid project_id',
+  PROJECT_NOT_OWNED: 'Project not owned by user',
+  KEY_NOT_FOUND: 'Key not found or access denied',
+
+  // Generic errors
+  DATABASE_ERROR: 'Database operation failed',
+  NO_DATA_RETURNED: 'No data returned from server',
+  INVALID_FIELD_VALUE: 'Invalid field value',
+  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
+} as const;
+
+// Default parameters
+export const KEYS_DEFAULT_PARAMS = {
+  LIMIT: KEYS_DEFAULT_LIMIT,
+  MISSING_ONLY: false,
+  OFFSET: KEYS_MIN_OFFSET,
+  SEARCH: undefined,
+} as const;
+
+// Validation utilities
+export const KEY_VALIDATION = {
+  isValidFormatClient: (key: string): boolean => {
+    if (!key || typeof key !== 'string') return false;
+    if (key.length < KEY_NAME_MIN_LENGTH || key.length > KEY_NAME_MAX_LENGTH) return false;
+    if (!KEY_FORMAT_PATTERN.test(key)) return false;
+    if (CONSECUTIVE_DOTS_PATTERN.test(key)) return false;
+    if (TRAILING_DOT_PATTERN.test(key)) return false;
+    return true;
+  },
+
+  isValidTranslationValue: (value: string): boolean => {
+    if (!value || typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (trimmed.length < TRANSLATION_VALUE_MIN_LENGTH || trimmed.length > TRANSLATION_VALUE_MAX_LENGTH) return false;
+    if (trimmed.includes('\n')) return false;
+    return true;
+  },
+
+  startsWithPrefix: (key: string, prefix: string): boolean => {
+    return key.startsWith(`${prefix}.`);
+  },
+
+  extractKeyName: (fullKey: string, prefix: string): string => {
+    if (!KEY_VALIDATION.startsWithPrefix(fullKey, prefix)) {
+      return fullKey;
+    }
+    return fullKey.substring(prefix.length + 1);
+  },
+
+  buildFullKey: (prefix: string, keyName: string): string => {
+    return `${prefix}.${keyName}`;
+  },
+};
+```
+
+Add to `src/shared/constants/index.ts`:
+
+```typescript
+export * from './locale.constants';
+export * from './keys.constants';
+export type { LocaleCode } from '@/shared/types';
+```
+
+### Step 3: Create Zod Validation Schemas
 
 Create `src/features/keys/api/keys.schemas.ts` with all validation schemas defined in section 3.2.
 
-### Step 3: Create Error Handling Utilities
+### Step 4: Create Error Handling Utilities
 
 Create `src/features/keys/api/keys.errors.ts`:
 
+**Note:** The implementation now uses constants from `src/shared/constants/keys.constants.ts` for error codes, constraint names, and error messages. This ensures consistency across the application.
+
 ```typescript
 import type { PostgrestError } from '@supabase/supabase-js';
+
 import type { ApiErrorResponse } from '@/shared/types';
+
 import { createApiErrorResponse } from '@/shared/utils';
+import { KEYS_PG_ERROR_CODES, KEYS_CONSTRAINTS, KEYS_ERROR_MESSAGES } from '@/shared/constants';
 
 /**
  * Handle database errors and convert them to API errors
@@ -884,36 +1024,44 @@ export function createDatabaseErrorResponse(
   console.error(`${logPrefix} Database error:`, error);
 
   // Handle unique constraint violations
-  if (error.code === '23505') {
-    if (error.message.includes('keys_unique_per_project')) {
-      return createApiErrorResponse(409, 'Key already exists in project');
+  if (error.code === KEYS_PG_ERROR_CODES.UNIQUE_VIOLATION) {
+    if (error.message.includes(KEYS_CONSTRAINTS.UNIQUE_PER_PROJECT)) {
+      return createApiErrorResponse(409, KEYS_ERROR_MESSAGES.KEY_ALREADY_EXISTS);
     }
   }
 
   // Handle trigger violations
   if (error.message.includes('must start with project prefix')) {
-    return createApiErrorResponse(400, 'Key must start with project prefix');
+    return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.KEY_INVALID_PREFIX);
   }
   if (error.message.includes('cannot be NULL or empty') || error.message.toLowerCase().includes('default_locale')) {
-    return createApiErrorResponse(400, 'Default locale value cannot be empty');
+    return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.DEFAULT_VALUE_EMPTY);
   }
 
   // Handle check constraint violations
-  if (error.code === '23514') {
-    return createApiErrorResponse(400, 'Invalid field value', { constraint: error.details });
+  if (error.code === KEYS_PG_ERROR_CODES.CHECK_VIOLATION) {
+    return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.INVALID_FIELD_VALUE, { constraint: error.details });
+  }
+
+  // Handle foreign key violations
+  if (error.code === KEYS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+    if (error.message.includes(KEYS_CONSTRAINTS.PROJECT_ID_FKEY)) {
+      return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.INVALID_PROJECT_ID);
+    }
+    return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.REFERENCED_RESOURCE_NOT_FOUND);
   }
 
   // Handle authorization errors (project not found or not owned)
   if (error.message.includes('not found') || error.message.includes('access denied')) {
-    return createApiErrorResponse(403, 'Project not owned by user');
+    return createApiErrorResponse(403, KEYS_ERROR_MESSAGES.PROJECT_NOT_OWNED);
   }
 
   // Generic database error
-  return createApiErrorResponse(500, fallbackMessage || 'Database operation failed', { original: error });
+  return createApiErrorResponse(500, fallbackMessage || KEYS_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
 }
 ```
 
-### Step 4: Create Query Keys Factory
+### Step 5: Create Query Keys Factory
 
 Create `src/features/keys/api/keys.keys.ts`:
 
@@ -941,9 +1089,9 @@ export const keysKeys = {
 };
 ```
 
-### Step 5: Create TanStack Query Hooks
+### Step 6: Create TanStack Query Hooks
 
-**5.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.ts`:**
+**6.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.ts`:**
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
@@ -1003,7 +1151,7 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
 }
 ```
 
-**5.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.ts`:**
+**6.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.ts`:**
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
@@ -1064,7 +1212,7 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
 }
 ```
 
-**5.3 Create `src/features/keys/api/useCreateKey/useCreateKey.ts`:**
+**6.3 Create `src/features/keys/api/useCreateKey/useCreateKey.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1110,7 +1258,7 @@ export function useCreateKey(projectId: string) {
 }
 ```
 
-**5.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.ts`:**
+**6.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.ts`:**
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1157,7 +1305,7 @@ export function useDeleteKey(projectId: string) {
 }
 ```
 
-### Step 6: Create API Index File
+### Step 7: Create API Index File
 
 Create `src/features/keys/api/index.ts`:
 
@@ -1189,9 +1337,9 @@ export { useKeysDefaultView } from './useKeysDefaultView/useKeysDefaultView';
 export { useKeysPerLanguageView } from './useKeysPerLanguageView/useKeysPerLanguageView';
 ```
 
-### Step 7: Write Unit Tests
+### Step 8: Write Unit Tests
 
-**7.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.test.ts`:**
+**8.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.test.ts`:**
 
 Test scenarios:
 
@@ -1207,7 +1355,7 @@ Test scenarios:
 - **Edge case: offset > total count**
 - **Performance test: large dataset**
 
-**7.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.test.ts`:**
+**8.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.test.ts`:**
 
 Test scenarios:
 
@@ -1224,7 +1372,7 @@ Test scenarios:
 - **Locale not in project**
 - **Empty project**
 
-**7.3 Create `src/features/keys/api/useCreateKey/useCreateKey.test.ts`:**
+**8.3 Create `src/features/keys/api/useCreateKey/useCreateKey.test.ts`:**
 
 Test scenarios:
 
@@ -1239,7 +1387,7 @@ Test scenarios:
 - **Prefix validation edge cases**
 - **Value trimming**
 
-**7.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.test.ts`:**
+**8.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.test.ts`:**
 
 Test scenarios:
 

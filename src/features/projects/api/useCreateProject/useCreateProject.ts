@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse, CreateProjectWithDefaultLocaleRequest, ProjectResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
@@ -43,7 +44,7 @@ export function useCreateProject() {
       }
 
       if (!data) {
-        throw createApiErrorResponse(500, 'No data returned from server');
+        throw createApiErrorResponse(500, PROJECTS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
       // Runtime validation of response data

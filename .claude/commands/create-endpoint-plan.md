@@ -15,9 +15,10 @@ Before we begin, review the following information:
    [Table Relationships](../../.ai/database/tables/table-relationships.md)
    </related_db_resources>
 
-3. Type definitions:
+3. Type definitions (check every type):
 
    <type_definitions>
+   [Database types](../../src/shared/types/database.types.ts)
    [Type Definitions](../../src/shared/types/types.ts)
    </type_definitions>
 
@@ -39,6 +40,12 @@ Before we begin, review the following information:
    <style_and_format>
    [Style and format](../../.ai/api/plans/1-projects-implementation-plan.md)
    </style_and_format>
+
+7. Current migrations (check every file in the migrations folder):
+
+   <current_migrations>
+   [Current migrations](../../supabase/migrations/)
+   </current_migrations>
 
 Your task is to create a comprehensive implementation plan for the REST API endpoint. Before delivering the final plan, use `<analysis>` tags to analyze the information and outline your approach. In this analysis, ensure that:
 
