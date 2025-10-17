@@ -44,6 +44,8 @@ GET /rest/v1/rpc/list_keys_default_view?project_id=550e8400-e29b-41d4-a716-44665
 Authorization: Bearer {access_token}
 ```
 
+Note: Raw RPC returns an array of rows and uses p\_-prefixed parameter names (e.g., p_project_id, p_limit). Client hooks map UI params to RPC params and wrap the result into `{ data, metadata }` using Supabase's exact count and pagination params.
+
 ### 2.2 List Keys (Per-Language View)
 
 - **HTTP Method:** GET
@@ -67,6 +69,8 @@ GET /rest/v1/rpc/list_keys_per_language_view?project_id=550e8400-e29b-41d4-a716-
 Authorization: Bearer {access_token}
 ```
 
+Note: Raw RPC returns an array of rows and uses p\_-prefixed parameter names (e.g., p_project_id, p_locale, p_limit). Client hooks map UI params to RPC params and wrap the result into `{ data, metadata }` using Supabase's exact count and pagination params.
+
 ### 2.3 Create Key with Default Value
 
 - **HTTP Method:** POST
@@ -89,6 +93,10 @@ Authorization: Bearer {access_token}
 - `p_default_value` (required, string) - Max 250 chars, no newline, auto-trimmed, cannot be empty
 - `p_project_id` (required, UUID) - Project UUID
 
+**Response Format:**
+
+The RPC function returns `TABLE(key_id uuid)`, which PostgREST wraps in an array. The client hook uses `.single()` to extract the single object.
+
 ### 2.4 Delete Key
 
 - **HTTP Method:** DELETE
@@ -98,6 +106,10 @@ Authorization: Bearer {access_token}
   - Required:
     - `id` (UUID) - Key ID (via query filter)
 - **Request Body:** None
+
+**Response Format:**
+
+The mutation returns `void` (no content). The underlying Supabase API returns `{ count, error }`, but the hook normalizes this to return `void`, matching REST conventions for 204 No Content.
 
 ## 3. Used Types
 
@@ -123,7 +135,6 @@ export interface KeyDefaultViewListResponse {
 // List Keys Per-Language View Response
 export interface KeyPerLanguageViewResponse {
   full_key: string;
-  id: string;
   is_machine_translated: boolean;
   key_id: string;
   updated_at: string;
@@ -155,7 +166,7 @@ export interface ListKeysDefaultViewParams extends PaginationParams {
   search?: string;
 }
 
-export interface ListKeysPerLanguageViewParams extends ListKeysDefaultViewParams {
+export interface ListKeysPerLanguageParams extends ListKeysDefaultViewParams {
   locale: string;
 }
 ```
@@ -234,12 +245,11 @@ export const keyDefaultViewResponseSchema = z.object({
 
 export const keyPerLanguageViewResponseSchema = z.object({
   full_key: z.string(),
-  id: z.string().uuid(),
   is_machine_translated: z.boolean(),
   key_id: z.string().uuid(),
   updated_at: z.string(),
   updated_by_user_id: z.string().uuid().nullable(),
-  updated_source: z.string(),
+  updated_source: z.enum(['user', 'system']),
   value: z.string().nullable(),
 });
 
@@ -289,7 +299,6 @@ export const createKeyResponseSchema = z.object({
   "data": [
     {
       "full_key": "app.home.title",
-      "id": "770e8400-e29b-41d4-a716-446655440002",
       "is_machine_translated": false,
       "key_id": "550e8400-e29b-41d4-a716-446655440000",
       "updated_at": "2025-01-15T10:05:00Z",
@@ -299,7 +308,6 @@ export const createKeyResponseSchema = z.object({
     },
     {
       "full_key": "app.home.cta",
-      "id": "880e8400-e29b-41d4-a716-446655440003",
       "is_machine_translated": true,
       "key_id": "660e8400-e29b-41d4-a716-446655440001",
       "updated_at": "2025-01-15T10:20:00Z",
@@ -318,7 +326,21 @@ export const createKeyResponseSchema = z.object({
 
 ### 4.3 Create Key with Default Value
 
-**Success Response (201 Created):**
+**Raw RPC Response (200 OK):**
+
+PostgREST wraps the result in an array:
+
+```json
+[
+  {
+    "key_id": "550e8400-e29b-41d4-a716-446655440000"
+  }
+]
+```
+
+**Hook Response:**
+
+The client hook uses `.single()` to extract the first element:
 
 ```json
 {
@@ -328,9 +350,23 @@ export const createKeyResponseSchema = z.object({
 
 ### 4.4 Delete Key
 
-**Success Response (204 No Content)**
+**Success Response (Mutation Returns void)**
 
-Empty response body.
+The mutation hook returns `void` (no content), equivalent to 204 No Content semantics.
+
+**Implementation Note:**
+
+The underlying Supabase API returns:
+
+```json
+{
+  "count": 1,
+  "error": null,
+  "status": 200
+}
+```
+
+The hook normalizes this by checking `count > 0` and returning `void` to match REST conventions for successful deletion with no response body.
 
 ### 4.5 Error Responses
 
@@ -469,8 +505,10 @@ All error responses follow the structure: `{ data: null, error: { code, message,
    - Inserts default locale translation with `updated_by_user_id = auth.uid()`
    - Trigger `trim_translation_value_trigger` auto-trims value and converts empty to NULL
    - Trigger `validate_default_locale_value_trigger` prevents NULL/empty for default locale
-   - Trigger `fan_out_translations_on_key_insert_trigger` creates NULL translations for all other locales
-   - Emits `key_created` telemetry event
+
+- Trigger `fan_out_translations_on_key_insert_trigger` creates NULL translations for all other locales
+- `key_created` telemetry event is emitted by trigger `emit_key_created_event` after insert into `keys`
+
 7. Database enforces unique constraint on (project_id, full_key)
 8. On conflict, PostgreSQL returns unique violation error → hook returns 409
 9. On prefix mismatch, trigger raises exception → hook returns 400
@@ -506,9 +544,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - RPC functions perform authorization checks by verifying project ownership
 - Users can only access keys for projects they own
 - RLS policies on `keys` table ensure `project_id` belongs to user
-- RLS policy: `keys_select_policy` - SELECT WHERE project_id IN (SELECT id FROM projects WHERE owner_user_id = auth.uid())
-- RLS policy: `keys_insert_policy` - INSERT WHERE project_id IN (SELECT id FROM projects WHERE owner_user_id = auth.uid())
-- RLS policy: `keys_delete_policy` - DELETE WHERE project_id IN (SELECT id FROM projects WHERE owner_user_id = auth.uid())
+- RLS policy: `keys_owner_policy FOR ALL` — USING/WITH CHECK via project ownership (analogicznie dla innych tabel)
 
 ### 6.3 Input Validation
 
@@ -525,7 +561,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - Supabase client uses parameterized queries for all operations
 - Never construct raw SQL strings from user input
 - RPC functions use typed parameters
-- Trigram search uses PostgreSQL's safe `LIKE` operator with parameterized values
+- Trigram search uses PostgreSQL's safe `ILIKE` operator with parameterized values
 
 ### 6.5 Data Exposure
 
@@ -540,6 +576,50 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - Validate that values don't contain script tags or malicious content
 
 ## 7. Error Handling
+
+### 7.0 Comprehensive Error Code Mapping
+
+This table maps all PostgreSQL error codes and conditions to HTTP status codes for consistent error handling across the Keys API.
+
+| Source                      | Error Code/Condition                             | HTTP Status | Message                                                                           | Details                                              | Handled By                                    |
+| --------------------------- | ------------------------------------------------ | ----------- | --------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------- |
+| **PostgreSQL Errors**       |
+| Unique Constraint           | `23505` (keys_unique_per_project)                | 409         | "Key already exists in project"                                                   | `{ constraint: "keys_unique_per_project" }`          | `createDatabaseErrorResponse`                 |
+| Check Constraint            | `23514`                                          | 400         | "Invalid field value"                                                             | `{ constraint: error.details }`                      | `createDatabaseErrorResponse`                 |
+| Foreign Key Violation       | `23503` (keys_project_id_fkey)                   | 400         | "Invalid project_id"                                                              | `{ constraint: "foreign_key" }`                      | `createDatabaseErrorResponse`                 |
+| **Trigger Violations**      |
+| Prefix Validation           | RAISE EXCEPTION "must start with project prefix" | 400         | "Key must start with project prefix"                                              | `{ field: "p_full_key" }`                            | `createDatabaseErrorResponse`                 |
+| Default Locale Value        | RAISE EXCEPTION "cannot be NULL or empty"        | 400         | "Default locale value cannot be empty"                                            | `{ field: "p_default_value" }`                       | `createDatabaseErrorResponse`                 |
+| **RPC Authorization**       |
+| Unauthenticated             | `v_owner_user_id IS NULL`                        | 401         | "Authentication required"                                                         | -                                                    | RPC function (RAISE EXCEPTION)                |
+| Project Not Found           | `v_default_locale IS NULL`                       | 403         | "Project not found or access denied"                                              | -                                                    | RPC function (RAISE EXCEPTION)                |
+| Locale Not in Project       | Empty result from JOIN                           | 403         | "Project not found, access denied, or locale does not exist in project"           | -                                                    | `list_keys_per_language_view` RPC             |
+| **RLS Policy Denial**       |
+| Ownership Violation         | Empty result set                                 | 403         | "Project not owned by user"                                                       | -                                                    | `createDatabaseErrorResponse` (message match) |
+| **Client-Side Validation**  |
+| Invalid UUID                | Zod parse error                                  | 400         | "Invalid key ID format" / "Invalid project ID format"                             | `{ field: "keyId", constraint: "uuid" }`             | QueryClient error handler                     |
+| Invalid Key Format          | Zod parse error                                  | 400         | "Key can only contain lowercase letters, numbers, dots, underscores, and hyphens" | `{ field: "p_full_key", constraint: "regex" }`       | QueryClient error handler                     |
+| Consecutive Dots            | Zod refine error                                 | 400         | "Key cannot contain consecutive dots"                                             | `{ field: "p_full_key", constraint: "custom" }`      | QueryClient error handler                     |
+| Trailing Dot                | Zod refine error                                 | 400         | "Key cannot end with a dot"                                                       | `{ field: "p_full_key", constraint: "custom" }`      | QueryClient error handler                     |
+| Empty Value (Default)       | Zod min error                                    | 400         | "Value cannot be empty"                                                           | `{ field: "p_default_value", constraint: "min" }`    | QueryClient error handler                     |
+| Value Too Long              | Zod max error                                    | 400         | "Value must be at most 250 characters"                                            | `{ field: "p_default_value", constraint: "max" }`    | QueryClient error handler                     |
+| Value with Newline          | Zod refine error                                 | 400         | "Value cannot contain newlines"                                                   | `{ field: "p_default_value", constraint: "custom" }` | QueryClient error handler                     |
+| Missing Required Param      | Zod parse error                                  | 400         | "Locale parameter is required"                                                    | `{ field: "locale", constraint: "required" }`        | QueryClient error handler                     |
+| Invalid Pagination          | Zod parse error                                  | 400         | "Limit must be between 1 and 100"                                                 | `{ field: "limit", constraint: "max" }`              | QueryClient error handler                     |
+| **Resource Not Found**      |
+| Delete: No Rows Affected    | `count === 0`                                    | 404         | "Key not found or access denied"                                                  | -                                                    | Hook logic (`useDeleteKey`)                   |
+| **Generic Database Errors** |
+| Connection Failure          | Network error                                    | 500         | "Database operation failed"                                                       | `{ original: error }`                                | `createDatabaseErrorResponse`                 |
+| Unknown PostgreSQL Error    | Unknown error code                               | 500         | "An unexpected error occurred"                                                    | `{ original: error }`                                | `createDatabaseErrorResponse`                 |
+| RPC Execution Error         | Unhandled RAISE EXCEPTION                        | 500         | "Failed to [create/delete] key"                                                   | -                                                    | `createDatabaseErrorResponse`                 |
+| Empty Response              | `!data` after RPC                                | 500         | "No data returned from server"                                                    | -                                                    | Hook logic                                    |
+
+**Notes:**
+
+- Zod validation errors are converted to ApiErrorResponse format by the global QueryClient error handler
+- `createDatabaseErrorResponse` handles PostgreSQL-specific errors and maps them to appropriate HTTP codes
+- RPC functions perform authorization checks and throw exceptions before executing queries
+- RLS policies provide defense-in-depth but errors appear as empty result sets (interpreted as 403)
 
 ### 7.1 Client-Side Validation Errors (400)
 
@@ -693,7 +773,7 @@ if (error) {
 
 **Pagination:**
 
-- Use `limit` and `offset` for cursor-based pagination
+- Use `limit` and `offset` for offset-based pagination
 - Default limit of 50 balances UX and performance
 - Max limit of 100 prevents excessive data transfer
 
@@ -811,7 +891,7 @@ export function createDatabaseErrorResponse(
   if (error.message.includes('must start with project prefix')) {
     return createApiErrorResponse(400, 'Key must start with project prefix');
   }
-  if (error.message.includes('cannot be empty for default locale')) {
+  if (error.message.includes('cannot be NULL or empty') || error.message.toLowerCase().includes('default_locale')) {
     return createApiErrorResponse(400, 'Default locale value cannot be empty');
   }
 
@@ -925,13 +1005,13 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
 ```typescript
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
-import type { ApiErrorResponse, KeyPerLanguageViewListResponse, ListKeysPerLanguageViewParams } from '@/shared/types';
+import type { ApiErrorResponse, KeyPerLanguageViewListResponse, ListKeysPerLanguageParams } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createDatabaseErrorResponse } from '../keys.errors';
 import { keysKeys } from '../keys.keys';
 import { keyPerLanguageViewResponseSchema, listKeysPerLanguageViewSchema } from '../keys.schemas';
 
-export function useKeysPerLanguageView(params: ListKeysPerLanguageViewParams) {
+export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   const supabase = useSupabase();
 
   return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
@@ -1002,7 +1082,9 @@ export function useCreateKey(projectId: string) {
       const rpcParams = createKeySchema.parse(keyData);
 
       // Call RPC function to create key with default value
-      const { data, error } = await supabase.rpc('create_key_with_value', rpcParams).maybeSingle();
+      // RPC returns TABLE(key_id uuid), PostgREST wraps in array
+      // .single() extracts first element and enforces exactly 1 row returned
+      const { data, error } = await supabase.rpc('create_key_with_value', rpcParams).single();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateKey', 'Failed to create key');
@@ -1012,7 +1094,7 @@ export function useCreateKey(projectId: string) {
         throw createApiErrorResponse(500, 'No data returned from server');
       }
 
-      // Runtime validation of response data
+      // Runtime validation of response data (already unwrapped by .single())
       const validatedResponse = createKeyResponseSchema.parse(data);
       return validatedResponse;
     },
@@ -1042,11 +1124,13 @@ export function useDeleteKey(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, ApiErrorResponse, string>({
+  return useMutation<void, ApiErrorResponse, string>({
     mutationFn: async (keyId) => {
       // Validate key ID
       const validatedId = keyIdSchema.parse(keyId);
 
+      // Supabase returns { count, error } not HTTP 204
+      // We normalize to void (equivalent to 204 No Content semantics)
       const { count, error } = await supabase.from('keys').delete().eq('id', validatedId);
 
       if (error) {
@@ -1056,6 +1140,8 @@ export function useDeleteKey(projectId: string) {
       if (count === 0) {
         throw createApiErrorResponse(404, 'Key not found or access denied');
       }
+
+      // Return void (no content) to match REST 204 semantics
     },
     onSuccess: (_, keyId) => {
       // Remove from cache
@@ -1106,7 +1192,7 @@ export { useKeysPerLanguageView } from './useKeysPerLanguageView/useKeysPerLangu
 
 Test scenarios:
 
-- Successful list fetch with default params (verify metadata: start=0, end=0, total=1)
+- Successful list fetch with default-locale values (verify metadata: start=0, end=0, total=1)
 - Successful list fetch with custom pagination (verify metadata: start=20, end=20, total=50)
 - Successful list fetch with search filter
 - Successful list fetch with missing_only filter
@@ -1114,31 +1200,41 @@ Test scenarios:
 - Validation error for invalid params (invalid project_id, limit > 100)
 - Authorization error (403)
 - Database error handling
+- **Edge case: limit = 0**
+- **Edge case: offset > total count**
+- **Performance test: large dataset**
 
 **7.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.test.ts`:**
 
 Test scenarios:
 
-- Successful list fetch with all required params
+- Successful list fetch with required parameters
 - Successful list fetch with search filter
 - Successful list fetch with missing_only filter
+- Verify fields: `value` can be null, `updated_by_user_id` can be null, `updated_source` ∈ {'user','system'}
 - Validation error for missing locale
 - Validation error for invalid locale format
 - Empty results for non-existent locale
 - Authorization error (403)
 - Database error handling
+- **Invalid locale format**
+- **Locale not in project**
+- **Empty project**
 
 **7.3 Create `src/features/keys/api/useCreateKey/useCreateKey.test.ts`:**
 
 Test scenarios:
 
 - Successful key creation
-- Validation error (invalid key format, consecutive dots, trailing dot)
+- Validation error (invalid key format, consecutive dots, trailing dot) — aligned with Zod from section 3.2
 - Validation error (empty value, value too long, value with newlines)
 - Duplicate key conflict (409)
-- Prefix mismatch error (400)
+- Prefix mismatch error (400) — match trigger message (`default_locale` / `cannot be NULL or empty`)
 - Authorization error (403)
 - Database error
+- **Concurrent key creation**
+- **Prefix validation edge cases**
+- **Value trimming**
 
 **7.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.test.ts`:**
 
@@ -1148,3 +1244,7 @@ Test scenarios:
 - Invalid UUID format
 - Key not found (404)
 - Verify cache invalidation (all list caches)
+- **Cascade delete verification**
+- **Cache invalidation**
+
+Note: At this stage we only update descriptions and test requirements in the plan; test implementations are not added.

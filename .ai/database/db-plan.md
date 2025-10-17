@@ -503,7 +503,7 @@ CREATE OR REPLACE FUNCTION create_key_with_value(
   p_full_key VARCHAR(256),
   p_default_value VARCHAR(250)
 )
-RETURNS UUID
+RETURNS JSON
 SECURITY DEFINER
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -527,29 +527,137 @@ BEGIN
   INSERT INTO translations (project_id, key_id, locale, value, updated_at, updated_source, updated_by_user_id)
   VALUES (p_project_id, v_key_id, v_default_locale, p_default_value, now(), 'user', auth.uid());
 
-  RETURN v_key_id;
+  RETURN json_build_object('key_id', v_key_id);
 END;
 $$;
 
-COMMENT ON FUNCTION create_key_with_value IS 'Atomically creates key with default locale value; fan-out to other locales via trigger';
+COMMENT ON FUNCTION create_key_with_value IS 'Creates key with default locale value and returns single object { key_id }';
+```
+
+### List Keys (Default Language View)
+
+```sql
+CREATE OR REPLACE FUNCTION list_keys_default_view(
+  p_project_id UUID,
+  p_search TEXT DEFAULT NULL,
+  p_missing_only BOOLEAN DEFAULT FALSE,
+  p_limit INT DEFAULT 50,
+  p_offset INT DEFAULT 0
+)
+RETURNS TABLE (
+  id UUID,
+  full_key VARCHAR(256),
+  created_at TIMESTAMPTZ,
+  value VARCHAR(250),
+  missing_count INT
+)
+LANGUAGE SQL
+STABLE
+AS $$
+  WITH default_locale AS (
+    SELECT default_locale FROM projects WHERE id = p_project_id
+  )
+  SELECT
+    k.id,
+    k.full_key,
+    k.created_at,
+    t.value,
+    (
+      SELECT COUNT(*) FROM translations t2
+      WHERE t2.key_id = k.id AND t2.value IS NULL
+    ) AS missing_count
+  FROM keys k
+  JOIN translations t
+    ON t.key_id = k.id
+   AND t.project_id = k.project_id
+   AND t.locale = (SELECT default_locale FROM default_locale)
+  WHERE k.project_id = p_project_id
+    AND (p_search IS NULL OR k.full_key ILIKE ('%' || p_search || '%'))
+    AND (NOT p_missing_only OR (
+      (
+        SELECT COUNT(*) FROM translations t3
+        WHERE t3.key_id = k.id AND t3.value IS NULL
+      ) > 0
+    ))
+  ORDER BY k.full_key ASC
+  LIMIT p_limit OFFSET p_offset
+$$;
+
+COMMENT ON FUNCTION list_keys_default_view IS
+  'List keys with default-locale values and missing counts. ' ||
+  'Authorization: RLS policies on projects table enforce ownership via JOIN. ' ||
+  'Locale validation not needed: default_locale is guaranteed to exist (foreign key constraint).';
+```
+
+### List Keys (Per-Language View)
+
+```sql
+CREATE OR REPLACE FUNCTION list_keys_per_language_view(
+  p_project_id UUID,
+  p_locale locale_code,
+  p_search TEXT DEFAULT NULL,
+  p_missing_only BOOLEAN DEFAULT FALSE,
+  p_limit INT DEFAULT 50,
+  p_offset INT DEFAULT 0
+)
+RETURNS TABLE (
+  key_id UUID,
+  full_key VARCHAR(256),
+  value VARCHAR(250),
+  is_machine_translated BOOLEAN,
+  updated_at TIMESTAMPTZ,
+  updated_source update_source_type,
+  updated_by_user_id UUID
+)
+LANGUAGE SQL
+STABLE
+AS $$
+  SELECT
+    k.id AS key_id,
+    k.full_key,
+    t.value,
+    t.is_machine_translated,
+    t.updated_at,
+    t.updated_source,
+    t.updated_by_user_id
+  FROM keys k
+  JOIN translations t
+    ON t.key_id = k.id
+   AND t.project_id = k.project_id
+   AND t.locale = p_locale
+  WHERE k.project_id = p_project_id
+    AND (p_search IS NULL OR k.full_key ILIKE ('%' || p_search || '%'))
+    AND (NOT p_missing_only OR t.value IS NULL)
+  ORDER BY k.full_key ASC
+  LIMIT p_limit OFFSET p_offset
+$$;
+
+COMMENT ON FUNCTION list_keys_per_language_view IS 'List keys with values for selected locale and metadata';
 ```
 
 ## Data Constraints Summary
 
-| Table                | Constraint       | Rule                                                                              |
-| -------------------- | ---------------- | --------------------------------------------------------------------------------- |
-| **projects**         | `prefix`         | 2-4 chars, `[a-z0-9._-]`, no trailing dot, unique per owner, immutable            |
-| **projects**         | `default_locale` | Immutable, must exist in `project_locales`, cannot be deleted                     |
-| **projects**         | `name`           | CITEXT, unique per owner                                                          |
-| **project_locales**  | `locale`         | BCP-47 `ll` or `ll-CC`, normalized via trigger                                    |
-| **project_locales**  | uniqueness       | `(project_id, locale)`                                                            |
-| **keys**             | `full_key`       | Lowercase, `[a-z0-9._-]`, no `..` or trailing dot, must start with `prefix + '.'` |
-| **keys**             | uniqueness       | `(project_id, full_key)`                                                          |
-| **translations**     | `value`          | Max 250 chars, no newline, NULL = missing, NOT NULL for default_locale            |
-| **translations**     | metadata         | `is_machine_translated`, `updated_source`, `updated_by_user_id`                   |
-| **translation_jobs** | active limit     | Only one `pending` or `running` job per project (enforced via trigger)            |
-| **translation_jobs** | `source_locale`  | Must equal project's `default_locale` (enforced via trigger)                      |
-| **translation_jobs** | `target_locale`  | Cannot equal `source_locale` (CHECK constraint)                                   |
+| Table                | Constraint       | Rule                                                                                                                                                                 |
+| -------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **projects**         | `prefix`         | 2-4 chars, `[a-z0-9._-]`, no trailing dot, unique per owner, immutable<br>**Examples:** `app`, `ui`, `web` (recommended); `v2` (allowed but discouraged - see notes) |
+| **projects**         | `default_locale` | Immutable, must exist in `project_locales`, cannot be deleted                                                                                                        |
+| **projects**         | `name`           | CITEXT, unique per owner                                                                                                                                             |
+| **project_locales**  | `locale`         | BCP-47 `ll` or `ll-CC`, normalized via trigger                                                                                                                       |
+| **project_locales**  | uniqueness       | `(project_id, locale)`                                                                                                                                               |
+| **keys**             | `full_key`       | Lowercase, `[a-z0-9._-]`, **no `..`** or trailing dot, must start with `prefix + '.'`                                                                                |
+| **keys**             | uniqueness       | `(project_id, full_key)`                                                                                                                                             |
+| **translations**     | `value`          | Max 250 chars, no newline, NULL = missing, NOT NULL for default_locale                                                                                               |
+| **translations**     | metadata         | `is_machine_translated`, `updated_source`, `updated_by_user_id`<br>`updated_at` auto-set by trigger                                                                  |
+| **translation_jobs** | active limit     | Only one `pending` or `running` job per project (enforced via trigger)                                                                                               |
+| **translation_jobs** | `source_locale`  | Must equal project's `default_locale` (enforced via trigger)                                                                                                         |
+| **translation_jobs** | `target_locale`  | Cannot equal `source_locale` (CHECK constraint)                                                                                                                      |
+
+**Prefix Guidance:**
+
+- **Recommended:** Use simple alphanumeric prefixes without dots (e.g., `app`, `ui`, `web`, `api`)
+- **Allowed but discouraged:** Dots inside prefix (e.g., `app.v2`) may cause ambiguity with dotted key notation
+- **Rationale for allowing dots:** Supports versioned namespaces (e.g., `v2.home.title`), but simple prefixes are clearer
+- **Example ambiguity:** With prefix `app.v2`, key `app.v2.home.title` has ambiguous namespace (`app` or `app.v2`?)
 
 ## Query Patterns and Optimizations
 

@@ -73,7 +73,9 @@ export interface Database {
           p_full_key: string;
           p_project_id: string;
         };
-        Returns: string;
+        Returns: {
+          key_id: string;
+        }[];
       };
       create_next_telemetry_partition: {
         Args: Record<PropertyKey, never>;
@@ -116,6 +118,41 @@ export interface Database {
       gtrgm_out: {
         Args: { '': unknown };
         Returns: unknown;
+      };
+      list_keys_default_view: {
+        Args: {
+          p_limit?: number;
+          p_missing_only?: boolean;
+          p_offset?: number;
+          p_project_id: string;
+          p_search?: string;
+        };
+        Returns: {
+          created_at: string;
+          full_key: string;
+          id: string;
+          missing_count: number;
+          value: string;
+        }[];
+      };
+      list_keys_per_language_view: {
+        Args: {
+          p_limit?: number;
+          p_locale: unknown;
+          p_missing_only?: boolean;
+          p_offset?: number;
+          p_project_id: string;
+          p_search?: string;
+        };
+        Returns: {
+          full_key: string;
+          is_machine_translated: boolean;
+          key_id: string;
+          updated_at: string;
+          updated_by_user_id: string;
+          updated_source: Database['public']['Enums']['update_source_type'];
+          value: string;
+        }[];
       };
       list_project_locales_with_default: {
         Args: { p_project_id: string };

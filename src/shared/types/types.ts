@@ -62,10 +62,11 @@ export interface ConflictErrorResponse extends ApiErrorResponse {
 /**
  * Create Key with Value Request - POST /rest/v1/rpc/create_key_with_value
  */
+// UI-level request (without RPC parameter prefixes)
 export interface CreateKeyRequest {
-  p_default_value: string;
-  p_full_key: string;
-  p_project_id: string;
+  default_value: string;
+  full_key: string;
+  project_id: string;
 }
 /**
  * Create Key Response - RPC function result
@@ -74,7 +75,8 @@ export interface CreateKeyResponse {
   key_id: string;
 }
 
-export interface CreateKeyWithValueArgs {
+// RPC args for create_key_with_value (with p_ prefixes)
+export interface CreateKeyRpcArgs {
   p_default_value: string;
   p_full_key: string;
   p_project_id: string;
@@ -83,6 +85,7 @@ export interface CreateKeyWithValueArgs {
  * Create Project Locale Request - POST /rest/v1/project_locales
  */
 export type CreateProjectLocaleRequest = Pick<ProjectLocaleInsert, 'label' | 'locale' | 'project_id'>;
+
 /**
  * Create Project Request - POST /rest/v1/projects or RPC create_project_with_default_locale
  */
@@ -92,7 +95,6 @@ export interface CreateProjectRequest {
   name: string;
   prefix: string;
 }
-
 /**
  * Create Project with Default Locale Request - RPC function
  */
@@ -103,6 +105,7 @@ export interface CreateProjectWithDefaultLocaleRequest extends CreateProjectRequ
  * Create Telemetry Event Request - POST /rest/v1/telemetry_events
  */
 export type CreateTelemetryEventRequest = Pick<TelemetryEventInsert, 'event_name' | 'project_id' | 'properties'>;
+
 /**
  * Create Translation Job Request - POST /functions/v1/translate
  */
@@ -113,7 +116,6 @@ export interface CreateTranslationJobRequest {
   project_id: string;
   target_locale: string;
 }
-
 /**
  * Create Translation Job Response - Edge Function result
  */
@@ -123,23 +125,23 @@ export interface CreateTranslationJobResponse {
   status: JobStatus;
 }
 export type EventType = Enums<'event_type'>;
+
 /**
  * Exported Translations - flat JSON object with dotted keys
  * Format: { "app.home.title": "Welcome Home", ... }
  */
 export type ExportedTranslations = Record<string, string>;
-
 /**
  * Export Translations Response - contains multiple locale files
  */
 export type ExportTranslationsData = Record<string, ExportedTranslations>;
 export type ItemStatus = Enums<'item_status'>;
-export type JobStatus = Enums<'job_status'>;
 
 // ============================================================================
 // Enum Types
 // ============================================================================
 
+export type JobStatus = Enums<'job_status'>;
 /**
  * Key entity - represents a translation key
  */
@@ -149,24 +151,28 @@ export interface KeyCreatedProperties {
   key_count: number;
 }
 /**
- * Key Default View - key with default locale value and missing count
- * Used by list_keys_default_view RPC function
+ * Key Per Language View - key with translation metadata for specific locale
+ * Used by list_keys_per_language_view RPC function
  */
-export interface KeyDefaultView {
+// Wrapper responses used by hooks (client-level API)
+export interface KeyDefaultViewListResponse {
+  data: KeyDefaultViewResponse[];
+  metadata: PaginationMetadata;
+}
+
+// Response DTOs for RPC functions (matching implementation plan)
+export interface KeyDefaultViewResponse {
   created_at: string;
   full_key: string;
   id: string;
   missing_count: number;
-  value: null | string;
+  value: string;
 }
+
 export type KeyInsert = TablesInsert<'keys'>;
-/**
- * Key Per Language View - key with translation metadata for specific locale
- * Used by list_keys_per_language_view RPC function
- */
+
 export interface KeyPerLanguageView {
   full_key: string;
-  id: string;
   is_machine_translated: boolean;
   key_id: string;
   updated_at: string;
@@ -175,9 +181,24 @@ export interface KeyPerLanguageView {
   value: null | string;
 }
 
+export interface KeyPerLanguageViewListResponse {
+  data: KeyPerLanguageView[];
+  metadata: PaginationMetadata;
+}
+
 // ============================================================================
 // Authentication DTOs (Section 2 of API Plan)
 // ============================================================================
+
+export interface KeyPerLanguageViewResponse {
+  full_key: string;
+  is_machine_translated: boolean;
+  key_id: string;
+  updated_at: string;
+  updated_by_user_id: null | string;
+  updated_source: UpdateSourceType;
+  value: null | string;
+}
 
 /**
  * Key Response - standard key representation
@@ -202,16 +223,24 @@ export interface ListKeysDefaultViewArgs {
 /**
  * List Keys Query Parameters - used by keys list views
  */
-export interface ListKeysParams extends PaginationParams {
+export interface ListKeysDefaultViewParams extends PaginationParams {
   missing_only?: boolean;
   project_id: string;
   search?: string;
 }
 
+export interface ListKeysDefaultViewRpcArgs {
+  p_limit?: number;
+  p_missing_only?: boolean;
+  p_offset?: number;
+  p_project_id: string;
+  p_search?: string;
+}
+
 /**
  * List Keys Per Language Query Parameters
  */
-export interface ListKeysPerLanguageParams extends ListKeysParams {
+export interface ListKeysPerLanguageParams extends ListKeysDefaultViewParams {
   locale: string;
 }
 
@@ -222,6 +251,15 @@ export interface ListKeysPerLanguageViewArgs {
   offset?: null | number;
   project_id: string;
   search?: null | string;
+}
+
+export interface ListKeysPerLanguageViewRpcArgs {
+  p_limit?: number;
+  p_locale: string;
+  p_missing_only?: boolean;
+  p_offset?: number;
+  p_project_id: string;
+  p_search?: string;
 }
 
 export interface ListProjectLocalesWithDefaultArgs {

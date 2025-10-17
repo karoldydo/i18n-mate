@@ -12,58 +12,49 @@ export { Constants } from './database.types';
 
 // Re-export all DTO and Command Model types
 export type {
-  // Helper Types
   ApiErrorResponse,
-  // Error Response Types
   ApiResponse,
   ApiResult,
-  // Translation DTOs
   BulkUpdateTranslationRequest,
-  // Translation Job DTOs
   CancelTranslationJobRequest,
   ConflictErrorResponse,
-  // Key DTOs
   CreateKeyRequest,
   CreateKeyResponse,
-  // RPC Function Types
-  CreateKeyWithValueArgs,
-  // Project Locale DTOs
+  CreateKeyRpcArgs,
   CreateProjectLocaleRequest,
-  // Project DTOs
   CreateProjectRequest,
   CreateProjectWithDefaultLocaleRequest,
-  // Telemetry DTOs
   CreateTelemetryEventRequest,
   CreateTranslationJobRequest,
   CreateTranslationJobResponse,
-  // Enum Types
   EventType,
-  // Export DTOs
   ExportedTranslations,
   ExportTranslationsData,
   ItemStatus,
   JobStatus,
-  // Base Entity Types
   Key,
   KeyCreatedProperties,
-  KeyDefaultView,
+  KeyDefaultViewListResponse,
+  KeyDefaultViewResponse,
   KeyInsert,
   KeyPerLanguageView,
+  KeyPerLanguageViewListResponse,
+  KeyPerLanguageViewResponse,
   KeyResponse,
   KeyUpdate,
   LanguageAddedProperties,
   ListKeysDefaultViewArgs,
-  // Pagination & Query Parameters
-  ListKeysParams,
+  ListKeysDefaultViewParams,
+  ListKeysDefaultViewRpcArgs,
   ListKeysPerLanguageParams,
   ListKeysPerLanguageViewArgs,
+  ListKeysPerLanguageViewRpcArgs,
   ListProjectLocalesWithDefaultArgs,
   ListProjectsParams,
   ListProjectsWithCountsArgs,
   ListTranslationJobsParams,
   PaginationMetadata,
   PaginationParams,
-  // Authentication DTOs
   PasswordResetRequest,
   PasswordResetResponse,
   Project,

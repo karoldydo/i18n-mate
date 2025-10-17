@@ -17,7 +17,9 @@ Definitions:
 
 - **Project:** a logical container for translations. Each project has an immutable default language and a **2–4 character prefix unique within the user scope**.
 - **Language (locale):** an identifier compliant with the BCP-47 standard (e.g., en, en-US, pl). **The MVP applies normalization only for the language/region pair**: language lowercase and REGION UPPERCASE. **Other sub-tags (script/variant/extension) are rejected.**
-- **Key:** `full key = prefix + "." + name`; the prefix cannot end with a dot, and the name cannot start with a dot; format `[a-z0-9._-]`, no spaces, no double dots (".."), no trailing dot. **The full key is unique within the project.** **A dot is allowed inside the prefix** (not at the end).
+- **Key:** `full key = prefix + "." + name`; the prefix cannot end with a dot, and the name cannot start with a dot; format `[a-z0-9._-]`, no spaces, **no consecutive dots ("..")**, no trailing dot, maximum 256 characters. **The full key is unique within the project.** **A dot is allowed inside the prefix** (not at the end).
+  - **Prefix Examples:** `app`, `ui`, `web`, `api` (recommended); `app.v2` (allowed but may cause ambiguity - use sparingly)
+  - **Rationale for dots in prefix:** Allows versioned or namespaced prefixes (e.g., `v2.home.title`), but developers should prefer simple prefixes to avoid confusion with dotted key notation.
 - **Translation value:** text up to 250 characters, with no newline characters. Lack of a value means missing **(with the exception of the default language — there the value cannot be empty)**.
 - **LLM translation process:** select the scope (a single key, selected keys, all keys), confirm the overwrite warning, and a modal presenting the translation progress, after which a toast with the result appears. **The target language cannot be the project's default language.**
 
@@ -64,7 +66,7 @@ User assumptions: no roles in the MVP; the target user is a frontend developer m
 ### 3.4 Keys and Translation Values
 
 - Add keys only in the default language; one at a time; no import and no rename.
-- Key format and validation: `[a-z0-9._-]`, no spaces, **no double dots (".."), no trailing dot**; the key includes the project's prefix.
+- Key format and validation: `[a-z0-9._-]`, no spaces, **no double dots (".."), no trailing dot**, maximum 256 characters; the key includes the project's prefix.
 - **Uniqueness:** the full key (prefix + "." + name) is unique within the project.
 - Delete a key only in the default language; cascades to delete values in all languages; the operation is irreversible; it is possible to immediately reuse the same name.
 - Values: limit of 250 characters, no newline, empty = missing **(in the default language the value cannot be empty)**; inline editing with autosave; character counter.
@@ -80,8 +82,9 @@ User assumptions: no roles in the MVP; the target user is a frontend developer m
 - After confirmation, a modal opens with a progress bar and information about the ongoing translation.
 - Completion of the translation is confirmed by a success toast; errors result in an error toast.
 - **Metadata for each value (after save):**
-  - **LLM:** `isMachineTranslated=true`, `updatedAt` set to the save time, `updatedBy=system`.
-  - **Manual edit (any language, including default):** `isMachineTranslated=false`, `updatedAt` set to the save time, `updatedBy=<user>`.
+  - **LLM:** `isMachineTranslated=true`, `updatedAt` auto-updated by database trigger, `updatedBy=system`.
+  - **Manual edit (any language, including default):** `isMachineTranslated=false`, `updatedAt` auto-updated by database trigger, `updatedBy=<user>`.
+  - **Note:** The `updatedAt` field is automatically set by the database trigger `update_translations_updated_at` on any UPDATE operation, ensuring accurate timestamps without application-level logic.
 
 ### 3.6 Translation Export
 
@@ -280,6 +283,7 @@ Acceptance criteria:
 
 - Validation of key format and uniqueness; **the full key is unique within the project**; it includes the project prefix.
 - **Disallow `..` and a trailing dot in the key name.**
+- **Maximum key length: 256 characters.**
 - Value up to 250 characters, no newline; **empty not allowed in the default language**.
 - After adding, the key exists in all languages (missing outside the default).
 - **Reference:** 3.4
@@ -413,3 +417,4 @@ Acceptance criteria:
 - Operational: LLM translation effectiveness (success rate, average time), number of keys/exports, API errors (429/5xx), average autosave time.
 - **Finding:** the `translation_completed` event is logged for all modes: "all", "selected", "single key".
 - **Data source:** events are stored in the **application's internal telemetry**; no external analytics API.
+- **Event Collection:** Telemetry events are emitted via database triggers immediately after entity creation/modification (e.g., `emit_key_created_event_trigger` on keys insert). This ensures atomic event capture and eliminates the need for application-level event tracking.
