@@ -13,11 +13,14 @@ import { projectIdSchema } from '../projects.schemas';
 /**
  * Delete a project by ID
  *
- * Removes the project record. Associated data (locales, keys, translations)
- * are handled by database constraints/triggers. On success, related caches
- * are cleared and the project list is invalidated.
+ * Removes the project record with cascading deletion of related data (locales,
+ * keys, translations) handled by database constraints. Operation is irreversible.
+ * On success, related caches are cleared and the project list is invalidated.
  *
- * @returns TanStack Query mutation hook
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during deletion
+ * @returns TanStack Query mutation hook for deleting projects
  */
 export function useDeleteProject() {
   const supabase = useSupabase();

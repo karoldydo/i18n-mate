@@ -248,6 +248,12 @@ export const projectLocaleWithDefaultSchema = projectLocaleResponseSchema.extend
 
 **Success Response (201 Created):**
 
+**Response Format Guidelines:**
+
+- **Single object format**: Creation endpoints return the newly created object directly
+- PostgREST returns a single object for INSERT operations with `.single()` or when using `Accept: application/vnd.pgrst.object+json` header
+- No wrapper object for creation responses (only list endpoints use `{ data, metadata }` format)
+
 ```json
 {
   "created_at": "2025-01-15T10:05:00Z",
@@ -292,6 +298,8 @@ export const projectLocaleWithDefaultSchema = projectLocaleResponseSchema.extend
 ### 4.3 Update Locale Label
 
 **Success Response (200 OK):**
+
+Update operations return the updated single object (no array wrapper):
 
 ```json
 {
@@ -417,30 +425,27 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 7. Database enforces unique constraint on `(project_id, locale)`
 8. On conflict, PostgreSQL returns unique violation error → hook returns 409
 9. If successful, database trigger `fanout_translation_locale_insert_trigger` executes:
-
-- Creates translation records for all existing keys in the project
-- Sets `value = NULL` (missing translation)
-- Sets `updated_source = 'user'`
-
+   - Creates translation records for all existing keys in the project
+   - Sets `value = NULL` (missing translation)
+   - Sets `updated_source = 'user'`
 10. Database trigger `emit_language_added_event_trigger` emits telemetry event:
+    - Event name: `language_added`
+    - Properties: `locale` (added locale code) and `locale_count` (total locales in project)
+    - Used for KPI tracking: projects with 2+ languages after 7 days from creation
 
-- Event name: `language_added`
-- Properties: `locale` (added locale code) and `locale_count` (total locales in project)
-- Used for KPI tracking: projects with 2+ languages after 7 days from creation
+    **Example Telemetry Event:**
 
-  **Example Telemetry Event:**
-
-  ```json
-  {
-    "created_at": "2025-01-15T10:05:00Z",
-    "event_name": "language_added",
-    "project_id": "550e8400-e29b-41d4-a716-446655440000",
-    "properties": {
-      "locale": "pl",
-      "locale_count": 2
+    ```json
+    {
+      "created_at": "2025-01-15T10:05:00Z",
+      "event_name": "language_added",
+      "project_id": "550e8400-e29b-41d4-a716-446655440000",
+      "properties": {
+        "locale": "pl",
+        "locale_count": 2
+      }
     }
-  }
-  ```
+    ```
 
 11. On success, new locale data is returned
 12. TanStack Query invalidates project locales cache
@@ -1056,6 +1061,13 @@ export const localesKeys = {
 
 ### Step 6: Create TanStack Query Hooks
 
+**Implementation Notes:**
+
+- All hooks follow TanStack Query best practices with proper error handling
+- Use optimistic updates for better UX in mutation hooks
+- Implement proper cache invalidation strategies
+- Include TypeScript generics for type safety and locale normalization
+
 **6.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.ts`:**
 
 ```typescript
@@ -1304,6 +1316,15 @@ export { useProjectLocales } from './useProjectLocales/useProjectLocales';
 - Each hook is exported from its subdirectory with full path for clarity
 
 ### Step 8: Write Unit Tests
+
+**Testing Strategy:**
+
+- Use Vitest with Testing Library for comprehensive test coverage
+- Co-locate tests with source files (`Hook.test.ts` next to `Hook.ts`)
+- Mock Supabase client using test utilities from `src/test/`
+- Test both success and error scenarios with locale-specific edge cases
+- Verify cache behavior, RPC functionality, and locale normalization
+- Aim for 90% coverage threshold as per project requirements
 
 **8.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.test.ts`:**
 

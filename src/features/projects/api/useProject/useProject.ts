@@ -13,12 +13,15 @@ import { projectIdSchema, projectResponseSchema } from '../projects.schemas';
 /**
  * Fetch a single project by ID
  *
- * Queries the `projects` table for the given ID and validates the response
- * against the runtime schema. Returns 404-style error if the project is not
- * found or the user has no access.
+ * Queries the `projects` table for the given ID with RLS-based access control
+ * and validates the response against the runtime schema. Returns 404-style error
+ * if the project is not found or the user has no access.
  *
- * @param projectId - UUID of the project
- * @returns TanStack Query result with the project
+ * @param projectId - UUID of the project to fetch
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with the project data
  */
 export function useProject(projectId: string) {
   const supabase = useSupabase();

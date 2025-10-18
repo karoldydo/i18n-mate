@@ -138,15 +138,12 @@ export type ProjectWithCounts = ProjectResponse & {
 };
 
 // Request DTOs
-export interface CreateProjectRequest {
+export interface CreateProjectWithDefaultLocaleRequest {
   default_locale: string;
+  default_locale_label: string;
   description?: null | string;
   name: string;
   prefix: string;
-}
-
-export interface CreateProjectWithDefaultLocaleRequest extends CreateProjectRequest {
-  default_locale_label: string;
 }
 
 export type UpdateProjectRequest = Pick<ProjectUpdate, 'description' | 'name'>;
@@ -1096,6 +1093,13 @@ export const projectsKeys = {
 
 ### Step 6: Create TanStack Query Hooks
 
+**Implementation Notes:**
+
+- All hooks follow TanStack Query best practices with proper error handling
+- Use optimistic updates for better UX in mutation hooks
+- Implement proper cache invalidation strategies
+- Include TypeScript generics for type safety and RPC parameter handling
+
 **6.1 Create `src/features/projects/api/useProjects/useProjects.ts`:**
 
 ```typescript
@@ -1107,6 +1111,21 @@ import { createDatabaseErrorResponse } from '../projects.errors';
 import { projectsKeys } from '../projects.keys';
 import { listProjectsSchema, projectWithCountsSchema } from '../projects.schemas';
 
+/**
+ * Fetch a paginated list of projects with counts
+ *
+ * Uses the RPC function `list_projects_with_counts` with exact total counting
+ * enabled. Returns projects with aggregated locale and key counts. Data items
+ * are validated at runtime and pagination metadata is computed from input params.
+ *
+ * @param params - Optional listing parameters (limit, offset, order)
+ * @param params.limit - Items per page (1-100, default: 50)
+ * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @param params.order - Sort order (name.asc|desc, created_at.asc|desc, default: name.asc)
+ * @throws {ApiErrorResponse} 400 - Validation error (limit > 100, negative offset)
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with projects data and pagination metadata
+ */
 export function useProjects(params: ListProjectsParams = {}) {
   const supabase = useSupabase();
 
@@ -1163,6 +1182,19 @@ import { createDatabaseErrorResponse } from '../projects.errors';
 import { projectsKeys } from '../projects.keys';
 import { projectIdSchema, projectResponseSchema } from '../projects.schemas';
 
+/**
+ * Fetch a single project by ID
+ *
+ * Queries the `projects` table for the given ID with RLS-based access control
+ * and validates the response against the runtime schema. Returns 404-style error
+ * if the project is not found or the user has no access.
+ *
+ * @param projectId - UUID of the project to fetch
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with the project data
+ */
 export function useProject(projectId: string) {
   const supabase = useSupabase();
 
@@ -1207,6 +1239,19 @@ import { createDatabaseErrorResponse } from '../projects.errors';
 import { projectsKeys } from '../projects.keys';
 import { createProjectSchema, projectResponseSchema } from '../projects.schemas';
 
+/**
+ * Create a new project with a default locale
+ *
+ * Uses the RPC function `create_project_with_default_locale` to create a
+ * project and its initial default locale in a single transaction. The
+ * database enforces prefix validation and uniqueness and will normalize
+ * provided values according to schema rules.
+ *
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid prefix format, length constraints)
+ * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name or prefix for user)
+ * @throws {ApiErrorResponse} 500 - Database error or no data returned
+ * @returns TanStack Query mutation hook for creating projects
+ */
 export function useCreateProject() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
@@ -1264,6 +1309,20 @@ interface UpdateProjectContext {
   previousProject?: ProjectResponse;
 }
 
+/**
+ * Update a project's fields with optimistic UI
+ *
+ * Updates mutable project fields (name, description only). Applies optimistic
+ * updates to the project detail cache with automatic rollback on error and
+ * revalidation on settle. Immutable fields (prefix, default_locale) are blocked.
+ *
+ * @param projectId - UUID of the project to update
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, attempt to change immutable fields)
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name for user)
+ * @throws {ApiErrorResponse} 500 - Database error
+ * @returns TanStack Query mutation hook for updating projects
+ */
 export function useUpdateProject(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
@@ -1340,6 +1399,18 @@ import { createDatabaseErrorResponse } from '../projects.errors';
 import { projectsKeys } from '../projects.keys';
 import { projectIdSchema } from '../projects.schemas';
 
+/**
+ * Delete a project by ID
+ *
+ * Removes the project record with cascading deletion of related data (locales,
+ * keys, translations) handled by database constraints. Operation is irreversible.
+ * On success, related caches are cleared and the project list is invalidated.
+ *
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during deletion
+ * @returns TanStack Query mutation hook for deleting projects
+ */
 export function useDeleteProject() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
@@ -1412,6 +1483,15 @@ export { useUpdateProject } from './useUpdateProject/useUpdateProject';
 - Each hook is exported from its subdirectory with full path for clarity
 
 ### Step 8: Write Unit Tests
+
+**Testing Strategy:**
+
+- Use Vitest with Testing Library for comprehensive test coverage
+- Co-locate tests with source files (`Hook.test.ts` next to `Hook.ts`)
+- Mock Supabase client using test utilities from `src/test/`
+- Test both success and error scenarios with edge cases
+- Verify cache behavior, pagination, and RPC functionality
+- Aim for 90% coverage threshold as per project requirements
 
 **8.1 Create `src/features/projects/api/useProjects/useProjects.test.ts`:**
 

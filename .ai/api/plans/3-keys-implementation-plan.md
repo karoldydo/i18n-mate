@@ -224,8 +224,8 @@ const keyIdSchema = z.string().uuid('Invalid key ID format');
 // List Keys Default View Schema
 export const listKeysDefaultViewSchema = z.object({
   limit: z.number().int().min(1).max(KEYS_MAX_LIMIT).optional().default(KEYS_DEFAULT_LIMIT),
-  missing_only: z.boolean().optional().default(KEYS_DEFAULT_PARAMS.MISSING_ONLY),
-  offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_DEFAULT_PARAMS.OFFSET),
+  missing_only: z.boolean().optional().default(false),
+  offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_MIN_OFFSET),
   project_id: projectIdSchema,
   search: z.string().optional(),
 });
@@ -279,6 +279,13 @@ export const createKeyResponseSchema = z.object({
 
 **Success Response (200 OK):**
 
+**Response Format Guidelines:**
+
+- **List format**: List endpoints always return `{ data: [], metadata: {} }` wrapper format
+- Raw RPC returns an array of rows, client hooks wrap this into structured response
+- Metadata includes pagination info: `start`, `end`, `total` (from Supabase count)
+- Use this format for paginated results with search/filter capabilities
+
 ```json
 {
   "data": [
@@ -308,6 +315,8 @@ export const createKeyResponseSchema = z.object({
 ### 4.2 List Keys (Per-Language View)
 
 **Success Response (200 OK):**
+
+Same list format as default view - includes translation metadata for specified locale:
 
 ```json
 {
@@ -341,8 +350,15 @@ export const createKeyResponseSchema = z.object({
 
 ### 4.3 Create Key with Default Value
 
-**Raw RPC Response (200 OK):**
+**Success Response (200 OK):**
 
+**Response Format Guidelines:**
+
+- **RPC Function Response**: PostgREST wraps RPC results in arrays by default
+- **Client Hook Response**: Uses `.single()` to extract single object for consistency
+- Creation endpoints return structured data, not the full entity (only key_id for reference)
+
+**Raw RPC Response:**
 PostgREST wraps the result in an array:
 
 ```json
@@ -354,7 +370,6 @@ PostgREST wraps the result in an array:
 ```
 
 **Hook Response:**
-
 The client hook uses `.single()` to extract the first element:
 
 ```json
@@ -520,10 +535,8 @@ All error responses follow the structure: `{ data: null, error: { code, message,
    - Inserts default locale translation with `updated_by_user_id = auth.uid()`
    - Trigger `trim_translation_value_insert_trigger` auto-trims value and converts empty to NULL
    - Trigger `validate_translation_default_locale_insert_trigger` prevents NULL/empty for default locale
-
-- Trigger `fanout_translation_key_insert_trigger` creates NULL translations for all other locales
-- `key_created` telemetry event is emitted by trigger `emit_key_created_event` after insert into `keys`
-
+   - Trigger `fanout_translation_key_insert_trigger` creates NULL translations for all other locales
+   - `key_created` telemetry event is emitted by trigger `emit_key_created_event` after insert into `keys`
 7. Database enforces unique constraint on (project_id, full_key)
 8. On conflict, PostgreSQL returns unique violation error → hook returns 409
 9. On prefix mismatch, trigger raises exception → hook returns 400
@@ -1047,6 +1060,13 @@ export const keysKeys = {
 
 ### Step 6: Create TanStack Query Hooks
 
+**Implementation Notes:**
+
+- All hooks follow TanStack Query best practices with proper error handling
+- Use optimistic updates for better UX in mutation hooks
+- Implement proper cache invalidation strategies
+- Include TypeScript generics for type safety and RPC parameter handling
+
 **6.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.ts`:**
 
 ```typescript
@@ -1295,6 +1315,15 @@ export { useKeysPerLanguageView } from './useKeysPerLanguageView/useKeysPerLangu
 
 ### Step 8: Write Unit Tests
 
+**Testing Strategy:**
+
+- Use Vitest with Testing Library for comprehensive test coverage
+- Co-locate tests with source files (`Hook.test.ts` next to `Hook.ts`)
+- Mock Supabase client using test utilities from `src/test/`
+- Test both success and error scenarios with edge cases
+- Verify cache behavior, pagination, and search functionality
+- Aim for 90% coverage threshold as per project requirements
+
 **8.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.test.ts`:**
 
 Test scenarios:
@@ -1309,7 +1338,8 @@ Test scenarios:
 - Database error handling
 - **Edge case: limit = 0**
 - **Edge case: offset > total count**
-- **Performance test: large dataset**
+- **Performance test: large dataset (1000+ keys)**
+- **Edge case: special characters in search**
 
 **8.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.test.ts`:**
 
@@ -1324,9 +1354,10 @@ Test scenarios:
 - Empty results for non-existent locale
 - Authorization error (403)
 - Database error handling
-- **Invalid locale format**
+- **Invalid locale format (malformed BCP-47)**
 - **Locale not in project**
-- **Empty project**
+- **Empty project with no keys**
+- **Edge case: mixed translated/untranslated keys**
 
 **8.3 Create `src/features/keys/api/useCreateKey/useCreateKey.test.ts`:**
 
@@ -1339,9 +1370,10 @@ Test scenarios:
 - Prefix mismatch error (400) — match trigger message (`default_locale` / `cannot be NULL or empty`)
 - Authorization error (403)
 - Database error
-- **Concurrent key creation**
-- **Prefix validation edge cases**
-- **Value trimming**
+- **Concurrent key creation (race conditions)**
+- **Prefix validation edge cases (case sensitivity)**
+- **Value trimming and normalization**
+- **Edge case: Unicode characters in key names**
 
 **8.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.test.ts`:**
 
@@ -1351,7 +1383,7 @@ Test scenarios:
 - Invalid UUID format
 - Key not found (404)
 - Verify cache invalidation (all list caches)
-- **Cascade delete verification**
-- **Cache invalidation**
-
-Note: At this stage we only update descriptions and test requirements in the plan; test implementations are not added.
+- **Cascade delete verification (translations cleanup)**
+- **Cache invalidation for multiple views**
+- **Edge case: concurrent deletion attempts**
+- **Authorization edge cases**

@@ -20,11 +20,16 @@ interface UpdateProjectContext {
 /**
  * Update a project's fields with optimistic UI
  *
- * Updates mutable project fields. Applies optimistic updates to the project
- * detail cache with automatic rollback on error and revalidation on settle.
+ * Updates mutable project fields (name, description only). Applies optimistic
+ * updates to the project detail cache with automatic rollback on error and
+ * revalidation on settle. Immutable fields (prefix, default_locale) are blocked.
  *
  * @param projectId - UUID of the project to update
- * @returns TanStack Query mutation hook
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, attempt to change immutable fields)
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name for user)
+ * @throws {ApiErrorResponse} 500 - Database error
+ * @returns TanStack Query mutation hook for updating projects
  */
 export function useUpdateProject(projectId: string) {
   const supabase = useSupabase();

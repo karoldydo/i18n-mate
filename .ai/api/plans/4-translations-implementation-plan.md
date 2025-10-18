@@ -293,6 +293,8 @@ Response body:
 
 **Success Response (200 OK):**
 
+Update operations return the updated single object (no array wrapper):
+
 ```json
 {
   "is_machine_translated": false,
@@ -309,6 +311,13 @@ Response body:
 ### 4.3 Bulk Update Translations
 
 **Success Response (200 OK):**
+
+**Response Format Guidelines:**
+
+- **Bulk operations**: Return array of affected records (no wrapper)
+- Each object represents one updated translation record
+- Used for batch processing (translation jobs, bulk edits)
+- Array length matches number of successfully updated records
 
 Returns array of updated records:
 
@@ -747,6 +756,8 @@ mkdir -p src/features/translations/api
 
 Create `src/shared/constants/translations.constants.ts` with centralized constants, patterns, and utilities:
 
+**Note:** This step creates centralized constants that ensure consistency between TypeScript validation (Zod schemas) and PostgreSQL domain constraints for translations.
+
 ```typescript
 /**
  * Translations Constants and Validation Patterns
@@ -927,6 +938,13 @@ export const translationsKeys = {
 **Note:** Properties are ordered alphabetically for consistency and easier code navigation.
 
 ### Step 6: Create TanStack Query Hooks
+
+**Implementation Notes:**
+
+- All hooks follow TanStack Query best practices with proper error handling
+- Use optimistic updates for better UX in mutation hooks
+- Implement proper cache invalidation strategies
+- Include TypeScript generics for type safety
 
 **6.1 Create `src/features/translations/api/useTranslation/useTranslation.ts`:**
 
@@ -1241,16 +1259,27 @@ export type { BulkUpdateTranslationsParams } from './useBulkUpdateTranslations/u
 
 ### Step 8: Write Unit Tests
 
+**Testing Strategy:**
+
+- Use Vitest with Testing Library for all tests
+- Co-locate tests with source files (`Hook.test.ts` next to `Hook.ts`)
+- Mock Supabase client using test utilities
+- Test both success and error scenarios comprehensively
+- Verify cache behavior and optimistic updates
+- Aim for 90% coverage threshold
+
 **8.1 Create `src/features/translations/api/useTranslation/useTranslation.test.ts`:**
 
 Test scenarios:
 
 - Successful translation fetch with full metadata
-- Translation not found (returns null, not error)
+- Translation not found (returns null, not error) - **Edge case: null handling**
 - Validation error for invalid project/key/locale ID
 - Authorization error (403)
 - Database error handling
 - Cache behavior verification
+- **Performance test: multiple concurrent fetches**
+- **Edge case: malformed UUID parameters**
 
 **8.2 Create `src/features/translations/api/useUpdateTranslation/useUpdateTranslation.test.ts`:**
 
@@ -1258,22 +1287,27 @@ Test scenarios:
 
 - Successful translation update with optimistic updates
 - Optimistic locking success (with updated_at)
-- Optimistic locking failure (409 conflict)
+- Optimistic locking failure (409 conflict) - **Critical: concurrent edit handling**
 - Validation error (empty value for default locale)
 - Validation error (value too long, contains newlines)
 - Translation not found (404)
 - Authorization error (403)
 - Optimistic update and rollback on error
 - Cache invalidation verification
+- **Edge case: network timeout during update**
+- **Edge case: partial update with mixed validation errors**
 
 **8.3 Create `src/features/translations/api/useBulkUpdateTranslations/useBulkUpdateTranslations.test.ts`:**
 
 Test scenarios:
 
 - Successful bulk update with multiple keys
-- Partial success (some keys not found)
+- Partial success (some keys not found) - **Critical: partial failure handling**
 - Validation error (invalid key IDs array)
 - Validation error (invalid update data)
 - Authorization error (403)
 - Database error handling
 - Cache invalidation for affected keys and locale view
+- **Performance test: large batch updates (100+ keys)**
+- **Edge case: empty key IDs array**
+- **Edge case: duplicate key IDs in request**
