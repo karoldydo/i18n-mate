@@ -150,7 +150,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER normalize_locale_trigger
+CREATE TRIGGER normalize_project_locale_insert_trigger
   BEFORE INSERT OR UPDATE OF locale ON project_locales
   FOR EACH ROW EXECUTE FUNCTION normalize_locale();
 ```
@@ -168,7 +168,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER prevent_default_locale_change_trigger
+CREATE TRIGGER prevent_project_default_locale_update_trigger
   BEFORE UPDATE OF default_locale ON projects
   FOR EACH ROW EXECUTE FUNCTION prevent_default_locale_change();
 ```
@@ -186,7 +186,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER prevent_default_locale_delete_trigger
+CREATE TRIGGER prevent_project_locale_default_delete_trigger
   BEFORE DELETE ON project_locales
   FOR EACH ROW EXECUTE FUNCTION prevent_default_locale_delete();
 ```
@@ -204,7 +204,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER prevent_prefix_change_trigger
+CREATE TRIGGER prevent_project_prefix_update_trigger
   BEFORE UPDATE OF prefix ON projects
   FOR EACH ROW EXECUTE FUNCTION prevent_prefix_change();
 ```
@@ -227,7 +227,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER validate_key_prefix_trigger
+CREATE TRIGGER validate_key_prefix_insert_trigger
   BEFORE INSERT OR UPDATE OF full_key ON keys
   FOR EACH ROW EXECUTE FUNCTION validate_key_prefix();
 ```
@@ -248,7 +248,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trim_translation_value_trigger
+CREATE TRIGGER trim_translation_value_insert_trigger
   BEFORE INSERT OR UPDATE OF value ON translations
   FOR EACH ROW EXECUTE FUNCTION trim_translation_value();
 ```
@@ -272,7 +272,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER validate_default_locale_value_trigger
+CREATE TRIGGER validate_translation_default_locale_insert_trigger
   BEFORE INSERT OR UPDATE OF value ON translations
   FOR EACH ROW EXECUTE FUNCTION validate_default_locale_value();
 ```
@@ -293,7 +293,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER fan_out_translations_on_key_insert_trigger
+CREATE TRIGGER fanout_translation_key_insert_trigger
   AFTER INSERT ON keys
   FOR EACH ROW EXECUTE FUNCTION fan_out_translations_on_key_insert();
 ```
@@ -313,7 +313,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER fan_out_translations_on_locale_insert_trigger
+CREATE TRIGGER fanout_translation_locale_insert_trigger
   AFTER INSERT ON project_locales
   FOR EACH ROW EXECUTE FUNCTION fan_out_translations_on_locale_insert();
 ```

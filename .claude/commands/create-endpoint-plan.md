@@ -38,7 +38,9 @@ Before we begin, review the following information:
 
 6. Style and format of output document:
    <style_and_format>
-   [Style and format](../../.ai/api/plans/1-projects-implementation-plan.md)
+   [Style and format - Projects](../../.ai/api/plans/1-projects-implementation-plan.md)
+   [Style and format - Locales](../../.ai/api/plans/2-locales-implementation-plan.md)
+   [Style and format - Keys](../../.ai/api/plans/3-keys-implementation-plan.md)
    </style_and_format>
 
 7. Current migrations (check every file in the migrations folder):

@@ -524,7 +524,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 3. Hook validates data using `updateProjectSchema` (ensures no immutable fields)
 4. Hook validates project ID using UUID schema
 5. Hook calls Supabase `.update()` with validated data and `.eq('id', projectId)`
-6. Database triggers `prevent_prefix_change_trigger` and `prevent_default_locale_change_trigger` check for immutability violations
+6. Database triggers `prevent_project_prefix_update_trigger` and `prevent_project_default_locale_update_trigger` check for immutability violations
 7. If user attempts to change immutable fields, trigger raises exception → hook returns 400
 8. RLS policy validates ownership
 9. If unauthorized or not found, Supabase returns empty result → hook returns 404
@@ -572,14 +572,14 @@ All error responses follow the structure: `{ data: null, error: { code, message,
   - `projects_update_policy` - UPDATE where owner_user_id = auth.uid()
   - `projects_delete_policy` - DELETE where owner_user_id = auth.uid()
 - Trigger names:
-  - `prevent_prefix_change_trigger` - Prevents modification of prefix field
-  - `prevent_default_locale_change_trigger` - Prevents modification of default_locale field
+  - `prevent_project_prefix_update_trigger` - Prevents modification of prefix field
+  - `prevent_project_default_locale_update_trigger` - Prevents modification of default_locale field
 
 ### 6.3 Input Validation
 
 - **Client-side validation:** Zod schemas validate all input before sending to backend
 - **Database-level validation:** CHECK constraints and triggers enforce data integrity
-- **Immutability enforcement:** Database triggers (`prevent_prefix_change_trigger`, `prevent_default_locale_change_trigger`) prevent changes to `prefix` and `default_locale`
+- **Immutability enforcement:** Database triggers (`prevent_project_prefix_update_trigger`, `prevent_project_default_locale_update_trigger`) prevent changes to `prefix` and `default_locale`
 - **Unique constraints:** Database enforces uniqueness of (owner_user_id, name) and (owner_user_id, prefix)
 
 ### 6.4 SQL Injection Prevention
@@ -748,15 +748,15 @@ if (error) {
 
 **Trigger Conditions:**
 
-- Attempt to change `prefix` (prevented by `prevent_prefix_change_trigger`)
-- Attempt to change `default_locale` (prevented by `prevent_default_locale_change_trigger`)
+- Attempt to change `prefix` (prevented by `prevent_project_prefix_update_trigger`)
+- Attempt to change `default_locale` (prevented by `prevent_project_default_locale_update_trigger`)
 
 **Handling:**
 
 - Catch PostgreSQL RAISE EXCEPTION from trigger
 - Return 400 with specific message based on field:
-  - For `prefix`: "Cannot modify prefix after creation" (trigger: `prevent_prefix_change_trigger`)
-  - For `default_locale`: "Cannot modify default locale after creation" (trigger: `prevent_default_locale_change_trigger`)
+  - For `prefix`: "Cannot modify prefix after creation" (trigger: `prevent_project_prefix_update_trigger`)
+  - For `default_locale`: "Cannot modify default locale after creation" (trigger: `prevent_project_default_locale_update_trigger`)
 
 ### 7.5 Not Found Errors (404)
 

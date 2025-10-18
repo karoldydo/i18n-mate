@@ -413,10 +413,10 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 3. Hook validates data using `createProjectLocaleSchema`
 4. If validation fails, return 400 error immediately
 5. Hook calls Supabase `.insert()` with validated data
-6. Database trigger `normalize_locale_trigger` normalizes locale code (ll or ll-CC format)
+6. Database trigger `normalize_project_locale_insert_trigger` normalizes locale code (ll or ll-CC format)
 7. Database enforces unique constraint on `(project_id, locale)`
 8. On conflict, PostgreSQL returns unique violation error → hook returns 409
-9. If successful, database trigger `fan_out_translations_on_locale_insert_trigger` executes:
+9. If successful, database trigger `fanout_translation_locale_insert_trigger` executes:
 
 - Creates translation records for all existing keys in the project
 - Sets `value = NULL` (missing translation)
@@ -466,7 +466,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 2. `useDeleteProjectLocale` mutation hook receives locale ID
 3. Hook validates UUID format
 4. Hook calls Supabase `.delete().eq('id', localeId)`
-5. Database trigger `prevent_default_locale_delete_trigger` checks if locale is default:
+5. Database trigger `prevent_project_locale_default_delete_trigger` checks if locale is default:
    - Queries projects table to find default_locale
    - If locale matches default_locale, raises exception → hook returns 400
 6. RLS policy validates ownership via project relationship
@@ -502,9 +502,9 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 - **Client-side validation:** Zod schemas validate all input before sending to backend
 - **Database-level validation:** CHECK constraints and triggers enforce data integrity
-- **Locale normalization:** Database trigger (`normalize_locale_trigger`) normalizes locale codes to ll or ll-CC format
+- **Locale normalization:** Database trigger (`normalize_project_locale_insert_trigger`) normalizes locale codes to ll or ll-CC format
 - **Immutability enforcement:** Client-side strict schema prevents modification of `locale` field
-- **Default locale protection:** Database trigger (`prevent_default_locale_delete_trigger`) prevents deletion
+- **Default locale protection:** Database trigger (`prevent_project_locale_default_delete_trigger`) prevents deletion
 - **Unique constraints:** Database enforces uniqueness of `(project_id, locale)`
 
 ### 6.4 SQL Injection Prevention
@@ -592,12 +592,12 @@ if (error) {
 
 **Trigger Conditions:**
 
-- Attempt to delete default locale (prevented by `prevent_default_locale_delete_trigger`)
+- Attempt to delete default locale (prevented by `prevent_project_locale_default_delete_trigger`)
 
 **Handling:**
 
 - Catch PostgreSQL RAISE EXCEPTION from trigger
-- Return 400 with specific message: "Cannot delete default locale" (trigger: `prevent_default_locale_delete_trigger`)
+- Return 400 with specific message: "Cannot delete default locale" (trigger: `prevent_project_locale_default_delete_trigger`)
 
 ### 7.5 Not Found Errors (404)
 
@@ -625,7 +625,7 @@ if (!data) {
 
 - Database connection failure
 - RPC function execution error
-- Fan-out trigger failure (`fan_out_translations_on_locale_insert_trigger`)
+- Fan-out trigger failure (`fanout_translation_locale_insert_trigger`)
 - Cascade delete failure
 
 **Handling:**
@@ -724,7 +724,7 @@ const updateMutation = useMutation({
 
 **Fan-Out Trigger Optimization:**
 
-- `fan_out_translations_on_locale_insert_trigger` uses single INSERT with SELECT
+- `fanout_translation_locale_insert_trigger` uses single INSERT with SELECT
 - Efficient for projects with many keys (batch insert vs. N individual inserts)
 - Trigger uses `SECURITY DEFINER` to bypass RLS during fan-out
 

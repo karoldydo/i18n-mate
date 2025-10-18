@@ -515,13 +515,13 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 4. If validation fails, return 400 error immediately
 5. Hook calls Supabase RPC `create_key_with_value` with validated data
 6. RPC function atomically:
-   - Validates key prefix matches project prefix (trigger `validate_key_prefix_trigger`)
+   - Validates key prefix matches project prefix (trigger `validate_key_prefix_insert_trigger`)
    - Inserts new key row in `keys` table
    - Inserts default locale translation with `updated_by_user_id = auth.uid()`
-   - Trigger `trim_translation_value_trigger` auto-trims value and converts empty to NULL
-   - Trigger `validate_default_locale_value_trigger` prevents NULL/empty for default locale
+   - Trigger `trim_translation_value_insert_trigger` auto-trims value and converts empty to NULL
+   - Trigger `validate_translation_default_locale_insert_trigger` prevents NULL/empty for default locale
 
-- Trigger `fan_out_translations_on_key_insert_trigger` creates NULL translations for all other locales
+- Trigger `fanout_translation_key_insert_trigger` creates NULL translations for all other locales
 - `key_created` telemetry event is emitted by trigger `emit_key_created_event` after insert into `keys`
 
 7. Database enforces unique constraint on (project_id, full_key)
@@ -566,9 +566,9 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - **Client-side validation:** Zod schemas validate all input before sending to backend
 - **Database-level validation:** CHECK constraints and triggers enforce data integrity
 - **Key format validation:** Pattern `^[a-z0-9._-]+$`, no `..`, no trailing dot
-- **Prefix requirement:** Trigger `validate_key_prefix_trigger` ensures key starts with project prefix + "."
+- **Prefix requirement:** Trigger `validate_key_prefix_insert_trigger` ensures key starts with project prefix + "."
 - **Value validation:** Max 250 chars, no newline, auto-trimmed
-- **Default locale value:** Trigger `validate_default_locale_value_trigger` prevents NULL/empty for default locale
+- **Default locale value:** Trigger `validate_translation_default_locale_insert_trigger` prevents NULL/empty for default locale
 - **Unique constraint:** Database enforces uniqueness of (project_id, full_key)
 
 ### 6.4 SQL Injection Prevention
@@ -716,8 +716,8 @@ if (error) {
 
 **Trigger Conditions:**
 
-- Key doesn't start with project prefix (prevented by `validate_key_prefix_trigger`)
-- Empty value for default locale (prevented by `validate_default_locale_value_trigger`)
+- Key doesn't start with project prefix (prevented by `validate_key_prefix_insert_trigger`)
+- Empty value for default locale (prevented by `validate_translation_default_locale_insert_trigger`)
 
 **Handling:**
 
@@ -837,7 +837,7 @@ gcTime: 10 * 60 * 1000,
 
 **Key Creation:**
 
-- Trigger `fan_out_translations_on_key_insert_trigger` creates translations for all locales
+- Trigger `fanout_translation_key_insert_trigger` creates translations for all locales
 - Fan-out is performed in a single transaction
 - If project has many locales (e.g., 20+), creation may be slower
 - Consider async fan-out for large projects (future optimization)
