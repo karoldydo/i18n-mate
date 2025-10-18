@@ -9,14 +9,22 @@ import { localesKeys } from '../locales.keys';
 import { localeIdSchema } from '../locales.schemas';
 
 /**
- * Delete a locale from a project
+ * Delete a locale from a project with cascading deletion
  *
- * Removes a locale and all associated translations. The database will:
- * 1. Prevent deletion if the locale is the project's default language
+ * Removes a locale and all associated translations. The operation is
+ * irreversible and handles cascading deletion of related data. The database
+ * prevents deletion of the project's default locale via trigger.
+ *
+ * Database operations:
+ * 1. Validate that locale is not the project's default language
  * 2. CASCADE delete all translation records for this locale
+ * 3. Remove locale record
  *
- * @param projectId - UUID of the project
- * @returns TanStack Query mutation hook
+ * @param projectId - UUID of the project containing the locale
+ * @throws {ApiErrorResponse} 400 - Validation error (attempt to delete default locale)
+ * @throws {ApiErrorResponse} 404 - Locale not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during deletion
+ * @returns TanStack Query mutation hook for deleting locales with cascade operations
  */
 export function useDeleteProjectLocale(projectId: string) {
   const supabase = useSupabase();

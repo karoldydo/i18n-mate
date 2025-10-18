@@ -15,10 +15,14 @@ import { listProjectLocalesWithDefaultSchema, projectLocaleWithDefaultSchema } f
  *
  * Uses the RPC function `list_project_locales_with_default` to retrieve
  * all locales for a project with an `is_default` flag indicating which
- * locale is the project's default language.
+ * locale is the project's default language. Results are ordered with
+ * the default locale first.
  *
- * @param projectId - UUID of the project
- * @returns TanStack Query result with array of locales
+ * @param projectId - UUID of the project to fetch locales for
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with array of locales including is_default flag
  */
 export function useProjectLocales(projectId: string) {
   const supabase = useSupabase();

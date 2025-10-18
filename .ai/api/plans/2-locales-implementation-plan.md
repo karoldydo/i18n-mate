@@ -1080,6 +1080,20 @@ import { createDatabaseErrorResponse } from '../locales.errors';
 import { localesKeys } from '../locales.keys';
 import { listProjectLocalesWithDefaultSchema, projectLocaleWithDefaultSchema } from '../locales.schemas';
 
+/**
+ * Fetch all locales for a project with default locale indicator
+ *
+ * Uses the RPC function `list_project_locales_with_default` to retrieve
+ * all locales for a project with an `is_default` flag indicating which
+ * locale is the project's default language. Results are ordered with
+ * the default locale first.
+ *
+ * @param projectId - UUID of the project to fetch locales for
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with array of locales including is_default flag
+ */
 export function useProjectLocales(projectId: string) {
   const supabase = useSupabase();
 
@@ -1117,13 +1131,38 @@ export function useProjectLocales(projectId: string) {
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiErrorResponse, CreateProjectLocaleRequest, ProjectLocaleResponse } from '@/shared/types';
+import type {
+  ApiErrorResponse,
+  CreateProjectLocaleAtomicRequest,
+  CreateProjectLocaleAtomicResponse,
+} from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { LOCALE_NORMALIZATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
-import { createDatabaseErrorResponse } from '../locales.errors';
+import { createAtomicLocaleErrorResponse } from '../locales.errors';
 import { localesKeys } from '../locales.keys';
-import { createProjectLocaleSchema, projectLocaleResponseSchema } from '../locales.schemas';
+import { createProjectLocaleAtomicSchema } from '../locales.schemas';
 
+/**
+ * Add a new locale to a project using atomic RPC function
+ *
+ * Creates a new locale entry for the project using the atomic approach. The database will:
+ * 1. Validate authentication and project ownership
+ * 2. Normalize the locale code to BCP-47 format (ll or ll-CC)
+ * 3. Create locale record atomically
+ * 4. Create translation records for all existing keys (fan-out)
+ * 5. Verify fan-out completeness
+ * 6. Emit telemetry events
+ * 7. Rollback on any failures
+ *
+ * @param projectId - UUID of the project to add locale to
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid locale format, label constraints)
+ * @throws {ApiErrorResponse} 401 - Authentication required
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 409 - Conflict error (locale already exists for project)
+ * @throws {ApiErrorResponse} 500 - Database error, fan-out verification failed, or incomplete fan-out
+ * @returns TanStack Query mutation hook for adding locales with enhanced retry logic
+ */
 export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
@@ -1179,6 +1218,21 @@ interface UpdateProjectLocaleContext {
   previousLocales?: ProjectLocaleWithDefault[];
 }
 
+/**
+ * Update a project locale's label with optimistic UI updates
+ *
+ * Updates mutable locale fields (label only). The locale code is immutable
+ * after creation and attempts to modify it will result in validation errors.
+ * Uses optimistic updates to provide instant UI feedback, with automatic
+ * rollback on error and revalidation on settle.
+ *
+ * @param projectId - UUID of the project containing the locale
+ * @param localeId - UUID of the locale to update
+ * @throws {ApiErrorResponse} 400 - Validation error (attempt to change immutable locale field)
+ * @throws {ApiErrorResponse} 404 - Locale not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during update
+ * @returns TanStack Query mutation hook for updating locale labels with optimistic updates
+ */
 export function useUpdateProjectLocale(projectId: string, localeId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
@@ -1251,6 +1305,24 @@ import { createDatabaseErrorResponse } from '../locales.errors';
 import { localesKeys } from '../locales.keys';
 import { localeIdSchema } from '../locales.schemas';
 
+/**
+ * Delete a locale from a project with cascading deletion
+ *
+ * Removes a locale and all associated translations. The operation is
+ * irreversible and handles cascading deletion of related data. The database
+ * prevents deletion of the project's default locale via trigger.
+ *
+ * Database operations:
+ * 1. Validate that locale is not the project's default language
+ * 2. CASCADE delete all translation records for this locale
+ * 3. Remove locale record
+ *
+ * @param projectId - UUID of the project containing the locale
+ * @throws {ApiErrorResponse} 400 - Validation error (attempt to delete default locale)
+ * @throws {ApiErrorResponse} 404 - Locale not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during deletion
+ * @returns TanStack Query mutation hook for deleting locales with cascade operations
+ */
 export function useDeleteProjectLocale(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();

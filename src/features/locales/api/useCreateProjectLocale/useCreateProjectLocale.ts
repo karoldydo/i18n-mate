@@ -33,8 +33,13 @@ import { createProjectLocaleAtomicSchema } from '../locales.schemas';
  * - Automatic telemetry event emission
  * - Enhanced retry logic for transient failures
  *
- * @param projectId - UUID of the project
- * @returns TanStack Query mutation hook
+ * @param projectId - UUID of the project to add locale to
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid locale format, label constraints)
+ * @throws {ApiErrorResponse} 401 - Authentication required
+ * @throws {ApiErrorResponse} 404 - Project not found or access denied
+ * @throws {ApiErrorResponse} 409 - Conflict error (locale already exists for project)
+ * @throws {ApiErrorResponse} 500 - Database error, fan-out verification failed, or incomplete fan-out
+ * @returns TanStack Query mutation hook for adding locales with enhanced retry logic
  */
 export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();

@@ -22,15 +22,19 @@ interface UpdateProjectLocaleContext {
 }
 
 /**
- * Update a project locale's label
+ * Update a project locale's label with optimistic UI updates
  *
- * Only the label field can be updated - the locale code is immutable.
+ * Updates mutable locale fields (label only). The locale code is immutable
+ * after creation and attempts to modify it will result in validation errors.
  * Uses optimistic updates to provide instant UI feedback, with automatic
- * rollback on error.
+ * rollback on error and revalidation on settle.
  *
- * @param projectId - UUID of the project
+ * @param projectId - UUID of the project containing the locale
  * @param localeId - UUID of the locale to update
- * @returns TanStack Query mutation hook
+ * @throws {ApiErrorResponse} 400 - Validation error (attempt to change immutable locale field)
+ * @throws {ApiErrorResponse} 404 - Locale not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during update
+ * @returns TanStack Query mutation hook for updating locale labels with optimistic updates
  */
 export function useUpdateProjectLocale(projectId: string, localeId: string) {
   const supabase = useSupabase();
