@@ -16,7 +16,7 @@ MVP scope:
 Definitions:
 
 - **Project:** a logical container for translations. Each project has an immutable default language and a **2–4 character prefix unique within the user scope**.
-- **Language (locale):** an identifier compliant with the BCP-47 standard (e.g., en, en-US, pl). **The MVP applies normalization only for the language/region pair**: language lowercase and REGION UPPERCASE. **Other sub-tags (script/variant/extension) are rejected.**
+- **Locale:** an identifier compliant with the BCP-47 standard (e.g., en, en-US, pl). **The MVP applies normalization only for the locale/region pair**: locale lowercase and REGION UPPERCASE. **Other sub-tags (script/variant/extension) are rejected.**
 - **Key:** `full key = prefix + "." + name`; the prefix cannot end with a dot, and the name cannot start with a dot; format `[a-z0-9._-]`, no spaces, **no consecutive dots ("..")**, no trailing dot, maximum 256 characters. **The full key is unique within the project.** **A dot is allowed inside the prefix** (not at the end).
   - **Prefix Examples:** `app`, `ui`, `web`, `api` (recommended); `app.v2` (allowed but may cause ambiguity - use sparingly)
   - **Rationale for dots in prefix:** Allows versioned or namespaced prefixes (e.g., `v2.home.title`), but developers should prefer simple prefixes to avoid confusion with dotted key notation.
@@ -86,9 +86,9 @@ User assumptions: no roles in the MVP; the target user is a frontend developer m
 - After confirmation, a modal opens with a progress bar and information about the ongoing translation.
 - Completion of the translation is confirmed by a success toast; errors result in an error toast.
 - **Metadata for each value (after save):**
-  - **LLM:** `isMachineTranslated=true`, `updatedAt` auto-updated by database trigger, `updatedBy=system`.
-  - **Manual edit (any language, including default):** `isMachineTranslated=false`, `updatedAt` auto-updated by database trigger, `updatedBy=<user>`.
-  - **Note:** The `updatedAt` field is automatically set by the database trigger `update_translations_updated_at` on any UPDATE operation, ensuring accurate timestamps without application-level logic.
+  - **LLM:** `is_machine_translated=true`, `updated_at` auto-updated by database trigger, `updated_source=system`, `updated_by_user_id=null`.
+  - **Manual edit (any language, including default):** `is_machine_translated=false`, `updated_at` auto-updated by database trigger, `updated_source=user`, `updated_by_user_id=<user_id>`.
+  - **Note:** The `updated_at` field is automatically set by the database trigger `update_translations_updated_at` on any UPDATE operation, ensuring accurate timestamps without application-level logic.
 
 ### 3.6 Translation Export
 
@@ -123,10 +123,10 @@ Assumptions:
 - Each project has one, immutable default language.
 - Keys are created only in the default language and are automatically mirrored 1:1 in all project languages via database triggers (fan-out mechanism) - no local per-language keys.
 - Value semantics: "missing" = NULL value; in the default language the value cannot be NULL (empty strings are auto-converted to NULL).
-- Locale normalization limited to the language/region pair: language lowercase, REGION UPPERCASE; other sub-tags (script/variant/extension) are rejected.
+- Locale normalization limited to the locale/region pair: locale lowercase, REGION UPPERCASE; other sub-tags (script/variant/extension) are rejected.
 - The target language for LLM translation cannot be the project's default language.
 - Export available only from the UI; no external API; removed languages do not appear in the ZIP.
-- Save metadata is a global rule: LLM → isMachineTranslated=true, updatedBy=system, updatedAt set; manual edit → `isMachineTranslated=false`, `updatedBy=<user>`, `updatedAt` set.
+- Save metadata is a global rule: LLM → is_machine_translated=true, updated_source=system, updated_by_user_id=null, updated_at set; manual edit → `is_machine_translated=false`, `updated_source=user`, `updated_by_user_id=<user_id>`, `updated_at` set.
 - Access condition: a session is created only after email verification (no session before verification).
 
 ## 5. User Stories
@@ -219,7 +219,7 @@ Title: Add a language to a project
 Description: As a user, I want to add a language compliant with BCP-47.  
 Acceptance criteria:
 
-- **Validation only for the language/region pair and normalization: language lowercase / REGION UPPERCASE; other sub-tags (script/variant/extension) are rejected.**
+- **Validation only for the locale/region pair and normalization: locale lowercase / REGION UPPERCASE; other sub-tags (script/variant/extension) are rejected.**
 - Duplicates within the project are blocked with a message.
 - After adding, all keys appear as missing (automatically created via database triggers with NULL values).
 - **Reference:** 3.3
@@ -298,7 +298,7 @@ Description: As a user, I want to edit a key's value in the default language wit
 Acceptance criteria:
 
 - Autosave; visible "saved" indicator.
-- Saving updates the metadata `updatedAt` and `updatedBy=<user>` and sets `isMachineTranslated=false`.
+- Saving updates the metadata `updated_at` and `updated_source=user`, `updated_by_user_id=<user_id>` and sets `is_machine_translated=false`.
 - **Reference:** 3.4, 3.5
 
 ID: US-032  
@@ -316,7 +316,7 @@ Description: As a user, I want to edit translation values for added languages.
 Acceptance criteria:
 
 - Limit of 250 characters, no newline, NULL = missing (empty strings are auto-converted to NULL).
-- Autosave and metadata update; **set `isMachineTranslated=false`, `updatedBy=<user>`.**
+- Autosave and metadata update; **set `is_machine_translated=false`, `updated_source=user`, `updated_by_user_id=<user_id>`.**
 - **Reference:** 3.4, 3.5
 
 ID: US-034  
@@ -351,7 +351,7 @@ Acceptance criteria:
 
 - Overwrite warning for existing values and required acceptance.
 - After confirmation, a modal opens with a progress bar and information about the ongoing translation.
-- After completion, a success toast is displayed; results and metadata are saved: `isMachineTranslated=true`, `updatedBy=system`.
+- After completion, a success toast is displayed; results and metadata are saved: `is_machine_translated=true`, `updated_source=system`, `updated_by_user_id=null`.
 - **The target language cannot be the project's default language.**
 - **Reference:** 3.5
 
@@ -410,7 +410,7 @@ Title: Locale normalization (global rule)
 Description: As a user, I want consistent language identifiers.  
 Acceptance criteria:
 
-- **Across the entire application** normalization applies: language lowercase / REGION UPPERCASE; **only language/region sub-tags (script/variant/extension) are allowed**; other attempts are rejected according to validation.
+- **Across the entire application** normalization applies: locale lowercase / REGION UPPERCASE; **only locale/region sub-tags (script/variant/extension) are allowed**; other attempts are rejected according to validation.
 - **Reference:** 3.3
 
 ## 6. Success Metrics

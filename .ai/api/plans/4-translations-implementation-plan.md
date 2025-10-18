@@ -76,7 +76,7 @@ Authorization: Bearer {access_token}
 Include `updated_at` in WHERE clause to prevent lost updates:
 
 ```http
-PATCH /rest/v1/translations?project_id=eq.{uuid}&key_id=eq.{uuid}&locale=eq.pl&updated_at=eq.2025-01-15T10:20:00Z
+PATCH /rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale=eq.{locale}&updated_at=eq.{timestamp}
 ```
 
 If no rows are affected (0 matches), return 409 Conflict and client must refetch.
@@ -243,6 +243,11 @@ export const translationResponseSchema = z.object({
 
 **Success Response (200 OK):**
 
+**Response Format Guidelines:**
+
+- **Array format**: Used for list endpoints or when expecting multiple results
+- **Single object format**: Used when fetching translation details by specific ID/combination using `.maybeSingle()` or `Accept: application/vnd.pgrst.object+json` header
+
 PostgREST returns an array by default:
 
 ```json
@@ -262,7 +267,14 @@ PostgREST returns an array by default:
 
 **Single Object Response (with .maybeSingle()):**
 
-When using Supabase client with `.maybeSingle()` or REST with `Accept: application/vnd.pgrst.object+json`:
+When using Supabase client with `.maybeSingle()` or REST with `Accept: application/vnd.pgrst.object+json` header.
+
+**Use Cases:**
+
+- **Array format**: For list views, search results, bulk operations
+- **Single object format**: For translation details, inline editing, specific translation fetching by unique composite key
+
+Response body:
 
 ```json
 {
