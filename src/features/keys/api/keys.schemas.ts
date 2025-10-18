@@ -36,10 +36,7 @@ const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
 });
 
 // Project ID validation
-const projectIdSchema = z.string().uuid('Invalid project ID format');
-
-// Key ID validation
-const keyIdSchema = z.string().uuid('Invalid key ID format');
+export const projectIdSchema = z.string().uuid('Invalid project ID format');
 
 // List Keys Default View Schema
 export const listKeysDefaultViewSchema = z.object({
@@ -71,7 +68,7 @@ export const createKeySchema = createKeyRequestSchema.transform((data) => ({
 
 // Delete Key Schema
 export const deleteKeySchema = z.object({
-  id: keyIdSchema,
+  id: projectIdSchema,
 });
 
 // Response Schemas for runtime validation

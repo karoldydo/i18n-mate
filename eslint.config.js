@@ -72,7 +72,7 @@ const jsxA11yConfig = defineConfig({
 });
 
 export default defineConfig([
-  globalIgnores(['dist', 'node_modules']),
+  globalIgnores(['dist', 'node_modules', '.history']),
   baseConfig,
   reactConfig,
   jsxA11yConfig,

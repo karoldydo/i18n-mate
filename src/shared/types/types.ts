@@ -43,6 +43,15 @@ export type ApiResult<T> = ApiErrorResponse | ApiResponse<T>;
  * Bulk Update Translations Request - used internally by translation jobs
  */
 export type BulkUpdateTranslationRequest = UpdateTranslationRequest;
+
+/**
+ * Bulk Update Translations Parameters - context for bulk translation updates
+ */
+export interface BulkUpdateTranslationsParams {
+  keyIds: string[];
+  locale: string;
+  projectId: string;
+}
 /**
  * Cancel Translation Job Request - PATCH /rest/v1/translation_jobs
  */
@@ -682,6 +691,17 @@ export type UpdateProjectLocaleRequest = Pick<ProjectLocaleUpdate, 'label'>;
 export type UpdateProjectRequest = Pick<ProjectUpdate, 'description' | 'name'>;
 
 export type UpdateSourceType = Enums<'update_source_type'>;
+
+/**
+ * Update Translation Parameters - context for translation updates
+ */
+export interface UpdateTranslationParams {
+  keyId: string;
+  locale: string;
+  projectId: string;
+  // Optimistic locking support
+  updatedAt?: string; // ISO 8601 timestamp
+}
 
 /**
  * Update Translation Request - PATCH /rest/v1/translations

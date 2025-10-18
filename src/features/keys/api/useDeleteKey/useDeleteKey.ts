@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
 
 import type { ApiErrorResponse } from '@/shared/types';
 
@@ -9,8 +8,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
 import { keysKeys } from '../keys.keys';
-
-const keyIdSchema = z.string().uuid('Invalid key ID format');
+import { projectIdSchema } from '../keys.schemas';
 
 /**
  * Delete a translation key by ID
@@ -33,7 +31,7 @@ export function useDeleteKey(projectId: string) {
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (keyId) => {
       // Validate key ID
-      const validatedId = keyIdSchema.parse(keyId);
+      const validatedId = projectIdSchema.parse(keyId);
 
       // Supabase returns { count, error } not HTTP 204
       // We normalize to void (equivalent to 204 No Content semantics)

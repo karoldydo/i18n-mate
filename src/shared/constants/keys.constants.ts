@@ -29,7 +29,7 @@ export const CONSECUTIVE_DOTS_PATTERN = /\.\./;
  * Pattern to detect trailing dots (invalid)
  * Used for validation refinement
  */
-export const TRAILING_DOT_PATTERN = /\.$/;
+export const KEY_TRAILING_DOT_PATTERN = /\.$/;
 
 /**
  * Maximum length for full key name (including prefix)
@@ -122,7 +122,7 @@ export const KEY_VALIDATION = {
     if (key.length < KEY_NAME_MIN_LENGTH || key.length > KEY_NAME_MAX_LENGTH) return false;
     if (!KEY_FORMAT_PATTERN.test(key)) return false;
     if (CONSECUTIVE_DOTS_PATTERN.test(key)) return false;
-    if (TRAILING_DOT_PATTERN.test(key)) return false;
+    if (KEY_TRAILING_DOT_PATTERN.test(key)) return false;
     return true;
   },
 
