@@ -592,50 +592,6 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ## 7. Error Handling
 
-### 7.0 Comprehensive Error Code Mapping
-
-This table maps all PostgreSQL error codes and conditions to HTTP status codes for consistent error handling across the Keys API.
-
-| Source                      | Error Code/Condition                             | HTTP Status | Message                                                                           | Details                                              | Handled By                                    |
-| --------------------------- | ------------------------------------------------ | ----------- | --------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------- |
-| **PostgreSQL Errors**       |
-| Unique Constraint           | `23505` (keys_unique_per_project)                | 409         | "Key already exists in project"                                                   | `{ constraint: "keys_unique_per_project" }`          | `createDatabaseErrorResponse`                 |
-| Check Constraint            | `23514`                                          | 400         | "Invalid field value"                                                             | `{ constraint: error.details }`                      | `createDatabaseErrorResponse`                 |
-| Foreign Key Violation       | `23503` (keys_project_id_fkey)                   | 400         | "Invalid project_id"                                                              | `{ constraint: "foreign_key" }`                      | `createDatabaseErrorResponse`                 |
-| **Trigger Violations**      |
-| Prefix Validation           | RAISE EXCEPTION "must start with project prefix" | 400         | "Key must start with project prefix"                                              | `{ field: "p_full_key" }`                            | `createDatabaseErrorResponse`                 |
-| Default Locale Value        | RAISE EXCEPTION "cannot be NULL or empty"        | 400         | "Default locale value cannot be empty"                                            | `{ field: "p_default_value" }`                       | `createDatabaseErrorResponse`                 |
-| **RPC Authorization**       |
-| Unauthenticated             | `v_owner_user_id IS NULL`                        | 401         | "Authentication required"                                                         | -                                                    | RPC function (RAISE EXCEPTION)                |
-| Project Not Found           | `v_default_locale IS NULL`                       | 403         | "Project not found or access denied"                                              | -                                                    | RPC function (RAISE EXCEPTION)                |
-| Locale Not in Project       | Empty result from JOIN                           | 403         | "Project not found, access denied, or locale does not exist in project"           | -                                                    | `list_keys_per_language_view` RPC             |
-| **RLS Policy Denial**       |
-| Ownership Violation         | Empty result set                                 | 403         | "Project not owned by user"                                                       | -                                                    | `createDatabaseErrorResponse` (message match) |
-| **Client-Side Validation**  |
-| Invalid UUID                | Zod parse error                                  | 400         | "Invalid key ID format" / "Invalid project ID format"                             | `{ field: "keyId", constraint: "uuid" }`             | QueryClient error handler                     |
-| Invalid Key Format          | Zod parse error                                  | 400         | "Key can only contain lowercase letters, numbers, dots, underscores, and hyphens" | `{ field: "p_full_key", constraint: "regex" }`       | QueryClient error handler                     |
-| Consecutive Dots            | Zod refine error                                 | 400         | "Key cannot contain consecutive dots"                                             | `{ field: "p_full_key", constraint: "custom" }`      | QueryClient error handler                     |
-| Trailing Dot                | Zod refine error                                 | 400         | "Key cannot end with a dot"                                                       | `{ field: "p_full_key", constraint: "custom" }`      | QueryClient error handler                     |
-| Empty Value (Default)       | Zod min error                                    | 400         | "Value cannot be empty"                                                           | `{ field: "p_default_value", constraint: "min" }`    | QueryClient error handler                     |
-| Value Too Long              | Zod max error                                    | 400         | "Value must be at most 250 characters"                                            | `{ field: "p_default_value", constraint: "max" }`    | QueryClient error handler                     |
-| Value with Newline          | Zod refine error                                 | 400         | "Value cannot contain newlines"                                                   | `{ field: "p_default_value", constraint: "custom" }` | QueryClient error handler                     |
-| Missing Required Param      | Zod parse error                                  | 400         | "Locale parameter is required"                                                    | `{ field: "locale", constraint: "required" }`        | QueryClient error handler                     |
-| Invalid Pagination          | Zod parse error                                  | 400         | "Limit must be between 1 and 100"                                                 | `{ field: "limit", constraint: "max" }`              | QueryClient error handler                     |
-| **Resource Not Found**      |
-| Delete: No Rows Affected    | `count === 0`                                    | 404         | "Key not found or access denied"                                                  | -                                                    | Hook logic (`useDeleteKey`)                   |
-| **Generic Database Errors** |
-| Connection Failure          | Network error                                    | 500         | "Database operation failed"                                                       | `{ original: error }`                                | `createDatabaseErrorResponse`                 |
-| Unknown PostgreSQL Error    | Unknown error code                               | 500         | "An unexpected error occurred"                                                    | `{ original: error }`                                | `createDatabaseErrorResponse`                 |
-| RPC Execution Error         | Unhandled RAISE EXCEPTION                        | 500         | "Failed to [create/delete] key"                                                   | -                                                    | `createDatabaseErrorResponse`                 |
-| Empty Response              | `!data` after RPC                                | 500         | "No data returned from server"                                                    | -                                                    | Hook logic                                    |
-
-**Notes:**
-
-- Zod validation errors are converted to ApiErrorResponse format by the global QueryClient error handler
-- `createDatabaseErrorResponse` handles PostgreSQL-specific errors and maps them to appropriate HTTP codes
-- RPC functions perform authorization checks and throw exceptions before executing queries
-- RLS policies provide defense-in-depth but errors appear as empty result sets (interpreted as 403)
-
 ### 7.1 Client-Side Validation Errors (400)
 
 **Trigger Conditions:**
@@ -671,7 +627,7 @@ Zod validation errors are automatically converted to ApiErrorResponse format by 
 }
 ```
 
-### 7.2 Authorization Errors (403)
+### 7.2 Authorization Errors (403/404)
 
 **Trigger Conditions:**
 
