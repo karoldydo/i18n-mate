@@ -15,10 +15,14 @@ import { createKeyResponseSchema, createKeySchema } from '../keys.schemas';
  *
  * Uses the RPC function `create_key_with_value` to create a key and its
  * default translation value in a single transaction. The database enforces
- * prefix validation, uniqueness, and triggers automatic fan-out to all locales.
+ * prefix validation, uniqueness, and triggers automatic fan-out to all locales
+ * with NULL values. Key name must start with project prefix and follow naming rules.
  *
- * @param projectId - Project UUID for cache invalidation
- * @returns TanStack Query mutation hook
+ * @param projectId - Project UUID for cache invalidation (required)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid key format, empty value, prefix mismatch)
+ * @throws {ApiErrorResponse} 409 - Conflict error (duplicate key name in project)
+ * @throws {ApiErrorResponse} 500 - Database error or no data returned
+ * @returns TanStack Query mutation hook for creating keys
  */
 export function useCreateKey(projectId: string) {
   const supabase = useSupabase();

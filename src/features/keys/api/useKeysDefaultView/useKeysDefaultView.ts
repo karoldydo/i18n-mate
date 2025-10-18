@@ -13,11 +13,20 @@ import { keyDefaultViewResponseSchema, listKeysDefaultViewSchema } from '../keys
  * Fetch a paginated list of keys in default language view with missing counts
  *
  * Uses the RPC function `list_keys_default_view` with exact total counting
- * enabled. Returns data items validated at runtime and pagination metadata
- * computed from input params and result size.
+ * enabled. Returns keys with their default locale values and missing counts
+ * for other locales. Data items are validated at runtime and pagination
+ * metadata is computed from input params and result size.
  *
- * @param params - Query parameters including project_id, search, missing_only, pagination
- * @returns TanStack Query result with data and metadata
+ * @param params - Query parameters for key listing
+ * @param params.project_id - Project UUID to fetch keys from (required)
+ * @param params.search - Search term for key name (case-insensitive contains, optional)
+ * @param params.missing_only - Filter keys with missing translations (default: false)
+ * @param params.limit - Items per page (1-100, default: 50)
+ * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
+ * @throws {ApiErrorResponse} 403 - Project not owned by user
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with keys data and pagination metadata
  */
 export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
   const supabase = useSupabase();

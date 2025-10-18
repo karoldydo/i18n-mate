@@ -16,11 +16,15 @@ const keyIdSchema = z.string().uuid('Invalid key ID format');
  * Delete a translation key by ID
  *
  * Removes the key record and all associated translations via CASCADE DELETE.
- * RLS policies ensure only project owners can delete keys. On success,
- * related caches are cleared and key lists are invalidated.
+ * Operation is irreversible and affects all locales in the project. RLS
+ * policies ensure only project owners can delete keys. On success, related
+ * caches are cleared and key lists are invalidated.
  *
- * @param projectId - Project UUID for cache invalidation
- * @returns TanStack Query mutation hook that returns void on success
+ * @param projectId - Project UUID for cache invalidation (required)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid key ID format)
+ * @throws {ApiErrorResponse} 404 - Key not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during deletion
+ * @returns TanStack Query mutation hook for deleting keys
  */
 export function useDeleteKey(projectId: string) {
   const supabase = useSupabase();

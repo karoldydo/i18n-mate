@@ -13,11 +13,21 @@ import { keyPerLanguageViewResponseSchema, listKeysPerLanguageViewSchema } from 
  * Fetch a paginated list of keys for a specific language with translation metadata
  *
  * Uses the RPC function `list_keys_per_language_view` with exact total counting
- * enabled. Returns data items validated at runtime and pagination metadata
- * computed from input params and result size.
+ * enabled. Returns keys with their translation values and metadata for the
+ * specified locale. Data items are validated at runtime and pagination
+ * metadata is computed from input params and result size.
  *
- * @param params - Query parameters including project_id, locale, search, missing_only, pagination
- * @returns TanStack Query result with data and metadata
+ * @param params - Query parameters for key listing per language
+ * @param params.project_id - Project UUID to fetch keys from (required)
+ * @param params.locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
+ * @param params.search - Search term for key name (case-insensitive contains, optional)
+ * @param params.missing_only - Filter keys with NULL values in selected locale (default: false)
+ * @param params.limit - Items per page (1-100, default: 50)
+ * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, malformed locale, limit > 100, negative offset)
+ * @throws {ApiErrorResponse} 403 - Project not owned by user
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with keys data and pagination metadata
  */
 export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   const supabase = useSupabase();

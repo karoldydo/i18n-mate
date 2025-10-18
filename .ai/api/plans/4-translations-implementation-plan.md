@@ -957,6 +957,22 @@ import { createDatabaseErrorResponse } from '../translations.errors';
 import { translationsKeys } from '../translations.keys';
 import { getTranslationQuerySchema, translationResponseSchema } from '../translations.schemas';
 
+/**
+ * Fetch a translation record for a specific project, key, and locale combination
+ *
+ * Retrieves a single translation record using direct table access with composite
+ * primary key lookup. Returns null if translation doesn't exist (valid state for
+ * missing translations). Uses maybeSingle() to handle zero-or-one results.
+ * RLS policies ensure only project owners can access translations.
+ *
+ * @param projectId - Project UUID to fetch translation from (required)
+ * @param keyId - Translation key UUID (required)
+ * @param locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, key_id, or locale format)
+ * @throws {ApiErrorResponse} 403 - Project not owned by user
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with translation data or null if not found
+ */
 export function useTranslation(projectId: string, keyId: string, locale: string) {
   const supabase = useSupabase();
 
@@ -1027,6 +1043,26 @@ export interface UpdateTranslationParams {
   updatedAt?: string; // ISO 8601 timestamp
 }
 
+/**
+ * Update a translation value with optimistic locking and optimistic UI updates
+ *
+ * Updates a single translation record using direct table access with composite
+ * primary key matching and optional optimistic locking via updated_at timestamp.
+ * Implements optimistic updates for instant UI feedback and proper rollback
+ * on error. Validates translation value constraints and prevents empty values
+ * for default locale. Triggers cache invalidation for affected views.
+ *
+ * @param params - Update parameters and context
+ * @param params.projectId - Project UUID for the translation (required)
+ * @param params.keyId - Translation key UUID (required)
+ * @param params.locale - Target locale code in BCP-47 format (required)
+ * @param params.updatedAt - ISO 8601 timestamp for optimistic locking (optional)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid IDs, value constraints, default locale empty)
+ * @throws {ApiErrorResponse} 404 - Translation not found
+ * @throws {ApiErrorResponse} 409 - Optimistic lock failure (translation modified by another user)
+ * @throws {ApiErrorResponse} 500 - Database error during update
+ * @returns TanStack Query mutation hook for updating translations with optimistic updates
+ */
 export function useUpdateTranslation(params: UpdateTranslationParams) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
@@ -1141,16 +1177,17 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import type { ApiErrorResponse, TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../translations.errors';
+import { translationsKeys } from '../translations.keys';
 import {
   bulkUpdateTranslationQuerySchema,
   updateTranslationRequestSchema,
   translationResponseSchema,
 } from '../translations.schemas';
-import { z } from 'zod';
 
 export interface BulkUpdateTranslationsParams {
   keyIds: string[];
@@ -1158,6 +1195,25 @@ export interface BulkUpdateTranslationsParams {
   projectId: string;
 }
 
+/**
+ * Update multiple translation values in a single atomic operation
+ *
+ * Performs bulk update of translations for multiple keys in the same locale
+ * using PostgreSQL's IN operator for efficient multi-row updates. Primarily
+ * used internally by translation jobs for batch processing. All affected
+ * translations receive identical update data (value, metadata). Validates
+ * all constraints and triggers cache invalidation for affected views.
+ *
+ * @param params - Bulk update parameters and context
+ * @param params.projectId - Project UUID for all translations (required)
+ * @param params.keyIds - Array of translation key UUIDs to update (required, min: 1)
+ * @param params.locale - Target locale code in BCP-47 format (required)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid IDs, empty key array, value constraints)
+ * @throws {ApiErrorResponse} 403 - Project not owned by user
+ * @throws {ApiErrorResponse} 500 - Database error during bulk update or no data returned
+ * @returns TanStack Query mutation hook for bulk translation updates
+ * @warning Not recommended for manual client use due to overwrite risk for multiple translations
+ */
 export function useBulkUpdateTranslations(params: BulkUpdateTranslationsParams) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();

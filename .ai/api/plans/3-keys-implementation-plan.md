@@ -1078,6 +1078,25 @@ import { createDatabaseErrorResponse } from '../keys.errors';
 import { keysKeys } from '../keys.keys';
 import { keyDefaultViewResponseSchema, listKeysDefaultViewSchema } from '../keys.schemas';
 
+/**
+ * Fetch a paginated list of keys in default language view with missing counts
+ *
+ * Uses the RPC function `list_keys_default_view` with exact total counting
+ * enabled. Returns keys with their default locale values and missing counts
+ * for other locales. Data items are validated at runtime and pagination
+ * metadata is computed from input params and result size.
+ *
+ * @param params - Query parameters for key listing
+ * @param params.project_id - Project UUID to fetch keys from (required)
+ * @param params.search - Search term for key name (case-insensitive contains, optional)
+ * @param params.missing_only - Filter keys with missing translations (default: false)
+ * @param params.limit - Items per page (1-100, default: 50)
+ * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
+ * @throws {ApiErrorResponse} 403 - Project not owned by user
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with keys data and pagination metadata
+ */
 export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
   const supabase = useSupabase();
 
@@ -1138,6 +1157,26 @@ import { createDatabaseErrorResponse } from '../keys.errors';
 import { keysKeys } from '../keys.keys';
 import { keyPerLanguageViewResponseSchema, listKeysPerLanguageViewSchema } from '../keys.schemas';
 
+/**
+ * Fetch a paginated list of keys for a specific language with translation metadata
+ *
+ * Uses the RPC function `list_keys_per_language_view` with exact total counting
+ * enabled. Returns keys with their translation values and metadata for the
+ * specified locale. Data items are validated at runtime and pagination
+ * metadata is computed from input params and result size.
+ *
+ * @param params - Query parameters for key listing per language
+ * @param params.project_id - Project UUID to fetch keys from (required)
+ * @param params.locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
+ * @param params.search - Search term for key name (case-insensitive contains, optional)
+ * @param params.missing_only - Filter keys with NULL values in selected locale (default: false)
+ * @param params.limit - Items per page (1-100, default: 50)
+ * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, malformed locale, limit > 100, negative offset)
+ * @throws {ApiErrorResponse} 403 - Project not owned by user
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ * @returns TanStack Query result with keys data and pagination metadata
+ */
 export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   const supabase = useSupabase();
 
@@ -1194,11 +1233,26 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse, CreateKeyRequest, CreateKeyResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../keys.errors';
 import { keysKeys } from '../keys.keys';
 import { createKeyResponseSchema, createKeySchema } from '../keys.schemas';
 
+/**
+ * Create a new translation key with default value
+ *
+ * Uses the RPC function `create_key_with_value` to create a key and its
+ * default translation value in a single transaction. The database enforces
+ * prefix validation, uniqueness, and triggers automatic fan-out to all locales
+ * with NULL values. Key name must start with project prefix and follow naming rules.
+ *
+ * @param projectId - Project UUID for cache invalidation (required)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid key format, empty value, prefix mismatch)
+ * @throws {ApiErrorResponse} 409 - Conflict error (duplicate key name in project)
+ * @throws {ApiErrorResponse} 500 - Database error or no data returned
+ * @returns TanStack Query mutation hook for creating keys
+ */
 export function useCreateKey(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
@@ -1218,7 +1272,7 @@ export function useCreateKey(projectId: string) {
       }
 
       if (!data) {
-        throw createApiErrorResponse(500, 'No data returned from server');
+        throw createApiErrorResponse(500, KEYS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
       // Runtime validation of response data (already unwrapped by .single())
@@ -1238,20 +1292,35 @@ export function useCreateKey(projectId: string) {
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import type { ApiErrorResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../keys.errors';
 import { keysKeys } from '../keys.keys';
-import { z } from 'zod';
 
 const keyIdSchema = z.string().uuid('Invalid key ID format');
 
+/**
+ * Delete a translation key by ID
+ *
+ * Removes the key record and all associated translations via CASCADE DELETE.
+ * Operation is irreversible and affects all locales in the project. RLS
+ * policies ensure only project owners can delete keys. On success, related
+ * caches are cleared and key lists are invalidated.
+ *
+ * @param projectId - Project UUID for cache invalidation (required)
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid key ID format)
+ * @throws {ApiErrorResponse} 404 - Key not found or access denied
+ * @throws {ApiErrorResponse} 500 - Database error during deletion
+ * @returns TanStack Query mutation hook for deleting keys
+ */
 export function useDeleteKey(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<void, ApiErrorResponse, string>({
+  return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (keyId) => {
       // Validate key ID
       const validatedId = keyIdSchema.parse(keyId);
@@ -1265,7 +1334,7 @@ export function useDeleteKey(projectId: string) {
       }
 
       if (count === 0) {
-        throw createApiErrorResponse(404, 'Key not found or access denied');
+        throw createApiErrorResponse(404, KEYS_ERROR_MESSAGES.KEY_NOT_FOUND);
       }
 
       // Return void (no content) to match REST 204 semantics
