@@ -419,17 +419,24 @@ export const createTranslationJobResponseSchema = z.object({
 {
   "data": [
     {
+      "actual_cost_usd": null,
       "completed_keys": 45,
       "created_at": "2025-01-15T10:15:00Z",
+      "estimated_cost_usd": 0.012,
       "failed_keys": 2,
+      "finished_at": null,
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "mode": "all",
+      "model": null,
+      "params": null,
       "project_id": "550e8400-e29b-41d4-a716-446655440001",
+      "provider": null,
       "source_locale": "en",
       "started_at": "2025-01-15T10:15:00Z",
       "status": "running",
       "target_locale": "pl",
-      "total_keys": 100
+      "total_keys": 100,
+      "updated_at": "2025-01-15T10:15:00Z"
     }
   ],
   "metadata": {
@@ -461,10 +468,10 @@ export const createTranslationJobResponseSchema = z.object({
 {
   "data": [
     {
-      "actual_cost_usd": "0.1150",
+      "actual_cost_usd": 0.115,
       "completed_keys": 98,
       "created_at": "2025-01-15T10:00:00Z",
-      "estimated_cost_usd": "0.1200",
+      "estimated_cost_usd": 0.12,
       "failed_keys": 2,
       "finished_at": "2025-01-15T10:05:00Z",
       "id": "550e8400-e29b-41d4-a716-446655440000",

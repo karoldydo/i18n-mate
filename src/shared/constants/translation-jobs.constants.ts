@@ -6,6 +6,7 @@
  */
 
 // Pagination defaults
+export const TRANSLATION_JOBS_MIN_LIMIT = 1;
 export const TRANSLATION_JOBS_DEFAULT_LIMIT = 20;
 export const TRANSLATION_JOBS_MAX_LIMIT = 100;
 export const TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT = 100;

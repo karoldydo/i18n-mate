@@ -6,6 +6,7 @@ import {
   TRANSLATION_JOBS_ERROR_MESSAGES,
   TRANSLATION_JOBS_MAX_ITEMS_LIMIT,
   TRANSLATION_JOBS_MAX_LIMIT,
+  TRANSLATION_JOBS_MIN_LIMIT,
   TRANSLATION_JOBS_MIN_OFFSET,
   TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX,
   TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN,
@@ -107,7 +108,13 @@ export const checkActiveJobSchema = z.object({
  * Supports status filtering (single or multiple) and various sort orders
  */
 export const listTranslationJobsSchema = z.object({
-  limit: z.number().int().min(1).max(TRANSLATION_JOBS_MAX_LIMIT).optional().default(TRANSLATION_JOBS_DEFAULT_LIMIT),
+  limit: z
+    .number()
+    .int()
+    .min(TRANSLATION_JOBS_MIN_LIMIT)
+    .max(TRANSLATION_JOBS_MAX_LIMIT)
+    .optional()
+    .default(TRANSLATION_JOBS_DEFAULT_LIMIT),
   offset: z.number().int().min(TRANSLATION_JOBS_MIN_OFFSET).optional().default(TRANSLATION_JOBS_MIN_OFFSET),
   order: z
     .enum(['created_at.asc', 'created_at.desc', 'status.asc', 'status.desc'])
@@ -180,7 +187,7 @@ export const getJobItemsSchema = z.object({
   limit: z
     .number()
     .int()
-    .min(1)
+    .min(TRANSLATION_JOBS_MIN_LIMIT)
     .max(TRANSLATION_JOBS_MAX_ITEMS_LIMIT)
     .optional()
     .default(TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT),
