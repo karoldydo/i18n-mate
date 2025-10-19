@@ -352,15 +352,26 @@ CREATE TRIGGER update_translation_job_items_updated_at
 
 ### 11. Validate Source Locale is Default Locale
 
+**Purpose:** Ensures translation jobs always use the project's default locale as source language.
+
+**Business Rule:** Translation jobs must translate FROM the project's default locale TO a target locale. This prevents confusion and maintains consistency in the translation workflow.
+
+**Usage Examples:**
+
+- ✅ Valid: Project with default_locale='en' creates job with source_locale='en' → target_locale='pl'
+- ❌ Invalid: Project with default_locale='en' attempts job with source_locale='pl' → target_locale='de'
+
 ```sql
 CREATE OR REPLACE FUNCTION validate_source_locale_is_default()
 RETURNS TRIGGER AS $$
 DECLARE
   project_default_locale locale_code;
 BEGIN
+  -- Fetch project's default locale for validation
   SELECT default_locale INTO project_default_locale
   FROM projects WHERE id = NEW.project_id;
 
+  -- Enforce business rule: source must equal project's default locale
   IF NEW.source_locale <> project_default_locale THEN
     RAISE EXCEPTION 'source_locale must equal project default_locale (%)', project_default_locale;
   END IF;
@@ -369,6 +380,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Trigger applies to both INSERT and UPDATE operations
+-- Prevents creation of jobs with wrong source locale and modification after creation
 CREATE TRIGGER validate_source_locale_is_default_trigger
   BEFORE INSERT OR UPDATE OF source_locale ON translation_jobs
   FOR EACH ROW EXECUTE FUNCTION validate_source_locale_is_default();
@@ -376,15 +389,30 @@ CREATE TRIGGER validate_source_locale_is_default_trigger
 
 ### 12. Prevent Multiple Active Jobs
 
+**Purpose:** Enforces business rule that only one translation job can be active per project at any time.
+
+**Business Rule:** Prevents resource contention, reduces OpenRouter API costs, and ensures sequential processing of translation jobs. Users must wait for current job to complete before starting a new one.
+
+**Active Job States:** 'pending' (waiting to start) and 'running' (currently processing)
+
+**Usage Examples:**
+
+- ✅ Allowed: Project has job_1 with status='completed', can create job_2 with status='pending'
+- ✅ Allowed: Project has job_1 with status='failed', can create job_2 with status='pending'
+- ❌ Blocked: Project has job_1 with status='running', cannot create job_2 with status='pending'
+- ❌ Blocked: Project has job_1 with status='pending', cannot create job_2 with status='pending'
+
 ```sql
 CREATE OR REPLACE FUNCTION prevent_multiple_active_jobs()
 RETURNS TRIGGER AS $$
 BEGIN
+  -- Only check when job is being set to an active state
   IF NEW.status IN ('pending', 'running') THEN
+    -- Check if another job is already active for this project
     IF EXISTS (
       SELECT 1 FROM translation_jobs
       WHERE project_id = NEW.project_id
-        AND id <> NEW.id
+        AND id <> NEW.id  -- Exclude current job (for UPDATE operations)
         AND status IN ('pending', 'running')
     ) THEN
       RAISE EXCEPTION 'Only one active translation job allowed per project';
@@ -394,6 +422,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Trigger fires on both INSERT (new jobs) and UPDATE (status changes)
+-- Prevents concurrent job creation and status changes that would violate the rule
 CREATE TRIGGER prevent_multiple_active_jobs_trigger
   BEFORE INSERT OR UPDATE OF status ON translation_jobs
   FOR EACH ROW EXECUTE FUNCTION prevent_multiple_active_jobs();
@@ -800,6 +830,117 @@ WHERE te.event_name = 'language_added'
 ```
 
 **Indexes used:** `idx_telemetry_events_project_time`, `idx_telemetry_events_name`
+
+### 7. Translation Jobs Active Check (Optimized)
+
+```sql
+-- Fast lookup for polling during translation progress
+-- Returns at most one active job per project for real-time UI updates
+SELECT id, status, completed_keys, total_keys, created_at, started_at,
+       CASE
+         WHEN total_keys > 0 THEN ROUND((completed_keys::decimal / total_keys) * 100, 1)
+         ELSE 0
+       END as progress_percentage
+FROM translation_jobs
+WHERE project_id = :project_id
+  AND status IN ('pending', 'running')
+LIMIT 1;
+```
+
+**Indexes used:** `idx_translation_jobs_project_status` (partial index)
+**Performance:** O(1) for active job detection, optimized for frequent polling
+**Use case:** Frontend polling every 2-5 seconds during translation progress
+
+### 8. Translation Job History with Pagination
+
+```sql
+-- List translation jobs with full details, sorted by most recent first
+-- Supports filtering by status and pagination for job history UI
+SELECT j.id, j.status, j.mode, j.target_locale, j.created_at, j.started_at, j.finished_at,
+       j.total_keys, j.completed_keys, j.failed_keys,
+       j.estimated_cost_usd, j.actual_cost_usd,
+       j.provider, j.model
+FROM translation_jobs j
+WHERE j.project_id = :project_id
+  AND (:status_filter IS NULL OR j.status = :status_filter)
+ORDER BY j.created_at DESC
+LIMIT :limit OFFSET :offset;
+
+-- Count query for pagination metadata
+SELECT COUNT(*) as total
+FROM translation_jobs
+WHERE project_id = :project_id
+  AND (:status_filter IS NULL OR status = :status_filter);
+```
+
+**Indexes used:** `idx_translation_jobs_project`
+**Performance:** Efficient pagination with stable sorting
+**Use case:** Job history page with filtering and pagination
+
+### 9. Translation Job Progress Tracking
+
+```sql
+-- Get detailed progress for active job including per-key status breakdown
+-- Used for debugging failed translations and showing detailed progress
+SELECT j.id, j.status, j.total_keys, j.completed_keys, j.failed_keys,
+       j.started_at, j.estimated_cost_usd,
+       -- Progress statistics
+       CASE
+         WHEN j.total_keys > 0 THEN ROUND((j.completed_keys::decimal / j.total_keys) * 100, 1)
+         ELSE 0
+       END as progress_percentage,
+       -- Time estimates
+       CASE
+         WHEN j.status = 'running' AND j.completed_keys > 0 THEN
+           j.started_at + (
+             (EXTRACT(EPOCH FROM now() - j.started_at) / j.completed_keys) * j.total_keys
+           ) * INTERVAL '1 second'
+         ELSE NULL
+       END as estimated_completion_time
+FROM translation_jobs j
+WHERE j.id = :job_id;
+
+-- Get failed items for error analysis
+SELECT ji.id, ji.key_id, ji.status, ji.error_code, ji.error_message,
+       k.full_key, ji.created_at, ji.updated_at
+FROM translation_job_items ji
+JOIN keys k ON k.id = ji.key_id
+WHERE ji.job_id = :job_id
+  AND ji.status = 'failed'
+ORDER BY ji.updated_at DESC;
+```
+
+**Indexes used:** `idx_translation_job_items_job`
+**Performance:** Fast lookup of job items by status
+**Use case:** Detailed job monitoring and error diagnosis
+
+### 10. Translation Job Cost Analysis
+
+```sql
+-- Analyze translation costs and accuracy across jobs
+-- Used for cost optimization and model performance analysis
+SELECT
+  j.provider,
+  j.model,
+  j.target_locale,
+  COUNT(*) as job_count,
+  AVG(j.total_keys) as avg_keys_per_job,
+  AVG(j.actual_cost_usd) as avg_cost_usd,
+  AVG(j.completed_keys::decimal / NULLIF(j.total_keys, 0)) as avg_success_rate,
+  AVG(EXTRACT(EPOCH FROM (j.finished_at - j.started_at))) as avg_duration_seconds,
+  -- Cost accuracy analysis
+  AVG(ABS(j.actual_cost_usd - j.estimated_cost_usd) / NULLIF(j.estimated_cost_usd, 0)) as avg_cost_variance
+FROM translation_jobs j
+WHERE j.status IN ('completed', 'failed')
+  AND j.project_id = :project_id
+  AND j.created_at >= :date_from
+GROUP BY j.provider, j.model, j.target_locale
+ORDER BY job_count DESC, avg_cost_usd ASC;
+```
+
+**Indexes used:** `idx_translation_jobs_project`
+**Performance:** Efficient aggregation over time ranges
+**Use case:** Cost optimization and provider/model selection analytics
 
 ## Optimistic Locking Example
 

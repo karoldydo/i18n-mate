@@ -183,12 +183,21 @@ export type ExportedTranslations = Record<string, string>;
  * Export Translations Response - contains multiple locale files
  */
 export type ExportTranslationsData = Record<string, ExportedTranslations>;
-export type ItemStatus = Enums<'item_status'>;
+/**
+ * Get Job Items Parameters - for fetching job item details
+ */
+export interface GetJobItemsParams {
+  jobId: string;
+  limit?: number;
+  offset?: number;
+  status?: ItemStatus;
+}
 
 // ============================================================================
 // Enum Types
 // ============================================================================
 
+export type ItemStatus = Enums<'item_status'>;
 export type JobStatus = Enums<'job_status'>;
 /**
  * Key entity - represents a translation key
@@ -204,6 +213,7 @@ export interface KeyCreatedEvent {
   project_id: string;
   properties: KeyCreatedProperties;
 }
+
 export interface KeyCreatedProperties {
   full_key: string;
   key_count: number;
@@ -224,14 +234,14 @@ export type KeyDefaultViewResponse = Database['public']['Functions']['list_keys_
 
 export type KeyInsert = TablesInsert<'keys'>;
 
+// ============================================================================
+// Authentication DTOs (Section 2 of API Plan)
+// ============================================================================
+
 export interface KeyPerLanguageViewListResponse {
   data: KeyPerLanguageViewResponse[];
   metadata: PaginationMetadata;
 }
-
-// ============================================================================
-// Authentication DTOs (Section 2 of API Plan)
-// ============================================================================
 
 /**
  * Key Per Language View Response - uses database generated composite type
@@ -332,11 +342,29 @@ export interface ListProjectsWithCountsArgs {
 }
 
 /**
+ * List Translation Job Items Response - paginated job items with key info
+ * Format: { data: TranslationJobItemResponse[], metadata: PaginationMetadata }
+ */
+export interface ListTranslationJobItemsResponse {
+  data: TranslationJobItemResponse[];
+  metadata: PaginationMetadata;
+}
+
+/**
  * List Translation Jobs Query Parameters
  */
 export interface ListTranslationJobsParams extends PaginationParams {
   project_id: string;
   status?: JobStatus | JobStatus[];
+}
+
+/**
+ * List Translation Jobs Response - paginated job history
+ * Format: { data: TranslationJobResponse[], metadata: PaginationMetadata }
+ */
+export interface ListTranslationJobsResponse {
+  data: TranslationJobResponse[];
+  metadata: PaginationMetadata;
 }
 
 /**
@@ -354,6 +382,10 @@ export interface PaginationMetadata {
   total: number;
 }
 
+// ============================================================================
+// Projects DTOs (Section 3 of API Plan)
+// ============================================================================
+
 /**
  * Pagination Parameters - used across list endpoints
  */
@@ -368,10 +400,6 @@ export interface PaginationParams {
 export interface PasswordResetRequest {
   email: string;
 }
-
-// ============================================================================
-// Projects DTOs (Section 3 of API Plan)
-// ============================================================================
 
 /**
  * Password Reset Response
@@ -396,15 +424,15 @@ export interface ProjectCreatedEvent {
   properties: ProjectCreatedProperties;
 }
 
+// ============================================================================
+// Project Locales DTOs (Section 4 of API Plan)
+// ============================================================================
+
 export interface ProjectCreatedProperties {
   locale_count: number;
 }
 
 export type ProjectInsert = TablesInsert<'projects'>;
-
-// ============================================================================
-// Project Locales DTOs (Section 4 of API Plan)
-// ============================================================================
 
 /**
  * Project List Response - list of projects with pagination metadata
@@ -420,16 +448,16 @@ export interface ProjectListResponse {
  */
 export type ProjectLocale = Tables<'project_locales'>;
 
+// ============================================================================
+// Keys DTOs (Section 5 of API Plan)
+// ============================================================================
+
 export type ProjectLocaleInsert = TablesInsert<'project_locales'>;
 
 /**
  * Project Locale Response - standard locale representation
  */
 export type ProjectLocaleResponse = ProjectLocale;
-
-// ============================================================================
-// Keys DTOs (Section 5 of API Plan)
-// ============================================================================
 
 export type ProjectLocaleUpdate = TablesUpdate<'project_locales'>;
 
@@ -450,6 +478,10 @@ export type ProjectResponse = Pick<
   'created_at' | 'default_locale' | 'description' | 'id' | 'name' | 'prefix' | 'updated_at'
 >;
 
+// ============================================================================
+// Translations DTOs (Section 6 of API Plan)
+// ============================================================================
+
 export type ProjectUpdate = TablesUpdate<'projects'>;
 
 /**
@@ -460,10 +492,6 @@ export type ProjectWithCounts = ProjectResponse & {
   key_count: number;
   locale_count: number;
 };
-
-// ============================================================================
-// Translations DTOs (Section 6 of API Plan)
-// ============================================================================
 
 /**
  * Resend Verification Email Request - POST /auth/v1/resend
@@ -479,6 +507,10 @@ export interface ResendVerificationRequest {
 export interface ResendVerificationResponse {
   message: string;
 }
+
+// ============================================================================
+// Translation Jobs DTOs (Section 7 of API Plan)
+// ============================================================================
 
 /**
  * Reset Password Request - PUT /auth/v1/user
@@ -496,10 +528,6 @@ export interface ResetPasswordResponse {
     id: string;
   };
 }
-
-// ============================================================================
-// Translation Jobs DTOs (Section 7 of API Plan)
-// ============================================================================
 
 /**
  * Sign In Request - POST /auth/v1/token?grant_type=password
@@ -545,16 +573,16 @@ export interface SignUpResponse {
   };
 }
 
+// ============================================================================
+// Telemetry DTOs (Section 9 of API Plan)
+// ============================================================================
+
 /**
  * Telemetry Event entity - represents application telemetry
  */
 export type TelemetryEvent = Tables<'telemetry_events'>;
 
 export type TelemetryEventInsert = TablesInsert<'telemetry_events'>;
-
-// ============================================================================
-// Telemetry DTOs (Section 9 of API Plan)
-// ============================================================================
 
 /**
  * Telemetry Event Properties - typed event-specific data
@@ -587,6 +615,10 @@ export type TelemetryEventUpdate = TablesUpdate<'telemetry_events'>;
  */
 export type Translation = Tables<'translations'>;
 
+// ============================================================================
+// Export DTOs (Section 8 of API Plan)
+// ============================================================================
+
 /**
  * Translation Completed Telemetry Event
  * Emitted when an LLM translation job is completed
@@ -606,7 +638,7 @@ export interface TranslationCompletedProperties {
 }
 
 // ============================================================================
-// Export DTOs (Section 8 of API Plan)
+// Pagination & Query Parameters
 // ============================================================================
 
 export type TranslationInsert = TablesInsert<'translations'>;
@@ -615,10 +647,6 @@ export type TranslationInsert = TablesInsert<'translations'>;
  * Translation Job entity - represents an LLM translation job
  */
 export type TranslationJob = Tables<'translation_jobs'>;
-
-// ============================================================================
-// Pagination & Query Parameters
-// ============================================================================
 
 export type TranslationJobInsert = TablesInsert<'translation_jobs'>;
 

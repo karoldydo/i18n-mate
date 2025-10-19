@@ -849,7 +849,6 @@ export * from './locale.constants';
 export * from './keys.constants';
 export * from './projects.constants';
 export * from './translations.constants';
-export type { LocaleCode } from '@/shared/types';
 ```
 
 ### Step 3: Create Zod Validation Schemas

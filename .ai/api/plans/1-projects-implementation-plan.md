@@ -982,7 +982,6 @@ Add to `src/shared/constants/index.ts`:
 export * from './keys.constants';
 export * from './locale.constants';
 export * from './projects.constants';
-export type { LocaleCode } from '@/shared/types';
 ```
 
 ### Step 3: Create Zod Validation Schemas
