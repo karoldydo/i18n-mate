@@ -25,6 +25,7 @@
     "narasimapandiyan.jetbrainsmonos",
     "vitest.explorer",
     "ms-vscode.live-server",
-    "anthropic.claude-code"
+    "anthropic.claude-code",
+    "denoland.vscode-deno"
   ]
 }

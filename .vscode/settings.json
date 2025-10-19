@@ -10,6 +10,8 @@
     "Supabase",
     "VITE"
   ],
+  "deno.enable": false,
+  "deno.enablePaths": ["supabase/functions"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
     "source.formatDocument": "explicit"
