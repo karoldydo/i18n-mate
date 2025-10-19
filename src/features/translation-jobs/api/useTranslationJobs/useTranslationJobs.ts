@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
 
 import type { ApiErrorResponse, ListTranslationJobsParams, ListTranslationJobsResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { calculatePaginationMetadata } from '@/shared/utils';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
 import { translationJobsKeys } from '../translation-jobs.keys';
-import { listTranslationJobsSchema } from '../translation-jobs.schemas';
+import { listTranslationJobsSchema, translationJobResponseSchema } from '../translation-jobs.schemas';
 
 /**
  * Fetch paginated list of translation jobs for project
@@ -71,16 +73,12 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
         );
       }
 
-      // Return jobs directly - they're already the correct Supabase type
-      const jobs = data || [];
+      // Runtime validation of response data
+      const jobs = z.array(translationJobResponseSchema).parse(data || []);
 
       return {
         data: jobs,
-        metadata: {
-          end: validated.offset + jobs.length - 1,
-          start: validated.offset,
-          total: count || 0,
-        },
+        metadata: calculatePaginationMetadata(validated.offset, jobs.length, count || 0),
       };
     },
     queryKey: translationJobsKeys.list(params),

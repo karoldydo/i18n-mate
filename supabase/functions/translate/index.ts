@@ -343,6 +343,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
       keyIds,
       project.default_locale,
       validatedData.target_locale,
+      validatedData.mode,
       validatedData.params,
       userId
     ).catch((error) => {
@@ -371,13 +372,13 @@ async function processTranslationJobInBackground(
   keyIds: string[],
   sourceLocale: string,
   targetLocale: string,
+  mode: 'all' | 'selected' | 'single',
   params?: null | {
     max_tokens?: number;
     model?: string;
     provider?: string;
     temperature?: number;
-  },
-  userId?: string
+  }
 ): Promise<void> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -450,10 +451,12 @@ async function processTranslationJobInBackground(
             is_machine_translated: true,
             key_id: keyId,
             locale: targetLocale,
-            updated_by: 'system',
+            project_id: projectId,
+            updated_by_user_id: null,
+            updated_source: 'system',
             value: translatedValue,
           },
-          { onConflict: 'key_id,locale' }
+          { onConflict: 'project_id,key_id,locale' }
         );
 
         if (upsertError) {
@@ -485,23 +488,19 @@ async function processTranslationJobInBackground(
       .eq('id', jobId);
 
     // Log telemetry
-    if (userId) {
-      try {
-        await supabase.from('telemetry_events').insert({
-          event_data: {
-            completed_keys: completedCount,
-            failed_keys: failedCount,
-            job_id: jobId,
-            project_id: projectId,
-            status: finalStatus,
-            total_keys: keyIds.length,
-          },
-          event_type: 'translation_completed',
-          user_id: userId,
-        });
-      } catch (err) {
-        console.warn('[processTranslationJob] Telemetry insert failed:', err);
-      }
+    try {
+      await supabase.from('telemetry_events').insert({
+        event_name: 'translation_completed',
+        project_id: projectId,
+        properties: {
+          completed_keys: completedCount,
+          failed_keys: failedCount,
+          mode: mode,
+          target_locale: targetLocale,
+        },
+      });
+    } catch (err) {
+      console.warn('[processTranslationJob] Telemetry insert failed:', err);
     }
   } catch (error) {
     console.error('[processTranslationJob] Fatal error:', error);

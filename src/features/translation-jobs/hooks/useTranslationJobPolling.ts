@@ -43,45 +43,46 @@ export function useTranslationJobPolling(projectId: string, enabled = true) {
   const hasActiveJob = Boolean(activeJob);
   const isJobRunning = activeJob ? isActiveJob(activeJob) : false;
 
-  // Memoized cleanup function to prevent recreation on every render
-  const cleanup = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    pollAttemptRef.current = 0;
-  }, []);
+  // Effect for managing polling lifecycle
+  useEffect(() => {
+    // Cleanup function - defined inside effect to avoid dependency issues
+    const cleanup = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      pollAttemptRef.current = 0;
+    };
 
-  // Memoized poll function to prevent recreation
-  const scheduleNextPoll = useCallback(() => {
-    if (pollAttemptRef.current >= TRANSLATION_JOBS_POLL_MAX_ATTEMPTS) {
-      console.warn('Translation job polling max attempts reached');
-      cleanup();
-      return;
-    }
-
-    const intervalIndex = Math.min(pollAttemptRef.current, TRANSLATION_JOBS_POLL_INTERVALS.length - 1);
-    const interval = TRANSLATION_JOBS_POLL_INTERVALS[intervalIndex];
-
-    timeoutRef.current = setTimeout(() => {
-      // Check if polling was aborted
-      if (abortControllerRef.current?.signal.aborted) {
+    // Schedule next poll - defined inside effect to avoid dependency issues
+    const scheduleNextPoll = () => {
+      if (pollAttemptRef.current >= TRANSLATION_JOBS_POLL_MAX_ATTEMPTS) {
+        console.warn('Translation job polling max attempts reached');
+        cleanup();
         return;
       }
 
-      pollAttemptRef.current++;
-      queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.active(projectId),
-      });
-      scheduleNextPoll();
-    }, interval);
-  }, [cleanup, projectId, queryClient]);
+      const intervalIndex = Math.min(pollAttemptRef.current, TRANSLATION_JOBS_POLL_INTERVALS.length - 1);
+      const interval = TRANSLATION_JOBS_POLL_INTERVALS[intervalIndex];
 
-  useEffect(() => {
+      timeoutRef.current = setTimeout(() => {
+        // Check if polling was aborted
+        if (abortControllerRef.current?.signal.aborted) {
+          return;
+        }
+
+        pollAttemptRef.current++;
+        queryClient.invalidateQueries({
+          queryKey: translationJobsKeys.active(projectId),
+        });
+        scheduleNextPoll();
+      }, interval);
+    };
+
     // Early return if polling should not be active
     if (!enabled || !hasActiveJob || !isJobRunning) {
       cleanup();
@@ -95,20 +96,44 @@ export function useTranslationJobPolling(projectId: string, enabled = true) {
 
     // Cleanup function for effect
     return cleanup;
-  }, [projectId, enabled, hasActiveJob, isJobRunning, scheduleNextPoll, cleanup]);
+  }, [projectId, enabled, hasActiveJob, isJobRunning, queryClient]);
 
   // Manual control functions
   const stopPolling = useCallback(() => {
-    cleanup();
-  }, [cleanup]);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    pollAttemptRef.current = 0;
+  }, []);
 
   const startPolling = useCallback(() => {
-    if (enabled && hasActiveJob && isJobRunning) {
-      pollAttemptRef.current = 0;
-      abortControllerRef.current = new AbortController();
-      scheduleNextPoll();
+    if (!enabled || !hasActiveJob || !isJobRunning) {
+      return;
     }
-  }, [enabled, hasActiveJob, isJobRunning, scheduleNextPoll]);
+
+    // Stop any existing polling first
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Reset and start fresh
+    pollAttemptRef.current = 0;
+    abortControllerRef.current = new AbortController();
+
+    // Trigger immediate refetch
+    queryClient.invalidateQueries({
+      queryKey: translationJobsKeys.active(projectId),
+    });
+  }, [enabled, hasActiveJob, isJobRunning, projectId, queryClient]);
 
   return {
     activeJob,

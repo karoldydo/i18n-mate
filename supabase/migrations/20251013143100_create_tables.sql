@@ -192,8 +192,8 @@ create table translation_jobs (
   finished_at timestamptz,
   
   total_keys integer,
-  completed_keys integer default 0,
-  failed_keys integer default 0,
+  completed_keys integer not null default 0,
+  failed_keys integer not null default 0,
 
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

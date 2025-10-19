@@ -59,11 +59,12 @@ export interface CancelTranslationJobRequest {
   status: 'cancelled';
 }
 /**
- * Check Active Job Response - consistent paginated format
- * Format: { data: TranslationJobResponse[], metadata: PaginationMetadata }
- * Note: data array contains 0-1 items (at most one active job per project)
+ * Check Active Job Response - returns raw array from Supabase query
+ * Format: TranslationJobResponse[] (empty array if no active job)
+ * Note: array contains 0-1 items (at most one active job per project)
+ * Hook useActiveTranslationJob returns this array directly without pagination wrapper
  */
-export type CheckActiveJobResponse = PaginatedResponse<TranslationJobResponse>;
+export type CheckActiveJobResponse = TranslationJobResponse[];
 
 /**
  * Conflict Error Response - used for optimistic locking and unique constraints
@@ -196,9 +197,10 @@ export type ExportTranslationsData = Record<string, ExportedTranslations>;
 
 /**
  * Get Job Items Parameters - for fetching job item details
+ * Note: Uses snake_case to match database column names and API convention
  */
 export interface GetJobItemsParams {
-  jobId: string;
+  job_id: string;
   limit?: number;
   offset?: number;
   status?: ItemStatus;

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse, TranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { TRANSLATION_JOBS_ERROR_MESSAGES, TRANSLATION_JOBS_VALIDATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
@@ -63,6 +64,27 @@ export function useCancelTranslationJob() {
         status: 'cancelled',
       });
 
+      // First, fetch the current job to verify it exists and is in a cancellable state
+      const { data: currentJob, error: fetchError } = await supabase
+        .from('translation_jobs')
+        .select('status')
+        .eq('id', validated.job_id)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw createTranslationJobDatabaseErrorResponse(fetchError, 'useCancelTranslationJob', 'Failed to fetch job');
+      }
+
+      if (!currentJob) {
+        throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
+      }
+
+      // Verify the job is in a cancellable state (pending or running)
+      if (!TRANSLATION_JOBS_VALIDATION.isCancellableStatus(currentJob.status)) {
+        throw createApiErrorResponse(400, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_CANCELLABLE);
+      }
+
+      // Update the job status to cancelled
       const { data, error } = await supabase
         .from('translation_jobs')
         .update({
@@ -78,7 +100,7 @@ export function useCancelTranslationJob() {
       }
 
       if (!data) {
-        throw createApiErrorResponse(404, 'Translation job not found or access denied');
+        throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
       }
 
       // Return data directly - it's already the correct Supabase type

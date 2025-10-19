@@ -79,15 +79,15 @@ export function createTranslationJobDatabaseErrorResponse(
   // Handle common PostgreSQL errors by code
   switch (error.code) {
     case '42P01': // undefined_table
-      return createApiErrorResponse(500, 'Database schema error');
+      return createApiErrorResponse(500, TRANSLATION_JOBS_ERROR_MESSAGES.DATABASE_SCHEMA_ERROR);
     case '23503': // foreign_key_violation
-      return createApiErrorResponse(404, 'Referenced resource not found or access denied');
+      return createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.FOREIGN_KEY_VIOLATION);
     case '23505': // unique_violation
-      return createApiErrorResponse(409, 'Resource already exists');
+      return createApiErrorResponse(409, TRANSLATION_JOBS_ERROR_MESSAGES.RESOURCE_ALREADY_EXISTS);
     case '23514': // check_violation
-      return createApiErrorResponse(400, 'Data validation failed');
+      return createApiErrorResponse(400, TRANSLATION_JOBS_ERROR_MESSAGES.CHECK_VIOLATION);
     case '42501': // insufficient_privilege
-      return createApiErrorResponse(403, 'Permission denied');
+      return createApiErrorResponse(403, TRANSLATION_JOBS_ERROR_MESSAGES.INSUFFICIENT_PRIVILEGE);
     default:
       break;
   }

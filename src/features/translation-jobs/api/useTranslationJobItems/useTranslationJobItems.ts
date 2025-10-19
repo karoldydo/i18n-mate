@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { ApiErrorResponse, GetJobItemsParams, ListTranslationJobItemsResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { calculatePaginationMetadata } from '@/shared/utils';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
 import { translationJobsKeys } from '../translation-jobs.keys';
@@ -30,7 +31,7 @@ import { getJobItemsSchema, translationJobItemResponseSchema } from '../translat
  * - Monitoring job execution status
  *
  * @param params - Query parameters for job items
- * @param params.jobId - Translation job UUID to fetch items from (required)
+ * @param params.job_id - Translation job UUID to fetch items from (required)
  * @param params.status - Filter by item status (pending, completed, failed, skipped)
  * @param params.limit - Items per page (1-1000, default: 100)
  * @param params.offset - Pagination offset (min: 0, default: 0)
@@ -47,7 +48,7 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
     queryFn: async () => {
       // Validate parameters
       const validated = getJobItemsSchema.parse({
-        job_id: params.jobId,
+        job_id: params.job_id,
         limit: params.limit,
         offset: params.offset,
         status: params.status,
@@ -78,14 +79,10 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
 
       return {
         data: items,
-        metadata: {
-          end: validated.offset + items.length - 1,
-          start: validated.offset,
-          total: count || 0,
-        },
+        metadata: calculatePaginationMetadata(validated.offset, items.length, count || 0),
       };
     },
-    queryKey: translationJobsKeys.items(params.jobId, params),
+    queryKey: translationJobsKeys.items(params.job_id, params),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
