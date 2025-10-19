@@ -692,10 +692,8 @@ export interface Database {
       };
       translation_jobs: {
         Insert: {
-          actual_cost_usd?: null | number;
           completed_keys?: null | number;
           created_at?: string;
-          estimated_cost_usd?: null | number;
           failed_keys?: null | number;
           finished_at?: null | string;
           id?: string;
@@ -721,10 +719,8 @@ export interface Database {
           },
         ];
         Row: {
-          actual_cost_usd: null | number;
           completed_keys: null | number;
           created_at: string;
-          estimated_cost_usd: null | number;
           failed_keys: null | number;
           finished_at: null | string;
           id: string;
@@ -741,10 +737,8 @@ export interface Database {
           updated_at: string;
         };
         Update: {
-          actual_cost_usd?: null | number;
           completed_keys?: null | number;
           created_at?: string;
-          estimated_cost_usd?: null | number;
           failed_keys?: null | number;
           finished_at?: null | string;
           id?: string;

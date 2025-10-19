@@ -755,12 +755,6 @@ GET /functions/v1/export-translations?project_id={uuid}
 - `503 Service Unavailable` - Provider unavailable, fail job
 - `400 Bad Request` - Invalid params, log and skip item
 
-**Cost Tracking:**
-
-- Extract token counts from `usage` field
-- Calculate cost using OpenRouter pricing API
-- Store in `translation_jobs.actual_cost_usd`
-
 ---
 
 ## Appendix C: Database Migration Order

@@ -23,7 +23,7 @@
 
 ## AI
 
-- **OpenRouter.ai** - Gateway to multiple LLM providers (OpenAI, Anthropic, Google) with unified API and cost controls
+- **OpenRouter.ai** - Gateway to multiple LLM providers (OpenAI, Anthropic, Google) with unified API
 
 ## CI/CD and Hosting
 

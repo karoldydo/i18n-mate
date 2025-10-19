@@ -22,7 +22,7 @@ import { createTranslationJobResponseSchema, createTranslationJobSchema } from '
  * - Target locale existence and uniqueness (not default locale)
  * - Active job conflict prevention (409 if another job is running)
  * - Mode-specific key_ids validation (all/selected/single)
- * - LLM parameter validation and cost estimation
+ * - LLM parameter validation
  *
  * After successful creation, the mutation:
  * - Invalidates active job cache to trigger polling

@@ -194,11 +194,7 @@ create table translation_jobs (
   total_keys integer,
   completed_keys integer default 0,
   failed_keys integer default 0,
-  
-  -- cost tracking
-  estimated_cost_usd numeric(10,4),
-  actual_cost_usd numeric(10,4),
-  
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 
@@ -209,8 +205,6 @@ create table translation_jobs (
 comment on table translation_jobs is 'LLM translation jobs; only one active (pending/running) per project';
 comment on column translation_jobs.mode is 'all = all keys; selected = specific keys; single = one key';
 comment on column translation_jobs.params is 'LLM parameters: temperature, max_tokens, etc.';
-comment on column translation_jobs.estimated_cost_usd is 'Estimated cost before execution';
-comment on column translation_jobs.actual_cost_usd is 'Actual cost after completion';
 
 -- enable rls (policies defined in separate migration)
 alter table translation_jobs enable row level security;

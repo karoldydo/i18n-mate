@@ -2,7 +2,7 @@
 
 ## 1. Endpoint Overview
 
-The Translation Jobs API provides comprehensive management of LLM-powered translation jobs. It consists of five endpoints that handle checking active jobs, listing job history, creating new translation jobs via Edge Functions, cancelling running jobs, and retrieving detailed item-level status. The API integrates deeply with OpenRouter.ai for LLM translation services and includes robust progress tracking, error handling, and cost monitoring.
+The Translation Jobs API provides comprehensive management of LLM-powered translation jobs. It consists of five endpoints that handle checking active jobs, listing job history, creating new translation jobs via Edge Functions, cancelling running jobs, and retrieving detailed item-level status. The API integrates deeply with OpenRouter.ai for LLM translation services and includes robust progress tracking and error handling.
 
 ### Key Features
 
@@ -12,7 +12,6 @@ The Translation Jobs API provides comprehensive management of LLM-powered transl
 - Real-time progress tracking with per-key status and error reporting
 - Graceful cancellation with preservation of partial results
 - **Centralized constants and validation patterns** for consistency between TypeScript and PostgreSQL constraints
-- Cost estimation and tracking with detailed LLM usage metrics
 
 ### Endpoints Summary
 
@@ -382,8 +381,6 @@ export const translationJobResponseSchema = z.object({
   total_keys: z.number().nullable(),
   completed_keys: z.number().nullable(),
   failed_keys: z.number().nullable(),
-  estimated_cost_usd: z.number().nullable(),
-  actual_cost_usd: z.number().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -419,10 +416,8 @@ export const createTranslationJobResponseSchema = z.object({
 {
   "data": [
     {
-      "actual_cost_usd": null,
       "completed_keys": 45,
       "created_at": "2025-01-15T10:15:00Z",
-      "estimated_cost_usd": 0.012,
       "failed_keys": 2,
       "finished_at": null,
       "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -468,10 +463,8 @@ export const createTranslationJobResponseSchema = z.object({
 {
   "data": [
     {
-      "actual_cost_usd": 0.115,
       "completed_keys": 98,
       "created_at": "2025-01-15T10:00:00Z",
-      "estimated_cost_usd": 0.12,
       "failed_keys": 2,
       "finished_at": "2025-01-15T10:05:00Z",
       "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -762,12 +755,11 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - **Mode-specific validation:** Complex validation rules for key_ids based on translation mode
 - **Business logic validation:** Active job detection, locale existence, ownership checks
 
-### 6.4 Rate Limiting and Cost Control
+### 6.4 Rate Limiting
 
 - Edge Function implements rate limiting per user/project
-- OpenRouter.ai provides built-in rate limiting and cost controls
-- Cost estimation and tracking prevents runaway expenses
-- Job cancellation allows users to stop expensive operations
+- OpenRouter.ai provides built-in rate limiting
+- Job cancellation allows users to stop running operations
 
 ### 6.5 Data Exposure
 
@@ -939,19 +931,6 @@ gcTime: 30 * 60 * 1000, // 30 minutes
 - Groups translation requests to OpenRouter when possible
 - Implements retry logic with exponential backoff for API failures
 - Preserves partial results if job is cancelled or fails
-
-### 8.4 Cost Optimization
-
-**Usage Monitoring:**
-
-- Track estimated vs actual costs for budget control
-- Cost per key metrics for different models/providers
-- Usage analytics for optimization insights
-
-**Smart Defaults:**
-
-- Conservative LLM parameters by default (temperature: 0.3, max_tokens: 256)
-- Allow user customization for quality vs cost tradeoffs
 
 ## 9. Implementation Steps
 
@@ -1707,10 +1686,6 @@ OPENROUTER_MODEL: string; // Default model (e.g., "anthropic/claude-3.5-sonnet")
 // Rate Limiting
 RATE_LIMIT_REQUESTS_PER_MINUTE: number; // Default: 60
 RATE_LIMIT_TOKENS_PER_MINUTE: number; // Default: 100000
-
-// Cost Controls
-MAX_ESTIMATED_COST_USD: number; // Default: 10.00 (per job)
-COST_BUFFER_PERCENTAGE: number; // Default: 10 (estimation buffer)
 ```
 
 ### 10.3 Request Processing Flow
@@ -1737,7 +1712,6 @@ Detailed flow of Edge Function execution:
 4. **Job Initialization**
    - Create translation_jobs record (status: 'pending')
    - Create translation_job_items for selected keys
-   - Calculate estimated cost based on key count and model pricing
    - Set job status to 'running' and started_at timestamp
 
 5. **Background Processing**
@@ -1753,7 +1727,6 @@ Detailed flow of Edge Function execution:
 6. **Job Completion**
    - Update job status ('completed' or 'failed')
    - Set finished_at timestamp
-   - Calculate actual_cost_usd
    - Emit telemetry event (translation_completed)
    - Return job summary
 ```
@@ -1795,26 +1768,7 @@ Comprehensive error handling with proper HTTP status codes:
 - Transaction rollback scenarios
 ```
 
-### 10.5 Cost Estimation Algorithm
-
-Accurate cost prediction before job execution:
-
-```typescript
-interface CostEstimation {
-  keyCount: number;
-  avgTokensPerKey: number; // Historical average: 50-100 tokens
-  modelPricePerToken: number; // From OpenRouter pricing API
-  estimatedTokens: number; // keyCount × avgTokensPerKey
-  baseCostUsd: number; // estimatedTokens × modelPricePerToken
-  bufferPercentage: number; // Default: 10% safety margin
-  estimatedCostUsd: number; // baseCostUsd × (1 + bufferPercentage)
-}
-
-// Example calculation:
-// 100 keys × 75 avg tokens × $0.000015/token × 1.10 buffer = $0.1238 USD
-```
-
-### 10.6 Rate Limiting Implementation
+### 10.5 Rate Limiting Implementation
 
 Multi-level rate limiting to prevent abuse:
 
@@ -1827,7 +1781,6 @@ Multi-level rate limiting to prevent abuse:
 // Per-Project Limits
 - 1 active job at any time
 - Max 10,000 keys per job
-- Max $10 USD estimated cost per job
 
 // Global Limits
 - 10 concurrent Edge Function executions
@@ -1845,20 +1798,17 @@ console.log({
   event: 'job_started',
   jobId: job.id,
   projectId: job.project_id,
-  keyCount: job.total_keys,
-  estimatedCost: job.estimated_cost_usd
+  keyCount: job.total_keys
 });
 
 // Performance Metrics
 - Job execution time
 - API response times
 - Token usage statistics
-- Cost accuracy tracking
 - Error rates by category
 
 // Alerting Thresholds
 - Job failure rate > 5%
-- Average cost variance > 20%
 - API response time > 30 seconds
 - Error rate > 1% for any error type
 ```
@@ -1870,7 +1820,6 @@ Comprehensive test coverage for Edge Function:
 ```typescript
 // Unit Tests
 - Input validation scenarios
-- Cost calculation accuracy
 - Error handling paths
 - Authentication/authorization logic
 
@@ -1884,7 +1833,6 @@ Comprehensive test coverage for Edge Function:
 - Full translation job workflows
 - Error recovery scenarios
 - Rate limiting behavior
-- Cost estimation accuracy
 
 // Performance Tests
 - Large job handling (1000+ keys)

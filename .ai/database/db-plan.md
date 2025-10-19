@@ -858,7 +858,6 @@ LIMIT 1;
 -- Supports filtering by status and pagination for job history UI
 SELECT j.id, j.status, j.mode, j.target_locale, j.created_at, j.started_at, j.finished_at,
        j.total_keys, j.completed_keys, j.failed_keys,
-       j.estimated_cost_usd, j.actual_cost_usd,
        j.provider, j.model
 FROM translation_jobs j
 WHERE j.project_id = :project_id
@@ -883,7 +882,7 @@ WHERE project_id = :project_id
 -- Get detailed progress for active job including per-key status breakdown
 -- Used for debugging failed translations and showing detailed progress
 SELECT j.id, j.status, j.total_keys, j.completed_keys, j.failed_keys,
-       j.started_at, j.estimated_cost_usd,
+       j.started_at,
        -- Progress statistics
        CASE
          WHEN j.total_keys > 0 THEN ROUND((j.completed_keys::decimal / j.total_keys) * 100, 1)
@@ -913,34 +912,6 @@ ORDER BY ji.updated_at DESC;
 **Indexes used:** `idx_translation_job_items_job`
 **Performance:** Fast lookup of job items by status
 **Use case:** Detailed job monitoring and error diagnosis
-
-### 10. Translation Job Cost Analysis
-
-```sql
--- Analyze translation costs and accuracy across jobs
--- Used for cost optimization and model performance analysis
-SELECT
-  j.provider,
-  j.model,
-  j.target_locale,
-  COUNT(*) as job_count,
-  AVG(j.total_keys) as avg_keys_per_job,
-  AVG(j.actual_cost_usd) as avg_cost_usd,
-  AVG(j.completed_keys::decimal / NULLIF(j.total_keys, 0)) as avg_success_rate,
-  AVG(EXTRACT(EPOCH FROM (j.finished_at - j.started_at))) as avg_duration_seconds,
-  -- Cost accuracy analysis
-  AVG(ABS(j.actual_cost_usd - j.estimated_cost_usd) / NULLIF(j.estimated_cost_usd, 0)) as avg_cost_variance
-FROM translation_jobs j
-WHERE j.status IN ('completed', 'failed')
-  AND j.project_id = :project_id
-  AND j.created_at >= :date_from
-GROUP BY j.provider, j.model, j.target_locale
-ORDER BY job_count DESC, avg_cost_usd ASC;
-```
-
-**Indexes used:** `idx_translation_jobs_project`
-**Performance:** Efficient aggregation over time ranges
-**Use case:** Cost optimization and provider/model selection analytics
 
 ## Optimistic Locking Example
 
@@ -1102,5 +1073,3 @@ WHERE status IN ('completed', 'failed', 'cancelled')
 3. **Event Type Expansion:** `event_type` enum limited to MVP events; future events require ALTER TYPE migration.
 
 4. **TTL Enforcement:** Define operational procedure for cleaning old jobs and telemetry data (e.g., cron job, Supabase scheduled function).
-
-5. **Cost Tracking Precision:** `NUMERIC(10,4)` for USD costs; verify scale matches OpenRouter billing precision.

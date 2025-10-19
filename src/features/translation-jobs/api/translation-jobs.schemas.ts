@@ -197,10 +197,8 @@ export const getJobItemsSchema = z.object({
 
 // Response Schemas for runtime validation
 export const translationJobResponseSchema = z.object({
-  actual_cost_usd: z.number().nullable(),
   completed_keys: z.number().nullable(),
   created_at: z.string(),
-  estimated_cost_usd: z.number().nullable(),
   failed_keys: z.number().nullable(),
   finished_at: z.string().nullable(),
   id: z.string().uuid(),

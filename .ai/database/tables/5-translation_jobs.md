@@ -18,8 +18,6 @@ CREATE TABLE translation_jobs (
   total_keys INTEGER,
   completed_keys INTEGER DEFAULT 0,
   failed_keys INTEGER DEFAULT 0,
-  estimated_cost_usd NUMERIC(10,4),
-  actual_cost_usd NUMERIC(10,4),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 
@@ -31,6 +29,4 @@ CREATE TABLE translation_jobs (
 COMMENT ON TABLE translation_jobs IS 'LLM translation jobs; only one active (pending/running) per project';
 COMMENT ON COLUMN translation_jobs.mode IS 'all = all keys; selected = specific keys; single = one key';
 COMMENT ON COLUMN translation_jobs.params IS 'LLM parameters: temperature, max_tokens, etc.';
-COMMENT ON COLUMN translation_jobs.estimated_cost_usd IS 'Estimated cost before execution';
-COMMENT ON COLUMN translation_jobs.actual_cost_usd IS 'Actual cost after completion';
 ```
