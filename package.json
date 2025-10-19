@@ -11,7 +11,7 @@
     "pre-commit": "lint-staged",
     "prepare": "husky",
     "preview": "vite preview",
-    "supabase:functions:serve": "supabase functions serve",
+    "supabase:functions:serve": "supabase functions serve --env-file .env",
     "supabase:migration": "supabase migration up",
     "supabase:reset": "supabase db reset --local",
     "supabase:start": "supabase start",
