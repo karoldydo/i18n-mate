@@ -241,10 +241,10 @@ import {
   TRANSLATION_JOBS_MIN_OFFSET,
   TRANSLATION_JOBS_MAX_ITEMS_LIMIT,
   TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT,
-  TRANSLATION_JOB_PARAMS_TEMPERATURE_MIN,
-  TRANSLATION_JOB_PARAMS_TEMPERATURE_MAX,
-  TRANSLATION_JOB_PARAMS_MAX_TOKENS_MIN,
-  TRANSLATION_JOB_PARAMS_MAX_TOKENS_MAX,
+  TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN,
+  TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX,
+  TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN,
+  TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX,
   TRANSLATION_JOBS_ERROR_MESSAGES,
 } from '@/shared/constants';
 
@@ -278,14 +278,14 @@ export const translationJobParamsSchema = z
   .object({
     temperature: z
       .number()
-      .min(TRANSLATION_JOB_PARAMS_TEMPERATURE_MIN)
-      .max(TRANSLATION_JOB_PARAMS_TEMPERATURE_MAX)
+      .min(TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN)
+      .max(TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX)
       .optional(),
     max_tokens: z
       .number()
       .int()
-      .min(TRANSLATION_JOB_PARAMS_MAX_TOKENS_MIN)
-      .max(TRANSLATION_JOB_PARAMS_MAX_TOKENS_MAX)
+      .min(TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN)
+      .max(TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX)
       .optional(),
     model: z.string().optional(),
     provider: z.string().optional(),
@@ -415,30 +415,42 @@ export const createTranslationJobResponseSchema = z.object({
 
 **Success Response (200 OK):**
 
-Array response (may be empty if no active job):
-
 ```json
-[
-  {
-    "completed_keys": 45,
-    "created_at": "2025-01-15T10:15:00Z",
-    "failed_keys": 2,
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "mode": "all",
-    "project_id": "550e8400-e29b-41d4-a716-446655440001",
-    "source_locale": "en",
-    "started_at": "2025-01-15T10:15:00Z",
-    "status": "running",
-    "target_locale": "pl",
-    "total_keys": 100
+{
+  "data": [
+    {
+      "completed_keys": 45,
+      "created_at": "2025-01-15T10:15:00Z",
+      "failed_keys": 2,
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "mode": "all",
+      "project_id": "550e8400-e29b-41d4-a716-446655440001",
+      "source_locale": "en",
+      "started_at": "2025-01-15T10:15:00Z",
+      "status": "running",
+      "target_locale": "pl",
+      "total_keys": 100
+    }
+  ],
+  "metadata": {
+    "end": 0,
+    "start": 0,
+    "total": 1
   }
-]
+}
 ```
 
-**Empty array if no active job:**
+**Empty data array if no active job:**
 
 ```json
-[]
+{
+  "data": [],
+  "metadata": {
+    "end": -1,
+    "start": 0,
+    "total": 0
+  }
+}
 ```
 
 ### 4.2 List Translation Jobs
@@ -962,10 +974,10 @@ export const TRANSLATION_JOBS_MAX_ITEMS_LIMIT = 1000;
 export const TRANSLATION_JOBS_MIN_OFFSET = 0;
 
 // LLM parameter constraints
-export const TRANSLATION_JOB_PARAMS_TEMPERATURE_MIN = 0;
-export const TRANSLATION_JOB_PARAMS_TEMPERATURE_MAX = 2;
-export const TRANSLATION_JOB_PARAMS_MAX_TOKENS_MIN = 1;
-export const TRANSLATION_JOB_PARAMS_MAX_TOKENS_MAX = 4096;
+export const TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN = 0;
+export const TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX = 2;
+export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN = 1;
+export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX = 4096;
 
 // Polling configuration
 export const TRANSLATION_JOB_POLL_INTERVALS = [2000, 2000, 3000, 5000, 5000]; // milliseconds
@@ -994,8 +1006,8 @@ export const TRANSLATION_JOBS_ERROR_MESSAGES = {
   ALL_MODE_NO_KEYS: 'All mode should not include specific key IDs',
   SELECTED_MODE_REQUIRES_KEYS: 'Selected mode requires at least one key ID',
   SINGLE_MODE_ONE_KEY: 'Single mode requires exactly one key ID',
-  INVALID_TEMPERATURE: `Temperature must be between ${TRANSLATION_JOB_PARAMS_TEMPERATURE_MIN} and ${TRANSLATION_JOB_PARAMS_TEMPERATURE_MAX}`,
-  INVALID_MAX_TOKENS: `Max tokens must be between ${TRANSLATION_JOB_PARAMS_MAX_TOKENS_MIN} and ${TRANSLATION_JOB_PARAMS_MAX_TOKENS_MAX}`,
+  INVALID_TEMPERATURE: `Temperature must be between ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN} and ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX}`,
+  INVALID_MAX_TOKENS: `Max tokens must be between ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN} and ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX}`,
 
   // Business logic errors
   TARGET_LOCALE_NOT_FOUND: 'Target locale does not exist in project',
