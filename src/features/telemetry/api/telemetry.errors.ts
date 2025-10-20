@@ -26,21 +26,21 @@ export function createDatabaseErrorResponse(
   const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
   console.error(`${logPrefix} Database error:`, error);
 
-  // Handle check constraint violations (invalid enum value)
+  // handle check constraint violations (invalid enum value)
   if (error.code === TELEMETRY_PG_ERROR_CODES.CHECK_VIOLATION) {
     return createApiErrorResponse(400, TELEMETRY_ERROR_MESSAGES.INVALID_EVENT_NAME, { constraint: error.details });
   }
 
-  // Handle foreign key violations (project not found)
+  // handle foreign key violations (project not found)
   if (error.code === TELEMETRY_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
     return createApiErrorResponse(404, TELEMETRY_ERROR_MESSAGES.PROJECT_NOT_FOUND);
   }
 
-  // Handle partition errors
+  // handle partition errors
   if (error.message.includes('partition') || error.message.includes('no partition')) {
     return createApiErrorResponse(500, TELEMETRY_ERROR_MESSAGES.PARTITION_ERROR, { original: error });
   }
 
-  // Generic database error
+  // generic database error
   return createApiErrorResponse(500, fallbackMessage || TELEMETRY_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
 }

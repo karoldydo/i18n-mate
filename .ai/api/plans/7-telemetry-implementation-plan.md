@@ -197,27 +197,66 @@ Create in `src/features/telemetry/api/telemetry.schemas.ts`:
 
 ```typescript
 import { z } from 'zod';
-import { TELEMETRY_DEFAULT_LIMIT, TELEMETRY_MAX_LIMIT } from '@/shared/constants';
 
-// Event name enum (for response validation)
-export const eventNameSchema = z.enum(['project_created', 'language_added', 'key_created', 'translation_completed']);
+import {
+  TELEMETRY_DEFAULT_LIMIT,
+  TELEMETRY_ERROR_MESSAGES,
+  TELEMETRY_EVENT_TYPES,
+  TELEMETRY_MAX_LIMIT,
+  TELEMETRY_MIN_OFFSET,
+  TELEMETRY_SORT_OPTIONS,
+} from '@/shared/constants';
+import type { EventType, Json, ListTelemetryEventsParams, TelemetryEventResponse } from '@/shared/types';
 
-// List Telemetry Events Schema
-export const listTelemetryEventsSchema = z.object({
-  limit: z.number().int().min(1).max(TELEMETRY_MAX_LIMIT).optional().default(TELEMETRY_DEFAULT_LIMIT),
-  offset: z.number().int().min(0).optional().default(0),
-  order: z.enum(['created_at.asc', 'created_at.desc']).optional().default('created_at.desc'),
-  project_id: z.string().uuid('Invalid project ID format'),
-});
+const JSON_SCHEMA: z.ZodType<Json> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(JSON_SCHEMA),
+    z.record(z.union([JSON_SCHEMA, z.undefined()])),
+  ])
+);
 
-// Response Schema for runtime validation
-export const telemetryEventResponseSchema = z.object({
+// event name enum (for response validation)
+export const EVENT_NAME_SCHEMA = z.enum([
+  TELEMETRY_EVENT_TYPES.PROJECT_CREATED,
+  TELEMETRY_EVENT_TYPES.LANGUAGE_ADDED,
+  TELEMETRY_EVENT_TYPES.KEY_CREATED,
+  TELEMETRY_EVENT_TYPES.TRANSLATION_COMPLETED,
+]) satisfies z.ZodType<EventType>;
+
+// list telemetry events schema
+export const LIST_TELEMETRY_EVENTS_SCHEMA = z.object({
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(TELEMETRY_MAX_LIMIT, TELEMETRY_ERROR_MESSAGES.LIMIT_TOO_HIGH)
+    .optional()
+    .default(TELEMETRY_DEFAULT_LIMIT),
+  offset: z
+    .number()
+    .int()
+    .min(TELEMETRY_MIN_OFFSET, TELEMETRY_ERROR_MESSAGES.NEGATIVE_OFFSET)
+    .optional()
+    .default(TELEMETRY_MIN_OFFSET),
+  order: z
+    .enum([TELEMETRY_SORT_OPTIONS.CREATED_AT_ASC, TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC])
+    .optional()
+    .default(TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC),
+  project_id: z.string().uuid(TELEMETRY_ERROR_MESSAGES.INVALID_PROJECT_ID),
+}) satisfies z.ZodType<ListTelemetryEventsParams>;
+
+// response schema for runtime validation
+export const TELEMETRY_EVENT_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
-  event_name: eventNameSchema,
+  event_name: EVENT_NAME_SCHEMA,
   id: z.string().uuid(),
   project_id: z.string().uuid(),
-  properties: z.record(z.unknown()).nullable(),
-});
+  properties: JSON_SCHEMA.nullable(),
+}) satisfies z.ZodType<TelemetryEventResponse>;
 ```
 
 ### 3.3 New Interface Types
@@ -718,46 +757,41 @@ export function createDatabaseErrorResponse(
   const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
   console.error(`${logPrefix} Database error:`, error);
 
-  // Handle check constraint violations (invalid enum value)
+  // handle check constraint violations (invalid enum value)
   if (error.code === TELEMETRY_PG_ERROR_CODES.CHECK_VIOLATION) {
     return createApiErrorResponse(400, TELEMETRY_ERROR_MESSAGES.INVALID_EVENT_NAME, { constraint: error.details });
   }
 
-  // Handle foreign key violations (project not found)
+  // handle foreign key violations (project not found)
   if (error.code === TELEMETRY_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
     return createApiErrorResponse(404, TELEMETRY_ERROR_MESSAGES.PROJECT_NOT_FOUND);
   }
 
-  // Handle partition errors
+  // handle partition errors
   if (error.message.includes('partition') || error.message.includes('no partition')) {
     return createApiErrorResponse(500, TELEMETRY_ERROR_MESSAGES.PARTITION_ERROR, { original: error });
   }
 
-  // Generic database error
+  // generic database error
   return createApiErrorResponse(500, fallbackMessage || TELEMETRY_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
 }
 ```
 
 ### Step 5: Create Query Keys Factory
 
-Create `src/features/telemetry/api/telemetry.keys.ts`:
+Create `src/features/telemetry/api/telemetry.key-factory.ts`:
 
 ```typescript
-import type { ListTelemetryEventsParams } from '@/shared/types';
+import type { TelemetryEventsParams } from '@/shared/types';
 
-/**
- * Query key factory for telemetry events
- * Follows TanStack Query best practices for structured query keys
- */
-export const telemetryKeys = {
+export const TELEMETRY_KEYS = {
   all: ['telemetry-events'] as const,
-  list: (projectId: string, params?: Omit<ListTelemetryEventsParams, 'project_id'>) =>
-    [...telemetryKeys.lists(), projectId, params] as const,
-  lists: () => [...telemetryKeys.all, 'list'] as const,
+  list: (projectId: string, params?: TelemetryEventsParams) => [...TELEMETRY_KEYS.lists(), projectId, params] as const,
+  lists: () => [...TELEMETRY_KEYS.all, 'list'] as const,
 };
 ```
 
-**Note:** Properties are ordered alphabetically for consistency. No `detail` keys needed since telemetry events are typically accessed in list form.
+**Note:** The factory stays close to TanStack Query guidance (top-level `all`, `lists`, `list`) and provides a local params helper for clarity.
 
 ### Step 6: Create TanStack Query Hook
 
@@ -773,40 +807,28 @@ export const telemetryKeys = {
 
 ```typescript
 import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
-import type { ApiErrorResponse, ListTelemetryEventsParams, TelemetryEventResponse } from '@/shared/types';
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createDatabaseErrorResponse } from '../telemetry.errors';
-import { telemetryKeys } from '../telemetry.keys';
-import { listTelemetryEventsSchema, telemetryEventResponseSchema } from '../telemetry.schemas';
 
-/**
- * Fetch telemetry events for a project
- *
- * Queries the partitioned `telemetry_events` table with filtering by project_id
- * and optional pagination. Results are ordered by created_at DESC (most recent first)
- * by default. Returns a raw array of events (not wrapped in pagination metadata).
- *
- * @param projectId - UUID of the project to fetch events for
- * @param params - Optional query parameters (limit, offset, order)
- * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, limit too high, negative offset)
- * @throws {ApiErrorResponse} 404 - Project not found or access denied
- * @throws {ApiErrorResponse} 500 - Database error during fetch
- * @returns TanStack Query result with array of telemetry events
- */
-export function useTelemetryEvents(projectId: string, params?: Omit<ListTelemetryEventsParams, 'project_id'>) {
+import type { ApiErrorResponse, TelemetryEventResponse, TelemetryEventsParams } from '@/shared/types';
+
+import { useSupabase } from '@/app/providers/SupabaseProvider';
+
+import { createDatabaseErrorResponse } from '../telemetry.errors';
+import { TELEMETRY_KEYS } from '../telemetry.key-factory';
+import { LIST_TELEMETRY_EVENTS_SCHEMA, TELEMETRY_EVENT_RESPONSE_SCHEMA } from '../telemetry.schemas';
+
+export function useTelemetryEvents(projectId: string, params?: TelemetryEventsParams) {
   const supabase = useSupabase();
 
   return useQuery<TelemetryEventResponse[], ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listTelemetryEventsSchema.parse({
+      // validate parameters
+      const validated = LIST_TELEMETRY_EVENTS_SCHEMA.parse({
         project_id: projectId,
         ...params,
       });
 
-      // Build query with filters
+      // build query with filters
       let query = supabase
         .from('telemetry_events')
         .select('*')
@@ -814,7 +836,7 @@ export function useTelemetryEvents(projectId: string, params?: Omit<ListTelemetr
         .order('created_at', { ascending: validated.order === 'created_at.asc' })
         .limit(validated.limit);
 
-      // Add offset if provided
+      // add offset if provided
       if (validated.offset && validated.offset > 0) {
         query = query.range(validated.offset, validated.offset + validated.limit - 1);
       }
@@ -825,12 +847,10 @@ export function useTelemetryEvents(projectId: string, params?: Omit<ListTelemetr
         throw createDatabaseErrorResponse(error, 'useTelemetryEvents', 'Failed to fetch telemetry events');
       }
 
-      // Runtime validation of response data
-      const events = z.array(telemetryEventResponseSchema).parse(data || []);
-
-      return events;
+      // validate response structure before returning
+      return TELEMETRY_EVENT_RESPONSE_SCHEMA.array().parse(data || []);
     },
-    queryKey: telemetryKeys.list(projectId, params),
+    queryKey: TELEMETRY_KEYS.list(projectId, params),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -843,37 +863,20 @@ export function useTelemetryEvents(projectId: string, params?: Omit<ListTelemetr
 Create `src/features/telemetry/api/index.ts`:
 
 ```typescript
-/**
- * Telemetry Events API
- *
- * This module provides TanStack Query hooks for reading telemetry events and KPI tracking.
- * Telemetry events are created automatically by database triggers and RPC functions.
- *
- * All hooks use the shared Supabase client from context and follow React Query best practices.
- *
- * @module features/telemetry/api
- */
-
-// Error Utilities
 export { createDatabaseErrorResponse } from './telemetry.errors';
-
-// Query Keys
-export { telemetryKeys } from './telemetry.keys';
-
-// Validation Schemas
+export { TELEMETRY_KEYS } from './telemetry.key-factory';
 export * from './telemetry.schemas';
-
-// Query Hooks
-export { useTelemetryEvents } from './useTelemetryEvents/useTelemetryEvents';
+export * from './useTelemetryEvents';
 ```
 
 **Organization:**
 
-- Error utilities are exported first for use in other features
-- Query keys factory for cache management
-- Validation schemas for response validation
-- Only query hook (no mutations - events are created automatically)
-- Clear documentation that telemetry is automatic
+- Error utilities remain first for reuse across features
+- `TELEMETRY_KEYS` exposes the TanStack Query key factory in a single place
+- Zod schemas (`EVENT_NAME_SCHEMA`, `LIST_TELEMETRY_EVENTS_SCHEMA`, `TELEMETRY_EVENT_RESPONSE_SCHEMA`) re-export with shared-type parity
+- Each schema uses `satisfies z.ZodType<...>` to lock runtime validation to the shared DTO contracts
+- Hook barrels (`export * from './useTelemetryEvents'`) keep consumer imports concise
+- Comments were removed to keep the barrel minimal and eslint-friendly
 
 ### Step 8: Write Unit Tests
 

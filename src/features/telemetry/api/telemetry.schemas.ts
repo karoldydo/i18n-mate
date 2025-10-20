@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { EventType, Json, ListTelemetryEventsParams, TelemetryEventResponse } from '@/shared/types';
+
 import {
   TELEMETRY_DEFAULT_LIMIT,
   TELEMETRY_ERROR_MESSAGES,
@@ -9,16 +11,27 @@ import {
   TELEMETRY_SORT_OPTIONS,
 } from '@/shared/constants';
 
-// Event name enum (for response validation)
-export const eventNameSchema = z.enum([
+const JSON_SCHEMA: z.ZodType<Json> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(JSON_SCHEMA),
+    z.record(z.union([JSON_SCHEMA, z.undefined()])),
+  ])
+);
+
+// event name enum (for response validation)
+export const EVENT_NAME_SCHEMA = z.enum([
   TELEMETRY_EVENT_TYPES.PROJECT_CREATED,
   TELEMETRY_EVENT_TYPES.LANGUAGE_ADDED,
   TELEMETRY_EVENT_TYPES.KEY_CREATED,
   TELEMETRY_EVENT_TYPES.TRANSLATION_COMPLETED,
-]);
+]) satisfies z.ZodType<EventType>;
 
-// List Telemetry Events Schema
-export const listTelemetryEventsSchema = z.object({
+// list telemetry events schema
+export const LIST_TELEMETRY_EVENTS_SCHEMA = z.object({
   limit: z
     .number()
     .int()
@@ -37,13 +50,13 @@ export const listTelemetryEventsSchema = z.object({
     .optional()
     .default(TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC),
   project_id: z.string().uuid(TELEMETRY_ERROR_MESSAGES.INVALID_PROJECT_ID),
-});
+}) satisfies z.ZodType<ListTelemetryEventsParams>;
 
-// Response Schema for runtime validation
-export const telemetryEventResponseSchema = z.object({
+// response schema for runtime validation
+export const TELEMETRY_EVENT_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
-  event_name: eventNameSchema,
+  event_name: EVENT_NAME_SCHEMA,
   id: z.string().uuid(),
   project_id: z.string().uuid(),
-  properties: z.any().nullable(),
-});
+  properties: JSON_SCHEMA.nullable(),
+}) satisfies z.ZodType<TelemetryEventResponse>;

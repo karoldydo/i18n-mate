@@ -1,21 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, TelemetryEventResponse } from '@/shared/types';
+import type { ApiErrorResponse, TelemetryEventResponse, TelemetryEventsParams } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../telemetry.errors';
-import { telemetryKeys } from '../telemetry.keys';
-import { listTelemetryEventsSchema } from '../telemetry.schemas';
-
-/**
- * Parameters for listing telemetry events
- */
-interface UseTelemetryEventsParams {
-  limit?: number;
-  offset?: number;
-  order?: 'created_at.asc' | 'created_at.desc';
-}
+import { TELEMETRY_KEYS } from '../telemetry.key-factory';
+import { LIST_TELEMETRY_EVENTS_SCHEMA, TELEMETRY_EVENT_RESPONSE_SCHEMA } from '../telemetry.schemas';
 
 /**
  * Fetch telemetry events for a project
@@ -31,19 +22,19 @@ interface UseTelemetryEventsParams {
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  * @returns TanStack Query result with array of telemetry events
  */
-export function useTelemetryEvents(projectId: string, params?: UseTelemetryEventsParams) {
+export function useTelemetryEvents(projectId: string, params?: TelemetryEventsParams) {
   const supabase = useSupabase();
 
   return useQuery<TelemetryEventResponse[], ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listTelemetryEventsSchema.parse({
+      // validate parameters
+      const validated = LIST_TELEMETRY_EVENTS_SCHEMA.parse({
         project_id: projectId,
         ...params,
       });
 
-      // Build query with filters
+      // build query with filters
       let query = supabase
         .from('telemetry_events')
         .select('*')
@@ -51,7 +42,7 @@ export function useTelemetryEvents(projectId: string, params?: UseTelemetryEvent
         .order('created_at', { ascending: validated.order === 'created_at.asc' })
         .limit(validated.limit);
 
-      // Add offset if provided
+      // add offset if provided
       if (validated.offset && validated.offset > 0) {
         query = query.range(validated.offset, validated.offset + validated.limit - 1);
       }
@@ -62,10 +53,10 @@ export function useTelemetryEvents(projectId: string, params?: UseTelemetryEvent
         throw createDatabaseErrorResponse(error, 'useTelemetryEvents', 'Failed to fetch telemetry events');
       }
 
-      // Return data directly - Supabase types match TelemetryEventResponse
-      return (data || []) as TelemetryEventResponse[];
+      // validate response structure before returning
+      return TELEMETRY_EVENT_RESPONSE_SCHEMA.array().parse(data || []);
     },
-    queryKey: telemetryKeys.list(projectId, params),
+    queryKey: TELEMETRY_KEYS.list(projectId, params),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
