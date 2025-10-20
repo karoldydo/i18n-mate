@@ -15,8 +15,8 @@ SUPABASE_URL="${VITE_SUPABASE_URL:-http://localhost:54321}"
 SUPABASE_ANON_KEY="${VITE_SUPABASE_ANON_KEY:-your_anon_key_here}"
 
 # Test user credentials (will be created if doesn't exist)
-TEST_EMAIL="${VITE_TEST_EMAIL:-testuser-$(date +%s)@i18n-mate.test}"
-TEST_PASSWORD="${VITE_TEST_PASSWORD:-TestPassword123!}"
+TEST_EMAIL="${TEST_EMAIL:-testuser-$(date +%s)@i18n-mate.test}"
+TEST_PASSWORD="${TEST_PASSWORD:-TestPassword123!}"
 
 # API Endpoints
 API_BASE="${SUPABASE_URL}/rest/v1"

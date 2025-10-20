@@ -126,8 +126,12 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # OpenRouter.ai
-VITE_OPENROUTER_API_KEY=your_openrouter_api_key
-VITE_OPENROUTER_MODEL=model_name
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=model_name
+
+# Testing (optional)
+TEST_EMAIL=your_test_email
+TEST_PASSWORD=your_test_password
 ```
 
 **Note**: Refer to [Supabase documentation](https://supabase.com/docs) and [OpenRouter documentation](https://openrouter.ai/docs) for obtaining the required credentials.

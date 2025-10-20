@@ -188,8 +188,12 @@ Required in `.env`:
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_OPENROUTER_API_KEY=your_openrouter_api_key
-VITE_OPENROUTER_MODEL=model_name
+
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=model_name
+
+TEST_EMAIL=your_test_email (optional)
+TEST_PASSWORD=your_test_password (optional)
 ```
 
 ## MVP Features
