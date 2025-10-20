@@ -722,7 +722,7 @@ GET /functions/v1/export-translations?project_id={uuid}
       "role": "user"
     }
   ],
-  "model": "anthropic/claude-3.5-sonnet",
+  "model": "google/gemini-2.5-flash-lite",
   "temperature": 0.3
 }
 ```
@@ -741,7 +741,7 @@ GET /functions/v1/export-translations?project_id={uuid}
     }
   ],
   "id": "gen-xxx",
-  "model": "anthropic/claude-3.5-sonnet",
+  "model": "google/gemini-2.5-flash-lite",
   "usage": {
     "completion_tokens": 8,
     "prompt_tokens": 45,

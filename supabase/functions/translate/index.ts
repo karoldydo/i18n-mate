@@ -401,7 +401,7 @@ async function processTranslationJobInBackground(
       .eq('id', jobId);
 
     const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
-    const openrouterModel = Deno.env.get('OPENROUTER_MODEL') || 'anthropic/claude-3.5-sonnet';
+    const openrouterModel = Deno.env.get('OPENROUTER_MODEL') || 'google/gemini-2.5-flash-lite';
 
     if (!openrouterApiKey) {
       throw new Error('OPENROUTER_API_KEY not configured');

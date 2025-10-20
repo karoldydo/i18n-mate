@@ -469,7 +469,7 @@ export const createTranslationJobResponseSchema = z.object({
       "finished_at": "2025-01-15T10:05:00Z",
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "mode": "all",
-      "model": "anthropic/claude-3.5-sonnet",
+      "model": "google/gemini-2.5-flash-lite",
       "params": {
         "max_tokens": 256,
         "temperature": 0.3
@@ -1681,7 +1681,7 @@ Required environment variables for Edge Function operation:
 // OpenRouter Integration
 OPENROUTER_API_KEY: string; // OpenRouter API authentication
 OPENROUTER_BASE_URL: string; // Default: "https://openrouter.ai/api/v1"
-OPENROUTER_MODEL: string; // Default model (e.g., "anthropic/claude-3.5-sonnet")
+OPENROUTER_MODEL: string; // Default model (e.g., "google/gemini-2.5-flash-lite")
 
 // Rate Limiting
 RATE_LIMIT_REQUESTS_PER_MINUTE: number; // Default: 60

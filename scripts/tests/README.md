@@ -83,7 +83,7 @@ TEST_PASSWORD=YourSecurePassword123!
 
 # OpenRouter Configuration (for translation jobs)
 OPENROUTER_API_KEY=your_openrouter_api_key
-OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
+OPENROUTER_MODEL=google/gemini-2.5-flash-lite
 ```
 
 ### Required Tools
