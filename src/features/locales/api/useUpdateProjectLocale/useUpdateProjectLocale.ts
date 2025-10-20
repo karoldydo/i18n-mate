@@ -11,8 +11,8 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../locales.errors';
-import { localesKeys } from '../locales.keys';
-import { localeIdSchema, projectLocaleResponseSchema, updateProjectLocaleSchema } from '../locales.schemas';
+import { LOCALES_KEYS } from '../locales.key-factory';
+import { LOCALE_ID_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA } from '../locales.schemas';
 
 /**
  * Context type for mutation callbacks
@@ -31,9 +31,11 @@ interface UpdateProjectLocaleContext {
  *
  * @param projectId - UUID of the project containing the locale
  * @param localeId - UUID of the locale to update
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (attempt to change immutable locale field)
  * @throws {ApiErrorResponse} 404 - Locale not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during update
+ *
  * @returns TanStack Query mutation hook for updating locale labels with optimistic updates
  */
 export function useUpdateProjectLocale(projectId: string, localeId: string) {
@@ -42,56 +44,56 @@ export function useUpdateProjectLocale(projectId: string, localeId: string) {
 
   return useMutation<ProjectLocaleResponse, ApiErrorResponse, UpdateProjectLocaleRequest, UpdateProjectLocaleContext>({
     mutationFn: async (updateData) => {
-      // Validate inputs
-      const validatedId = localeIdSchema.parse(localeId);
-      const validatedInput = updateProjectLocaleSchema.parse(updateData);
+      // validate inputs
+      const VALIDATED_ID = LOCALE_ID_SCHEMA.parse(localeId);
+      const VALIDATED_INPUT = UPDATE_PROJECT_LOCALE_SCHEMA.parse(updateData);
 
       const { data, error } = await supabase
         .from('project_locales')
-        .update(validatedInput)
-        .eq('id', validatedId)
+        .update(VALIDATED_INPUT)
+        .eq('id', VALIDATED_ID)
         .select()
         .single();
 
-      // Handle database errors
+      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateProjectLocale', 'Failed to update locale');
       }
 
-      // Handle missing data (locale not found or access denied)
+      // handle missing data (locale not found or access denied)
       if (!data) {
         throw createApiErrorResponse(404, 'Locale not found or access denied');
       }
 
-      // Runtime validation of response data
-      const validatedResponse = projectLocaleResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      const VALIDATED_RESPONSE = PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
+      return VALIDATED_RESPONSE;
     },
     onError: (_err, _newData, context) => {
-      // Rollback on error
+      // rollback on error
       if (context?.previousLocales) {
-        queryClient.setQueryData(localesKeys.list(projectId), context.previousLocales);
+        queryClient.setQueryData(LOCALES_KEYS.list(projectId), context.previousLocales);
       }
     },
     onMutate: async (newData) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: localesKeys.list(projectId) });
+      // cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: LOCALES_KEYS.list(projectId) });
 
-      // Snapshot previous value
-      const previousLocales = queryClient.getQueryData<ProjectLocaleWithDefault[]>(localesKeys.list(projectId));
+      // snapshot previous value
+      const PREVIOUS_LOCALES = queryClient.getQueryData<ProjectLocaleWithDefault[]>(LOCALES_KEYS.list(projectId));
 
-      // Optimistically update
-      queryClient.setQueryData(localesKeys.list(projectId), (old: ProjectLocaleWithDefault[] | undefined) => {
-        // Guard clause: prevent errors if cache is empty
+      // optimistically update
+      queryClient.setQueryData(LOCALES_KEYS.list(projectId), (old: ProjectLocaleWithDefault[] | undefined) => {
+        // guard clause: prevent errors if cache is empty
         if (!old) return old;
         return old.map((locale) => (locale.id === localeId ? { ...locale, ...newData } : locale));
       });
 
-      return { previousLocales };
+      return { previousLocales: PREVIOUS_LOCALES };
     },
     onSettled: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: localesKeys.list(projectId) });
+      // refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: LOCALES_KEYS.list(projectId) });
     },
   });
 }

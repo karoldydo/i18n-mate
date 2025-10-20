@@ -1,28 +1,8 @@
-/**
- * Project Locales API
- *
- * This module provides TanStack Query hooks for managing languages assigned to projects.
- * All hooks use the shared Supabase client from context and follow React Query best practices.
- *
- * @module features/locales/api
- */
-
-// Error Utilities
 export { createAtomicLocaleErrorResponse, createDatabaseErrorResponse } from './locales.errors';
-
-// Query Keys
-export { localesKeys } from './locales.keys';
-
-// Validation Schemas
+export { LOCALES_KEYS } from './locales.key-factory';
 export * from './locales.schemas';
-
-// Mutation Hooks
-export { useCreateProjectLocale } from './useCreateProjectLocale/useCreateProjectLocale';
-
-export { useDeleteProjectLocale } from './useDeleteProjectLocale/useDeleteProjectLocale';
-// Query Hooks
-export { useProjectLocales } from './useProjectLocales/useProjectLocales';
-export { useUpdateProjectLocale } from './useUpdateProjectLocale/useUpdateProjectLocale';
-
-// Utility Functions (re-exported from shared constants for convenience)
+export * from './useCreateProjectLocale';
+export * from './useDeleteProjectLocale';
+export * from './useProjectLocales';
+export * from './useUpdateProjectLocale';
 export { LOCALE_NORMALIZATION } from '@/shared/constants';

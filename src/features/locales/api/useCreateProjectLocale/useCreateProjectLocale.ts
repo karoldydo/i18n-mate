@@ -11,8 +11,8 @@ import { LOCALE_NORMALIZATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createAtomicLocaleErrorResponse } from '../locales.errors';
-import { localesKeys } from '../locales.keys';
-import { createProjectLocaleAtomicSchema } from '../locales.schemas';
+import { LOCALES_KEYS } from '../locales.key-factory';
+import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA } from '../locales.schemas';
 
 /**
  * Add a new locale to a project using atomic RPC function
@@ -34,11 +34,13 @@ import { createProjectLocaleAtomicSchema } from '../locales.schemas';
  * - Enhanced retry logic for transient failures
  *
  * @param projectId - UUID of the project to add locale to
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid locale format, label constraints)
  * @throws {ApiErrorResponse} 401 - Authentication required
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 409 - Conflict error (locale already exists for project)
  * @throws {ApiErrorResponse} 500 - Database error, fan-out verification failed, or incomplete fan-out
+ *
  * @returns TanStack Query mutation hook for adding locales with enhanced retry logic
  */
 export function useCreateProjectLocale(projectId: string) {
@@ -51,21 +53,21 @@ export function useCreateProjectLocale(projectId: string) {
     Omit<CreateProjectLocaleAtomicRequest, 'p_project_id'>
   >({
     mutationFn: async (localeData) => {
-      // Normalize locale code before validation
-      const normalizedLocale = LOCALE_NORMALIZATION.normalize(localeData.p_locale);
+      // normalize locale code before validation
+      const NORMALIZED_LOCALE = LOCALE_NORMALIZATION.normalize(localeData.p_locale);
 
-      // Validate input with normalized locale
-      const validated = createProjectLocaleAtomicSchema.parse({
+      // validate input with normalized locale
+      const VALIDATED = CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA.parse({
         ...localeData,
-        p_locale: normalizedLocale,
+        p_locale: NORMALIZED_LOCALE,
         p_project_id: projectId,
       });
 
-      // Call atomic RPC function
+      // call atomic rpc function
       const { data, error } = await supabase.rpc('create_project_locale_atomic', {
-        p_label: validated.p_label,
-        p_locale: validated.p_locale,
-        p_project_id: validated.p_project_id,
+        p_label: VALIDATED.p_label,
+        p_locale: VALIDATED.p_locale,
+        p_project_id: VALIDATED.p_project_id,
       });
 
       if (error) {
@@ -76,45 +78,45 @@ export function useCreateProjectLocale(projectId: string) {
         throw createApiErrorResponse(500, 'No data returned from atomic locale creation');
       }
 
-      // Return first (and only) result from RPC
+      // return first (and only) result from rpc
       return data[0];
     },
     onSuccess: () => {
-      // Invalidate project locales list cache
-      queryClient.invalidateQueries({ queryKey: localesKeys.list(projectId) });
+      // invalidate project locales list cache
+      queryClient.invalidateQueries({ queryKey: LOCALES_KEYS.list(projectId) });
     },
-    // Enhanced retry logic for atomic operations
+    // enhanced retry logic for atomic operations
     retry: (failureCount, error) => {
-      // Don't retry authentication/authorization errors
+      // don't retry authentication/authorization errors
       if (error?.error?.code === 401 || error?.error?.code === 403 || error?.error?.code === 404) {
         return false;
       }
 
-      // Retry fan-out failures up to 2 times (transient issues)
+      // retry fan-out failures up to 2 times (transient issues)
       if (error?.error?.details?.code === 'FANOUT_INCOMPLETE' && failureCount < 2) {
         return true;
       }
 
-      // Retry verification failures once
+      // retry verification failures once
       if (error?.error?.details?.code === 'FANOUT_VERIFICATION_FAILED' && failureCount < 1) {
         return true;
       }
 
-      // Don't retry conflict errors (locale already exists)
+      // don't retry conflict errors (locale already exists)
       if (error?.error?.code === 409) {
         return false;
       }
 
-      // Default retry once for other errors
+      // default retry once for other errors
       return failureCount < 1;
     },
     retryDelay: (attemptIndex) => {
-      // Exponential backoff with jitter, max 5 seconds
-      const baseDelay = 1000;
-      const maxDelay = 5000;
-      const exponentialDelay = baseDelay * Math.pow(2, attemptIndex);
-      const jitter = Math.random() * 500; // Add 0-500ms jitter
-      return Math.min(exponentialDelay + jitter, maxDelay);
+      // exponential backoff with jitter, max 5 seconds
+      const BASE_DELAY = 1000;
+      const MAX_DELAY = 5000;
+      const EXPONENTIAL_DELAY = BASE_DELAY * Math.pow(2, attemptIndex);
+      const JITTER = Math.random() * 500; // add 0-500ms jitter
+      return Math.min(EXPONENTIAL_DELAY + JITTER, MAX_DELAY);
     },
   });
 }
