@@ -351,6 +351,14 @@ export interface ListProjectsWithCountsArgs {
 }
 
 /**
+ * List Telemetry Events Query Parameters
+ */
+export interface ListTelemetryEventsParams extends PaginationParams {
+  order?: 'created_at.asc' | 'created_at.desc';
+  project_id: string;
+}
+
+/**
  * List Translation Job Items Response - paginated job items with key info
  * Format: { data: TranslationJobItemResponse[], metadata: PaginationMetadata }
  */
@@ -409,16 +417,16 @@ export interface PasswordResetRequest {
   email: string;
 }
 
+// ============================================================================
+// Projects DTOs (Section 3 of API Plan)
+// ============================================================================
+
 /**
  * Password Reset Response
  */
 export interface PasswordResetResponse {
   message: string;
 }
-
-// ============================================================================
-// Projects DTOs (Section 3 of API Plan)
-// ============================================================================
 
 /**
  * Project entity - represents a translation project
@@ -446,11 +454,11 @@ export interface ProjectCreatedProperties {
  */
 export type ProjectId = string & { readonly __brand: 'ProjectId' };
 
-export type ProjectInsert = TablesInsert<'projects'>;
-
 // ============================================================================
 // Project Locales DTOs (Section 4 of API Plan)
 // ============================================================================
+
+export type ProjectInsert = TablesInsert<'projects'>;
 
 /**
  * Project List Response - list of projects with pagination metadata
@@ -465,14 +473,14 @@ export type ProjectLocale = Tables<'project_locales'>;
 
 export type ProjectLocaleInsert = TablesInsert<'project_locales'>;
 
+// ============================================================================
+// Keys DTOs (Section 5 of API Plan)
+// ============================================================================
+
 /**
  * Project Locale Response - standard locale representation
  */
 export type ProjectLocaleResponse = ProjectLocale;
-
-// ============================================================================
-// Keys DTOs (Section 5 of API Plan)
-// ============================================================================
 
 export type ProjectLocaleUpdate = TablesUpdate<'project_locales'>;
 
@@ -495,6 +503,10 @@ export type ProjectResponse = Pick<
 
 export type ProjectUpdate = TablesUpdate<'projects'>;
 
+// ============================================================================
+// Translations DTOs (Section 6 of API Plan)
+// ============================================================================
+
 /**
  * Project with Counts - enhanced project with aggregated counts
  * Used by list_projects_with_counts RPC function
@@ -503,10 +515,6 @@ export type ProjectWithCounts = ProjectResponse & {
   key_count: number;
   locale_count: number;
 };
-
-// ============================================================================
-// Translations DTOs (Section 6 of API Plan)
-// ============================================================================
 
 /**
  * Resend Verification Email Request - POST /auth/v1/resend
@@ -530,6 +538,10 @@ export interface ResetPasswordRequest {
   password: string;
 }
 
+// ============================================================================
+// Translation Jobs DTOs (Section 7 of API Plan)
+// ============================================================================
+
 /**
  * Reset Password Response
  */
@@ -539,10 +551,6 @@ export interface ResetPasswordResponse {
     id: string;
   };
 }
-
-// ============================================================================
-// Translation Jobs DTOs (Section 7 of API Plan)
-// ============================================================================
 
 /**
  * Sign In Request - POST /auth/v1/token?grant_type=password
@@ -593,11 +601,11 @@ export interface SignUpResponse {
  */
 export type TelemetryEvent = Tables<'telemetry_events'>;
 
-export type TelemetryEventInsert = TablesInsert<'telemetry_events'>;
-
 // ============================================================================
 // Telemetry DTOs (Section 9 of API Plan)
 // ============================================================================
+
+export type TelemetryEventInsert = TablesInsert<'telemetry_events'>;
 
 /**
  * Telemetry Event Properties - typed event-specific data

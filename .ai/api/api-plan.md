@@ -240,11 +240,12 @@ Export all translations as ZIP with `{locale}.json` files (Supabase Edge Functio
 
 Get telemetry events for project (owner or service_role only).
 
-### 9.2 Create Telemetry Event
+**Note:** Telemetry events are created **automatically** by database triggers and RPC functions. There is no manual POST endpoint. Events are emitted when:
 
-[See details →](./specifications/9.2-telemetry-create.md)
-
-Create telemetry event (internal use, called by Edge Functions).
+- Projects are created (via `create_project_with_default_locale` RPC)
+- Locales are added (via `emit_language_added_event_trigger` trigger)
+- Keys are created (via `emit_key_created_event_trigger` trigger)
+- Translations are completed (via Edge Function during LLM translation)
 
 ---
 
@@ -295,15 +296,15 @@ Atomically creates key with default locale value and fans out to other locales.
 
 ### 11.3 RLS Policy Summary
 
-| Table                   | Policy                                                                 |
-| ----------------------- | ---------------------------------------------------------------------- |
-| `projects`              | User can only access own projects                                      |
-| `project_locales`       | User can access locales for own projects                               |
-| `keys`                  | User can access keys for own projects                                  |
-| `translations`          | User can access translations for own projects                          |
-| `translation_jobs`      | User can access jobs for own projects                                  |
-| `translation_job_items` | User can access items for jobs in own projects                         |
-| `telemetry_events`      | User can SELECT own project events; service_role can INSERT all events |
+| Table                   | Policy                                                             |
+| ----------------------- | ------------------------------------------------------------------ |
+| `projects`              | User can only access own projects                                  |
+| `project_locales`       | User can access locales for own projects                           |
+| `keys`                  | User can access keys for own projects                              |
+| `translations`          | User can access translations for own projects                      |
+| `translation_jobs`      | User can access jobs for own projects                              |
+| `translation_job_items` | User can access items for jobs in own projects                     |
+| `telemetry_events`      | User can SELECT own project events; INSERT handled by triggers/RPC |
 
 ---
 
