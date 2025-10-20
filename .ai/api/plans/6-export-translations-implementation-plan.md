@@ -129,6 +129,7 @@ Create validation schemas in `src/features/export/api/export.schemas.ts`:
 import { z } from 'zod';
 import { EXPORT_ERROR_MESSAGES } from '@/shared/constants';
 
+// export translations request schema
 export const EXPORT_TRANSLATIONS_SCHEMA = z.object({
   project_id: z.string().uuid(EXPORT_ERROR_MESSAGES.INVALID_PROJECT_ID),
 });
@@ -714,9 +715,12 @@ Create `src/features/export/api/useExportTranslations/useExportTranslations.ts`:
 
 ```typescript
 import { useMutation } from '@tanstack/react-query';
+
 import type { ApiErrorResponse } from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
+
 import { createEdgeFunctionErrorResponse } from '../export.errors';
 import { EXPORT_TRANSLATIONS_SCHEMA } from '../export.schemas';
 
@@ -736,12 +740,12 @@ import { EXPORT_TRANSLATIONS_SCHEMA } from '../export.schemas';
 export function useExportTranslations(projectId: string) {
   const supabase = useSupabase();
 
-  return useMutation<void, ApiErrorResponse, void>({
+  return useMutation<unknown, ApiErrorResponse>({
     mutationFn: async () => {
-      // Validate project ID
+      // validate project id
       const validated = EXPORT_TRANSLATIONS_SCHEMA.parse({ project_id: projectId });
 
-      // Get current session for authentication
+      // get current session for authentication
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -749,16 +753,23 @@ export function useExportTranslations(projectId: string) {
         throw createApiErrorResponse(401, 'Authentication required');
       }
 
-      // Call Edge Function with authenticated fetch
-      // Note: supabase.functions.invoke() is not ideal for GET with query params and binary responses
-      const functionUrl = `${supabase.supabaseUrl}/functions/v1/export-translations?project_id=${validated.project_id}`;
+      // get supabase configuration from environment
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw createApiErrorResponse(500, 'Supabase configuration missing');
+      }
+
+      // call edge function with authenticated fetch
+      const functionUrl = `${supabaseUrl}/functions/v1/export-translations?project_id=${validated.project_id}`;
 
       const response = await fetch(functionUrl, {
-        method: 'GET',
         headers: {
+          apikey: supabaseAnonKey,
           Authorization: `Bearer ${session.access_token}`,
-          apikey: supabase.supabaseKey,
         },
+        method: 'GET',
       });
 
       if (!response.ok) {
@@ -773,14 +784,20 @@ export function useExportTranslations(projectId: string) {
         throw createEdgeFunctionErrorResponse('Export generation failed', response.status, 'useExportTranslations');
       }
 
-      // Handle successful ZIP response
+      // handle successful zip response
       const blob = await response.blob();
 
-      // Generate filename with timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-      const filename = `export-${projectId}-${timestamp}.zip`;
+      // extract filename from content-disposition header or generate fallback
+      let filename = `export-${projectId}-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.zip`;
+      const contentDisposition = response.headers.get('Content-Disposition');
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
 
-      // Trigger browser download
+      // trigger browser download
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';

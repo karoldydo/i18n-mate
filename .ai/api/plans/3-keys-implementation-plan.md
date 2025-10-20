@@ -255,6 +255,7 @@ export const KEY_DEFAULT_VIEW_RESPONSE_SCHEMA = z.object({
   value: z.string(),
 });
 
+// key per-language view response schema
 export const KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA = z.object({
   full_key: z.string(),
   is_machine_translated: z.boolean(),
@@ -265,6 +266,7 @@ export const KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA = z.object({
   value: z.string().nullable(),
 });
 
+// create key response schema
 export const CREATE_KEY_RESPONSE_SCHEMA = z.object({
   key_id: z.string().uuid(),
 });
@@ -1033,10 +1035,7 @@ Create `src/features/keys/api/keys.key-factory.ts`:
 ```typescript
 import type { ListKeysDefaultViewParams, ListKeysPerLanguageParams } from '@/shared/types';
 
-/**
- * Query key factory for keys
- * Follows TanStack Query best practices for structured query keys
- */
+// query key factory for keys, follows tanstack query best practices for structured query keys
 export const KEYS_KEY_FACTORY = {
   all: ['keys'] as const,
   defaultView: (projectId: string, params: Omit<ListKeysDefaultViewParams, 'project_id'>) =>
@@ -1090,9 +1089,11 @@ import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from 
  * @param params.missing_only - Filter keys with missing translations (default: false)
  * @param params.limit - Items per page (1-100, default: 50)
  * @param params.offset - Pagination offset (min: 0, default: 0)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with keys data and pagination metadata
  */
 export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
@@ -1170,9 +1171,11 @@ import { KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA, LIST_KEYS_PER_LANGUAGE_VIEW_SCHE
  * @param params.missing_only - Filter keys with NULL values in selected locale (default: false)
  * @param params.limit - Items per page (1-100, default: 50)
  * @param params.offset - Pagination offset (min: 0, default: 0)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, malformed locale, limit > 100, negative offset)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with keys data and pagination metadata
  */
 export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
@@ -1246,9 +1249,11 @@ import { CREATE_KEY_RESPONSE_SCHEMA, CREATE_KEY_SCHEMA } from '../keys.schemas';
  * with NULL values. Key name must start with project prefix and follow naming rules.
  *
  * @param projectId - Project UUID for cache invalidation (required)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid key format, empty value, prefix mismatch)
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate key name in project)
  * @throws {ApiErrorResponse} 500 - Database error or no data returned
+ *
  * @returns TanStack Query mutation hook for creating keys
  */
 export function useCreateKey(projectId: string) {
@@ -1304,9 +1309,11 @@ import { PROJECT_ID_SCHEMA } from '../keys.schemas';
  * caches are cleared and key lists are invalidated.
  *
  * @param projectId - Project UUID for cache invalidation (required)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid key ID format)
  * @throws {ApiErrorResponse} 404 - Key not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during deletion
+ *
  * @returns TanStack Query mutation hook for deleting keys
  */
 export function useDeleteKey(projectId: string) {
@@ -1317,6 +1324,8 @@ export function useDeleteKey(projectId: string) {
     mutationFn: async (keyId) => {
       const validatedId = PROJECT_ID_SCHEMA.parse(keyId);
 
+      // supabase returns { count, error } not http 204
+      // we normalize to void (equivalent to 204 no content semantics)
       const { count, error } = await supabase.from('keys').delete().eq('id', validatedId);
 
       if (error) {
@@ -1326,6 +1335,8 @@ export function useDeleteKey(projectId: string) {
       if (count === 0) {
         throw createApiErrorResponse(404, KEYS_ERROR_MESSAGES.KEY_NOT_FOUND);
       }
+
+      // return void (no content) to match rest 204 semantics
     },
     onSuccess: (_, keyId) => {
       // remove from cache
