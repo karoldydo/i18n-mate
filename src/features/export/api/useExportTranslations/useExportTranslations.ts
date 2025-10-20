@@ -15,10 +15,12 @@ import { exportTranslationsSchema } from '../export.schemas';
  * Uses browser download API to save file with auto-generated filename.
  *
  * @param projectId - UUID of the project to export
+ *
  * @throws {ApiErrorResponse} 400 - Invalid project ID format
  * @throws {ApiErrorResponse} 401 - Authentication required
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Export generation failed
+ *
  * @returns TanStack Query mutation hook for exporting translations
  */
 export function useExportTranslations(projectId: string) {
@@ -26,10 +28,10 @@ export function useExportTranslations(projectId: string) {
 
   return useMutation<unknown, ApiErrorResponse>({
     mutationFn: async () => {
-      // Validate project ID
+      // validate project id
       const validated = exportTranslationsSchema.parse({ project_id: projectId });
 
-      // Get current session for authentication
+      // get current session for authentication
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -37,7 +39,7 @@ export function useExportTranslations(projectId: string) {
         throw createApiErrorResponse(401, 'Authentication required');
       }
 
-      // Get Supabase configuration from environment
+      // get supabase configuration from environment
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -45,7 +47,7 @@ export function useExportTranslations(projectId: string) {
         throw createApiErrorResponse(500, 'Supabase configuration missing');
       }
 
-      // Call Edge Function with authenticated fetch
+      // call edge function with authenticated fetch
       const functionUrl = `${supabaseUrl}/functions/v1/export-translations?project_id=${validated.project_id}`;
 
       const response = await fetch(functionUrl, {
@@ -68,10 +70,10 @@ export function useExportTranslations(projectId: string) {
         throw createEdgeFunctionErrorResponse('Export generation failed', response.status, 'useExportTranslations');
       }
 
-      // Handle successful ZIP response
+      // handle successful zip response
       const blob = await response.blob();
 
-      // Extract filename from Content-Disposition header or generate fallback
+      // extract filename from content-disposition header or generate fallback
       let filename = `export-${projectId}-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.zip`;
       const contentDisposition = response.headers.get('Content-Disposition');
       if (contentDisposition) {
@@ -81,7 +83,7 @@ export function useExportTranslations(projectId: string) {
         }
       }
 
-      // Trigger browser download
+      // trigger browser download
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';

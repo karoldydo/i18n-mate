@@ -33,15 +33,13 @@
   "git.confirmSync": false,
   "git.enableSmartCommit": true,
   "json.schemaDownload.enable": true,
+  "markdown.extension.preview.autoShowPreviewToSide": true,
+  "markdown.preview.openMarkdownLinks": "inPreview",
   "terminal.integrated.scrollback": 1000000,
   "vitest.rootConfig": "./vitest.config.ts",
   "vitest.shellType": "terminal",
   "window.commandCenter": true,
   "workbench.colorTheme": "Default Dark Modern",
-  "workbench.editor.enablePreview": false,
-  "workbench.editorAssociations": {
-    "*.{md,mdc}": "vscode.markdown.preview.editor"
-  },
   "workbench.iconTheme": "vscode-icons",
   "workbench.tree.indent": 16
 }

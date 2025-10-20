@@ -26,6 +26,7 @@
     "vitest.explorer",
     "ms-vscode.live-server",
     "anthropic.claude-code",
-    "denoland.vscode-deno"
+    "denoland.vscode-deno",
+    "yzhang.markdown-all-in-one"
   ]
 }

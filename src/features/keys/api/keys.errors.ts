@@ -16,6 +16,7 @@ import { createApiErrorResponse } from '@/shared/utils';
  * @param error - PostgrestError from Supabase
  * @param context - Optional context string for logging (e.g., hook name)
  * @param fallbackMessage - Optional custom fallback message for generic errors
+ *
  * @returns Standardized ApiErrorResponse object
  */
 export function createDatabaseErrorResponse(

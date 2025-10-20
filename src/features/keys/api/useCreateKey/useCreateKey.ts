@@ -19,9 +19,11 @@ import { createKeyResponseSchema, createKeySchema } from '../keys.schemas';
  * with NULL values. Key name must start with project prefix and follow naming rules.
  *
  * @param projectId - Project UUID for cache invalidation (required)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid key format, empty value, prefix mismatch)
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate key name in project)
  * @throws {ApiErrorResponse} 500 - Database error or no data returned
+ *
  * @returns TanStack Query mutation hook for creating keys
  */
 export function useCreateKey(projectId: string) {
@@ -30,12 +32,8 @@ export function useCreateKey(projectId: string) {
 
   return useMutation<CreateKeyResponse, ApiErrorResponse, CreateKeyRequest>({
     mutationFn: async (keyData) => {
-      // Validate input and transform to RPC parameter format (adds p_ prefix)
       const rpcParams = createKeySchema.parse(keyData);
 
-      // Call RPC function to create key with default value
-      // RPC returns TABLE(key_id uuid), PostgREST wraps in array
-      // .single() extracts first element and enforces exactly 1 row returned
       const { data, error } = await supabase.rpc('create_key_with_value', rpcParams).single();
 
       if (error) {
@@ -46,12 +44,10 @@ export function useCreateKey(projectId: string) {
         throw createApiErrorResponse(500, KEYS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
-      // Runtime validation of response data (already unwrapped by .single())
-      const validatedResponse = createKeyResponseSchema.parse(data);
-      return validatedResponse;
+      return createKeyResponseSchema.parse(data);
     },
     onSuccess: () => {
-      // Invalidate all key list caches for this project (default and all per-language views)
+      // invalidate all key list caches for this project (default and all per-language views)
       queryClient.invalidateQueries({ queryKey: keysKeys.defaultViews(projectId) });
       queryClient.invalidateQueries({ queryKey: keysKeys.all });
     },

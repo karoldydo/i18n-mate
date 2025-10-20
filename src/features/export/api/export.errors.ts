@@ -13,6 +13,7 @@ import { createApiErrorResponse } from '@/shared/utils';
  * @param message - Error message from Edge Function
  * @param statusCode - HTTP status code from response
  * @param context - Optional context string for logging (e.g., hook name)
+ *
  * @returns Standardized ApiErrorResponse object
  */
 export function createEdgeFunctionErrorResponse(
