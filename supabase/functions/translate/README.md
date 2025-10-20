@@ -10,7 +10,7 @@ Create `supabase/.env.local`:
 
 ```bash
 OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxx
-OPENROUTER_MODEL=openai/gpt-oss-20b:free
+OPENROUTER_MODEL=google/gemini-2.5-flash-lite
 ```
 
 ### 2. Start Supabase
@@ -35,10 +35,10 @@ Function will be available at `http://localhost:54321/functions/v1/translate`
 
 ## Required Environment Variables
 
-| Variable             | Description          | Example                   |
-| -------------------- | -------------------- | ------------------------- |
-| `OPENROUTER_API_KEY` | OpenRouter API key   | `sk-or-v1-xxxxx`          |
-| `OPENROUTER_MODEL`   | LLM model (optional) | `openai/gpt-oss-20b:free` |
+| Variable             | Description          | Example                        |
+| -------------------- | -------------------- | ------------------------------ |
+| `OPENROUTER_API_KEY` | OpenRouter API key   | `sk-or-v1-xxxxx`               |
+| `OPENROUTER_MODEL`   | LLM model (optional) | `google/gemini-2.5-flash-lite` |
 
 Auto-injected by Supabase:
 
