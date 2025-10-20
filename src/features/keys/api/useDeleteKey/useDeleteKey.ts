@@ -7,8 +7,8 @@ import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { keysKeys } from '../keys.keys';
-import { projectIdSchema } from '../keys.schemas';
+import { KEYS_KEY_FACTORY } from '../keys.key-factory';
+import { PROJECT_ID_SCHEMA } from '../keys.schemas';
 
 /**
  * Delete a translation key by ID
@@ -19,9 +19,11 @@ import { projectIdSchema } from '../keys.schemas';
  * caches are cleared and key lists are invalidated.
  *
  * @param projectId - Project UUID for cache invalidation (required)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid key ID format)
  * @throws {ApiErrorResponse} 404 - Key not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during deletion
+ *
  * @returns TanStack Query mutation hook for deleting keys
  */
 export function useDeleteKey(projectId: string) {
@@ -30,11 +32,10 @@ export function useDeleteKey(projectId: string) {
 
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (keyId) => {
-      // Validate key ID
-      const validatedId = projectIdSchema.parse(keyId);
+      const validatedId = PROJECT_ID_SCHEMA.parse(keyId);
 
-      // Supabase returns { count, error } not HTTP 204
-      // We normalize to void (equivalent to 204 No Content semantics)
+      // supabase returns { count, error } not http 204
+      // we normalize to void (equivalent to 204 no content semantics)
       const { count, error } = await supabase.from('keys').delete().eq('id', validatedId);
 
       if (error) {
@@ -45,14 +46,14 @@ export function useDeleteKey(projectId: string) {
         throw createApiErrorResponse(404, KEYS_ERROR_MESSAGES.KEY_NOT_FOUND);
       }
 
-      // Return void (no content) to match REST 204 semantics
+      // return void (no content) to match rest 204 semantics
     },
     onSuccess: (_, keyId) => {
-      // Remove from cache
-      queryClient.removeQueries({ queryKey: keysKeys.detail(keyId) });
-      // Invalidate all list caches for this project
-      queryClient.invalidateQueries({ queryKey: keysKeys.defaultViews(projectId) });
-      queryClient.invalidateQueries({ queryKey: keysKeys.all });
+      // remove from cache
+      queryClient.removeQueries({ queryKey: KEYS_KEY_FACTORY.detail(keyId) });
+      // invalidate all list caches for this project
+      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
+      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });
     },
   });
 }

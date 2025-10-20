@@ -7,8 +7,8 @@ import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { keysKeys } from '../keys.keys';
-import { createKeyResponseSchema, createKeySchema } from '../keys.schemas';
+import { KEYS_KEY_FACTORY } from '../keys.key-factory';
+import { CREATE_KEY_RESPONSE_SCHEMA, CREATE_KEY_SCHEMA } from '../keys.schemas';
 
 /**
  * Create a new translation key with default value
@@ -32,9 +32,9 @@ export function useCreateKey(projectId: string) {
 
   return useMutation<CreateKeyResponse, ApiErrorResponse, CreateKeyRequest>({
     mutationFn: async (keyData) => {
-      const rpcParams = createKeySchema.parse(keyData);
+      const validated = CREATE_KEY_SCHEMA.parse(keyData);
 
-      const { data, error } = await supabase.rpc('create_key_with_value', rpcParams).single();
+      const { data, error } = await supabase.rpc('create_key_with_value', validated).single();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateKey', 'Failed to create key');
@@ -44,12 +44,12 @@ export function useCreateKey(projectId: string) {
         throw createApiErrorResponse(500, KEYS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
-      return createKeyResponseSchema.parse(data);
+      return CREATE_KEY_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: () => {
       // invalidate all key list caches for this project (default and all per-language views)
-      queryClient.invalidateQueries({ queryKey: keysKeys.defaultViews(projectId) });
-      queryClient.invalidateQueries({ queryKey: keysKeys.all });
+      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
+      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });
     },
   });
 }

@@ -1,13 +1,18 @@
 {
   "cSpell.words": [
+    "apikey",
     "CITEXT",
     "duplicative",
+    "fanout",
+    "FKEY",
+    "ILIKE",
     "openrouter",
     "Postgrest",
     "Referer",
     "refetches",
     "Shadcn",
     "Supabase",
+    "trgm",
     "VITE"
   ],
   "deno.enable": false,

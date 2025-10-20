@@ -13,8 +13,8 @@ import {
   TRANSLATION_VALUE_MIN_LENGTH,
 } from '@/shared/constants';
 
-// Full key validation
-const fullKeySchema = z
+// full key validation
+const FULL_KEY_SCHEMA = z
   .string()
   .min(KEY_NAME_MIN_LENGTH, KEYS_ERROR_MESSAGES.KEY_REQUIRED)
   .max(KEY_NAME_MAX_LENGTH, KEYS_ERROR_MESSAGES.KEY_TOO_LONG)
@@ -22,57 +22,52 @@ const fullKeySchema = z
   .refine((val) => !val.includes('..'), KEYS_ERROR_MESSAGES.KEY_CONSECUTIVE_DOTS)
   .refine((val) => !val.endsWith('.'), KEYS_ERROR_MESSAGES.KEY_TRAILING_DOT);
 
-// Translation value validation
-const translationValueSchema = z
+// translation value validation
+const TRANSLATION_VALUE_SCHEMA = z
   .string()
   .min(TRANSLATION_VALUE_MIN_LENGTH, KEYS_ERROR_MESSAGES.VALUE_REQUIRED)
   .max(TRANSLATION_VALUE_MAX_LENGTH, KEYS_ERROR_MESSAGES.VALUE_TOO_LONG)
   .refine((val) => !val.includes('\n'), KEYS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
   .transform((val) => val.trim());
 
-// Locale code validation (BCP-47 format)
-const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
+// locale code validation (bcp-47 format)
+const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
   message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
 });
 
-// Project ID validation
-export const projectIdSchema = z.string().uuid('Invalid project ID format');
+// project id validation
+export const PROJECT_ID_SCHEMA = z.string().uuid('Invalid project ID format');
 
-// List Keys Default View Schema
-export const listKeysDefaultViewSchema = z.object({
+// list keys default view schema
+export const LIST_KEYS_DEFAULT_VIEW_SCHEMA = z.object({
   limit: z.number().int().min(1).max(KEYS_MAX_LIMIT).optional().default(KEYS_DEFAULT_LIMIT),
   missing_only: z.boolean().optional().default(KEYS_DEFAULT_PARAMS.MISSING_ONLY),
   offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_DEFAULT_PARAMS.OFFSET),
-  project_id: projectIdSchema,
+  project_id: PROJECT_ID_SCHEMA,
   search: z.string().optional(),
 });
 
-// List Keys Per-Language View Schema
-export const listKeysPerLanguageViewSchema = listKeysDefaultViewSchema.extend({
-  locale: localeCodeSchema,
+// list keys per-language view schema
+export const LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA = LIST_KEYS_DEFAULT_VIEW_SCHEMA.extend({
+  locale: LOCALE_CODE_SCHEMA,
 });
 
-// Create Key Request Schema (API input format without p_ prefix)
-export const createKeyRequestSchema = z.object({
-  default_value: translationValueSchema,
-  full_key: fullKeySchema,
-  project_id: projectIdSchema,
+// create key request schema (api input format without p_ prefix)
+export const CREATE_KEY_REQUEST_SCHEMA = z.object({
+  default_value: TRANSLATION_VALUE_SCHEMA,
+  full_key: FULL_KEY_SCHEMA,
+  project_id: PROJECT_ID_SCHEMA,
 });
 
-// Create Key Schema with RPC parameter transformation (adds p_ prefix)
-export const createKeySchema = createKeyRequestSchema.transform((data) => ({
+// create key schema with rpc parameter transformation (adds p_ prefix)
+export const CREATE_KEY_SCHEMA = CREATE_KEY_REQUEST_SCHEMA.transform((data) => ({
   p_default_value: data.default_value,
   p_full_key: data.full_key,
   p_project_id: data.project_id,
 }));
 
-// Delete Key Schema
-export const deleteKeySchema = z.object({
-  id: projectIdSchema,
-});
-
-// Response Schemas for runtime validation
-export const keyDefaultViewResponseSchema = z.object({
+// response schemas for runtime validation
+export const KEY_DEFAULT_VIEW_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   full_key: z.string(),
   id: z.string().uuid(),
@@ -80,7 +75,8 @@ export const keyDefaultViewResponseSchema = z.object({
   value: z.string(),
 });
 
-export const keyPerLanguageViewResponseSchema = z.object({
+// key per-language view response schema
+export const KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA = z.object({
   full_key: z.string(),
   is_machine_translated: z.boolean(),
   key_id: z.string().uuid(),
@@ -90,6 +86,7 @@ export const keyPerLanguageViewResponseSchema = z.object({
   value: z.string().nullable(),
 });
 
-export const createKeyResponseSchema = z.object({
+// create key response schema
+export const CREATE_KEY_RESPONSE_SCHEMA = z.object({
   key_id: z.string().uuid(),
 });

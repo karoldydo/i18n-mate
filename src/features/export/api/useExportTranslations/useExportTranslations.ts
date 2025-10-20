@@ -6,7 +6,7 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createEdgeFunctionErrorResponse } from '../export.errors';
-import { exportTranslationsSchema } from '../export.schemas';
+import { EXPORT_TRANSLATIONS_SCHEMA } from '../export.schemas';
 
 /**
  * Export project translations as ZIP file
@@ -29,7 +29,7 @@ export function useExportTranslations(projectId: string) {
   return useMutation<unknown, ApiErrorResponse>({
     mutationFn: async () => {
       // validate project id
-      const validated = exportTranslationsSchema.parse({ project_id: projectId });
+      const validated = EXPORT_TRANSLATIONS_SCHEMA.parse({ project_id: projectId });
 
       // get current session for authentication
       const {

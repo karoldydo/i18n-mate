@@ -129,7 +129,7 @@ Create validation schemas in `src/features/export/api/export.schemas.ts`:
 import { z } from 'zod';
 import { EXPORT_ERROR_MESSAGES } from '@/shared/constants';
 
-export const exportTranslationsSchema = z.object({
+export const EXPORT_TRANSLATIONS_SCHEMA = z.object({
   project_id: z.string().uuid(EXPORT_ERROR_MESSAGES.INVALID_PROJECT_ID),
 });
 ```
@@ -310,7 +310,7 @@ if (!project_id) {
 }
 
 // Validate UUID format using Zod
-const validated = exportTranslationsSchema.parse(url.searchParams);
+const validated = EXPORT_TRANSLATIONS_SCHEMA.parse(url.searchParams);
 ```
 
 ### 7.2 Authorization Errors (401/404)
@@ -718,7 +718,7 @@ import type { ApiErrorResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createEdgeFunctionErrorResponse } from '../export.errors';
-import { exportTranslationsSchema } from '../export.schemas';
+import { EXPORT_TRANSLATIONS_SCHEMA } from '../export.schemas';
 
 /**
  * Export project translations as ZIP file
@@ -739,7 +739,7 @@ export function useExportTranslations(projectId: string) {
   return useMutation<void, ApiErrorResponse, void>({
     mutationFn: async () => {
       // Validate project ID
-      const validated = exportTranslationsSchema.parse({ project_id: projectId });
+      const validated = EXPORT_TRANSLATIONS_SCHEMA.parse({ project_id: projectId });
 
       // Get current session for authentication
       const {

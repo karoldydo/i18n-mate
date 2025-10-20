@@ -6,8 +6,8 @@ import type { ApiErrorResponse, KeyDefaultViewListResponse, ListKeysDefaultViewP
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { keysKeys } from '../keys.keys';
-import { keyDefaultViewResponseSchema, listKeysDefaultViewSchema } from '../keys.schemas';
+import { KEYS_KEY_FACTORY } from '../keys.key-factory';
+import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from '../keys.schemas';
 
 /**
  * Fetch a paginated list of keys in default language view with missing counts
@@ -23,9 +23,11 @@ import { keyDefaultViewResponseSchema, listKeysDefaultViewSchema } from '../keys
  * @param params.missing_only - Filter keys with missing translations (default: false)
  * @param params.limit - Items per page (1-100, default: 50)
  * @param params.offset - Pagination offset (min: 0, default: 0)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with keys data and pagination metadata
  */
 export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
@@ -34,10 +36,8 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
   return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listKeysDefaultViewSchema.parse(params);
+      const validated = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
 
-      // Call RPC function for default view list
       const { count, data, error } = await supabase.rpc(
         'list_keys_default_view',
         {
@@ -54,8 +54,8 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
         throw createDatabaseErrorResponse(error, 'useKeysDefaultView', 'Failed to fetch keys');
       }
 
-      // Runtime validation of response data
-      const keys = z.array(keyDefaultViewResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const keys = z.array(KEY_DEFAULT_VIEW_RESPONSE_SCHEMA).parse(data || []);
 
       return {
         data: keys,
@@ -66,7 +66,7 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
         },
       };
     },
-    queryKey: keysKeys.defaultView(params.project_id, {
+    queryKey: KEYS_KEY_FACTORY.defaultView(params.project_id, {
       limit: params.limit,
       missing_only: params.missing_only,
       offset: params.offset,

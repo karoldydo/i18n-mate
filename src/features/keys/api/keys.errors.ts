@@ -27,14 +27,14 @@ export function createDatabaseErrorResponse(
   const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
   console.error(`${logPrefix} Database error:`, error);
 
-  // Handle unique constraint violations
+  // handle unique constraint violations
   if (error.code === KEYS_PG_ERROR_CODES.UNIQUE_VIOLATION) {
     if (error.message.includes(KEYS_CONSTRAINTS.UNIQUE_PER_PROJECT)) {
       return createApiErrorResponse(409, KEYS_ERROR_MESSAGES.KEY_ALREADY_EXISTS);
     }
   }
 
-  // Handle trigger violations
+  // handle trigger violations
   if (error.message.includes('must start with project prefix')) {
     return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.KEY_INVALID_PREFIX);
   }
@@ -42,12 +42,12 @@ export function createDatabaseErrorResponse(
     return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.DEFAULT_VALUE_EMPTY);
   }
 
-  // Handle check constraint violations
+  // handle check constraint violations
   if (error.code === KEYS_PG_ERROR_CODES.CHECK_VIOLATION) {
     return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.INVALID_FIELD_VALUE, { constraint: error.details });
   }
 
-  // Handle foreign key violations
+  // handle foreign key violations
   if (error.code === KEYS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
     if (error.message.includes(KEYS_CONSTRAINTS.PROJECT_ID_FKEY)) {
       return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.INVALID_PROJECT_ID);
@@ -55,11 +55,11 @@ export function createDatabaseErrorResponse(
     return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.REFERENCED_RESOURCE_NOT_FOUND);
   }
 
-  // Handle authorization errors (project not found or not owned)
+  // handle authorization errors (project not found or not owned)
   if (error.message.includes('not found') || error.message.includes('access denied')) {
     return createApiErrorResponse(403, KEYS_ERROR_MESSAGES.PROJECT_NOT_OWNED);
   }
 
-  // Generic database error
+  // generic database error
   return createApiErrorResponse(500, fallbackMessage || KEYS_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
 }

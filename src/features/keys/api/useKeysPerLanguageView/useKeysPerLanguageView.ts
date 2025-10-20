@@ -6,8 +6,8 @@ import type { ApiErrorResponse, KeyPerLanguageViewListResponse, ListKeysPerLangu
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { keysKeys } from '../keys.keys';
-import { keyPerLanguageViewResponseSchema, listKeysPerLanguageViewSchema } from '../keys.schemas';
+import { KEYS_KEY_FACTORY } from '../keys.key-factory';
+import { KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA, LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA } from '../keys.schemas';
 
 /**
  * Fetch a paginated list of keys for a specific language with translation metadata
@@ -24,9 +24,11 @@ import { keyPerLanguageViewResponseSchema, listKeysPerLanguageViewSchema } from 
  * @param params.missing_only - Filter keys with NULL values in selected locale (default: false)
  * @param params.limit - Items per page (1-100, default: 50)
  * @param params.offset - Pagination offset (min: 0, default: 0)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, malformed locale, limit > 100, negative offset)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with keys data and pagination metadata
  */
 export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
@@ -35,10 +37,8 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listKeysPerLanguageViewSchema.parse(params);
+      const validated = LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
 
-      // Call RPC function for per-language view list
       const { count, data, error } = await supabase.rpc(
         'list_keys_per_language_view',
         {
@@ -56,8 +56,8 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
         throw createDatabaseErrorResponse(error, 'useKeysPerLanguageView', 'Failed to fetch keys');
       }
 
-      // Runtime validation of response data
-      const keys = z.array(keyPerLanguageViewResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const keys = z.array(KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA).parse(data || []);
 
       return {
         data: keys,
@@ -68,7 +68,7 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
         },
       };
     },
-    queryKey: keysKeys.perLanguageView(params.project_id, params.locale, {
+    queryKey: KEYS_KEY_FACTORY.perLanguageView(params.project_id, params.locale, {
       limit: params.limit,
       missing_only: params.missing_only,
       offset: params.offset,

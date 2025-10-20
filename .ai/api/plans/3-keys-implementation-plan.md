@@ -193,8 +193,8 @@ import {
   KEYS_ERROR_MESSAGES,
 } from '@/shared/constants';
 
-// Full key validation
-const fullKeySchema = z
+// full key validation
+const FULL_KEY_SCHEMA = z
   .string()
   .min(KEY_NAME_MIN_LENGTH, KEYS_ERROR_MESSAGES.KEY_REQUIRED)
   .max(KEY_NAME_MAX_LENGTH, KEYS_ERROR_MESSAGES.KEY_TOO_LONG)
@@ -202,55 +202,52 @@ const fullKeySchema = z
   .refine((val) => !val.includes('..'), KEYS_ERROR_MESSAGES.KEY_CONSECUTIVE_DOTS)
   .refine((val) => !val.endsWith('.'), KEYS_ERROR_MESSAGES.KEY_TRAILING_DOT);
 
-// Translation value validation
-const translationValueSchema = z
+// translation value validation
+const TRANSLATION_VALUE_SCHEMA = z
   .string()
   .min(TRANSLATION_VALUE_MIN_LENGTH, KEYS_ERROR_MESSAGES.VALUE_REQUIRED)
   .max(TRANSLATION_VALUE_MAX_LENGTH, KEYS_ERROR_MESSAGES.VALUE_TOO_LONG)
   .refine((val) => !val.includes('\n'), KEYS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
   .transform((val) => val.trim());
 
-// Locale code validation (BCP-47 format)
-const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
+// locale code validation (BCP-47 format)
+const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
   message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
 });
 
-// Project ID validation
-const projectIdSchema = z.string().uuid('Invalid project ID format');
+// project id validation
+export const PROJECT_ID_SCHEMA = z.string().uuid('Invalid project ID format');
 
-// Key ID validation
-const keyIdSchema = z.string().uuid('Invalid key ID format');
-
-// List Keys Default View Schema
-export const listKeysDefaultViewSchema = z.object({
+// list keys default view schema
+export const LIST_KEYS_DEFAULT_VIEW_SCHEMA = z.object({
   limit: z.number().int().min(1).max(KEYS_MAX_LIMIT).optional().default(KEYS_DEFAULT_LIMIT),
-  missing_only: z.boolean().optional().default(false),
-  offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_MIN_OFFSET),
-  project_id: projectIdSchema,
+  missing_only: z.boolean().optional().default(KEYS_DEFAULT_PARAMS.MISSING_ONLY),
+  offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_DEFAULT_PARAMS.OFFSET),
+  project_id: PROJECT_ID_SCHEMA,
   search: z.string().optional(),
 });
 
-// List Keys Per-Language View Schema
-export const listKeysPerLanguageViewSchema = listKeysDefaultViewSchema.extend({
-  locale: localeCodeSchema,
+// list keys per-language view schema
+export const LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA = LIST_KEYS_DEFAULT_VIEW_SCHEMA.extend({
+  locale: LOCALE_CODE_SCHEMA,
 });
 
-// Create Key Request Schema (API input format without p_ prefix)
-export const createKeyRequestSchema = z.object({
-  default_value: translationValueSchema,
-  full_key: fullKeySchema,
-  project_id: projectIdSchema,
+// create key request schema (api input format without p_ prefix)
+export const CREATE_KEY_REQUEST_SCHEMA = z.object({
+  default_value: TRANSLATION_VALUE_SCHEMA,
+  full_key: FULL_KEY_SCHEMA,
+  project_id: PROJECT_ID_SCHEMA,
 });
 
-// Create Key Schema with RPC parameter transformation (adds p_ prefix)
-export const createKeySchema = createKeyRequestSchema.transform((data) => ({
+// create key schema with rpc parameter transformation (adds p_ prefix)
+export const CREATE_KEY_SCHEMA = CREATE_KEY_REQUEST_SCHEMA.transform((data) => ({
   p_default_value: data.default_value,
   p_full_key: data.full_key,
   p_project_id: data.project_id,
 }));
 
-// Response Schemas for runtime validation
-export const keyDefaultViewResponseSchema = z.object({
+// response schemas for runtime validation
+export const KEY_DEFAULT_VIEW_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   full_key: z.string(),
   id: z.string().uuid(),
@@ -258,7 +255,7 @@ export const keyDefaultViewResponseSchema = z.object({
   value: z.string(),
 });
 
-export const keyPerLanguageViewResponseSchema = z.object({
+export const KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA = z.object({
   full_key: z.string(),
   is_machine_translated: z.boolean(),
   key_id: z.string().uuid(),
@@ -268,7 +265,7 @@ export const keyPerLanguageViewResponseSchema = z.object({
   value: z.string().nullable(),
 });
 
-export const createKeyResponseSchema = z.object({
+export const CREATE_KEY_RESPONSE_SCHEMA = z.object({
   key_id: z.string().uuid(),
 });
 ```
@@ -488,7 +485,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User requests key list for project via React component
 2. TanStack Query hook (`useKeysDefaultView`) is invoked with project ID and optional params
-3. Hook validates params using `listKeysDefaultViewSchema`
+3. Hook validates params using `LIST_KEYS_DEFAULT_VIEW_SCHEMA`
 4. Hook retrieves Supabase client from `useSupabase()` context
 5. Client calls RPC function `list_keys_default_view` with validated params
 6. RPC function performs authorization check via RLS policy on projects table
@@ -507,7 +504,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User selects a locale and requests key list via React component
 2. TanStack Query hook (`useKeysPerLanguageView`) is invoked with project ID, locale, and optional params
-3. Hook validates params using `listKeysPerLanguageViewSchema` (includes locale validation)
+3. Hook validates params using `LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA` (includes locale validation)
 4. Hook retrieves Supabase client from `useSupabase()` context
 5. Client calls RPC function `list_keys_per_language_view` with validated params
 6. RPC function performs authorization check via RLS policy
@@ -526,7 +523,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User submits key creation form with full_key and default_value
 2. `useCreateKey` mutation hook receives form data
-3. Hook validates data using `createKeySchema`
+3. Hook validates data using `CREATE_KEY_SCHEMA`
 4. If validation fails, return 400 error immediately
 5. Hook calls Supabase RPC `create_key_with_value` with validated data
 6. RPC function atomically:
@@ -548,7 +545,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User confirms key deletion
 2. `useDeleteKey` mutation hook receives key ID
-3. Hook validates UUID format using `keyIdSchema`
+3. Hook validates UUID format using `PROJECT_ID_SCHEMA` (shared UUID schema)
 4. Hook calls Supabase `.delete().eq('id', keyId)`
 5. RLS policy validates project ownership via JOIN
 6. If unauthorized or not found, returns 404
@@ -572,7 +569,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - RPC functions perform authorization checks by verifying project ownership
 - Users can only access keys for projects they own
 - RLS policies on `keys` table ensure `project_id` belongs to user
-- RLS policy: `keys_owner_policy FOR ALL` — USING/WITH CHECK via project ownership (analogicznie dla innych tabel)
+- RLS policy: `keys_owner_policy FOR ALL` — USING/WITH CHECK via project ownership
 
 ### 6.3 Input Validation
 
@@ -1031,29 +1028,29 @@ export function createDatabaseErrorResponse(
 
 ### Step 5: Create Query Keys Factory
 
-Create `src/features/keys/api/keys.keys.ts`:
+Create `src/features/keys/api/keys.key-factory.ts`:
 
 ```typescript
-import type { ListKeysDefaultViewParams, ListKeysPerLanguageViewParams } from '@/shared/types';
+import type { ListKeysDefaultViewParams, ListKeysPerLanguageParams } from '@/shared/types';
 
 /**
  * Query key factory for keys
  * Follows TanStack Query best practices for structured query keys
  */
-export const keysKeys = {
+export const KEYS_KEY_FACTORY = {
   all: ['keys'] as const,
   defaultView: (projectId: string, params: Omit<ListKeysDefaultViewParams, 'project_id'>) =>
-    [...keysKeys.defaultViews(projectId), params] as const,
-  defaultViews: (projectId: string) => [...keysKeys.all, 'default', projectId] as const,
-  detail: (keyId: string) => [...keysKeys.details(), keyId] as const,
-  details: () => [...keysKeys.all, 'detail'] as const,
+    [...KEYS_KEY_FACTORY.defaultViews(projectId), params] as const,
+  defaultViews: (projectId: string) => [...KEYS_KEY_FACTORY.all, 'default', projectId] as const,
+  detail: (keyId: string) => [...KEYS_KEY_FACTORY.details(), keyId] as const,
+  details: () => [...KEYS_KEY_FACTORY.all, 'detail'] as const,
   perLanguageView: (
     projectId: string,
     locale: string,
-    params: Omit<ListKeysPerLanguageViewParams, 'project_id' | 'locale'>
-  ) => [...keysKeys.perLanguageViews(projectId, locale), params] as const,
+    params: Omit<ListKeysPerLanguageParams, 'project_id' | 'locale'>
+  ) => [...KEYS_KEY_FACTORY.perLanguageViews(projectId, locale), params] as const,
   perLanguageViews: (projectId: string, locale: string) =>
-    [...keysKeys.all, 'per-language', projectId, locale] as const,
+    [...KEYS_KEY_FACTORY.all, 'per-language', projectId, locale] as const,
 };
 ```
 
@@ -1072,10 +1069,12 @@ export const keysKeys = {
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import type { ApiErrorResponse, KeyDefaultViewListResponse, ListKeysDefaultViewParams } from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { keysKeys } from '../keys.keys';
-import { keyDefaultViewResponseSchema, listKeysDefaultViewSchema } from '../keys.schemas';
+import { KEYS_KEY_FACTORY } from '../keys.key-factory';
+import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from '../keys.schemas';
 
 /**
  * Fetch a paginated list of keys in default language view with missing counts
@@ -1102,10 +1101,8 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
   return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listKeysDefaultViewSchema.parse(params);
+      const validated = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
 
-      // Call RPC function for default view list
       const { count, data, error } = await supabase.rpc(
         'list_keys_default_view',
         {
@@ -1122,8 +1119,8 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
         throw createDatabaseErrorResponse(error, 'useKeysDefaultView', 'Failed to fetch keys');
       }
 
-      // Runtime validation of response data
-      const keys = z.array(keyDefaultViewResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const keys = z.array(KEY_DEFAULT_VIEW_RESPONSE_SCHEMA).parse(data || []);
 
       return {
         data: keys,
@@ -1134,7 +1131,7 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
         },
       };
     },
-    queryKey: keysKeys.defaultView(params.project_id, {
+    queryKey: KEYS_KEY_FACTORY.defaultView(params.project_id, {
       limit: params.limit,
       missing_only: params.missing_only,
       offset: params.offset,
@@ -1151,10 +1148,12 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import type { ApiErrorResponse, KeyPerLanguageViewListResponse, ListKeysPerLanguageParams } from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { keysKeys } from '../keys.keys';
-import { keyPerLanguageViewResponseSchema, listKeysPerLanguageViewSchema } from '../keys.schemas';
+import { KEYS_KEY_FACTORY } from '../keys.key-factory';
+import { KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA, LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA } from '../keys.schemas';
 
 /**
  * Fetch a paginated list of keys for a specific language with translation metadata
@@ -1182,10 +1181,8 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listKeysPerLanguageViewSchema.parse(params);
+      const validated = LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
 
-      // Call RPC function for per-language view list
       const { count, data, error } = await supabase.rpc(
         'list_keys_per_language_view',
         {
@@ -1203,8 +1200,8 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
         throw createDatabaseErrorResponse(error, 'useKeysPerLanguageView', 'Failed to fetch keys');
       }
 
-      // Runtime validation of response data
-      const keys = z.array(keyPerLanguageViewResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const keys = z.array(KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA).parse(data || []);
 
       return {
         data: keys,
@@ -1215,7 +1212,7 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
         },
       };
     },
-    queryKey: keysKeys.perLanguageView(params.project_id, params.locale, {
+    queryKey: KEYS_KEY_FACTORY.perLanguageView(params.project_id, params.locale, {
       limit: params.limit,
       missing_only: params.missing_only,
       offset: params.offset,
@@ -1231,12 +1228,14 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse, CreateKeyRequest, CreateKeyResponse } from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
+
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { keysKeys } from '../keys.keys';
-import { createKeyResponseSchema, createKeySchema } from '../keys.schemas';
+import { KEYS_KEY_FACTORY } from '../keys.key-factory';
+import { CREATE_KEY_RESPONSE_SCHEMA, CREATE_KEY_SCHEMA } from '../keys.schemas';
 
 /**
  * Create a new translation key with default value
@@ -1258,13 +1257,9 @@ export function useCreateKey(projectId: string) {
 
   return useMutation<CreateKeyResponse, ApiErrorResponse, CreateKeyRequest>({
     mutationFn: async (keyData) => {
-      // Validate input and transform to RPC parameter format (adds p_ prefix)
-      const rpcParams = createKeySchema.parse(keyData);
+      const validated = CREATE_KEY_SCHEMA.parse(keyData);
 
-      // Call RPC function to create key with default value
-      // RPC returns TABLE(key_id uuid), PostgREST wraps in array
-      // .single() extracts first element and enforces exactly 1 row returned
-      const { data, error } = await supabase.rpc('create_key_with_value', rpcParams).single();
+      const { data, error } = await supabase.rpc('create_key_with_value', validated).single();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateKey', 'Failed to create key');
@@ -1274,14 +1269,12 @@ export function useCreateKey(projectId: string) {
         throw createApiErrorResponse(500, KEYS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
-      // Runtime validation of response data (already unwrapped by .single())
-      const validatedResponse = createKeyResponseSchema.parse(data);
-      return validatedResponse;
+      return CREATE_KEY_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: () => {
-      // Invalidate all key list caches for this project (default and all per-language views)
-      queryClient.invalidateQueries({ queryKey: keysKeys.defaultViews(projectId) });
-      queryClient.invalidateQueries({ queryKey: keysKeys.all });
+      // invalidate all key list caches for this project (default and all per-language views)
+      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
+      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });
     },
   });
 }
@@ -1291,15 +1284,16 @@ export function useCreateKey(projectId: string) {
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
+
 import type { ApiErrorResponse } from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
-import { createDatabaseErrorResponse } from '../keys.errors';
-import { keysKeys } from '../keys.keys';
 
-const keyIdSchema = z.string().uuid('Invalid key ID format');
+import { createDatabaseErrorResponse } from '../keys.errors';
+import { KEYS_KEY_FACTORY } from '../keys.key-factory';
+import { PROJECT_ID_SCHEMA } from '../keys.schemas';
 
 /**
  * Delete a translation key by ID
@@ -1321,11 +1315,8 @@ export function useDeleteKey(projectId: string) {
 
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (keyId) => {
-      // Validate key ID
-      const validatedId = keyIdSchema.parse(keyId);
+      const validatedId = PROJECT_ID_SCHEMA.parse(keyId);
 
-      // Supabase returns { count, error } not HTTP 204
-      // We normalize to void (equivalent to 204 No Content semantics)
       const { count, error } = await supabase.from('keys').delete().eq('id', validatedId);
 
       if (error) {
@@ -1335,50 +1326,32 @@ export function useDeleteKey(projectId: string) {
       if (count === 0) {
         throw createApiErrorResponse(404, KEYS_ERROR_MESSAGES.KEY_NOT_FOUND);
       }
-
-      // Return void (no content) to match REST 204 semantics
     },
     onSuccess: (_, keyId) => {
-      // Remove from cache
-      queryClient.removeQueries({ queryKey: keysKeys.detail(keyId) });
-      // Invalidate all list caches for this project
-      queryClient.invalidateQueries({ queryKey: keysKeys.defaultViews(projectId) });
-      queryClient.invalidateQueries({ queryKey: keysKeys.all });
+      // remove from cache
+      queryClient.removeQueries({ queryKey: KEYS_KEY_FACTORY.detail(keyId) });
+      // invalidate all list caches for this project
+      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
+      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });
     },
   });
 }
 ```
+
+After implementing each hook, add an `index.ts` inside its directory (for example, `useCreateKey/index.ts`) that re-exports the hook with `export * from './useCreateKey';` to support the barrel structure used by the keys API.
 
 ### Step 7: Create API Index File
 
 Create `src/features/keys/api/index.ts`:
 
 ```typescript
-/**
- * Keys API
- *
- * This module provides TanStack Query hooks for managing translation keys.
- * All hooks use the shared Supabase client from context and follow React Query best practices.
- *
- * @module features/keys/api
- */
-
-// Error Utilities
-export { createDatabaseErrorResponse } from './keys.errors';
-
-// Query Keys
-export { keysKeys } from './keys.keys';
-
-// Validation Schemas
+export * from './keys.errors';
+export * from './keys.key-factory';
 export * from './keys.schemas';
-
-// Mutation Hooks
-export { useCreateKey } from './useCreateKey/useCreateKey';
-export { useDeleteKey } from './useDeleteKey/useDeleteKey';
-
-// Query Hooks
-export { useKeysDefaultView } from './useKeysDefaultView/useKeysDefaultView';
-export { useKeysPerLanguageView } from './useKeysPerLanguageView/useKeysPerLanguageView';
+export * from './useCreateKey';
+export * from './useDeleteKey';
+export * from './useKeysDefaultView';
+export * from './useKeysPerLanguageView';
 ```
 
 ### Step 8: Write Unit Tests
