@@ -17,9 +17,11 @@ import { LIST_TELEMETRY_EVENTS_SCHEMA, TELEMETRY_EVENT_RESPONSE_SCHEMA } from '.
  *
  * @param projectId - UUID of the project to fetch events for
  * @param params - Optional query parameters (limit, offset, order)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, limit too high, negative offset)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with array of telemetry events
  */
 export function useTelemetryEvents(projectId: string, params?: TelemetryEventsParams) {

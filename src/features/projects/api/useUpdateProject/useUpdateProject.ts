@@ -7,8 +7,8 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { projectIdSchema, projectResponseSchema, updateProjectSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { PROJECT_ID_SCHEMA, PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA } from '../projects.schemas';
 
 /**
  * Context type for mutation callbacks
@@ -25,10 +25,12 @@ interface UpdateProjectContext {
  * revalidation on settle. Immutable fields (prefix, default_locale) are blocked.
  *
  * @param projectId - UUID of the project to update
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, attempt to change immutable fields)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name for user)
  * @throws {ApiErrorResponse} 500 - Database error
+ *
  * @returns TanStack Query mutation hook for updating projects
  */
 export function useUpdateProject(projectId: string) {
@@ -37,9 +39,9 @@ export function useUpdateProject(projectId: string) {
 
   return useMutation<ProjectResponse, ApiErrorResponse, UpdateProjectRequest, UpdateProjectContext>({
     mutationFn: async (updateData) => {
-      // Validate inputs
-      const validatedId = projectIdSchema.parse(projectId);
-      const validatedInput = updateProjectSchema.parse(updateData);
+      // validate inputs
+      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
+      const validatedInput = UPDATE_PROJECT_SCHEMA.parse(updateData);
 
       const { data, error } = await supabase
         .from('projects')
@@ -48,36 +50,35 @@ export function useUpdateProject(projectId: string) {
         .select('id,name,description,prefix,default_locale,created_at,updated_at')
         .maybeSingle();
 
-      // Handle database errors
+      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateProject', 'Failed to update project');
       }
 
-      // Handle missing data (project not found or access denied)
+      // handle missing data (project not found or access denied)
       if (!data) {
         throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
 
-      // Runtime validation of response data
-      const validatedResponse = projectResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     onError: (_err, _newData, context) => {
-      // Rollback on error
+      // rollback on error
       if (context?.previousProject) {
-        queryClient.setQueryData(projectsKeys.detail(projectId), context.previousProject);
+        queryClient.setQueryData(PROJECTS_KEY_FACTORY.detail(projectId), context.previousProject);
       }
     },
     onMutate: async (newData) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: projectsKeys.detail(projectId) });
+      // cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
 
-      // Snapshot previous value
-      const previousProject = queryClient.getQueryData<ProjectResponse>(projectsKeys.detail(projectId));
+      // snapshot previous value
+      const previousProject = queryClient.getQueryData<ProjectResponse>(PROJECTS_KEY_FACTORY.detail(projectId));
 
-      // Optimistically update
-      queryClient.setQueryData(projectsKeys.detail(projectId), (old: ProjectResponse | undefined) => {
-        // Guard clause: prevent errors if cache is empty
+      // optimistically update
+      queryClient.setQueryData(PROJECTS_KEY_FACTORY.detail(projectId), (old: ProjectResponse | undefined) => {
+        // guard clause: prevent errors if cache is empty
         if (!old) return old;
         return {
           ...old,
@@ -88,9 +89,9 @@ export function useUpdateProject(projectId: string) {
       return { previousProject };
     },
     onSettled: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: projectsKeys.detail(projectId) });
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+      // refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }

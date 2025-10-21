@@ -7,8 +7,8 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { createProjectSchema, projectResponseSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { CREATE_PROJECT_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.schemas';
 
 /**
  * Create a new project with a default locale
@@ -21,6 +21,7 @@ import { createProjectSchema, projectResponseSchema } from '../projects.schemas'
  * @throws {ApiErrorResponse} 400 - Validation error (invalid prefix format, length constraints)
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name or prefix for user)
  * @throws {ApiErrorResponse} 500 - Database error or no data returned
+ *
  * @returns TanStack Query mutation hook for creating projects
  */
 export function useCreateProject() {
@@ -29,18 +30,11 @@ export function useCreateProject() {
 
   return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectWithDefaultLocaleRequest>({
     mutationFn: async (projectData) => {
-      // Validate input and transform to RPC parameter format (adds p_ prefix)
-      const rpcParams = createProjectSchema.parse(projectData);
+      // validate input and transform to rpc parameter format (adds p_ prefix)
+      const rpcParams = CREATE_PROJECT_SCHEMA.parse(projectData);
 
-      // Call RPC function to create project with default locale
-      // Note: Type cast needed because Supabase generates p_description as string|undefined
-      // but SQL function accepts NULL. This is a limitation of Supabase type generation.
-      const { data, error } = await supabase
-        .rpc('create_project_with_default_locale', {
-          ...rpcParams,
-          p_description: rpcParams.p_description as unknown as string | undefined,
-        })
-        .maybeSingle();
+      // call rpc function to create project with default locale
+      const { data, error } = await supabase.rpc('create_project_with_default_locale', rpcParams).maybeSingle();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateProject', 'Failed to create project');
@@ -50,13 +44,12 @@ export function useCreateProject() {
         throw createApiErrorResponse(500, PROJECTS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
-      // Runtime validation of response data
-      const validatedResponse = projectResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: () => {
-      // Invalidate project list cache
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+      // invalidate project list cache
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }

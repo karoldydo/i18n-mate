@@ -13,17 +13,17 @@ import {
 
 import { useUpdateProject } from './useUpdateProject';
 
-// Mock Supabase client
+// mock supabase client
 const mockSupabase = {
   from: vi.fn(),
 };
 
-// Mock the useSupabase hook
+// mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
   useSupabase: () => mockSupabase,
 }));
 
-// Create wrapper with providers
+// create wrapper with providers
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -210,7 +210,7 @@ describe('useUpdateProject', () => {
   it('should prevent modification of prefix field', async () => {
     const updateData = {
       name: 'Updated Name',
-      prefix: 'new', // Attempting to change immutable field
+      prefix: 'new', // attempting to change immutable field
     } as unknown as UpdateProjectRequest;
 
     const { result } = renderHook(() => useUpdateProject(validProjectId), {
@@ -224,7 +224,7 @@ describe('useUpdateProject', () => {
 
   it('should prevent modification of default_locale field', async () => {
     const updateData = {
-      default_locale: 'fr', // Attempting to change immutable field
+      default_locale: 'fr', // attempting to change immutable field
       name: 'Updated Name',
     } as unknown as UpdateProjectRequest;
 
@@ -411,7 +411,7 @@ describe('useUpdateProject', () => {
       wrapper: createWrapper(),
     });
 
-    // Mutation should have onMutate for optimistic updates
+    // mutation should have onmutate for optimistic updates
     expect(result.current.mutate).toBeDefined();
   });
 });

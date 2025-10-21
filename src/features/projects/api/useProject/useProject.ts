@@ -7,8 +7,8 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { projectIdSchema, projectResponseSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { PROJECT_ID_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.schemas';
 
 /**
  * Fetch a single project by ID
@@ -18,9 +18,11 @@ import { projectIdSchema, projectResponseSchema } from '../projects.schemas';
  * if the project is not found or the user has no access.
  *
  * @param projectId - UUID of the project to fetch
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with the project data
  */
 export function useProject(projectId: string) {
@@ -29,8 +31,8 @@ export function useProject(projectId: string) {
   return useQuery<ProjectResponse, ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // Validate project ID
-      const validatedId = projectIdSchema.parse(projectId);
+      // validate project id
+      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
 
       const { data, error } = await supabase
         .from('projects')
@@ -46,11 +48,10 @@ export function useProject(projectId: string) {
         throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
 
-      // Runtime validation of response data
-      const validatedResponse = projectResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
-    queryKey: projectsKeys.detail(projectId),
+    queryKey: PROJECTS_KEY_FACTORY.detail(projectId),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }

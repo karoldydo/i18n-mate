@@ -135,6 +135,8 @@ export type CreateProjectLocaleAtomicResponse =
  */
 export type CreateProjectLocaleRequest = Pick<ProjectLocaleInsert, 'label' | 'locale' | 'project_id'>;
 
+export type CreateProjectRpcArgs = Database['public']['Functions']['create_project_with_default_locale']['Args'];
+
 /**
  * Create Project with Default Locale Request - RPC create_project_with_default_locale
  *

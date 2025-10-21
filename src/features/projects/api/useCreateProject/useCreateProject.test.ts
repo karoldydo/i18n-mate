@@ -13,17 +13,17 @@ import {
 
 import { useCreateProject } from './useCreateProject';
 
-// Mock Supabase client
+// mock supabase client
 const mockSupabase = {
   rpc: vi.fn(),
 };
 
-// Mock the useSupabase hook
+// mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
   useSupabase: () => mockSupabase,
 }));
 
-// Create wrapper with providers
+// create wrapper with providers
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -87,7 +87,7 @@ describe('useCreateProject', () => {
       p_name: 'Test Project',
       p_prefix: 'test',
     });
-    // Runtime validation filters out owner_user_id (not in ProjectResponse type)
+    // runtime validation filters out owner_user_id (not in project response type)
     expect(result.current.data).toEqual({
       created_at: '2025-01-15T10:00:00Z',
       default_locale: 'en',
@@ -221,7 +221,7 @@ describe('useCreateProject', () => {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',
-      prefix: 'a', // Only 1 character
+      prefix: 'a', // only 1 character
     };
 
     const { result } = renderHook(() => useCreateProject(), {
@@ -318,7 +318,7 @@ describe('useCreateProject', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // Runtime validation filters out owner_user_id
+    // runtime validation filters out owner_user_id
     expect(result.current.data).toEqual({
       created_at: '2025-01-15T10:00:00Z',
       default_locale: 'en-US',

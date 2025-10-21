@@ -7,8 +7,8 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { projectIdSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { PROJECT_ID_SCHEMA } from '../projects.schemas';
 
 /**
  * Delete a project by ID
@@ -20,6 +20,7 @@ import { projectIdSchema } from '../projects.schemas';
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during deletion
+ *
  * @returns TanStack Query mutation hook for deleting projects
  */
 export function useDeleteProject() {
@@ -28,8 +29,8 @@ export function useDeleteProject() {
 
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (projectId) => {
-      // Validate project ID
-      const validatedId = projectIdSchema.parse(projectId);
+      // validate project id
+      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
 
       const { count, error } = await supabase.from('projects').delete().eq('id', validatedId);
 
@@ -42,10 +43,10 @@ export function useDeleteProject() {
       }
     },
     onSuccess: (_, projectId) => {
-      // Remove from cache
-      queryClient.removeQueries({ queryKey: projectsKeys.detail(projectId) });
-      // Invalidate list
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+      // remove from cache
+      queryClient.removeQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
+      // invalidate list
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }

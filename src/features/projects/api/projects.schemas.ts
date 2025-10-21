@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+import type {
+  CreateProjectRpcArgs,
+  CreateProjectWithDefaultLocaleRequest,
+  ListProjectsParams,
+  ProjectResponse,
+  ProjectWithCounts,
+  UpdateProjectRequest,
+} from '@/shared/types';
+
 import {
   PROJECT_LOCALE_LABEL_MAX_LENGTH,
   PROJECT_LOCALE_LABEL_MIN_LENGTH,
@@ -13,21 +22,21 @@ import {
   PROJECTS_MIN_OFFSET,
 } from '@/shared/constants';
 
-// Locale code validation (BCP-47 format)
-const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
+// locale code validation (bcp-47 format)
+const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
   message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
 });
 
-// Prefix validation
-const prefixSchema = z
+// prefix validation
+const PREFIX_SCHEMA = z
   .string()
   .min(PROJECT_PREFIX_MIN_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_SHORT)
   .max(PROJECT_PREFIX_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_LONG)
   .regex(PROJECT_PREFIX_PATTERN, PROJECTS_ERROR_MESSAGES.PREFIX_INVALID_FORMAT)
   .refine((val) => !val.endsWith('.'), PROJECTS_ERROR_MESSAGES.PREFIX_TRAILING_DOT);
 
-// List Projects Schema
-export const listProjectsSchema = z.object({
+// list projects schema
+export const LIST_PROJECTS_SCHEMA = z.object({
   limit: z.number().int().min(1).max(PROJECTS_MAX_LIMIT).optional().default(PROJECTS_DEFAULT_LIMIT),
   offset: z.number().int().min(PROJECTS_MIN_OFFSET).optional().default(PROJECTS_MIN_OFFSET),
   order: z
@@ -39,11 +48,11 @@ export const listProjectsSchema = z.object({
     ])
     .optional()
     .default(PROJECT_SORT_OPTIONS.NAME_ASC),
-});
+}) satisfies z.ZodType<ListProjectsParams>;
 
-// Create Project Request Schema (API input format without p_ prefix)
-export const createProjectRequestSchema = z.object({
-  default_locale: localeCodeSchema,
+// create project request schema (api input format without p_ prefix)
+export const CREATE_PROJECT_REQUEST_SCHEMA = z.object({
+  default_locale: LOCALE_CODE_SCHEMA,
   default_locale_label: z
     .string()
     .min(PROJECT_LOCALE_LABEL_MIN_LENGTH, PROJECTS_ERROR_MESSAGES.LOCALE_LABEL_REQUIRED)
@@ -51,34 +60,38 @@ export const createProjectRequestSchema = z.object({
     .trim(),
   description: z.string().trim().optional().nullable(),
   name: z.string().min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED).trim(),
-  prefix: prefixSchema,
-});
+  prefix: PREFIX_SCHEMA,
+}) satisfies z.ZodType<CreateProjectWithDefaultLocaleRequest>;
 
-// Create Project Schema with RPC parameter transformation (adds p_ prefix)
-export const createProjectSchema = createProjectRequestSchema.transform((data) => ({
-  p_default_locale: data.default_locale,
-  p_default_locale_label: data.default_locale_label,
-  p_description: data.description,
-  p_name: data.name,
-  p_prefix: data.prefix,
-}));
+// create project schema with rpc parameter transformation (adds p_ prefix)
+export const CREATE_PROJECT_SCHEMA = CREATE_PROJECT_REQUEST_SCHEMA.transform(
+  (data): CreateProjectRpcArgs => ({
+    p_default_locale: data.default_locale,
+    p_default_locale_label: data.default_locale_label,
+    p_description: data.description ?? undefined,
+    p_name: data.name,
+    p_prefix: data.prefix,
+  })
+);
 
-// Update Project Schema
-export const updateProjectSchema = z
+// update project schema
+export const UPDATE_PROJECT_SCHEMA = z
   .object({
     default_locale: z.never().optional(),
     description: z.string().trim().optional().nullable(),
     name: z.string().min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED).trim().optional(),
-    // Prevent immutable fields
+    // prevent immutable fields
     prefix: z.never().optional(),
   })
-  .strict();
+  .strict() satisfies z.ZodType<UpdateProjectRequest>;
 
-// Project ID Schema
-export const projectIdSchema = z.string().uuid('Invalid project ID format');
+// project id schema
+export const PROJECT_ID_SCHEMA = z.string().uuid('Invalid project ID format') satisfies z.ZodType<
+  ProjectResponse['id']
+>;
 
-// Response Schemas for runtime validation
-export const projectResponseSchema = z.object({
+// response schemas for runtime validation
+export const PROJECT_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   default_locale: z.string(),
   description: z.string().nullable(),
@@ -86,9 +99,9 @@ export const projectResponseSchema = z.object({
   name: z.string(),
   prefix: z.string(),
   updated_at: z.string(),
-});
+}) satisfies z.ZodType<ProjectResponse>;
 
-export const projectWithCountsSchema = projectResponseSchema.extend({
+export const PROJECT_WITH_COUNTS_SCHEMA = PROJECT_RESPONSE_SCHEMA.extend({
   key_count: z.number(),
   locale_count: z.number(),
-});
+}) satisfies z.ZodType<ProjectWithCounts>;

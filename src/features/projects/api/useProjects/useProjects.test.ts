@@ -9,17 +9,17 @@ import { PROJECTS_DEFAULT_LIMIT, PROJECTS_MAX_LIMIT } from '@/shared/constants/p
 
 import { useProjects } from './useProjects';
 
-// Mock Supabase client
+// mock supabase client
 const mockSupabase = {
   rpc: vi.fn(),
 };
 
-// Mock the useSupabase hook
+// mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
   useSupabase: () => mockSupabase,
 }));
 
-// Create wrapper with providers
+// create wrapper with providers
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -282,7 +282,7 @@ describe('useProjects', () => {
 
   it('should validate limit max value', async () => {
     const params: ListProjectsParams = {
-      limit: PROJECTS_MAX_LIMIT + 50, // Over max
+      limit: PROJECTS_MAX_LIMIT + 50, // over max
     };
 
     const { result } = renderHook(() => useProjects(params), {
@@ -402,7 +402,7 @@ describe('useProjects', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // Last page with only 1 item (total 26, offset 25, returns 1 item)
+    // last page with only 1 item (total 26, offset 25, returns 1 item)
     expect(result.current.data?.metadata).toEqual({
       end: 25,
       start: 25,

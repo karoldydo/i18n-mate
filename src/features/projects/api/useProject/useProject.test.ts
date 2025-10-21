@@ -7,17 +7,17 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants/projects.constants';
 
 import { useProject } from './useProject';
 
-// Mock Supabase client
+// mock supabase client
 const mockSupabase = {
   from: vi.fn(),
 };
 
-// Mock the useSupabase hook
+// mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
   useSupabase: () => mockSupabase,
 }));
 
-// Create wrapper with providers
+// create wrapper with providers
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {

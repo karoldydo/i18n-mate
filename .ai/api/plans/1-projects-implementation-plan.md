@@ -146,6 +146,8 @@ export interface CreateProjectWithDefaultLocaleRequest {
   prefix: string;
 }
 
+export type CreateProjectRpcArgs = Database['public']['Functions']['create_project_with_default_locale']['Args'];
+
 export type UpdateProjectRequest = Pick<ProjectUpdate, 'description' | 'name'>;
 
 export interface ListProjectsParams extends PaginationParams {
@@ -202,98 +204,118 @@ Create validation schemas in `src/features/projects/api/projects.schemas.ts`:
 import { z } from 'zod';
 
 import {
-  PROJECT_PREFIX_PATTERN,
-  PROJECT_PREFIX_MIN_LENGTH,
-  PROJECT_PREFIX_MAX_LENGTH,
-  PROJECT_LOCALE_LABEL_MIN_LENGTH,
   PROJECT_LOCALE_LABEL_MAX_LENGTH,
+  PROJECT_LOCALE_LABEL_MIN_LENGTH,
+  PROJECT_PREFIX_MAX_LENGTH,
+  PROJECT_PREFIX_MIN_LENGTH,
+  PROJECT_PREFIX_PATTERN,
+  PROJECT_SORT_OPTIONS,
   PROJECTS_DEFAULT_LIMIT,
+  PROJECTS_ERROR_MESSAGES,
   PROJECTS_MAX_LIMIT,
   PROJECTS_MIN_OFFSET,
-  PROJECT_SORT_OPTIONS,
-  PROJECTS_ERROR_MESSAGES,
 } from '@/shared/constants';
+import type {
+  CreateProjectRpcArgs,
+  CreateProjectWithDefaultLocaleRequest,
+  ListProjectsParams,
+  ProjectResponse,
+  ProjectWithCounts,
+  UpdateProjectRequest,
+} from '@/shared/types';
 
-// Locale code validation (BCP-47 format)
-const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
+// locale code validation (bcp-47 format)
+const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
   message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
 });
 
-// Prefix validation
-const prefixSchema = z
+// prefix validation
+const PREFIX_SCHEMA = z
   .string()
   .min(PROJECT_PREFIX_MIN_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_SHORT)
   .max(PROJECT_PREFIX_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_LONG)
   .regex(PROJECT_PREFIX_PATTERN, PROJECTS_ERROR_MESSAGES.PREFIX_INVALID_FORMAT)
   .refine((val) => !val.endsWith('.'), PROJECTS_ERROR_MESSAGES.PREFIX_TRAILING_DOT);
 
-// List Projects Schema
-export const listProjectsSchema = z.object({
-  limit: z.number().int().min(1).max(PROJECTS_MAX_LIMIT).optional().default(PROJECTS_DEFAULT_LIMIT),
-  offset: z.number().int().min(PROJECTS_MIN_OFFSET).optional().default(PROJECTS_MIN_OFFSET),
-  order: z
-    .enum([
-      PROJECT_SORT_OPTIONS.NAME_ASC,
-      PROJECT_SORT_OPTIONS.NAME_DESC,
-      PROJECT_SORT_OPTIONS.CREATED_AT_ASC,
-      PROJECT_SORT_OPTIONS.CREATED_AT_DESC,
-    ])
-    .optional()
-    .default(PROJECT_SORT_OPTIONS.NAME_ASC),
-});
+// list projects schema
+export const LIST_PROJECTS_SCHEMA = z
+  .object({
+    limit: z.number().int().min(1).max(PROJECTS_MAX_LIMIT).optional().default(PROJECTS_DEFAULT_LIMIT),
+    offset: z.number().int().min(PROJECTS_MIN_OFFSET).optional().default(PROJECTS_MIN_OFFSET),
+    order: z
+      .enum([
+        PROJECT_SORT_OPTIONS.NAME_ASC,
+        PROJECT_SORT_OPTIONS.NAME_DESC,
+        PROJECT_SORT_OPTIONS.CREATED_AT_ASC,
+        PROJECT_SORT_OPTIONS.CREATED_AT_DESC,
+      ])
+      .optional()
+      .default(PROJECT_SORT_OPTIONS.NAME_ASC),
+  })
+  satisfies z.ZodType<ListProjectsParams>;
 
 // Create Project Request Schema (API input format without p_ prefix)
-export const createProjectRequestSchema = z.object({
-  default_locale: localeCodeSchema,
-  default_locale_label: z
-    .string()
-    .min(1, 'Default locale label is required')
-    .max(64, 'Default locale label must be at most 64 characters')
-    .trim(),
-  description: z.string().trim().optional().nullable(),
-  name: z.string().min(1, 'Project name is required').trim(),
-  prefix: prefixSchema,
-});
+export const CREATE_PROJECT_REQUEST_SCHEMA = z
+  .object({
+    default_locale: LOCALE_CODE_SCHEMA,
+    default_locale_label: z
+      .string()
+      .min(1, 'Default locale label is required')
+      .max(64, 'Default locale label must be at most 64 characters')
+      .trim(),
+    description: z.string().trim().optional().nullable(),
+    name: z.string().min(1, 'Project name is required').trim(),
+    prefix: PREFIX_SCHEMA,
+  })
+  satisfies z.ZodType<CreateProjectWithDefaultLocaleRequest>;
 
 // Create Project Schema with RPC parameter transformation (adds p_ prefix)
 // This schema automatically converts API request format to Supabase RPC parameter format
-export const createProjectSchema = createProjectRequestSchema.transform((data) => ({
-  p_default_locale: data.default_locale,
-  p_default_locale_label: data.default_locale_label,
-  p_description: data.description,
-  p_name: data.name,
-  p_prefix: data.prefix,
-}));
+export const CREATE_PROJECT_SCHEMA = CREATE_PROJECT_REQUEST_SCHEMA.transform(
+  (data): CreateProjectRpcArgs => ({
+    p_default_locale: data.default_locale,
+    p_default_locale_label: data.default_locale_label,
+    p_description: data.description ?? undefined,
+    p_name: data.name,
+    p_prefix: data.prefix,
+  })
+) satisfies z.ZodType<CreateProjectRpcArgs>;
 
 // Update Project Schema
-export const updateProjectSchema = z
+export const UPDATE_PROJECT_SCHEMA = z
   .object({
     default_locale: z.never().optional(),
     description: z.string().trim().optional().nullable(),
     name: z.string().min(1, 'Project name cannot be empty').trim().optional(),
-    // Prevent immutable fields
+    // prevent immutable fields
     prefix: z.never().optional(),
   })
-  .strict();
+  .strict()
+  satisfies z.ZodType<UpdateProjectRequest>;
 
 // Project ID Schema
-export const projectIdSchema = z.string().uuid('Invalid project ID format');
+export const PROJECT_ID_SCHEMA = z
+  .string()
+  .uuid('Invalid project ID format')
+  satisfies z.ZodType<ProjectResponse['id']>;
 
 // Response Schemas for runtime validation
-export const projectResponseSchema = z.object({
-  created_at: z.string(),
-  default_locale: z.string(),
-  description: z.string().nullable(),
-  id: z.string().uuid(),
-  name: z.string(),
-  prefix: z.string(),
-  updated_at: z.string(),
-});
+export const PROJECT_RESPONSE_SCHEMA = z
+  .object({
+    created_at: z.string(),
+    default_locale: z.string(),
+    description: z.string().nullable(),
+    id: z.string().uuid(),
+    name: z.string(),
+    prefix: z.string(),
+    updated_at: z.string(),
+  })
+  satisfies z.ZodType<ProjectResponse>;
 
-export const projectWithCountsSchema = projectResponseSchema.extend({
+export const PROJECT_WITH_COUNTS_SCHEMA = PROJECT_RESPONSE_SCHEMA.extend({
   key_count: z.number(),
   locale_count: z.number(),
-});
+}) satisfies z.ZodType<ProjectWithCounts>;
 ```
 
 ## 4. Response Details
@@ -1070,7 +1092,7 @@ This module provides centralized error handling utilities used by all TanStack Q
 
 ### Step 5: Create Query Keys Factory
 
-Create `src/features/projects/api/projects.keys.ts`:
+Create `src/features/projects/api/projects.key-factory.ts`:
 
 ```typescript
 import type { ListProjectsParams } from '@/shared/types';
@@ -1079,12 +1101,12 @@ import type { ListProjectsParams } from '@/shared/types';
  * Query key factory for projects
  * Follows TanStack Query best practices for structured query keys
  */
-export const projectsKeys = {
+export const PROJECTS_KEY_FACTORY = {
   all: ['projects'] as const,
-  detail: (id: string) => [...projectsKeys.details(), id] as const,
-  details: () => [...projectsKeys.all, 'detail'] as const,
-  list: (params: ListProjectsParams) => [...projectsKeys.lists(), params] as const,
-  lists: () => [...projectsKeys.all, 'list'] as const,
+  detail: (id: string) => [...PROJECTS_KEY_FACTORY.details(), id] as const,
+  details: () => [...PROJECTS_KEY_FACTORY.all, 'detail'] as const,
+  list: (params: ListProjectsParams) => [...PROJECTS_KEY_FACTORY.lists(), params] as const,
+  lists: () => [...PROJECTS_KEY_FACTORY.all, 'list'] as const,
 };
 ```
 
@@ -1107,8 +1129,8 @@ import { z } from 'zod';
 import type { ApiErrorResponse, ListProjectsParams, ProjectListResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { listProjectsSchema, projectWithCountsSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.schemas';
 
 /**
  * Fetch a paginated list of projects with counts
@@ -1131,10 +1153,10 @@ export function useProjects(params: ListProjectsParams = {}) {
   return useQuery<ProjectListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listProjectsSchema.parse(params);
+      // validate parameters
+      const validated = LIST_PROJECTS_SCHEMA.parse(params);
 
-      // Call RPC function for list with counts (enable exact total counting)
+      // call rpc function for list with counts (enable exact total counting)
       const { count, data, error } = await supabase
         .rpc(
           'list_projects_with_counts',
@@ -1152,8 +1174,8 @@ export function useProjects(params: ListProjectsParams = {}) {
         throw createDatabaseErrorResponse(error, 'useProjects', 'Failed to fetch projects');
       }
 
-      // Runtime validation of response data
-      const projects = z.array(projectWithCountsSchema).parse(data || []);
+      // runtime validation of response data
+      const projects = z.array(PROJECT_WITH_COUNTS_SCHEMA).parse(data || []);
 
       return {
         data: projects,
@@ -1164,7 +1186,7 @@ export function useProjects(params: ListProjectsParams = {}) {
         },
       };
     },
-    queryKey: projectsKeys.list(params),
+    queryKey: PROJECTS_KEY_FACTORY.list(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -1176,10 +1198,11 @@ export function useProjects(params: ListProjectsParams = {}) {
 import { useQuery } from '@tanstack/react-query';
 import type { ApiErrorResponse, ProjectResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { projectIdSchema, projectResponseSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { PROJECT_ID_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.schemas';
 
 /**
  * Fetch a single project by ID
@@ -1189,9 +1212,11 @@ import { projectIdSchema, projectResponseSchema } from '../projects.schemas';
  * if the project is not found or the user has no access.
  *
  * @param projectId - UUID of the project to fetch
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with the project data
  */
 export function useProject(projectId: string) {
@@ -1200,8 +1225,8 @@ export function useProject(projectId: string) {
   return useQuery<ProjectResponse, ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // Validate project ID
-      const validatedId = projectIdSchema.parse(projectId);
+      // validate project id
+      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
 
       const { data, error } = await supabase
         .from('projects')
@@ -1214,14 +1239,13 @@ export function useProject(projectId: string) {
       }
 
       if (!data) {
-        throw createApiErrorResponse(404, 'Project not found or access denied');
+        throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
 
-      // Runtime validation of response data
-      const validatedResponse = projectResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
-    queryKey: projectsKeys.detail(projectId),
+    queryKey: PROJECTS_KEY_FACTORY.detail(projectId),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
@@ -1233,10 +1257,11 @@ export function useProject(projectId: string) {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse, CreateProjectWithDefaultLocaleRequest, ProjectResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { createProjectSchema, projectResponseSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { CREATE_PROJECT_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.schemas';
 
 /**
  * Create a new project with a default locale
@@ -1249,6 +1274,7 @@ import { createProjectSchema, projectResponseSchema } from '../projects.schemas'
  * @throws {ApiErrorResponse} 400 - Validation error (invalid prefix format, length constraints)
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name or prefix for user)
  * @throws {ApiErrorResponse} 500 - Database error or no data returned
+ *
  * @returns TanStack Query mutation hook for creating projects
  */
 export function useCreateProject() {
@@ -1257,34 +1283,26 @@ export function useCreateProject() {
 
   return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectWithDefaultLocaleRequest>({
     mutationFn: async (projectData) => {
-      // Validate input and transform to RPC parameter format (adds p_ prefix)
-      const rpcParams = createProjectSchema.parse(projectData);
+      // validate input and transform to rpc parameter format (adds p_ prefix)
+      const rpcParams = CREATE_PROJECT_SCHEMA.parse(projectData);
 
-      // Call RPC function to create project with default locale
-      // Note: Type cast needed because Supabase generates p_description as string|undefined
-      // but SQL function accepts NULL. This is a limitation of Supabase type generation.
-      const { data, error } = await supabase
-        .rpc('create_project_with_default_locale', {
-          ...rpcParams,
-          p_description: rpcParams.p_description as unknown as string | undefined,
-        })
-        .maybeSingle();
+      // call rpc function to create project with default locale
+      const { data, error } = await supabase.rpc('create_project_with_default_locale', rpcParams).maybeSingle();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateProject', 'Failed to create project');
       }
 
       if (!data) {
-        throw createApiErrorResponse(500, 'No data returned from server');
+        throw createApiErrorResponse(500, PROJECTS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
-      // Runtime validation of response data
-      const validatedResponse = projectResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: () => {
-      // Invalidate project list cache
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+      // invalidate project list cache
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }
@@ -1296,10 +1314,11 @@ export function useCreateProject() {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse, ProjectResponse, UpdateProjectRequest } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { projectIdSchema, projectResponseSchema, updateProjectSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { PROJECT_ID_SCHEMA, PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA } from '../projects.schemas';
 
 /**
  * Context type for mutation callbacks
@@ -1316,10 +1335,12 @@ interface UpdateProjectContext {
  * revalidation on settle. Immutable fields (prefix, default_locale) are blocked.
  *
  * @param projectId - UUID of the project to update
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, attempt to change immutable fields)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name for user)
  * @throws {ApiErrorResponse} 500 - Database error
+ *
  * @returns TanStack Query mutation hook for updating projects
  */
 export function useUpdateProject(projectId: string) {
@@ -1328,9 +1349,9 @@ export function useUpdateProject(projectId: string) {
 
   return useMutation<ProjectResponse, ApiErrorResponse, UpdateProjectRequest, UpdateProjectContext>({
     mutationFn: async (updateData) => {
-      // Validate inputs
-      const validatedId = projectIdSchema.parse(projectId);
-      const validatedInput = updateProjectSchema.parse(updateData);
+      // validate inputs
+      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
+      const validatedInput = UPDATE_PROJECT_SCHEMA.parse(updateData);
 
       const { data, error } = await supabase
         .from('projects')
@@ -1339,36 +1360,35 @@ export function useUpdateProject(projectId: string) {
         .select('id,name,description,prefix,default_locale,created_at,updated_at')
         .maybeSingle();
 
-      // Handle database errors
+      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateProject', 'Failed to update project');
       }
 
-      // Handle missing data (project not found or access denied)
+      // handle missing data (project not found or access denied)
       if (!data) {
-        throw createApiErrorResponse(404, 'Project not found or access denied');
+        throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
 
-      // Runtime validation of response data
-      const validatedResponse = projectResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     onError: (_err, _newData, context) => {
-      // Rollback on error
+      // rollback on error
       if (context?.previousProject) {
-        queryClient.setQueryData(projectsKeys.detail(projectId), context.previousProject);
+        queryClient.setQueryData(PROJECTS_KEY_FACTORY.detail(projectId), context.previousProject);
       }
     },
     onMutate: async (newData) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: projectsKeys.detail(projectId) });
+      // cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
 
-      // Snapshot previous value
-      const previousProject = queryClient.getQueryData<ProjectResponse>(projectsKeys.detail(projectId));
+      // snapshot previous value
+      const previousProject = queryClient.getQueryData<ProjectResponse>(PROJECTS_KEY_FACTORY.detail(projectId));
 
-      // Optimistically update
-      queryClient.setQueryData(projectsKeys.detail(projectId), (old: ProjectResponse | undefined) => {
-        // Guard clause: prevent errors if cache is empty
+      // optimistically update
+      queryClient.setQueryData(PROJECTS_KEY_FACTORY.detail(projectId), (old: ProjectResponse | undefined) => {
+        // guard clause: prevent errors if cache is empty
         if (!old) return old;
         return {
           ...old,
@@ -1379,9 +1399,9 @@ export function useUpdateProject(projectId: string) {
       return { previousProject };
     },
     onSettled: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: projectsKeys.detail(projectId) });
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+      // refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }
@@ -1393,10 +1413,11 @@ export function useUpdateProject(projectId: string) {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { projectsKeys } from '../projects.keys';
-import { projectIdSchema } from '../projects.schemas';
+import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
+import { PROJECT_ID_SCHEMA } from '../projects.schemas';
 
 /**
  * Delete a project by ID
@@ -1416,8 +1437,8 @@ export function useDeleteProject() {
 
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (projectId) => {
-      // Validate project ID
-      const validatedId = projectIdSchema.parse(projectId);
+      // validate project id
+      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
 
       const { count, error } = await supabase.from('projects').delete().eq('id', validatedId);
 
@@ -1426,14 +1447,14 @@ export function useDeleteProject() {
       }
 
       if (count === 0) {
-        throw createApiErrorResponse(404, 'Project not found or access denied');
+        throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
     },
     onSuccess: (_, projectId) => {
-      // Remove from cache
-      queryClient.removeQueries({ queryKey: projectsKeys.detail(projectId) });
-      // Invalidate list
-      queryClient.invalidateQueries({ queryKey: projectsKeys.lists() });
+      // remove from cache
+      queryClient.removeQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
+      // invalidate list
+      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }
@@ -1455,31 +1476,31 @@ Create `src/features/projects/api/index.ts`:
 
 // Error Utilities
 export { createDatabaseErrorResponse } from './projects.errors';
-
-// Query Keys
-export { projectsKeys } from './projects.keys';
-
-// Validation Schemas
+export { PROJECTS_KEY_FACTORY } from './projects.key-factory';
 export * from './projects.schemas';
-
-// Mutation Hooks
-export { useCreateProject } from './useCreateProject/useCreateProject';
-export { useDeleteProject } from './useDeleteProject/useDeleteProject';
-
-// Query Hooks
-export { useProject } from './useProject/useProject';
-export { useProjects } from './useProjects/useProjects';
-export { useUpdateProject } from './useUpdateProject/useUpdateProject';
+export * from './useCreateProject';
+export * from './useDeleteProject';
+export * from './useProject';
+export * from './useProjects';
+export * from './useUpdateProject';
 ```
 
 **Organization:**
 
-- Error utilities are exported first for use in other features
-- Query keys factory for cache management
-- Validation schemas for input/output validation
-- Hooks grouped by type (mutations vs queries)
-- Alphabetical order within each group for easy discovery
-- Each hook is exported from its subdirectory with full path for clarity
+- Error utilities and key factory are exported explicitly for reuse
+- Schemas and hooks are re-exported wholesale to simplify imports
+- Hook directories expose `index.ts` files so the API barrel can use `export *` form
+- Flat export list keeps tree-shaking effective while avoiding comment clutter
+
+### Step 7.1: Expose Feature Barrel
+
+Create `src/features/projects/index.ts` to provide a single entry point:
+
+```typescript
+export * from './api';
+```
+
+This keeps consumer imports concise (`import { useProjects } from '@/features/projects';`) while delegating module structure to the API index.
 
 ### Step 8: Write Unit Tests
 

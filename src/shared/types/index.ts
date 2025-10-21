@@ -25,6 +25,7 @@ export type {
   CreateProjectLocaleAtomicRequest,
   CreateProjectLocaleAtomicResponse,
   CreateProjectLocaleRequest,
+  CreateProjectRpcArgs,
   CreateProjectWithDefaultLocaleRequest,
   CreateTelemetryEventRequest,
   CreateTranslationJobRequest,

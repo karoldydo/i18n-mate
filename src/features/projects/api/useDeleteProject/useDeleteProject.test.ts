@@ -7,17 +7,17 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants/projects.constants';
 
 import { useDeleteProject } from './useDeleteProject';
 
-// Mock Supabase client
+// mock supabase client
 const mockSupabase = {
   from: vi.fn(),
 };
 
-// Mock the useSupabase hook
+// mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
   useSupabase: () => mockSupabase,
 }));
 
-// Create wrapper with providers
+// create wrapper with providers
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -172,8 +172,8 @@ describe('useDeleteProject', () => {
   });
 
   it('should cascade delete related data', async () => {
-    // This test verifies that the delete operation is called correctly
-    // The actual cascade is handled by the database ON DELETE CASCADE
+    // this test verifies that the delete operation is called correctly
+    // the actual cascade is handled by the database on delete cascade
     mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
@@ -191,7 +191,7 @@ describe('useDeleteProject', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // Verify delete was called with correct ID
+    // verify delete was called with correct id
     const deleteMock = mockSupabase.from().delete;
     expect(deleteMock).toHaveBeenCalled();
   });
@@ -225,7 +225,7 @@ describe('useDeleteProject', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // Verify cache was invalidated
+    // verify cache was invalidated
     expect(removeQueriesSpy).toHaveBeenCalled();
     expect(invalidateQueriesSpy).toHaveBeenCalled();
   });
@@ -244,14 +244,14 @@ describe('useDeleteProject', () => {
       wrapper: createWrapper(),
     });
 
-    // First delete
+    // first delete
     result.current.mutate(validProjectId);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // Reset
+    // reset
     result.current.reset();
 
-    // Second delete of different project
+    // second delete of different project
     const secondProjectId = '550e8400-e29b-41d4-a716-446655440001';
     result.current.mutate(secondProjectId);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
