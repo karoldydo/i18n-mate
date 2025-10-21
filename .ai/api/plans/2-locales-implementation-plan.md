@@ -758,8 +758,6 @@ Create `src/shared/constants/locale.constants.ts` with centralized constants, pa
  * All patterns follow BCP-47 subset: ll or ll-CC format only.
  */
 
-import type { LocaleCode } from '@/shared/types';
-
 /**
  * BCP-47 locale pattern - matches ll or ll-CC format only
  * Examples: en, en-US, pl, pl-PL, es, es-ES
@@ -796,25 +794,27 @@ export const LOCALE_CODE_MAX_LENGTH = 5;
  */
 export const LOCALE_LABEL_MAX_LENGTH = 64;
 
-/**
- * PostgreSQL error codes relevant to locales operations
- */
-export const LOCALES_PG_ERROR_CODES = {
-  /** Check constraint violation */
-  CHECK_VIOLATION: '23514',
-  /** Foreign key violation */
-  FOREIGN_KEY_VIOLATION: '23503',
-  /** Unique constraint violation */
-  UNIQUE_VIOLATION: '23505',
-} as const;
+const MULTIPLE_REGION_SEPARATOR_PATTERN = /.*-.*-.*/;
+const LANGUAGE_COUNTRY_PATTERN = /^([a-zA-Z]{2})-([a-zA-Z]{2})$/;
+const LANGUAGE_ONLY_PATTERN = /^[a-zA-Z]{2}$/;
 
-/**
- * Database constraint names for locales
- */
-export const LOCALES_CONSTRAINTS = {
-  PROJECT_ID_FKEY: 'project_locales_project_id_fkey',
-  UNIQUE_PER_PROJECT: 'project_locales_unique_per_project',
-} as const;
+const normalizeLocale = (locale: string): string => {
+  if (!locale) return locale;
+
+  if (LANGUAGE_COUNTRY_PATTERN.test(locale)) {
+    const match = locale.match(LANGUAGE_COUNTRY_PATTERN);
+    if (match) {
+      const [, language, region] = match;
+      return `${language.toLowerCase()}-${region.toUpperCase()}`;
+    }
+  }
+
+  if (LANGUAGE_ONLY_PATTERN.test(locale)) {
+    return locale.toLowerCase();
+  }
+
+  return locale;
+};
 
 /**
  * Locale normalization patterns and utilities
@@ -834,36 +834,23 @@ export const LOCALE_NORMALIZATION = {
     if (!locale || typeof locale !== 'string') return false;
     if (locale.length > LOCALE_CODE_MAX_LENGTH) return false;
     if (!LOCALE_CODE_INPUT_PATTERN.test(locale)) return false;
-    if (/.*-.*-.*/.test(locale)) return false; // Max one dash
-    return true;
+    if (MULTIPLE_REGION_SEPARATOR_PATTERN.test(locale)) return false; // Max one dash
+    const normalized = normalizeLocale(locale);
+    return LOCALE_CODE_PATTERN.test(normalized);
   },
 
   /** Pattern for language-country format (needs normalization) */
-  LANGUAGE_COUNTRY: /^([a-zA-Z]{2})-([a-zA-Z]{2})$/,
+  LANGUAGE_COUNTRY: LANGUAGE_COUNTRY_PATTERN,
 
   /** Pattern for language-only format */
-  LANGUAGE_ONLY: /^[a-zA-Z]{2}$/,
+  LANGUAGE_ONLY: LANGUAGE_ONLY_PATTERN,
 
   /**
    * Normalize function (TypeScript implementation)
    * Converts locale to database format: language lowercase, region uppercase
    * Examples: "en-us" -> "en-US", "PL" -> "pl", "EN-GB" -> "en-GB"
    */
-  normalize: (locale: string): string => {
-    if (!locale) return locale;
-
-    if (LOCALE_NORMALIZATION.LANGUAGE_COUNTRY.test(locale)) {
-      const match = locale.match(LOCALE_NORMALIZATION.LANGUAGE_COUNTRY);
-      if (match) {
-        const [, lang, country] = match;
-        return `${lang.toLowerCase()}-${country.toUpperCase()}`;
-      }
-    }
-    if (LOCALE_NORMALIZATION.LANGUAGE_ONLY.test(locale)) {
-      return locale.toLowerCase();
-    }
-    return locale; // Return as-is if doesn't match expected patterns
-  },
+  normalize: normalizeLocale,
 };
 
 /**
@@ -875,92 +862,7 @@ export const LOCALE_ERROR_MESSAGES = {
   LABEL_REQUIRED: 'Locale label is required',
   LABEL_TOO_LONG: `Locale label must be at most ${LOCALE_LABEL_MAX_LENGTH} characters`,
   TOO_LONG: `Locale code must be at most ${LOCALE_CODE_MAX_LENGTH} characters`,
-
-  // Database operation errors
-  PROJECT_NOT_FOUND: 'Project not found or access denied',
-  LOCALE_NOT_FOUND: 'Locale not found or access denied',
-  DEFAULT_LOCALE_IMMUTABLE: 'Cannot delete default locale',
-
-  // Generic errors
-  DATABASE_ERROR: 'Database operation failed',
-  NO_DATA_RETURNED: 'No data returned from server',
-  INVALID_FIELD_VALUE: 'Invalid field value',
-  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
 } as const;
-
-/**
- * Locale validation patterns and utilities
- */
-export const LOCALE_VALIDATION = {
-  /**
-   * Validate locale label format
-   * Checks length constraints
-   */
-  isValidLocaleLabel: (label: string): boolean => {
-    if (!label || typeof label !== 'string') return false;
-    const trimmed = label.trim();
-    if (trimmed.length < 1 || trimmed.length > LOCALE_LABEL_MAX_LENGTH) return false;
-    return true;
-  },
-
-  /**
-   * Check if locale code is valid (normalized format)
-   */
-  isValidLocaleCode: (locale: string): boolean => {
-    return LOCALE_CODE_PATTERN.test(locale) && locale.length <= LOCALE_CODE_MAX_LENGTH;
-  },
-};
-
-/**
- * Creates a branded LocaleCode from a string with validation
- * Throws error if locale is invalid
- */
-export function createLocaleCode(locale: string): LocaleCode {
-  const normalized = LOCALE_NORMALIZATION.normalize(locale);
-  if (!LOCALE_VALIDATION.isValidLocaleCode(normalized)) {
-    throw new Error(LOCALE_ERROR_MESSAGES.INVALID_FORMAT);
-  }
-  return normalized as LocaleCode;
-}
-
-/**
- * Type guard that also serves as type assertion for LocaleCode
- */
-export function isLocaleCode(locale: string): locale is LocaleCode {
-  return LOCALE_VALIDATION.isValidLocaleCode(locale);
-}
-
-/**
- * Type guard to check if string is a valid locale code
- */
-export function isValidLocaleCode(locale: string): boolean {
-  return LOCALE_VALIDATION.isValidLocaleCode(locale);
-}
-
-/**
- * Type guard to check if string could be a valid locale code (before normalization)
- */
-export function isValidLocaleInput(locale: string): boolean {
-  return LOCALE_CODE_INPUT_PATTERN.test(locale) && locale.length <= LOCALE_CODE_MAX_LENGTH;
-}
-
-/**
- * Sanitize and normalize locale label
- * Trims whitespace and ensures valid format
- */
-export function normalizeLocaleLabel(label: string): string {
-  if (!label || typeof label !== 'string') {
-    throw new Error(LOCALE_ERROR_MESSAGES.LABEL_REQUIRED);
-  }
-
-  const normalized = label.trim();
-
-  if (!LOCALE_VALIDATION.isValidLocaleLabel(normalized)) {
-    throw new Error(LOCALE_ERROR_MESSAGES.LABEL_TOO_LONG);
-  }
-
-  return normalized;
-}
 ```
 
 Add to `src/shared/constants/index.ts`:
