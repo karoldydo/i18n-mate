@@ -12,11 +12,11 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../translations.errors';
-import { translationsKeys } from '../translations.keys';
+import { TRANSLATIONS_KEYS } from '../translations.key-factory';
 import {
-  bulkUpdateTranslationQuerySchema,
-  translationResponseSchema,
-  updateTranslationRequestSchema,
+  BULK_UPDATE_TRANSLATION_QUERY_SCHEMA,
+  TRANSLATION_RESPONSE_SCHEMA,
+  UPDATE_TRANSLATION_REQUEST_SCHEMA,
 } from '../translations.schemas';
 
 /**
@@ -32,10 +32,13 @@ import {
  * @param params.projectId - Project UUID for all translations (required)
  * @param params.keyIds - Array of translation key UUIDs to update (required, min: 1)
  * @param params.locale - Target locale code in BCP-47 format (required)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid IDs, empty key array, value constraints)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during bulk update or no data returned
+ *
  * @returns TanStack Query mutation hook for bulk translation updates
+ *
  * @warning Not recommended for manual client use due to overwrite risk for multiple translations
  */
 export function useBulkUpdateTranslations(params: BulkUpdateTranslationsParams) {
@@ -44,48 +47,48 @@ export function useBulkUpdateTranslations(params: BulkUpdateTranslationsParams) 
 
   return useMutation<TranslationResponse[], ApiErrorResponse, UpdateTranslationRequest>({
     mutationFn: async (updateData) => {
-      // Validate query parameters
-      const validatedQuery = bulkUpdateTranslationQuerySchema.parse({
+      // validate query parameters
+      const validatedQuery = BULK_UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
         key_ids: params.keyIds,
-        locale: params.locale,
         project_id: params.projectId,
+        target_locale: params.locale,
       });
 
-      // Validate request data
-      const validatedInput = updateTranslationRequestSchema.parse(updateData);
+      // validate request data
+      const validatedInput = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(updateData);
 
       const { data, error } = await supabase
         .from('translations')
         .update(validatedInput)
         .eq('project_id', validatedQuery.project_id)
-        .eq('locale', validatedQuery.locale)
+        .eq('target_locale', validatedQuery.target_locale)
         .in('key_id', validatedQuery.key_ids)
         .select();
 
-      // Handle database errors
+      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useBulkUpdateTranslations', 'Failed to bulk update translations');
       }
 
-      // Handle missing data
+      // handle missing data
       if (!data) {
         throw createApiErrorResponse(500, 'No data returned from server');
       }
 
-      // Runtime validation of response data
-      const validatedResponse = z.array(translationResponseSchema).parse(data);
+      // runtime validation of response data
+      const validatedResponse = z.array(TRANSLATION_RESPONSE_SCHEMA).parse(data);
       return validatedResponse;
     },
     onSuccess: () => {
-      // Invalidate per-language key view cache for the target locale
+      // invalidate per-language key view cache for the target locale
       queryClient.invalidateQueries({
         queryKey: ['keys', 'per-language', params.projectId, params.locale],
       });
 
-      // Invalidate individual translation caches for all affected keys
+      // invalidate individual translation caches for all affected keys
       params.keyIds.forEach((keyId: string) => {
         queryClient.invalidateQueries({
-          queryKey: translationsKeys.detail(params.projectId, keyId, params.locale),
+          queryKey: TRANSLATIONS_KEYS.detail(params.projectId, keyId, params.locale),
         });
       });
     },

@@ -11,11 +11,11 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../translations.errors';
-import { translationsKeys } from '../translations.keys';
+import { TRANSLATIONS_KEYS } from '../translations.key-factory';
 import {
-  translationResponseSchema,
-  updateTranslationQuerySchema,
-  updateTranslationRequestSchema,
+  TRANSLATION_RESPONSE_SCHEMA,
+  UPDATE_TRANSLATION_QUERY_SCHEMA,
+  UPDATE_TRANSLATION_REQUEST_SCHEMA,
 } from '../translations.schemas';
 
 /**
@@ -39,10 +39,12 @@ interface UpdateTranslationContext {
  * @param params.keyId - Translation key UUID (required)
  * @param params.locale - Target locale code in BCP-47 format (required)
  * @param params.updatedAt - ISO 8601 timestamp for optimistic locking (optional)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid IDs, value constraints, default locale empty)
  * @throws {ApiErrorResponse} 404 - Translation not found
  * @throws {ApiErrorResponse} 409 - Optimistic lock failure (translation modified by another user)
  * @throws {ApiErrorResponse} 500 - Database error during update
+ *
  * @returns TanStack Query mutation hook for updating translations with optimistic updates
  */
 export function useUpdateTranslation(params: UpdateTranslationParams) {
@@ -51,18 +53,18 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
 
   return useMutation<TranslationResponse, ApiErrorResponse, UpdateTranslationRequest, UpdateTranslationContext>({
     mutationFn: async (updateData) => {
-      // Validate query parameters
-      const validatedQuery = updateTranslationQuerySchema.parse({
+      // validate query parameters
+      const validatedQuery = UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: params.keyId,
         locale: params.locale,
         project_id: params.projectId,
         updated_at: params.updatedAt,
       });
 
-      // Validate request data
-      const validatedInput = updateTranslationRequestSchema.parse(updateData);
+      // validate request data
+      const validatedInput = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(updateData);
 
-      // Build query with optimistic locking support
+      // build query with optimistic locking support
       let query = supabase
         .from('translations')
         .update(validatedInput)
@@ -70,57 +72,56 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
         .eq('key_id', validatedQuery.key_id)
         .eq('locale', validatedQuery.locale);
 
-      // Add optimistic locking if timestamp provided
+      // add optimistic locking if timestamp provided
       if (validatedQuery.updated_at) {
         query = query.eq('updated_at', validatedQuery.updated_at);
       }
 
       const { count, data, error } = await query.select().single();
 
-      // Handle database errors
+      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateTranslation', 'Failed to update translation');
       }
 
-      // Handle optimistic lock failure (no rows affected)
+      // handle optimistic lock failure (no rows affected)
       if (count === 0) {
         throw createApiErrorResponse(409, 'Translation was modified by another user. Please refresh and try again.');
       }
 
-      // Handle missing data
+      // handle missing data
       if (!data) {
         throw createApiErrorResponse(404, 'Translation not found');
       }
 
-      // Runtime validation of response data
-      const validatedResponse = translationResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return TRANSLATION_RESPONSE_SCHEMA.parse(data);
     },
     onError: (_err, _newData, context) => {
-      // Rollback on error
+      // rollback on error
       if (context?.previousTranslation !== undefined) {
         queryClient.setQueryData(
-          translationsKeys.detail(params.projectId, params.keyId, params.locale),
+          TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
           context.previousTranslation
         );
       }
     },
     onMutate: async (newData) => {
-      // Cancel outgoing refetches
+      // cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: translationsKeys.detail(params.projectId, params.keyId, params.locale),
+        queryKey: TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
       });
 
-      // Snapshot previous value
+      // snapshot previous value
       const previousTranslation = queryClient.getQueryData<null | TranslationResponse>(
-        translationsKeys.detail(params.projectId, params.keyId, params.locale)
+        TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale)
       );
 
-      // Optimistically update
+      // optimistically update
       queryClient.setQueryData(
-        translationsKeys.detail(params.projectId, params.keyId, params.locale),
+        TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
         (old: null | TranslationResponse) => {
-          // If no previous translation, create new one with optimistic data
+          // if no previous translation, create new one with optimistic data
           if (!old) {
             return {
               key_id: params.keyId,
@@ -142,11 +143,11 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
       return { previousTranslation };
     },
     onSettled: () => {
-      // Refetch to ensure consistency
+      // refetch to ensure consistency
       queryClient.invalidateQueries({
-        queryKey: translationsKeys.detail(params.projectId, params.keyId, params.locale),
+        queryKey: TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
       });
-      // Also invalidate key lists that show this translation
+      // also invalidate key lists that show this translation
       queryClient.invalidateQueries({
         queryKey: ['keys', 'per-language', params.projectId, params.locale],
       });

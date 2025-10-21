@@ -5,8 +5,8 @@ import type { ApiErrorResponse, TranslationResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../translations.errors';
-import { translationsKeys } from '../translations.keys';
-import { getTranslationQuerySchema, translationResponseSchema } from '../translations.schemas';
+import { TRANSLATIONS_KEYS } from '../translations.key-factory';
+import { GET_TRANSLATION_QUERY_SCHEMA, TRANSLATION_RESPONSE_SCHEMA } from '../translations.schemas';
 
 /**
  * Fetch a translation record for a specific project, key, and locale combination
@@ -19,9 +19,11 @@ import { getTranslationQuerySchema, translationResponseSchema } from '../transla
  * @param projectId - Project UUID to fetch translation from (required)
  * @param keyId - Translation key UUID (required)
  * @param locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, key_id, or locale format)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with translation data or null if not found
  */
 export function useTranslation(projectId: string, keyId: string, locale: string) {
@@ -30,8 +32,8 @@ export function useTranslation(projectId: string, keyId: string, locale: string)
   return useQuery<null | TranslationResponse, ApiErrorResponse>({
     gcTime: 15 * 60 * 1000, // 15 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = getTranslationQuerySchema.parse({
+      // validate parameters
+      const validated = GET_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: keyId,
         locale: locale,
         project_id: projectId,
@@ -49,16 +51,15 @@ export function useTranslation(projectId: string, keyId: string, locale: string)
         throw createDatabaseErrorResponse(error, 'useTranslation', 'Failed to fetch translation');
       }
 
-      // Return null if translation doesn't exist (valid state for missing translations)
+      // return null if translation doesn't exist (valid state for missing translations)
       if (!data) {
         return null;
       }
 
-      // Runtime validation of response data
-      const validatedResponse = translationResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return TRANSLATION_RESPONSE_SCHEMA.parse(data);
     },
-    queryKey: translationsKeys.detail(projectId, keyId, locale),
+    queryKey: TRANSLATIONS_KEYS.detail(projectId, keyId, locale),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

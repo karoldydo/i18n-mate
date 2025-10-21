@@ -167,74 +167,93 @@ Create validation schemas in `src/features/translations/api/translations.schemas
 
 ```typescript
 import { z } from 'zod';
+
 import {
   TRANSLATION_VALUE_MAX_LENGTH,
   TRANSLATION_VALUE_MIN_LENGTH,
   TRANSLATIONS_ERROR_MESSAGES,
-  UPDATE_SOURCE_VALUES,
+  TRANSLATIONS_UPDATE_SOURCE_VALUES,
 } from '@/shared/constants';
+import type { CreateTranslationJobRequest, TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
 
-// Translation value validation (same as used in keys)
-const translationValueSchema = z
+// translation value validation (same as used in keys)
+const TRANSLATION_VALUE_SCHEMA = z
   .string()
   .min(TRANSLATION_VALUE_MIN_LENGTH, TRANSLATIONS_ERROR_MESSAGES.VALUE_REQUIRED)
   .max(TRANSLATION_VALUE_MAX_LENGTH, TRANSLATIONS_ERROR_MESSAGES.VALUE_TOO_LONG)
-  .refine((val) => !val.includes('\n'), TRANSLATIONS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
+  .refine((val) => !val.includes('
+'), TRANSLATIONS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
   .transform((val) => val.trim());
 
-// Locale code validation (BCP-47 format)
-const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
+// locale code validation (bcp-47 format)
+const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
   message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
 });
 
-// UUID validation schemas
-const projectIdSchema = z.string().uuid('Invalid project ID format');
-const keyIdSchema = z.string().uuid('Invalid key ID format');
-const userIdSchema = z.string().uuid('Invalid user ID format');
+// uuid validation schemas
+const PROJECT_ID_SCHEMA = z.string().uuid('Invalid project ID format');
+const KEY_ID_SCHEMA = z.string().uuid('Invalid key ID format');
+const USER_ID_SCHEMA = z.string().uuid('Invalid user ID format');
 
-// Update source validation
-const updateSourceSchema = z.enum(['user', 'system'] as const, {
+// update source validation
+const UPDATE_SOURCE_SCHEMA = z.enum(TRANSLATIONS_UPDATE_SOURCE_VALUES, {
   errorMap: () => ({ message: 'Update source must be "user" or "system"' }),
 });
 
-// Get Translation Query Schema
-export const getTranslationQuerySchema = z.object({
-  key_id: keyIdSchema,
-  locale: localeCodeSchema,
-  project_id: projectIdSchema,
-});
+// get translation query schema
+export const GET_TRANSLATION_QUERY_SCHEMA =
+  z
+    .object({
+      key_id: KEY_ID_SCHEMA,
+      locale: LOCALE_CODE_SCHEMA,
+      project_id: PROJECT_ID_SCHEMA,
+    })
+    satisfies z.ZodType<Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>>;
 
-// Update Translation Request Schema
-export const updateTranslationRequestSchema = z.object({
-  is_machine_translated: z.boolean(),
-  updated_by_user_id: userIdSchema.nullable(),
-  updated_source: updateSourceSchema,
-  value: translationValueSchema,
-});
+// update translation request schema
+export const UPDATE_TRANSLATION_REQUEST_SCHEMA =
+  z
+    .object({
+      is_machine_translated: z.boolean(),
+      updated_by_user_id: USER_ID_SCHEMA.nullable(),
+      updated_source: UPDATE_SOURCE_SCHEMA,
+      value: TRANSLATION_VALUE_SCHEMA,
+    })
+    satisfies z.ZodType<UpdateTranslationRequest>;
 
-// Update Translation Query Schema (with optimistic locking)
-export const updateTranslationQuerySchema = getTranslationQuerySchema.extend({
-  updated_at: z.string().datetime().optional(), // ISO 8601 timestamp for optimistic locking
-});
+// update translation query schema (with optimistic locking)
+export const UPDATE_TRANSLATION_QUERY_SCHEMA =
+  GET_TRANSLATION_QUERY_SCHEMA.extend({
+    updated_at: z.string().datetime().optional(), // iso 8601 timestamp for optimistic locking
+  }) satisfies z.ZodType<
+    Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'> &
+      Partial<Pick<TranslationResponse, 'updated_at'>>
+  >;
 
-// Bulk Update Query Schema
-export const bulkUpdateTranslationQuerySchema = z.object({
-  key_ids: z.array(keyIdSchema).min(1, 'At least one key ID is required'),
-  locale: localeCodeSchema,
-  project_id: projectIdSchema,
-});
+// bulk update query schema
+export const BULK_UPDATE_TRANSLATION_QUERY_SCHEMA =
+  z
+    .object({
+      key_ids: z.array(KEY_ID_SCHEMA).min(1, 'At least one key ID is required'),
+      locale: LOCALE_CODE_SCHEMA,
+      project_id: PROJECT_ID_SCHEMA,
+    })
+    satisfies z.ZodType<Pick<CreateTranslationJobRequest, 'key_ids' | 'locale' | 'project_id'>>;
 
-// Response Schemas for runtime validation
-export const translationResponseSchema = z.object({
-  is_machine_translated: z.boolean(),
-  key_id: keyIdSchema,
-  locale: localeCodeSchema,
-  project_id: projectIdSchema,
-  updated_at: z.string(),
-  updated_by_user_id: userIdSchema.nullable(),
-  updated_source: updateSourceSchema,
-  value: z.string().nullable(),
-});
+// response schemas for runtime validation
+export const TRANSLATION_RESPONSE_SCHEMA =
+  z
+    .object({
+      is_machine_translated: z.boolean(),
+      key_id: KEY_ID_SCHEMA,
+      locale: LOCALE_CODE_SCHEMA,
+      project_id: PROJECT_ID_SCHEMA,
+      updated_at: z.string(),
+      updated_by_user_id: USER_ID_SCHEMA.nullable(),
+      updated_source: UPDATE_SOURCE_SCHEMA,
+      value: z.string().nullable(),
+    })
+    satisfies z.ZodType<TranslationResponse>;
 ```
 
 ## 4. Response Details
@@ -432,7 +451,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User requests translation via React component (e.g., for editing)
 2. TanStack Query hook (`useTranslation`) is invoked with project_id, key_id, and locale
-3. Hook validates params using `getTranslationQuerySchema`
+3. Hook validates params using `GET_TRANSLATION_QUERY_SCHEMA`
 4. Hook retrieves Supabase client from `useSupabase()` context
 5. Client calls `.from('translations').select('*').eq('project_id', projectId).eq('key_id', keyId).eq('locale', locale).maybeSingle()`
 6. RLS policy filters results by project ownership via foreign key to projects table
@@ -444,8 +463,8 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User edits translation value in inline editor
 2. `useUpdateTranslation` mutation hook receives new value and metadata
-3. Hook validates data using `updateTranslationRequestSchema`
-4. Hook validates query params using `updateTranslationQuerySchema`
+3. Hook validates data using `UPDATE_TRANSLATION_REQUEST_SCHEMA`
+4. Hook validates query params using `UPDATE_TRANSLATION_QUERY_SCHEMA`
 5. Hook calls Supabase `.update(validatedData).eq('project_id', projectId).eq('key_id', keyId).eq('locale', locale)`
 6. If optimistic locking is enabled, adds `.eq('updated_at', timestamp)` to WHERE clause
 7. Database trigger `trim_translation_value_insert_trigger` auto-trims value and converts empty to NULL
@@ -461,8 +480,8 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. Translation job or bulk operation requests multiple translation updates
 2. `useBulkUpdateTranslations` mutation hook receives update data and key IDs
-3. Hook validates data using `updateTranslationRequestSchema`
-4. Hook validates query params using `bulkUpdateTranslationQuerySchema`
+3. Hook validates data using `UPDATE_TRANSLATION_REQUEST_SCHEMA`
+4. Hook validates query params using `BULK_UPDATE_TRANSLATION_QUERY_SCHEMA`
 5. Hook constructs PostgREST filter: `key_id=in.(uuid1,uuid2,uuid3...)`
 6. Hook calls Supabase `.update(validatedData).eq('project_id', projectId).eq('locale', locale).in('key_id', keyIds)`
 7. Database triggers perform validation and trimming for each affected row
@@ -767,13 +786,13 @@ Create `src/shared/constants/translations.constants.ts` with centralized constan
  */
 
 // Re-export translation value constraints from keys constants for consistency
-import { TRANSLATION_VALUE_MAX_LENGTH, TRANSLATION_VALUE_MIN_LENGTH, KEY_VALIDATION } from './keys.constants';
+import { KEY_VALIDATION, TRANSLATION_VALUE_MAX_LENGTH, TRANSLATION_VALUE_MIN_LENGTH } from './keys.constants';
 
 export { TRANSLATION_VALUE_MAX_LENGTH, TRANSLATION_VALUE_MIN_LENGTH };
 
 // Update source values
-export const UPDATE_SOURCE_VALUES = ['user', 'system'] as const;
-export type UpdateSourceType = (typeof UPDATE_SOURCE_VALUES)[number];
+export const TRANSLATIONS_UPDATE_SOURCE_VALUES = ['user', 'system'] as const;
+export type UpdateSourceType = (typeof TRANSLATIONS_UPDATE_SOURCE_VALUES)[number];
 
 // PostgreSQL error codes relevant to translations
 export const TRANSLATIONS_PG_ERROR_CODES = {
@@ -787,47 +806,42 @@ export const TRANSLATIONS_PG_ERROR_CODES = {
 
 // Database constraint names for translations
 export const TRANSLATIONS_CONSTRAINTS = {
-  PROJECT_ID_FKEY: 'translations_project_id_fkey',
   KEY_ID_FKEY: 'translations_key_id_fkey',
-  PROJECT_LOCALE_FKEY: 'translations_project_id_locale_fkey',
   PRIMARY_KEY: 'translations_pkey',
+  PROJECT_ID_FKEY: 'translations_project_id_fkey',
+  PROJECT_LOCALE_FKEY: 'translations_project_id_locale_fkey',
 } as const;
 
 // Error messages for translations validation
 export const TRANSLATIONS_ERROR_MESSAGES = {
-  // Validation errors
+  DATABASE_ERROR: 'Database operation failed',
+  DEFAULT_LOCALE_EMPTY: 'Default locale value cannot be empty',
+  INVALID_FIELD_VALUE: 'Invalid field value',
+  INVALID_UPDATE_SOURCE: 'Update source must be "user" or "system"',
+  NO_DATA_RETURNED: 'No data returned from server',
+  OPTIMISTIC_LOCK_FAILED: 'Translation was modified by another user. Please refresh and try again.',
+  PROJECT_NOT_OWNED: 'Project not owned by user',
+  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
+  TRANSLATION_NOT_FOUND: 'Translation not found',
+  VALUE_NO_NEWLINES: 'Translation value cannot contain newlines',
   VALUE_REQUIRED: 'Translation value cannot be empty',
   VALUE_TOO_LONG: `Translation value must be at most ${TRANSLATION_VALUE_MAX_LENGTH} characters`,
-  VALUE_NO_NEWLINES: 'Translation value cannot contain newlines',
-  INVALID_UPDATE_SOURCE: 'Update source must be "user" or "system"',
-
-  // Database operation errors
-  TRANSLATION_NOT_FOUND: 'Translation not found',
-  PROJECT_NOT_OWNED: 'Project not owned by user',
-  DEFAULT_LOCALE_EMPTY: 'Default locale value cannot be empty',
-  OPTIMISTIC_LOCK_FAILED: 'Translation was modified by another user. Please refresh and try again.',
-
-  // Generic errors
-  DATABASE_ERROR: 'Database operation failed',
-  NO_DATA_RETURNED: 'No data returned from server',
-  INVALID_FIELD_VALUE: 'Invalid field value',
-  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
 } as const;
 
 // Validation utilities
 export const TRANSLATION_VALIDATION = {
   /**
+   * Check if update source is valid
+   */
+  isValidUpdateSource: (source: string): source is UpdateSourceType => {
+    return TRANSLATIONS_UPDATE_SOURCE_VALUES.includes(source as UpdateSourceType);
+  },
+
+  /**
    * Validate translation value (client-side)
    * Same rules as KEY_VALIDATION.isValidTranslationValue
    */
   isValidValue: KEY_VALIDATION.isValidTranslationValue,
-
-  /**
-   * Check if update source is valid
-   */
-  isValidUpdateSource: (source: string): source is UpdateSourceType => {
-    return UPDATE_SOURCE_VALUES.includes(source as UpdateSourceType);
-  },
 
   /**
    * Sanitize translation value
@@ -842,15 +856,6 @@ export const TRANSLATION_VALIDATION = {
 };
 ```
 
-Add to `src/shared/constants/index.ts`:
-
-```typescript
-export * from './locale.constants';
-export * from './keys.constants';
-export * from './projects.constants';
-export * from './translations.constants';
-```
-
 ### Step 3: Create Zod Validation Schemas
 
 Create `src/features/translations/api/translations.schemas.ts` with all validation schemas defined in section 3.2.
@@ -863,9 +868,11 @@ Create `src/features/translations/api/translations.errors.ts`:
 
 ```typescript
 import type { PostgrestError } from '@supabase/supabase-js';
+
 import type { ApiErrorResponse } from '@/shared/types';
+
+import { TRANSLATIONS_ERROR_MESSAGES, TRANSLATIONS_PG_ERROR_CODES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
-import { TRANSLATIONS_PG_ERROR_CODES, TRANSLATIONS_CONSTRAINTS, TRANSLATIONS_ERROR_MESSAGES } from '@/shared/constants';
 
 /**
  * Handle database errors and convert them to API errors
@@ -888,29 +895,29 @@ export function createDatabaseErrorResponse(
   const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
   console.error(`${logPrefix} Database error:`, error);
 
-  // Handle trigger violations (default locale validation)
+  // handle trigger violations (default locale validation)
   if (error.message.includes('cannot be NULL or empty') || error.message.toLowerCase().includes('default_locale')) {
     return createApiErrorResponse(400, TRANSLATIONS_ERROR_MESSAGES.DEFAULT_LOCALE_EMPTY);
   }
 
-  // Handle check constraint violations
+  // handle check constraint violations
   if (error.code === TRANSLATIONS_PG_ERROR_CODES.CHECK_VIOLATION) {
     return createApiErrorResponse(400, TRANSLATIONS_ERROR_MESSAGES.INVALID_FIELD_VALUE, {
       constraint: error.details,
     });
   }
 
-  // Handle foreign key violations
+  // handle foreign key violations
   if (error.code === TRANSLATIONS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
     return createApiErrorResponse(404, TRANSLATIONS_ERROR_MESSAGES.REFERENCED_RESOURCE_NOT_FOUND);
   }
 
-  // Handle authorization errors (project not found or not owned)
+  // handle authorization errors (project not found or not owned)
   if (error.message.includes('not found') || error.message.includes('access denied')) {
     return createApiErrorResponse(403, TRANSLATIONS_ERROR_MESSAGES.PROJECT_NOT_OWNED);
   }
 
-  // Generic database error
+  // generic database error
   return createApiErrorResponse(500, fallbackMessage || TRANSLATIONS_ERROR_MESSAGES.DATABASE_ERROR, {
     original: error,
   });
@@ -919,18 +926,18 @@ export function createDatabaseErrorResponse(
 
 ### Step 5: Create Query Keys Factory
 
-Create `src/features/translations/api/translations.keys.ts`:
+Create `src/features/translations/api/translations.key-factory.ts`:
 
 ```typescript
 /**
  * Query key factory for translations
  * Follows TanStack Query best practices for structured query keys
  */
-export const translationsKeys = {
+export const TRANSLATIONS_KEYS = {
   all: ['translations'] as const,
   detail: (projectId: string, keyId: string, locale: string) =>
-    [...translationsKeys.details(), projectId, keyId, locale] as const,
-  details: () => [...translationsKeys.all, 'detail'] as const,
+    [...TRANSLATIONS_KEYS.details(), projectId, keyId, locale] as const,
+  details: () => [...TRANSLATIONS_KEYS.all, 'detail'] as const,
 };
 ```
 
@@ -950,11 +957,12 @@ export const translationsKeys = {
 ```typescript
 import { useQuery } from '@tanstack/react-query';
 import type { ApiErrorResponse, TranslationResponse } from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createApiErrorResponse } from '@/shared/utils';
+
 import { createDatabaseErrorResponse } from '../translations.errors';
-import { translationsKeys } from '../translations.keys';
-import { getTranslationQuerySchema, translationResponseSchema } from '../translations.schemas';
+import { TRANSLATIONS_KEYS } from '../translations.key-factory';
+import { GET_TRANSLATION_QUERY_SCHEMA, TRANSLATION_RESPONSE_SCHEMA } from '../translations.schemas';
 
 /**
  * Fetch a translation record for a specific project, key, and locale combination
@@ -978,11 +986,11 @@ export function useTranslation(projectId: string, keyId: string, locale: string)
   return useQuery<TranslationResponse | null, ApiErrorResponse>({
     gcTime: 15 * 60 * 1000, // 15 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = getTranslationQuerySchema.parse({
-        project_id: projectId,
+      // validate parameters
+      const validated = GET_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: keyId,
         locale: locale,
+        project_id: projectId,
       });
 
       const { data, error } = await supabase
@@ -997,16 +1005,16 @@ export function useTranslation(projectId: string, keyId: string, locale: string)
         throw createDatabaseErrorResponse(error, 'useTranslation', 'Failed to fetch translation');
       }
 
-      // Return null if translation doesn't exist (valid state for missing translations)
+      // return null if translation doesn't exist (valid state for missing translations)
       if (!data) {
         return null;
       }
 
-      // Runtime validation of response data
-      const validatedResponse = translationResponseSchema.parse(data);
+      // runtime validation of response data
+      const validatedResponse = TRANSLATION_RESPONSE_SCHEMA.parse(data);
       return validatedResponse;
     },
-    queryKey: translationsKeys.detail(projectId, keyId, locale),
+    queryKey: TRANSLATIONS_KEYS.detail(projectId, keyId, locale),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -1016,30 +1024,30 @@ export function useTranslation(projectId: string, keyId: string, locale: string)
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiErrorResponse, TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
+
+import type {
+  ApiErrorResponse,
+  TranslationResponse,
+  UpdateTranslationParams,
+  UpdateTranslationRequest,
+} from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
+
 import { createDatabaseErrorResponse } from '../translations.errors';
-import { translationsKeys } from '../translations.keys';
+import { TRANSLATIONS_KEYS } from '../translations.key-factory';
 import {
-  updateTranslationRequestSchema,
-  updateTranslationQuerySchema,
-  translationResponseSchema,
+  TRANSLATION_RESPONSE_SCHEMA,
+  UPDATE_TRANSLATION_QUERY_SCHEMA,
+  UPDATE_TRANSLATION_REQUEST_SCHEMA,
 } from '../translations.schemas';
 
 /**
  * Context type for mutation callbacks
  */
 interface UpdateTranslationContext {
-  previousTranslation?: TranslationResponse | null;
-}
-
-export interface UpdateTranslationParams {
-  keyId: string;
-  locale: string;
-  projectId: string;
-  // Optimistic locking support
-  updatedAt?: string; // ISO 8601 timestamp
+  previousTranslation?: null | TranslationResponse;
 }
 
 /**
@@ -1064,22 +1072,23 @@ export interface UpdateTranslationParams {
  */
 export function useUpdateTranslation(params: UpdateTranslationParams) {
   const supabase = useSupabase();
+
   const queryClient = useQueryClient();
 
   return useMutation<TranslationResponse, ApiErrorResponse, UpdateTranslationRequest, UpdateTranslationContext>({
     mutationFn: async (updateData) => {
-      // Validate query parameters
-      const validatedQuery = updateTranslationQuerySchema.parse({
-        project_id: params.projectId,
+      // validate query parameters
+      const validatedQuery = UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: params.keyId,
         locale: params.locale,
+        project_id: params.projectId,
         updated_at: params.updatedAt,
       });
 
-      // Validate request data
-      const validatedInput = updateTranslationRequestSchema.parse(updateData);
+      // validate request data
+      const validatedInput = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(updateData);
 
-      // Build query with optimistic locking support
+      // build query with optimistic locking support
       let query = supabase
         .from('translations')
         .update(validatedInput)
@@ -1087,62 +1096,62 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
         .eq('key_id', validatedQuery.key_id)
         .eq('locale', validatedQuery.locale);
 
-      // Add optimistic locking if timestamp provided
+      // add optimistic locking if timestamp provided
       if (validatedQuery.updated_at) {
         query = query.eq('updated_at', validatedQuery.updated_at);
       }
 
       const { count, data, error } = await query.select().single();
 
-      // Handle database errors
+      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateTranslation', 'Failed to update translation');
       }
 
-      // Handle optimistic lock failure (no rows affected)
+      // handle optimistic lock failure (no rows affected)
       if (count === 0) {
         throw createApiErrorResponse(409, 'Translation was modified by another user. Please refresh and try again.');
       }
 
-      // Handle missing data
+      // handle missing data
       if (!data) {
         throw createApiErrorResponse(404, 'Translation not found');
       }
 
-      // Runtime validation of response data
-      const validatedResponse = translationResponseSchema.parse(data);
+      // runtime validation of response data
+      const validatedResponse = TRANSLATION_RESPONSE_SCHEMA.parse(data);
       return validatedResponse;
     },
     onError: (_err, _newData, context) => {
-      // Rollback on error
+      // rollback on error
       if (context?.previousTranslation !== undefined) {
         queryClient.setQueryData(
-          translationsKeys.detail(params.projectId, params.keyId, params.locale),
+          TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
           context.previousTranslation
         );
       }
     },
     onMutate: async (newData) => {
-      // Cancel outgoing refetches
+      // cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: translationsKeys.detail(params.projectId, params.keyId, params.locale),
+        queryKey: TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
       });
 
-      // Snapshot previous value
-      const previousTranslation = queryClient.getQueryData<TranslationResponse | null>(
-        translationsKeys.detail(params.projectId, params.keyId, params.locale)
+      // snapshot previous value
+      const previousTranslation = queryClient.getQueryData<null | TranslationResponse>(
+        TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale)
       );
 
-      // Optimistically update
+      // optimistically update
       queryClient.setQueryData(
-        translationsKeys.detail(params.projectId, params.keyId, params.locale),
-        (old: TranslationResponse | null) => {
-          // If no previous translation, create new one with optimistic data
+        TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
+        (old: null | TranslationResponse) => {
+          // if no previous translation, create new one with optimistic data
           if (!old) {
             return {
-              project_id: params.projectId,
               key_id: params.keyId,
               locale: params.locale,
+              project_id: params.projectId,
               updated_at: new Date().toISOString(),
               ...newData,
             } as TranslationResponse;
@@ -1159,11 +1168,11 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
       return { previousTranslation };
     },
     onSettled: () => {
-      // Refetch to ensure consistency
+      // refetch to ensure consistency
       queryClient.invalidateQueries({
-        queryKey: translationsKeys.detail(params.projectId, params.keyId, params.locale),
+        queryKey: TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
       });
-      // Also invalidate key lists that show this translation
+      // also invalidate key lists that show this translation
       queryClient.invalidateQueries({
         queryKey: ['keys', 'per-language', params.projectId, params.locale],
       });
@@ -1177,22 +1186,24 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import type { ApiErrorResponse, TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
+
+import type {
+  ApiErrorResponse,
+  BulkUpdateTranslationsParams,
+  TranslationResponse,
+  UpdateTranslationRequest,
+} from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
-import { createDatabaseErrorResponse } from '../translations.errors';
-import { translationsKeys } from '../translations.keys';
-import {
-  bulkUpdateTranslationQuerySchema,
-  updateTranslationRequestSchema,
-  translationResponseSchema,
-} from '../translations.schemas';
 
-export interface BulkUpdateTranslationsParams {
-  keyIds: string[];
-  locale: string;
-  projectId: string;
-}
+import { createDatabaseErrorResponse } from '../translations.errors';
+import { TRANSLATIONS_KEYS } from '../translations.key-factory';
+import {
+  BULK_UPDATE_TRANSLATION_QUERY_SCHEMA,
+  TRANSLATION_RESPONSE_SCHEMA,
+  UPDATE_TRANSLATION_REQUEST_SCHEMA,
+} from '../translations.schemas';
 
 /**
  * Update multiple translation values in a single atomic operation
@@ -1219,15 +1230,15 @@ export function useBulkUpdateTranslations(params: BulkUpdateTranslationsParams) 
 
   return useMutation<TranslationResponse[], ApiErrorResponse, UpdateTranslationRequest>({
     mutationFn: async (updateData) => {
-      // Validate query parameters
-      const validatedQuery = bulkUpdateTranslationQuerySchema.parse({
-        project_id: params.projectId,
+      // validate query parameters
+      const validatedQuery = BULK_UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
         key_ids: params.keyIds,
         locale: params.locale,
+        project_id: params.projectId,
       });
 
-      // Validate request data
-      const validatedInput = updateTranslationRequestSchema.parse(updateData);
+      // validate request data
+      const validatedInput = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(updateData);
 
       const { data, error } = await supabase
         .from('translations')
@@ -1237,30 +1248,30 @@ export function useBulkUpdateTranslations(params: BulkUpdateTranslationsParams) 
         .in('key_id', validatedQuery.key_ids)
         .select();
 
-      // Handle database errors
+      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useBulkUpdateTranslations', 'Failed to bulk update translations');
       }
 
-      // Handle missing data
+      // handle missing data
       if (!data) {
         throw createApiErrorResponse(500, 'No data returned from server');
       }
 
-      // Runtime validation of response data
-      const validatedResponse = z.array(translationResponseSchema).parse(data);
+      // runtime validation of response data
+      const validatedResponse = z.array(TRANSLATION_RESPONSE_SCHEMA).parse(data);
       return validatedResponse;
     },
     onSuccess: () => {
-      // Invalidate per-language key view cache for the target locale
+      // invalidate per-language key view cache for the target locale
       queryClient.invalidateQueries({
         queryKey: ['keys', 'per-language', params.projectId, params.locale],
       });
 
-      // Invalidate individual translation caches for all affected keys
-      params.keyIds.forEach((keyId) => {
+      // invalidate individual translation caches for all affected keys
+      params.keyIds.forEach((keyId: string) => {
         queryClient.invalidateQueries({
-          queryKey: translationsKeys.detail(params.projectId, keyId, params.locale),
+          queryKey: TRANSLATIONS_KEYS.detail(params.projectId, keyId, params.locale),
         });
       });
     },
@@ -1273,44 +1284,13 @@ export function useBulkUpdateTranslations(params: BulkUpdateTranslationsParams) 
 Create `src/features/translations/api/index.ts`:
 
 ```typescript
-/**
- * Translations API
- *
- * This module provides TanStack Query hooks for managing translation values.
- * All hooks use the shared Supabase client from context and follow React Query best practices.
- *
- * @module features/translations/api
- */
-
-// Error Utilities
-export { createDatabaseErrorResponse } from './translations.errors';
-
-// Query Keys
-export { translationsKeys } from './translations.keys';
-
-// Validation Schemas
+export * from './translations.errors';
+export * from './translations.key-factory';
 export * from './translations.schemas';
-
-// Mutation Hooks
-export { useBulkUpdateTranslations } from './useBulkUpdateTranslations/useBulkUpdateTranslations';
-export { useUpdateTranslation } from './useUpdateTranslation/useUpdateTranslation';
-
-// Query Hooks
-export { useTranslation } from './useTranslation/useTranslation';
-
-// Additional exports for type safety
-export type { UpdateTranslationParams } from './useUpdateTranslation/useUpdateTranslation';
-export type { BulkUpdateTranslationsParams } from './useBulkUpdateTranslations/useBulkUpdateTranslations';
+export * from './useBulkUpdateTranslations';
+export * from './useTranslation';
+export * from './useUpdateTranslation';
 ```
-
-**Organization:**
-
-- Error utilities are exported first for use in other features
-- Query keys factory for cache management
-- Validation schemas for input/output validation
-- Hooks grouped by type (mutations vs queries)
-- Alphabetical order within each group for easy discovery
-- Type exports for better TypeScript integration
 
 ### Step 8: Write Unit Tests
 

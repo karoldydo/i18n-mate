@@ -26,29 +26,29 @@ export function createDatabaseErrorResponse(
   const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
   console.error(`${logPrefix} Database error:`, error);
 
-  // Handle trigger violations (default locale validation)
+  // handle trigger violations (default locale validation)
   if (error.message.includes('cannot be NULL or empty') || error.message.toLowerCase().includes('default_locale')) {
     return createApiErrorResponse(400, TRANSLATIONS_ERROR_MESSAGES.DEFAULT_LOCALE_EMPTY);
   }
 
-  // Handle check constraint violations
+  // handle check constraint violations
   if (error.code === TRANSLATIONS_PG_ERROR_CODES.CHECK_VIOLATION) {
     return createApiErrorResponse(400, TRANSLATIONS_ERROR_MESSAGES.INVALID_FIELD_VALUE, {
       constraint: error.details,
     });
   }
 
-  // Handle foreign key violations
+  // handle foreign key violations
   if (error.code === TRANSLATIONS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
     return createApiErrorResponse(404, TRANSLATIONS_ERROR_MESSAGES.REFERENCED_RESOURCE_NOT_FOUND);
   }
 
-  // Handle authorization errors (project not found or not owned)
+  // handle authorization errors (project not found or not owned)
   if (error.message.includes('not found') || error.message.includes('access denied')) {
     return createApiErrorResponse(403, TRANSLATIONS_ERROR_MESSAGES.PROJECT_NOT_OWNED);
   }
 
-  // Generic database error
+  // generic database error
   return createApiErrorResponse(500, fallbackMessage || TRANSLATIONS_ERROR_MESSAGES.DATABASE_ERROR, {
     original: error,
   });
