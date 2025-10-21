@@ -12,7 +12,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createAtomicLocaleErrorResponse } from '../locales.errors';
 import { LOCALES_KEYS } from '../locales.key-factory';
-import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA } from '../locales.schemas';
+import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } from '../locales.schemas';
 
 /**
  * Add a new locale to a project using atomic RPC function
@@ -52,34 +52,30 @@ export function useCreateProjectLocale(projectId: string) {
     ApiErrorResponse,
     Omit<CreateProjectLocaleAtomicRequest, 'p_project_id'>
   >({
-    mutationFn: async (localeData) => {
+    mutationFn: async (payload) => {
       // normalize locale code before validation
-      const NORMALIZED_LOCALE = LOCALE_NORMALIZATION.normalize(localeData.p_locale);
+      const normalized = LOCALE_NORMALIZATION.normalize(payload.p_locale);
 
       // validate input with normalized locale
-      const VALIDATED = CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA.parse({
-        ...localeData,
-        p_locale: NORMALIZED_LOCALE,
+      const { p_label, p_locale, p_project_id } = CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA.parse({
+        ...payload,
+        p_locale: normalized,
         p_project_id: projectId,
       });
 
-      // call atomic rpc function
-      const { data, error } = await supabase.rpc('create_project_locale_atomic', {
-        p_label: VALIDATED.p_label,
-        p_locale: VALIDATED.p_locale,
-        p_project_id: VALIDATED.p_project_id,
-      });
+      const { data, error } = await supabase
+        .rpc('create_project_locale_atomic', { p_label, p_locale, p_project_id })
+        .single();
 
       if (error) {
         throw createAtomicLocaleErrorResponse(error, 'useCreateProjectLocale', 'Failed to add locale');
       }
 
-      if (!data || data.length === 0) {
+      if (!data) {
         throw createApiErrorResponse(500, 'No data returned from atomic locale creation');
       }
 
-      // return first (and only) result from rpc
-      return data[0];
+      return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: () => {
       // invalidate project locales list cache

@@ -8,7 +8,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
-import { PROJECT_ID_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.schemas';
+import { PROJECT_RESPONSE_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
 
 /**
  * Fetch a single project by ID
@@ -31,13 +31,12 @@ export function useProject(projectId: string) {
   return useQuery<ProjectResponse, ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // validate project id
-      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
+      const id = UUID_SCHEMA.parse(projectId);
 
       const { data, error } = await supabase
         .from('projects')
         .select('id,name,description,prefix,default_locale,created_at,updated_at')
-        .eq('id', validatedId)
+        .eq('id', id)
         .maybeSingle();
 
       if (error) {
@@ -48,7 +47,6 @@ export function useProject(projectId: string) {
         throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
 
-      // runtime validation of response data
       return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     queryKey: PROJECTS_KEY_FACTORY.detail(projectId),

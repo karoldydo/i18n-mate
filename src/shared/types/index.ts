@@ -15,8 +15,6 @@ export type {
   ApiErrorResponse,
   ApiResponse,
   ApiResult,
-  BulkUpdateTranslationRequest,
-  BulkUpdateTranslationsParams,
   CancelTranslationJobRequest,
   ConflictErrorResponse,
   CreateKeyRequest,

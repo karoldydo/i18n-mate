@@ -199,16 +199,16 @@ const FULL_KEY_SCHEMA = z
   .min(KEY_NAME_MIN_LENGTH, KEYS_ERROR_MESSAGES.KEY_REQUIRED)
   .max(KEY_NAME_MAX_LENGTH, KEYS_ERROR_MESSAGES.KEY_TOO_LONG)
   .regex(KEY_FORMAT_PATTERN, KEYS_ERROR_MESSAGES.KEY_INVALID_FORMAT)
-  .refine((val) => !val.includes('..'), KEYS_ERROR_MESSAGES.KEY_CONSECUTIVE_DOTS)
-  .refine((val) => !val.endsWith('.'), KEYS_ERROR_MESSAGES.KEY_TRAILING_DOT);
+  .refine((value) => !value.includes('..'), KEYS_ERROR_MESSAGES.KEY_CONSECUTIVE_DOTS)
+  .refine((value) => !value.endsWith('.'), KEYS_ERROR_MESSAGES.KEY_TRAILING_DOT);
 
 // translation value validation
 const TRANSLATION_VALUE_SCHEMA = z
   .string()
   .min(TRANSLATION_VALUE_MIN_LENGTH, KEYS_ERROR_MESSAGES.VALUE_REQUIRED)
   .max(TRANSLATION_VALUE_MAX_LENGTH, KEYS_ERROR_MESSAGES.VALUE_TOO_LONG)
-  .refine((val) => !val.includes('\n'), KEYS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
-  .transform((val) => val.trim());
+  .refine((value) => !value.includes('\n'), KEYS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
+  .transform((value) => value.trim());
 
 // locale code validation (BCP-47 format)
 const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
@@ -216,14 +216,14 @@ const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
 });
 
 // project id validation
-export const PROJECT_ID_SCHEMA = z.string().uuid('Invalid project ID format');
+export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
 // list keys default view schema
 export const LIST_KEYS_DEFAULT_VIEW_SCHEMA = z.object({
   limit: z.number().int().min(1).max(KEYS_MAX_LIMIT).optional().default(KEYS_DEFAULT_LIMIT),
   missing_only: z.boolean().optional().default(KEYS_DEFAULT_PARAMS.MISSING_ONLY),
   offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_DEFAULT_PARAMS.OFFSET),
-  project_id: PROJECT_ID_SCHEMA,
+  project_id: UUID_SCHEMA,
   search: z.string().optional(),
 });
 
@@ -236,7 +236,7 @@ export const LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA = LIST_KEYS_DEFAULT_VIEW_SCHEMA.
 export const CREATE_KEY_REQUEST_SCHEMA = z.object({
   default_value: TRANSLATION_VALUE_SCHEMA,
   full_key: FULL_KEY_SCHEMA,
-  project_id: PROJECT_ID_SCHEMA,
+  project_id: UUID_SCHEMA,
 });
 
 // create key schema with rpc parameter transformation (adds p_ prefix)
@@ -547,7 +547,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User confirms key deletion
 2. `useDeleteKey` mutation hook receives key ID
-3. Hook validates UUID format using `PROJECT_ID_SCHEMA` (shared UUID schema)
+3. Hook validates UUID format using `UUID_SCHEMA` (shared UUID schema)
 4. Hook calls Supabase `.delete().eq('id', keyId)`
 5. RLS policy validates project ownership via JOIN
 6. If unauthorized or not found, returns 404
@@ -1102,16 +1102,16 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
   return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      const validated = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
+      const { limit, missing_only, offset, project_id, search } = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
 
       const { count, data, error } = await supabase.rpc(
         'list_keys_default_view',
         {
-          p_limit: validated.limit,
-          p_missing_only: validated.missing_only,
-          p_offset: validated.offset,
-          p_project_id: validated.project_id,
-          p_search: validated.search,
+          p_limit: limit,
+          p_missing_only: missing_only,
+          p_offset: offset,
+          p_project_id: project_id,
+          p_search: search,
         },
         { count: 'exact' }
       );
@@ -1126,8 +1126,8 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
       return {
         data: keys,
         metadata: {
-          end: (validated.offset || 0) + keys.length - 1,
-          start: validated.offset || 0,
+          end: (offset || 0) + keys.length - 1,
+          start: offset || 0,
           total: count || 0,
         },
       };
@@ -1184,17 +1184,18 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      const validated = LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
+      const { limit, locale, missing_only, offset, project_id, search } =
+        LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
 
       const { count, data, error } = await supabase.rpc(
         'list_keys_per_language_view',
         {
-          p_limit: validated.limit,
-          p_locale: validated.locale,
-          p_missing_only: validated.missing_only,
-          p_offset: validated.offset,
-          p_project_id: validated.project_id,
-          p_search: validated.search,
+          p_limit: limit,
+          p_locale: locale,
+          p_missing_only: missing_only,
+          p_offset: offset,
+          p_project_id: project_id,
+          p_search: search,
         },
         { count: 'exact' }
       );
@@ -1209,8 +1210,8 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
       return {
         data: keys,
         metadata: {
-          end: (validated.offset || 0) + keys.length - 1,
-          start: validated.offset || 0,
+          end: (offset || 0) + keys.length - 1,
+          start: offset || 0,
           total: count || 0,
         },
       };
@@ -1261,10 +1262,16 @@ export function useCreateKey(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<CreateKeyResponse, ApiErrorResponse, CreateKeyRequest>({
-    mutationFn: async (keyData) => {
-      const validated = CREATE_KEY_SCHEMA.parse(keyData);
+    mutationFn: async (payload) => {
+      const { p_default_value, p_full_key, p_project_id } = CREATE_KEY_SCHEMA.parse(payload);
 
-      const { data, error } = await supabase.rpc('create_key_with_value', validated).single();
+      const { data, error } = await supabase
+        .rpc('create_key_with_value', {
+          p_default_value,
+          p_full_key,
+          p_project_id,
+        })
+        .single();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateKey', 'Failed to create key');
@@ -1298,7 +1305,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
 import { KEYS_KEY_FACTORY } from '../keys.key-factory';
-import { PROJECT_ID_SCHEMA } from '../keys.schemas';
+import { UUID_SCHEMA } from '../keys.schemas';
 
 /**
  * Delete a translation key by ID
@@ -1321,12 +1328,10 @@ export function useDeleteKey(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<unknown, ApiErrorResponse, string>({
-    mutationFn: async (keyId) => {
-      const validatedId = PROJECT_ID_SCHEMA.parse(keyId);
+    mutationFn: async (uuid) => {
+      const id = UUID_SCHEMA.parse(uuid);
 
-      // supabase returns { count, error } not http 204
-      // we normalize to void (equivalent to 204 no content semantics)
-      const { count, error } = await supabase.from('keys').delete().eq('id', validatedId);
+      const { count, error } = await supabase.from('keys').delete().eq('id', id);
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useDeleteKey', 'Failed to delete key');
@@ -1338,9 +1343,9 @@ export function useDeleteKey(projectId: string) {
 
       // return void (no content) to match rest 204 semantics
     },
-    onSuccess: (_, keyId) => {
+    onSuccess: (_, uuid) => {
       // remove from cache
-      queryClient.removeQueries({ queryKey: KEYS_KEY_FACTORY.detail(keyId) });
+      queryClient.removeQueries({ queryKey: KEYS_KEY_FACTORY.detail(uuid) });
       // invalidate all list caches for this project
       queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
       queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });

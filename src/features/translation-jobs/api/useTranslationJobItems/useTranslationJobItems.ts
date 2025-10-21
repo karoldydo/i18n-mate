@@ -48,8 +48,7 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
   return useQuery<ListTranslationJobItemsResponse, ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // validate parameters
-      const validated = GET_JOB_ITEMS_SCHEMA.parse({
+      const { job_id, limit, offset, status } = GET_JOB_ITEMS_SCHEMA.parse({
         job_id: params.job_id,
         limit: params.limit,
         offset: params.offset,
@@ -59,12 +58,12 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
       let query = supabase
         .from('translation_job_items')
         .select('*, keys(full_key)', { count: 'exact' })
-        .eq('job_id', validated.job_id)
-        .range(validated.offset, validated.offset + validated.limit - 1);
+        .eq('job_id', job_id)
+        .range(offset, offset + limit - 1);
 
       // apply status filter if provided
-      if (validated.status) {
-        query = query.eq('status', validated.status);
+      if (status) {
+        query = query.eq('status', status);
       }
 
       // order by creation time
@@ -81,7 +80,7 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
 
       return {
         data: items,
-        metadata: calculatePaginationMetadata(validated.offset, items.length, count || 0),
+        metadata: calculatePaginationMetadata(offset, items.length, count || 0),
       };
     },
     queryKey: TRANSLATION_JOBS_KEY_FACTORY.items(params.job_id, params),

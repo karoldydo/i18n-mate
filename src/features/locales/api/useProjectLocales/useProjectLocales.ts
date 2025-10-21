@@ -32,13 +32,9 @@ export function useProjectLocales(projectId: string) {
   return useQuery<ProjectLocaleWithDefault[], ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // validate project id
-      const VALIDATED = LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA.parse({ project_id: projectId });
+      const { p_project_id } = LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA.parse({ project_id: projectId });
 
-      // call rpc function for list with is_default flag
-      const { data, error } = await supabase.rpc('list_project_locales_with_default', {
-        p_project_id: VALIDATED.p_project_id,
-      });
+      const { data, error } = await supabase.rpc('list_project_locales_with_default', { p_project_id });
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useProjectLocales', 'Failed to fetch project locales');

@@ -197,8 +197,8 @@ export const UPDATE_PROJECT_LOCALE_SCHEMA = z
   })
   .strict();
 
-// locale id schema
-export const LOCALE_ID_SCHEMA = z.string().uuid('Invalid locale ID format');
+// UUID schema
+export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
 // project locale response schema
 export const PROJECT_LOCALE_RESPONSE_SCHEMA = z.object({
@@ -454,7 +454,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 1. User submits locale label update form
 2. `useUpdateProjectLocale` mutation hook receives locale ID and update data
 3. Hook validates data using `UPDATE_PROJECT_LOCALE_SCHEMA` (ensures no immutable fields)
-4. Hook validates locale ID using `LOCALE_ID_SCHEMA`
+4. Hook validates locale ID using `UUID_SCHEMA`
 5. Hook calls Supabase `.update()` with validated data and `.eq('id', localeId)`
 6. RLS policy validates ownership via project relationship
 7. If unauthorized or not found, Supabase returns empty result → hook returns 404
@@ -467,7 +467,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User confirms locale deletion
 2. `useDeleteProjectLocale` mutation hook receives locale ID
-3. Hook validates UUID format using `LOCALE_ID_SCHEMA`
+3. Hook validates UUID format using `UUID_SCHEMA`
 4. Hook calls Supabase `.delete().eq('id', localeId)`
 5. Database trigger `prevent_project_locale_default_delete_trigger` checks if locale is default:
    - Queries projects table to find default_locale
@@ -1086,13 +1086,9 @@ export function useProjectLocales(projectId: string) {
   return useQuery<ProjectLocaleWithDefault[], ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // validate project id
-      const VALIDATED = LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA.parse({ project_id: projectId });
+      const { p_project_id } = LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA.parse({ project_id: projectId });
 
-      // call rpc function for list with is_default flag
-      const { data, error } = await supabase.rpc('list_project_locales_with_default', {
-        p_project_id: VALIDATED.p_project_id,
-      });
+      const { data, error } = await supabase.rpc('list_project_locales_with_default', { p_project_id });
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useProjectLocales', 'Failed to fetch project locales');
@@ -1102,10 +1098,7 @@ export function useProjectLocales(projectId: string) {
         throw createApiErrorResponse(500, 'No data returned from server');
       }
 
-      // runtime validation of response data
-      const LOCALES = z.array(PROJECT_LOCALE_WITH_DEFAULT_SCHEMA).parse(data);
-
-      return LOCALES;
+      return z.array(PROJECT_LOCALE_WITH_DEFAULT_SCHEMA).parse(data);
     },
     queryKey: LOCALES_KEYS.list(projectId),
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -1130,7 +1123,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createAtomicLocaleErrorResponse } from '../locales.errors';
 import { LOCALES_KEYS } from '../locales.key-factory';
-import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA } from '../locales.schemas';
+import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } from '../locales.schemas';
 
 export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();
@@ -1141,34 +1134,30 @@ export function useCreateProjectLocale(projectId: string) {
     ApiErrorResponse,
     Omit<CreateProjectLocaleAtomicRequest, 'p_project_id'>
   >({
-    mutationFn: async (localeData) => {
+    mutationFn: async (payload) => {
       // normalize locale code before validation
-      const NORMALIZED_LOCALE = LOCALE_NORMALIZATION.normalize(localeData.p_locale);
+      const normalized = LOCALE_NORMALIZATION.normalize(payload.p_locale);
 
       // validate input with normalized locale
-      const VALIDATED = CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA.parse({
-        ...localeData,
-        p_locale: NORMALIZED_LOCALE,
+      const { p_label, p_locale, p_project_id } = CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA.parse({
+        ...payload,
+        p_locale: normalized,
         p_project_id: projectId,
       });
 
-      // call atomic rpc function
-      const { data, error } = await supabase.rpc('create_project_locale_atomic', {
-        p_label: VALIDATED.p_label,
-        p_locale: VALIDATED.p_locale,
-        p_project_id: VALIDATED.p_project_id,
-      });
+      const { data, error } = await supabase
+        .rpc('create_project_locale_atomic', { p_label, p_locale, p_project_id })
+        .single();
 
       if (error) {
         throw createAtomicLocaleErrorResponse(error, 'useCreateProjectLocale', 'Failed to add locale');
       }
 
-      if (!data || data.length === 0) {
+      if (!data) {
         throw createApiErrorResponse(500, 'No data returned from atomic locale creation');
       }
 
-      // return first (and only) result from rpc
-      return data[0];
+      return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: () => {
       // invalidate project locales list cache
@@ -1225,7 +1214,7 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../locales.errors';
 import { LOCALES_KEYS } from '../locales.key-factory';
-import { LOCALE_ID_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA } from '../locales.schemas';
+import { PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
 
 interface UpdateProjectLocaleContext {
   previousLocales?: ProjectLocaleWithDefault[];
@@ -1236,31 +1225,21 @@ export function useUpdateProjectLocale(projectId: string, localeId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<ProjectLocaleResponse, ApiErrorResponse, UpdateProjectLocaleRequest, UpdateProjectLocaleContext>({
-    mutationFn: async (updateData) => {
-      // validate inputs
-      const VALIDATED_ID = LOCALE_ID_SCHEMA.parse(localeId);
-      const VALIDATED_INPUT = UPDATE_PROJECT_LOCALE_SCHEMA.parse(updateData);
+    mutationFn: async (payload) => {
+      const id = UUID_SCHEMA.parse(localeId);
+      const body = UPDATE_PROJECT_LOCALE_SCHEMA.parse(payload);
 
-      const { data, error } = await supabase
-        .from('project_locales')
-        .update(VALIDATED_INPUT)
-        .eq('id', VALIDATED_ID)
-        .select()
-        .single();
+      const { data, error } = await supabase.from('project_locales').update(body).eq('id', id).select().single();
 
-      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateProjectLocale', 'Failed to update locale');
       }
 
-      // handle missing data (locale not found or access denied)
       if (!data) {
         throw createApiErrorResponse(404, 'Locale not found or access denied');
       }
 
-      // runtime validation of response data
-      const VALIDATED_RESPONSE = PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
-      return VALIDATED_RESPONSE;
+      return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
     },
     onError: (_err, _newData, context) => {
       // rollback on error
@@ -1300,18 +1279,17 @@ import type { ApiErrorResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createDatabaseErrorResponse } from '../locales.errors';
 import { LOCALES_KEYS } from '../locales.key-factory';
-import { LOCALE_ID_SCHEMA } from '../locales.schemas';
+import { UUID_SCHEMA } from '../locales.schemas';
 
 export function useDeleteProjectLocale(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
   return useMutation<unknown, ApiErrorResponse, string>({
-    mutationFn: async (localeId) => {
-      // validate locale id
-      const VALIDATED_ID = LOCALE_ID_SCHEMA.parse(localeId);
+    mutationFn: async (uuid) => {
+      const id = UUID_SCHEMA.parse(uuid);
 
-      const { error } = await supabase.from('project_locales').delete().eq('id', VALIDATED_ID);
+      const { error } = await supabase.from('project_locales').delete().eq('id', id);
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useDeleteProjectLocale', 'Failed to delete locale');

@@ -29,12 +29,10 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
 
   return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectWithDefaultLocaleRequest>({
-    mutationFn: async (projectData) => {
-      // validate input and transform to rpc parameter format (adds p_ prefix)
-      const rpcParams = CREATE_PROJECT_SCHEMA.parse(projectData);
+    mutationFn: async (payload) => {
+      const body = CREATE_PROJECT_SCHEMA.parse(payload);
 
-      // call rpc function to create project with default locale
-      const { data, error } = await supabase.rpc('create_project_with_default_locale', rpcParams).maybeSingle();
+      const { data, error } = await supabase.rpc('create_project_with_default_locale', body).maybeSingle();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateProject', 'Failed to create project');
@@ -44,7 +42,6 @@ export function useCreateProject() {
         throw createApiErrorResponse(500, PROJECTS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
-      // runtime validation of response data
       return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: () => {

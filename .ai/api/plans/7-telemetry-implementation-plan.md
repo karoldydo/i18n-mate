@@ -822,23 +822,21 @@ export function useTelemetryEvents(projectId: string, params?: TelemetryEventsPa
   return useQuery<TelemetryEventResponse[], ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // validate parameters
-      const validated = LIST_TELEMETRY_EVENTS_SCHEMA.parse({
+      const { limit, offset, order, project_id } = LIST_TELEMETRY_EVENTS_SCHEMA.parse({
         project_id: projectId,
         ...params,
       });
 
-      // build query with filters
       let query = supabase
         .from('telemetry_events')
         .select('*')
-        .eq('project_id', validated.project_id)
-        .order('created_at', { ascending: validated.order === 'created_at.asc' })
-        .limit(validated.limit);
+        .eq('project_id', project_id)
+        .order('created_at', { ascending: order === 'created_at.asc' })
+        .limit(limit);
 
       // add offset if provided
-      if (validated.offset && validated.offset > 0) {
-        query = query.range(validated.offset, validated.offset + validated.limit - 1);
+      if (offset && offset > 0) {
+        query = query.range(offset, offset + limit - 1);
       }
 
       const { data, error } = await query;
@@ -847,7 +845,6 @@ export function useTelemetryEvents(projectId: string, params?: TelemetryEventsPa
         throw createDatabaseErrorResponse(error, 'useTelemetryEvents', 'Failed to fetch telemetry events');
       }
 
-      // validate response structure before returning
       return TELEMETRY_EVENT_RESPONSE_SCHEMA.array().parse(data || []);
     },
     queryKey: TELEMETRY_KEYS.list(projectId, params),

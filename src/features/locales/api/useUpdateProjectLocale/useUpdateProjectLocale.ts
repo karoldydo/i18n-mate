@@ -12,7 +12,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../locales.errors';
 import { LOCALES_KEYS } from '../locales.key-factory';
-import { LOCALE_ID_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA } from '../locales.schemas';
+import { PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
 
 /**
  * Context type for mutation callbacks
@@ -43,31 +43,21 @@ export function useUpdateProjectLocale(projectId: string, localeId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<ProjectLocaleResponse, ApiErrorResponse, UpdateProjectLocaleRequest, UpdateProjectLocaleContext>({
-    mutationFn: async (updateData) => {
-      // validate inputs
-      const VALIDATED_ID = LOCALE_ID_SCHEMA.parse(localeId);
-      const VALIDATED_INPUT = UPDATE_PROJECT_LOCALE_SCHEMA.parse(updateData);
+    mutationFn: async (payload) => {
+      const id = UUID_SCHEMA.parse(localeId);
+      const body = UPDATE_PROJECT_LOCALE_SCHEMA.parse(payload);
 
-      const { data, error } = await supabase
-        .from('project_locales')
-        .update(VALIDATED_INPUT)
-        .eq('id', VALIDATED_ID)
-        .select()
-        .single();
+      const { data, error } = await supabase.from('project_locales').update(body).eq('id', id).select().single();
 
-      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateProjectLocale', 'Failed to update locale');
       }
 
-      // handle missing data (locale not found or access denied)
       if (!data) {
         throw createApiErrorResponse(404, 'Locale not found or access denied');
       }
 
-      // runtime validation of response data
-      const VALIDATED_RESPONSE = PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
-      return VALIDATED_RESPONSE;
+      return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
     },
     onError: (_err, _newData, context) => {
       // rollback on error

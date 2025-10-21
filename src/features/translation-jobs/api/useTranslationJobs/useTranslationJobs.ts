@@ -43,26 +43,25 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
   return useQuery<ListTranslationJobsResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // validate parameters
-      const validated = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
+      const { limit, offset, order, project_id, status } = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
 
       let query = supabase
         .from('translation_jobs')
         .select('*', { count: 'exact' })
-        .eq('project_id', validated.project_id)
-        .range(validated.offset, validated.offset + validated.limit - 1);
+        .eq('project_id', project_id)
+        .range(offset, offset + limit - 1);
 
       // apply status filter if provided
-      if (validated.status) {
-        if (Array.isArray(validated.status)) {
-          query = query.in('status', validated.status);
+      if (status) {
+        if (Array.isArray(status)) {
+          query = query.in('status', status);
         } else {
-          query = query.eq('status', validated.status);
+          query = query.eq('status', status);
         }
       }
 
       // apply sorting
-      const [field, direction] = validated.order.split('.');
+      const [field, direction] = order.split('.');
       query = query.order(field, { ascending: direction === 'asc' });
 
       const { count, data, error } = await query;
@@ -80,7 +79,7 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
 
       return {
         data: jobs,
-        metadata: calculatePaginationMetadata(validated.offset, jobs.length, count || 0),
+        metadata: calculatePaginationMetadata(offset, jobs.length, count || 0),
       };
     },
     queryKey: TRANSLATION_JOBS_KEY_FACTORY.list(params),

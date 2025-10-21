@@ -59,8 +59,7 @@ export function useCancelTranslationJob() {
     CancelTranslationJobContext
   >({
     mutationFn: async ({ jobId }) => {
-      // validate input
-      const validated = CANCEL_TRANSLATION_JOB_SCHEMA.parse({
+      const { job_id } = CANCEL_TRANSLATION_JOB_SCHEMA.parse({
         job_id: jobId,
         status: 'cancelled',
       });
@@ -69,7 +68,7 @@ export function useCancelTranslationJob() {
       const { data: currentJob, error: fetchError } = await supabase
         .from('translation_jobs')
         .select('status')
-        .eq('id', validated.job_id)
+        .eq('id', job_id)
         .maybeSingle();
 
       if (fetchError) {
@@ -85,14 +84,13 @@ export function useCancelTranslationJob() {
         throw createApiErrorResponse(400, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_CANCELLABLE);
       }
 
-      // update the job status to cancelled
       const { data, error } = await supabase
         .from('translation_jobs')
         .update({
           finished_at: new Date().toISOString(),
           status: 'cancelled',
         })
-        .eq('id', validated.job_id)
+        .eq('id', job_id)
         .select('*')
         .maybeSingle();
 
@@ -104,7 +102,6 @@ export function useCancelTranslationJob() {
         throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
       }
 
-      // return data directly - it's already the correct supabase type
       return data;
     },
     onError: (_err, { jobId }, context) => {

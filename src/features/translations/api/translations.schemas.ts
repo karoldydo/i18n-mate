@@ -14,8 +14,8 @@ const TRANSLATION_VALUE_SCHEMA = z
   .string()
   .min(TRANSLATION_VALUE_MIN_LENGTH, TRANSLATIONS_ERROR_MESSAGES.VALUE_REQUIRED)
   .max(TRANSLATION_VALUE_MAX_LENGTH, TRANSLATIONS_ERROR_MESSAGES.VALUE_TOO_LONG)
-  .refine((val) => !val.includes('\n'), TRANSLATIONS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
-  .transform((val) => val.trim());
+  .refine((value) => !value.includes('\n'), TRANSLATIONS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
+  .transform((value) => value.trim());
 
 // locale code validation (bcp-47 format)
 const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
@@ -49,7 +49,7 @@ export const UPDATE_TRANSLATION_REQUEST_SCHEMA = z.object({
 
 // update translation query schema (with optimistic locking)
 export const UPDATE_TRANSLATION_QUERY_SCHEMA = GET_TRANSLATION_QUERY_SCHEMA.extend({
-  updated_at: z.string().datetime().optional(), // iso 8601 timestamp for optimistic locking
+  updated_at: z.string().datetime(), // iso 8601 timestamp for optimistic locking
 }) satisfies z.ZodType<
   Partial<Pick<TranslationResponse, 'updated_at'>> & Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>
 >;

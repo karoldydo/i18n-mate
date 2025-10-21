@@ -18,7 +18,7 @@ import { GET_TRANSLATION_QUERY_SCHEMA, TRANSLATION_RESPONSE_SCHEMA } from '../tr
  *
  * @param projectId - Project UUID to fetch translation from (required)
  * @param keyId - Translation key UUID (required)
- * @param locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
+ * @param localeCode - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, key_id, or locale format)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
@@ -26,25 +26,24 @@ import { GET_TRANSLATION_QUERY_SCHEMA, TRANSLATION_RESPONSE_SCHEMA } from '../tr
  *
  * @returns TanStack Query result with translation data or null if not found
  */
-export function useTranslation(projectId: string, keyId: string, locale: string) {
+export function useTranslation(projectId: string, keyId: string, localeCode: string) {
   const supabase = useSupabase();
 
   return useQuery<null | TranslationResponse, ApiErrorResponse>({
     gcTime: 15 * 60 * 1000, // 15 minutes
     queryFn: async () => {
-      // validate parameters
-      const validated = GET_TRANSLATION_QUERY_SCHEMA.parse({
+      const { key_id, locale, project_id } = GET_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: keyId,
-        locale: locale,
+        locale: localeCode,
         project_id: projectId,
       });
 
       const { data, error } = await supabase
         .from('translations')
         .select('*')
-        .eq('project_id', validated.project_id)
-        .eq('key_id', validated.key_id)
-        .eq('locale', validated.locale)
+        .eq('project_id', project_id)
+        .eq('key_id', key_id)
+        .eq('locale', locale)
         .maybeSingle();
 
       if (error) {
@@ -56,10 +55,9 @@ export function useTranslation(projectId: string, keyId: string, locale: string)
         return null;
       }
 
-      // runtime validation of response data
       return TRANSLATION_RESPONSE_SCHEMA.parse(data);
     },
-    queryKey: TRANSLATIONS_KEYS.detail(projectId, keyId, locale),
+    queryKey: TRANSLATIONS_KEYS.detail(projectId, keyId, localeCode),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

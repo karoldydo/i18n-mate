@@ -31,10 +31,16 @@ export function useCreateKey(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<CreateKeyResponse, ApiErrorResponse, CreateKeyRequest>({
-    mutationFn: async (keyData) => {
-      const validated = CREATE_KEY_SCHEMA.parse(keyData);
+    mutationFn: async (payload) => {
+      const { p_default_value, p_full_key, p_project_id } = CREATE_KEY_SCHEMA.parse(payload);
 
-      const { data, error } = await supabase.rpc('create_key_with_value', validated).single();
+      const { data, error } = await supabase
+        .rpc('create_key_with_value', {
+          p_default_value,
+          p_full_key,
+          p_project_id,
+        })
+        .single();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateKey', 'Failed to create key');

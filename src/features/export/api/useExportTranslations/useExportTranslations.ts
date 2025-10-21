@@ -28,8 +28,7 @@ export function useExportTranslations(projectId: string) {
 
   return useMutation<unknown, ApiErrorResponse>({
     mutationFn: async () => {
-      // validate project id
-      const validated = EXPORT_TRANSLATIONS_SCHEMA.parse({ project_id: projectId });
+      const { project_id } = EXPORT_TRANSLATIONS_SCHEMA.parse({ project_id: projectId });
 
       // get current session for authentication
       const {
@@ -48,7 +47,7 @@ export function useExportTranslations(projectId: string) {
       }
 
       // call edge function with authenticated fetch
-      const functionUrl = `${supabaseUrl}/functions/v1/export-translations?project_id=${validated.project_id}`;
+      const functionUrl = `${supabaseUrl}/functions/v1/export-translations?project_id=${project_id}`;
 
       const response = await fetch(functionUrl, {
         headers: {

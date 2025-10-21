@@ -42,8 +42,8 @@ export const UPDATE_PROJECT_LOCALE_SCHEMA = z
   })
   .strict() satisfies z.ZodType<UpdateProjectLocaleRequest>;
 
-// locale id schema
-export const LOCALE_ID_SCHEMA = z.string().uuid('Invalid locale ID format');
+// UUID schema
+export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
 // project locale response schema
 export const PROJECT_LOCALE_RESPONSE_SCHEMA = z.object({

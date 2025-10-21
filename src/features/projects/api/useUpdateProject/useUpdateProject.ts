@@ -8,7 +8,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
-import { PROJECT_ID_SCHEMA, PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA } from '../projects.schemas';
+import { PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
 
 /**
  * Context type for mutation callbacks
@@ -38,15 +38,14 @@ export function useUpdateProject(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<ProjectResponse, ApiErrorResponse, UpdateProjectRequest, UpdateProjectContext>({
-    mutationFn: async (updateData) => {
-      // validate inputs
-      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
-      const validatedInput = UPDATE_PROJECT_SCHEMA.parse(updateData);
+    mutationFn: async (payload) => {
+      const id = UUID_SCHEMA.parse(projectId);
+      const body = UPDATE_PROJECT_SCHEMA.parse(payload);
 
       const { data, error } = await supabase
         .from('projects')
-        .update(validatedInput)
-        .eq('id', validatedId)
+        .update(body)
+        .eq('id', id)
         .select('id,name,description,prefix,default_locale,created_at,updated_at')
         .maybeSingle();
 

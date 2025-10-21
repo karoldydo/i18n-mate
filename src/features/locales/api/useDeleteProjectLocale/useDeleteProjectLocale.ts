@@ -6,7 +6,7 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../locales.errors';
 import { LOCALES_KEYS } from '../locales.key-factory';
-import { LOCALE_ID_SCHEMA } from '../locales.schemas';
+import { UUID_SCHEMA } from '../locales.schemas';
 
 /**
  * Delete a locale from a project with cascading deletion
@@ -33,11 +33,10 @@ export function useDeleteProjectLocale(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<unknown, ApiErrorResponse, string>({
-    mutationFn: async (localeId) => {
-      // validate locale id
-      const VALIDATED_ID = LOCALE_ID_SCHEMA.parse(localeId);
+    mutationFn: async (uuid) => {
+      const id = UUID_SCHEMA.parse(uuid);
 
-      const { error } = await supabase.from('project_locales').delete().eq('id', VALIDATED_ID);
+      const { error } = await supabase.from('project_locales').delete().eq('id', id);
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useDeleteProjectLocale', 'Failed to delete locale');

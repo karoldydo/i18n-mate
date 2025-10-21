@@ -290,14 +290,10 @@ export const UPDATE_PROJECT_SCHEMA = z
     // prevent immutable fields
     prefix: z.never().optional(),
   })
-  .strict()
-  satisfies z.ZodType<UpdateProjectRequest>;
+  .strict() satisfies z.ZodType<UpdateProjectRequest>;
 
-// Project ID Schema
-export const PROJECT_ID_SCHEMA = z
-  .string()
-  .uuid('Invalid project ID format')
-  satisfies z.ZodType<ProjectResponse['id']>;
+// UUID schema
+export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
 // Response Schemas for runtime validation
 export const PROJECT_RESPONSE_SCHEMA = z
@@ -1139,7 +1135,7 @@ import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.sc
  * enabled. Returns projects with aggregated locale and key counts. Data items
  * are validated at runtime and pagination metadata is computed from input params.
  *
- * @param params - Optional listing parameters (limit, offset, order)
+ * @param listProjectsParams - Optional listing parameters (limit, offset, order)
  * @param params.limit - Items per page (1-100, default: 50)
  * @param params.offset - Pagination offset (min: 0, default: 0)
  * @param params.order - Sort order (name.asc|desc, created_at.asc|desc, default: name.asc)
@@ -1147,27 +1143,24 @@ import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.sc
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  * @returns TanStack Query result with projects data and pagination metadata
  */
-export function useProjects(params: ListProjectsParams = {}) {
+export function useProjects(listProjectsParams: ListProjectsParams = {}) {
   const supabase = useSupabase();
 
   return useQuery<ProjectListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // validate parameters
-      const validated = LIST_PROJECTS_SCHEMA.parse(params);
-
-      // call rpc function for list with counts (enable exact total counting)
+      const params = LIST_PROJECTS_SCHEMA.parse(listProjectsParams);
       const { count, data, error } = await supabase
         .rpc(
           'list_projects_with_counts',
           {
-            p_limit: validated.limit,
-            p_offset: validated.offset,
+            p_limit: params.limit,
+            p_offset: params.offset,
           },
           { count: 'exact' }
         )
-        .order(validated.order?.split('.')[0] || 'name', {
-          ascending: validated.order?.endsWith('.asc') ?? true,
+        .order(params.order?.split('.')[0] || 'name', {
+          ascending: params.order?.endsWith('.asc') ?? true,
         });
 
       if (error) {
@@ -1180,13 +1173,13 @@ export function useProjects(params: ListProjectsParams = {}) {
       return {
         data: projects,
         metadata: {
-          end: (validated.offset || 0) + projects.length - 1,
-          start: validated.offset || 0,
+          end: (params.offset || 0) + projects.length - 1,
+          start: params.offset || 0,
           total: count || 0,
         },
       };
     },
-    queryKey: PROJECTS_KEY_FACTORY.list(params),
+    queryKey: PROJECTS_KEY_FACTORY.list(listProjectsParams),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -1202,7 +1195,7 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
-import { PROJECT_ID_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.schemas';
+import { PROJECT_RESPONSE_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
 
 /**
  * Fetch a single project by ID
@@ -1225,13 +1218,12 @@ export function useProject(projectId: string) {
   return useQuery<ProjectResponse, ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // validate project id
-      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
+      const id = UUID_SCHEMA.parse(projectId);
 
       const { data, error } = await supabase
         .from('projects')
         .select('id,name,description,prefix,default_locale,created_at,updated_at')
-        .eq('id', validatedId)
+        .eq('id', id)
         .maybeSingle();
 
       if (error) {
@@ -1242,7 +1234,6 @@ export function useProject(projectId: string) {
         throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
 
-      // runtime validation of response data
       return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     queryKey: PROJECTS_KEY_FACTORY.detail(projectId),
@@ -1282,12 +1273,10 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
 
   return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectWithDefaultLocaleRequest>({
-    mutationFn: async (projectData) => {
-      // validate input and transform to rpc parameter format (adds p_ prefix)
-      const rpcParams = CREATE_PROJECT_SCHEMA.parse(projectData);
+    mutationFn: async (payload) => {
+      const body = CREATE_PROJECT_SCHEMA.parse(payload);
 
-      // call rpc function to create project with default locale
-      const { data, error } = await supabase.rpc('create_project_with_default_locale', rpcParams).maybeSingle();
+      const { data, error } = await supabase.rpc('create_project_with_default_locale', body).maybeSingle();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useCreateProject', 'Failed to create project');
@@ -1297,7 +1286,6 @@ export function useCreateProject() {
         throw createApiErrorResponse(500, PROJECTS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
-      // runtime validation of response data
       return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: () => {
@@ -1318,7 +1306,7 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
-import { PROJECT_ID_SCHEMA, PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA } from '../projects.schemas';
+import { PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
 
 /**
  * Context type for mutation callbacks
@@ -1348,15 +1336,14 @@ export function useUpdateProject(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<ProjectResponse, ApiErrorResponse, UpdateProjectRequest, UpdateProjectContext>({
-    mutationFn: async (updateData) => {
-      // validate inputs
-      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
-      const validatedInput = UPDATE_PROJECT_SCHEMA.parse(updateData);
+    mutationFn: async (payload) => {
+      const id = UUID_SCHEMA.parse(projectId);
+      const body = UPDATE_PROJECT_SCHEMA.parse(payload);
 
       const { data, error } = await supabase
         .from('projects')
-        .update(validatedInput)
-        .eq('id', validatedId)
+        .update(body)
+        .eq('id', id)
         .select('id,name,description,prefix,default_locale,created_at,updated_at')
         .maybeSingle();
 
@@ -1417,7 +1404,7 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
-import { PROJECT_ID_SCHEMA } from '../projects.schemas';
+import { UUID_SCHEMA } from '../projects.schemas';
 
 /**
  * Delete a project by ID
@@ -1437,10 +1424,9 @@ export function useDeleteProject() {
 
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (projectId) => {
-      // validate project id
-      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
+      const id = UUID_SCHEMA.parse(projectId);
 
-      const { count, error } = await supabase.from('projects').delete().eq('id', validatedId);
+      const { count, error } = await supabase.from('projects').delete().eq('id', id);
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useDeleteProject', 'Failed to delete project');

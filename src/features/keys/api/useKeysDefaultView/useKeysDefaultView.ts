@@ -36,16 +36,16 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
   return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      const validated = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
+      const { limit, missing_only, offset, project_id, search } = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
 
       const { count, data, error } = await supabase.rpc(
         'list_keys_default_view',
         {
-          p_limit: validated.limit,
-          p_missing_only: validated.missing_only,
-          p_offset: validated.offset,
-          p_project_id: validated.project_id,
-          p_search: validated.search,
+          p_limit: limit,
+          p_missing_only: missing_only,
+          p_offset: offset,
+          p_project_id: project_id,
+          p_search: search,
         },
         { count: 'exact' }
       );
@@ -60,8 +60,8 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
       return {
         data: keys,
         metadata: {
-          end: (validated.offset || 0) + keys.length - 1,
-          start: validated.offset || 0,
+          end: (offset || 0) + keys.length - 1,
+          start: offset || 0,
           total: count || 0,
         },
       };

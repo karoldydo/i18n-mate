@@ -42,13 +42,9 @@ export function useCreateTranslationJob() {
 
   return useMutation<CreateTranslationJobResponse, ApiErrorResponse, CreateTranslationJobRequest>({
     mutationFn: async (jobData) => {
-      // validate input with mode-specific rules
-      const validated = CREATE_TRANSLATION_JOB_SCHEMA.parse(jobData);
+      const body = CREATE_TRANSLATION_JOB_SCHEMA.parse(jobData);
 
-      // call edge function
-      const { data, error } = await supabase.functions.invoke('translate', {
-        body: validated,
-      });
+      const { data, error } = await supabase.functions.invoke('translate', { body });
 
       if (error) {
         throw createEdgeFunctionErrorResponse(
@@ -58,13 +54,12 @@ export function useCreateTranslationJob() {
         );
       }
 
-      // runtime validation of response data
       return CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA.parse(data);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_, { project_id }) => {
       // invalidate active job cache for polling to start
       queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(variables.project_id),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(project_id),
       });
       // invalidate job list cache
       queryClient.invalidateQueries({

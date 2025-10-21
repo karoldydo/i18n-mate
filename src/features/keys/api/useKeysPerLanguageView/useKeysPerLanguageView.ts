@@ -37,17 +37,18 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      const validated = LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
+      const { limit, locale, missing_only, offset, project_id, search } =
+        LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
 
       const { count, data, error } = await supabase.rpc(
         'list_keys_per_language_view',
         {
-          p_limit: validated.limit,
-          p_locale: validated.locale,
-          p_missing_only: validated.missing_only,
-          p_offset: validated.offset,
-          p_project_id: validated.project_id,
-          p_search: validated.search,
+          p_limit: limit,
+          p_locale: locale,
+          p_missing_only: missing_only,
+          p_offset: offset,
+          p_project_id: project_id,
+          p_search: search,
         },
         { count: 'exact' }
       );
@@ -62,8 +63,8 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
       return {
         data: keys,
         metadata: {
-          end: (validated.offset || 0) + keys.length - 1,
-          start: validated.offset || 0,
+          end: (offset || 0) + keys.length - 1,
+          start: offset || 0,
           total: count || 0,
         },
       };

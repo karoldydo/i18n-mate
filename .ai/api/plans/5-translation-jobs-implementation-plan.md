@@ -1035,53 +1035,68 @@ export function useActiveTranslationJob(projectId: string) {
 ```typescript
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
-import type { ApiErrorResponse, ListTranslationJobsParams, TranslationJobResponse } from '@/shared/types';
+
+import type { ApiErrorResponse, ListTranslationJobsParams, ListTranslationJobsResponse } from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { calculatePaginationMetadata } from '@/shared/utils';
+
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
 import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
 import { LIST_TRANSLATION_JOBS_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
- * List response wrapper for translation jobs
- */
-interface TranslationJobListResponse {
-  data: TranslationJobResponse[];
-  metadata: {
-    start: number;
-    end: number;
-    total: number;
-  };
-}
-
-/**
  * Fetch paginated list of translation jobs for project
+ *
+ * Provides comprehensive job history with filtering and sorting capabilities.
+ * Supports pagination with total count for UI pagination controls.
+ * Jobs are sorted by creation date (newest first) by default.
+ *
+ * Features:
+ * - Pagination with limit/offset
+ * - Status filtering (single status or array of statuses)
+ * - Sorting by created_at or status (asc/desc)
+ * - Total count for pagination metadata
+ * - Runtime validation of response data
+ *
+ * @param params - Query parameters for job listing
+ * @param params.project_id - Project UUID to fetch jobs from (required)
+ * @param params.limit - Items per page (1-100, default: 20)
+ * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @param params.status - Filter by job status (single or array)
+ * @param params.order - Sort order (default: 'created_at.desc')
+ *
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
+ * @throws {ApiErrorResponse} 403 - Project not owned by user (via RLS)
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
+ * @returns TanStack Query result with jobs data and pagination metadata
  */
 export function useTranslationJobs(params: ListTranslationJobsParams) {
   const supabase = useSupabase();
 
-  return useQuery<TranslationJobListResponse, ApiErrorResponse>({
+  return useQuery<ListTranslationJobsResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // validate parameters
-      const validated = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
+      const { limit, offset, order, project_id, status } = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
 
       let query = supabase
         .from('translation_jobs')
         .select('*', { count: 'exact' })
-        .eq('project_id', validated.project_id)
-        .range(validated.offset, validated.offset + validated.limit - 1);
+        .eq('project_id', project_id)
+        .range(offset, offset + limit - 1);
 
       // apply status filter if provided
-      if (validated.status) {
-        if (Array.isArray(validated.status)) {
-          query = query.in('status', validated.status);
+      if (status) {
+        if (Array.isArray(status)) {
+          query = query.in('status', status);
         } else {
-          query = query.eq('status', validated.status);
+          query = query.eq('status', status);
         }
       }
 
       // apply sorting
-      const [field, direction] = validated.order.split('.');
+      const [field, direction] = order.split('.');
       query = query.order(field, { ascending: direction === 'asc' });
 
       const { count, data, error } = await query;
@@ -1095,15 +1110,11 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
       }
 
       // runtime validation of response data
-      const jobs = z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data ?? []);
+      const jobs = z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data || []);
 
       return {
         data: jobs,
-        metadata: {
-          end: validated.offset + jobs.length - 1,
-          start: validated.offset,
-          total: count || 0,
-        },
+        metadata: calculatePaginationMetadata(offset, jobs.length, count || 0),
       };
     },
     queryKey: TRANSLATION_JOBS_KEY_FACTORY.list(params),
@@ -1137,12 +1148,10 @@ export function useCreateTranslationJob() {
 
   return useMutation<CreateTranslationJobResponse, ApiErrorResponse, CreateTranslationJobRequest>({
     mutationFn: async (jobData) => {
-      // validate input
-      const validated = CREATE_TRANSLATION_JOB_SCHEMA.parse(jobData);
+      const body = CREATE_TRANSLATION_JOB_SCHEMA.parse(jobData);
 
-      // call edge function
       const { data, error } = await supabase.functions.invoke('translate', {
-        body: validated,
+        body,
       });
 
       if (error) {
@@ -1153,13 +1162,12 @@ export function useCreateTranslationJob() {
         );
       }
 
-      // runtime validation of response data
       return CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA.parse(data);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_, { project_id }) => {
       // invalidate active job cache for polling to start
       queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(variables.project_id),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(project_id),
       });
       // invalidate job list cache
       queryClient.invalidateQueries({
@@ -1176,10 +1184,26 @@ export function useCreateTranslationJob() {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse, TranslationJobResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { TRANSLATION_JOBS_ERROR_MESSAGES, TRANSLATION_JOBS_VALIDATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
+
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
 import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
-import { CANCEL_TRANSLATION_JOB_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
+import { CANCEL_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
+
+/**
+ * Context type for mutation callbacks
+ */
+interface CancelTranslationJobContext {
+  previousJob?: TranslationJobResponse;
+}
+
+/**
+ * Variables for cancelling a translation job
+ */
+interface CancelTranslationJobVariables {
+  jobId: string;
+}
 
 /**
  * Cancel running translation job
@@ -1187,26 +1211,67 @@ import { CANCEL_TRANSLATION_JOB_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '
  * Updates job status to 'cancelled' and sets finished_at timestamp.
  * Edge Function will check cancellation flag and stop processing between API calls.
  * Completed translations are preserved.
+ *
+ * Cancellation conditions:
+ * - Job must be in 'pending' or 'running' status
+ * - User must own the project (enforced by RLS)
+ * - Database triggers validate state transitions
+ *
+ * After successful cancellation:
+ * - Updates specific job cache with new status
+ * - Invalidates active job cache (job no longer active)
+ * - Invalidates job list cache to show updated status
+ * - Client should stop polling active job status
+ *
+ * @throws {ApiErrorResponse} 400 - Job not in cancellable state (completed/failed/cancelled)
+ * @throws {ApiErrorResponse} 404 - Job not found or access denied (via RLS)
+ * @throws {ApiErrorResponse} 500 - Database error during update
+ *
+ * @returns TanStack Query mutation hook for cancelling translation jobs
  */
 export function useCancelTranslationJob() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<TranslationJobResponse, ApiErrorResponse, { job_id: string }>({
-    mutationFn: async ({ job_id }) => {
-      // validate input
-      const validated = CANCEL_TRANSLATION_JOB_SCHEMA.parse({
-        job_id: job_id,
+  return useMutation<
+    TranslationJobResponse,
+    ApiErrorResponse,
+    CancelTranslationJobVariables,
+    CancelTranslationJobContext
+  >({
+    mutationFn: async ({ jobId }) => {
+      const { job_id } = CANCEL_TRANSLATION_JOB_SCHEMA.parse({
+        job_id: jobId,
         status: 'cancelled',
       });
+
+      // fetch the current job to verify it exists and is in a cancellable state
+      const { data: currentJob, error: fetchError } = await supabase
+        .from('translation_jobs')
+        .select('status')
+        .eq('id', job_id)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw createTranslationJobDatabaseErrorResponse(fetchError, 'useCancelTranslationJob', 'Failed to fetch job');
+      }
+
+      if (!currentJob) {
+        throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
+      }
+
+      // verify the job is in a cancellable state (pending or running)
+      if (!TRANSLATION_JOBS_VALIDATION.isCancellableStatus(currentJob.status)) {
+        throw createApiErrorResponse(400, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_CANCELLABLE);
+      }
 
       const { data, error } = await supabase
         .from('translation_jobs')
         .update({
-          status: 'cancelled',
           finished_at: new Date().toISOString(),
+          status: 'cancelled',
         })
-        .eq('id', validated.job_id)
+        .eq('id', job_id)
         .select('*')
         .maybeSingle();
 
@@ -1215,12 +1280,46 @@ export function useCancelTranslationJob() {
       }
 
       if (!data) {
-        throw createApiErrorResponse(404, 'Translation job not found or access denied');
+        throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
       }
 
-      // runtime validation of response data
-      const validatedResponse = TRANSLATION_JOB_RESPONSE_SCHEMA.parse(data);
-      return validatedResponse;
+      return data;
+    },
+    onError: (_err, { jobId }, context) => {
+      // rollback on error
+      if (context?.previousJob) {
+        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.active(context.previousJob.project_id), [
+          context.previousJob,
+        ]);
+        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId), context.previousJob);
+      }
+    },
+    onMutate: async ({ jobId }) => {
+      // cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: TRANSLATION_JOBS_KEY_FACTORY.all });
+
+      // get the current job from cache (assuming it's already loaded)
+      const currentJobData = queryClient.getQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId)) as
+        | TranslationJobResponse
+        | undefined;
+
+      if (currentJobData) {
+        const updatedJob = {
+          ...currentJobData,
+          finished_at: new Date().toISOString(),
+          status: 'cancelled' as const,
+        };
+
+        // update active job cache (empty array since job is no longer active)
+        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.active(currentJobData.project_id), []);
+
+        // update specific job cache
+        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId), updatedJob);
+
+        return { previousJob: currentJobData };
+      }
+
+      return {};
     },
     onSuccess: (data) => {
       // update specific job cache
@@ -1243,63 +1342,70 @@ export function useCancelTranslationJob() {
 ```typescript
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
-import type { ApiErrorResponse, TranslationJobItemResponse } from '@/shared/types';
+
+import type { ApiErrorResponse, GetJobItemsParams, ListTranslationJobItemsResponse } from '@/shared/types';
+
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { calculatePaginationMetadata } from '@/shared/utils';
+
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
 import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
 import { GET_JOB_ITEMS_SCHEMA, TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
-
-/**
- * List response wrapper for translation job items
- */
-interface TranslationJobItemListResponse {
-  data: TranslationJobItemResponse[];
-  metadata: {
-    start: number;
-    end: number;
-    total: number;
-  };
-}
-
-/**
- * Get job items parameters
- */
-interface GetJobItemsParams {
-  job_id: string;
-  status?: string;
-  limit?: number;
-  offset?: number;
-}
 
 /**
  * Fetch detailed item-level status for translation job
  *
  * Includes key information via JOIN for displaying full_key names.
  * Used for debugging failed translations and showing detailed progress.
+ *
+ * Features:
+ * - Item-level status tracking (pending, completed, failed, skipped)
+ * - Key name resolution via LEFT JOIN to keys table
+ * - Error code and message display for failed items
+ * - Pagination with total count
+ * - Optional status filtering
+ * - Ordered by creation time for predictable display
+ *
+ * This hook is essential for:
+ * - Debugging translation failures
+ * - Showing detailed job progress
+ * - Displaying error messages per key
+ * - Monitoring job execution status
+ *
+ * @param params - Query parameters for job items
+ * @param params.job_id - Translation job UUID to fetch items from (required)
+ * @param params.status - Filter by item status (pending, completed, failed, skipped)
+ * @param params.limit - Items per page (1-1000, default: 100)
+ * @param params.offset - Pagination offset (min: 0, default: 0)
+ *
+ * @throws {ApiErrorResponse} 400 - Validation error (invalid job_id, limit > 1000, negative offset)
+ * @throws {ApiErrorResponse} 403 - Job not accessible (project not owned via RLS)
+ * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
+ * @returns TanStack Query result with job items data and pagination metadata
  */
 export function useTranslationJobItems(params: GetJobItemsParams) {
   const supabase = useSupabase();
 
-  return useQuery<TranslationJobItemListResponse, ApiErrorResponse>({
+  return useQuery<ListTranslationJobItemsResponse, ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // validate parameters
-      const validated = GET_JOB_ITEMS_SCHEMA.parse({
+      const { job_id, limit, offset, status } = GET_JOB_ITEMS_SCHEMA.parse({
         job_id: params.job_id,
-        status: params.status,
         limit: params.limit,
         offset: params.offset,
+        status: params.status,
       });
 
       let query = supabase
         .from('translation_job_items')
         .select('*, keys(full_key)', { count: 'exact' })
-        .eq('job_id', validated.job_id)
-        .range(validated.offset, validated.offset + validated.limit - 1);
+        .eq('job_id', job_id)
+        .range(offset, offset + limit - 1);
 
       // apply status filter if provided
-      if (validated.status) {
-        query = query.eq('status', validated.status);
+      if (status) {
+        query = query.eq('status', status);
       }
 
       // order by creation time
@@ -1312,15 +1418,11 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
       }
 
       // runtime validation of response data
-      const items = z.array(TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA).parse(data ?? []);
+      const items = z.array(TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA).parse(data || []);
 
       return {
         data: items,
-        metadata: {
-          end: validated.offset + items.length - 1,
-          start: validated.offset,
-          total: count || 0,
-        },
+        metadata: calculatePaginationMetadata(offset, items.length, count || 0),
       };
     },
     queryKey: TRANSLATION_JOBS_KEY_FACTORY.items(params.job_id, params),

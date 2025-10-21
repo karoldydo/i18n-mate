@@ -8,7 +8,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
-import { PROJECT_ID_SCHEMA } from '../projects.schemas';
+import { UUID_SCHEMA } from '../projects.schemas';
 
 /**
  * Delete a project by ID
@@ -29,10 +29,9 @@ export function useDeleteProject() {
 
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (projectId) => {
-      // validate project id
-      const validatedId = PROJECT_ID_SCHEMA.parse(projectId);
+      const id = UUID_SCHEMA.parse(projectId);
 
-      const { count, error } = await supabase.from('projects').delete().eq('id', validatedId);
+      const { count, error } = await supabase.from('projects').delete().eq('id', id);
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useDeleteProject', 'Failed to delete project');

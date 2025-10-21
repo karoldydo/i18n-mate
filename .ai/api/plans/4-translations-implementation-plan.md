@@ -151,9 +151,8 @@ const TRANSLATION_VALUE_SCHEMA = z
   .string()
   .min(TRANSLATION_VALUE_MIN_LENGTH, TRANSLATIONS_ERROR_MESSAGES.VALUE_REQUIRED)
   .max(TRANSLATION_VALUE_MAX_LENGTH, TRANSLATIONS_ERROR_MESSAGES.VALUE_TOO_LONG)
-  .refine((val) => !val.includes('
-'), TRANSLATIONS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
-  .transform((val) => val.trim());
+  .refine((value) => !value.includes('\\n'), TRANSLATIONS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
+  .transform((value) => value.trim());
 
 // locale code validation (bcp-47 format)
 const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
@@ -171,34 +170,26 @@ const UPDATE_SOURCE_SCHEMA = z.enum(TRANSLATIONS_UPDATE_SOURCE_VALUES, {
 });
 
 // get translation query schema
-export const GET_TRANSLATION_QUERY_SCHEMA =
-  z
-    .object({
-      key_id: KEY_ID_SCHEMA,
-      locale: LOCALE_CODE_SCHEMA,
-      project_id: PROJECT_ID_SCHEMA,
-    })
-    satisfies z.ZodType<Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>>;
+export const GET_TRANSLATION_QUERY_SCHEMA = z.object({
+  key_id: KEY_ID_SCHEMA,
+  locale: LOCALE_CODE_SCHEMA,
+  project_id: PROJECT_ID_SCHEMA,
+}) satisfies z.ZodType<Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>>;
 
 // update translation request schema
-export const UPDATE_TRANSLATION_REQUEST_SCHEMA =
-  z
-    .object({
-      is_machine_translated: z.boolean(),
-      updated_by_user_id: USER_ID_SCHEMA.nullable(),
-      updated_source: UPDATE_SOURCE_SCHEMA,
-      value: TRANSLATION_VALUE_SCHEMA,
-    })
-    satisfies z.ZodType<UpdateTranslationRequest>;
+export const UPDATE_TRANSLATION_REQUEST_SCHEMA = z.object({
+  is_machine_translated: z.boolean(),
+  updated_by_user_id: USER_ID_SCHEMA.nullable(),
+  updated_source: UPDATE_SOURCE_SCHEMA,
+  value: TRANSLATION_VALUE_SCHEMA,
+}) satisfies z.ZodType<UpdateTranslationRequest>;
 
 // update translation query schema (with optimistic locking)
-export const UPDATE_TRANSLATION_QUERY_SCHEMA =
-  GET_TRANSLATION_QUERY_SCHEMA.extend({
-    updated_at: z.string().datetime().optional(), // iso 8601 timestamp for optimistic locking
-  }) satisfies z.ZodType<
-    Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'> &
-      Partial<Pick<TranslationResponse, 'updated_at'>>
-  >;
+export const UPDATE_TRANSLATION_QUERY_SCHEMA = GET_TRANSLATION_QUERY_SCHEMA.extend({
+  updated_at: z.string().datetime(), // iso 8601 timestamp for optimistic locking
+}) satisfies z.ZodType<
+  Partial<Pick<TranslationResponse, 'updated_at'>> & Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>
+>;
 
 // response schemas for runtime validation
 export const TRANSLATION_RESPONSE_SCHEMA =
@@ -880,47 +871,43 @@ import { GET_TRANSLATION_QUERY_SCHEMA, TRANSLATION_RESPONSE_SCHEMA } from '../tr
  *
  * @param projectId - Project UUID to fetch translation from (required)
  * @param keyId - Translation key UUID (required)
- * @param locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
+ * @param localeCode - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, key_id, or locale format)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  * @returns TanStack Query result with translation data or null if not found
  */
-export function useTranslation(projectId: string, keyId: string, locale: string) {
+export function useTranslation(projectId: string, keyId: string, localeCode: string) {
   const supabase = useSupabase();
 
   return useQuery<TranslationResponse | null, ApiErrorResponse>({
     gcTime: 15 * 60 * 1000, // 15 minutes
     queryFn: async () => {
-      // validate parameters
-      const validated = GET_TRANSLATION_QUERY_SCHEMA.parse({
+      const { key_id, locale, project_id } = GET_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: keyId,
-        locale: locale,
+        locale: localeCode,
         project_id: projectId,
       });
 
       const { data, error } = await supabase
         .from('translations')
         .select('*')
-        .eq('project_id', validated.project_id)
-        .eq('key_id', validated.key_id)
-        .eq('locale', validated.locale)
+        .eq('project_id', project_id)
+        .eq('key_id', key_id)
+        .eq('locale', locale)
         .maybeSingle();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useTranslation', 'Failed to fetch translation');
       }
 
-      // return null if translation doesn't exist (valid state for missing translations)
       if (!data) {
         return null;
       }
 
-      // runtime validation of response data
-      const validatedResponse = TRANSLATION_RESPONSE_SCHEMA.parse(data);
-      return validatedResponse;
+      return TRANSLATION_RESPONSE_SCHEMA.parse(data);
     },
-    queryKey: TRANSLATIONS_KEYS.detail(projectId, keyId, locale),
+    queryKey: TRANSLATIONS_KEYS.detail(projectId, keyId, localeCode),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -982,34 +969,30 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
   const queryClient = useQueryClient();
 
   return useMutation<TranslationResponse, ApiErrorResponse, UpdateTranslationRequest, UpdateTranslationContext>({
-    mutationFn: async (updateData) => {
-      // validate query parameters
-      const validatedQuery = UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
+    mutationFn: async (payload) => {
+      const { key_id, locale, project_id, updated_at } = UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: params.keyId,
         locale: params.locale,
         project_id: params.projectId,
         updated_at: params.updatedAt,
       });
 
-      // validate request data
-      const validatedInput = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(updateData);
+      const body = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(payload);
 
-      // build query with optimistic locking support
       let query = supabase
         .from('translations')
-        .update(validatedInput)
-        .eq('project_id', validatedQuery.project_id)
-        .eq('key_id', validatedQuery.key_id)
-        .eq('locale', validatedQuery.locale);
+        .update(body)
+        .eq('project_id', project_id)
+        .eq('key_id', key_id)
+        .eq('locale', locale);
 
       // add optimistic locking if timestamp provided
-      if (validatedQuery.updated_at) {
-        query = query.eq('updated_at', validatedQuery.updated_at);
+      if (updated_at) {
+        query = query.eq('updated_at', updated_at);
       }
 
       const { count, data, error } = await query.select().single();
 
-      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateTranslation', 'Failed to update translation');
       }
@@ -1019,14 +1002,11 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
         throw createApiErrorResponse(409, 'Translation was modified by another user. Please refresh and try again.');
       }
 
-      // handle missing data
       if (!data) {
         throw createApiErrorResponse(404, 'Translation not found');
       }
 
-      // runtime validation of response data
-      const validatedResponse = TRANSLATION_RESPONSE_SCHEMA.parse(data);
-      return validatedResponse;
+      return TRANSLATION_RESPONSE_SCHEMA.parse(data);
     },
     onError: (_err, _newData, context) => {
       // rollback on error

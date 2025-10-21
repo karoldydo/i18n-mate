@@ -35,13 +35,12 @@ export function useActiveTranslationJob(projectId: string) {
   return useQuery<TranslationJobResponse[], ApiErrorResponse>({
     gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
-      // validate project id
-      const validated = CHECK_ACTIVE_JOB_SCHEMA.parse({ project_id: projectId });
+      const { project_id } = CHECK_ACTIVE_JOB_SCHEMA.parse({ project_id: projectId });
 
       const { data, error } = await supabase
         .from('translation_jobs')
         .select('*')
-        .eq('project_id', validated.project_id)
+        .eq('project_id', project_id)
         .in('status', ['pending', 'running'])
         .limit(1);
 
@@ -49,7 +48,6 @@ export function useActiveTranslationJob(projectId: string) {
         throw createTranslationJobDatabaseErrorResponse(error, 'useActiveTranslationJob', 'Failed to check active job');
       }
 
-      // runtime validation of response data
       return z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data || []);
     },
     queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),

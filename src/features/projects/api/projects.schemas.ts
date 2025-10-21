@@ -33,7 +33,7 @@ const PREFIX_SCHEMA = z
   .min(PROJECT_PREFIX_MIN_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_SHORT)
   .max(PROJECT_PREFIX_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.PREFIX_TOO_LONG)
   .regex(PROJECT_PREFIX_PATTERN, PROJECTS_ERROR_MESSAGES.PREFIX_INVALID_FORMAT)
-  .refine((val) => !val.endsWith('.'), PROJECTS_ERROR_MESSAGES.PREFIX_TRAILING_DOT);
+  .refine((value) => !value.endsWith('.'), PROJECTS_ERROR_MESSAGES.PREFIX_TRAILING_DOT);
 
 // list projects schema
 export const LIST_PROJECTS_SCHEMA = z.object({
@@ -85,10 +85,8 @@ export const UPDATE_PROJECT_SCHEMA = z
   })
   .strict() satisfies z.ZodType<UpdateProjectRequest>;
 
-// project id schema
-export const PROJECT_ID_SCHEMA = z.string().uuid('Invalid project ID format') satisfies z.ZodType<
-  ProjectResponse['id']
->;
+// UUID schema
+export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
 // response schemas for runtime validation
 export const PROJECT_RESPONSE_SCHEMA = z.object({

@@ -52,34 +52,30 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
   const queryClient = useQueryClient();
 
   return useMutation<TranslationResponse, ApiErrorResponse, UpdateTranslationRequest, UpdateTranslationContext>({
-    mutationFn: async (updateData) => {
-      // validate query parameters
-      const validatedQuery = UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
+    mutationFn: async (payload) => {
+      const { key_id, locale, project_id, updated_at } = UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: params.keyId,
         locale: params.locale,
         project_id: params.projectId,
         updated_at: params.updatedAt,
       });
 
-      // validate request data
-      const validatedInput = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(updateData);
+      const body = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(payload);
 
-      // build query with optimistic locking support
       let query = supabase
         .from('translations')
-        .update(validatedInput)
-        .eq('project_id', validatedQuery.project_id)
-        .eq('key_id', validatedQuery.key_id)
-        .eq('locale', validatedQuery.locale);
+        .update(body)
+        .eq('project_id', project_id)
+        .eq('key_id', key_id)
+        .eq('locale', locale);
 
       // add optimistic locking if timestamp provided
-      if (validatedQuery.updated_at) {
-        query = query.eq('updated_at', validatedQuery.updated_at);
+      if (updated_at) {
+        query = query.eq('updated_at', updated_at);
       }
 
       const { count, data, error } = await query.select().single();
 
-      // handle database errors
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateTranslation', 'Failed to update translation');
       }
@@ -89,12 +85,10 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
         throw createApiErrorResponse(409, 'Translation was modified by another user. Please refresh and try again.');
       }
 
-      // handle missing data
       if (!data) {
         throw createApiErrorResponse(404, 'Translation not found');
       }
 
-      // runtime validation of response data
       return TRANSLATION_RESPONSE_SCHEMA.parse(data);
     },
     onError: (_err, _newData, context) => {

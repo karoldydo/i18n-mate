@@ -8,7 +8,7 @@ import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
 import { KEYS_KEY_FACTORY } from '../keys.key-factory';
-import { PROJECT_ID_SCHEMA } from '../keys.schemas';
+import { UUID_SCHEMA } from '../keys.schemas';
 
 /**
  * Delete a translation key by ID
@@ -31,12 +31,10 @@ export function useDeleteKey(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<unknown, ApiErrorResponse, string>({
-    mutationFn: async (keyId) => {
-      const validatedId = PROJECT_ID_SCHEMA.parse(keyId);
+    mutationFn: async (uuid) => {
+      const id = UUID_SCHEMA.parse(uuid);
 
-      // supabase returns { count, error } not http 204
-      // we normalize to void (equivalent to 204 no content semantics)
-      const { count, error } = await supabase.from('keys').delete().eq('id', validatedId);
+      const { count, error } = await supabase.from('keys').delete().eq('id', id);
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useDeleteKey', 'Failed to delete key');
@@ -45,12 +43,10 @@ export function useDeleteKey(projectId: string) {
       if (count === 0) {
         throw createApiErrorResponse(404, KEYS_ERROR_MESSAGES.KEY_NOT_FOUND);
       }
-
-      // return void (no content) to match rest 204 semantics
     },
-    onSuccess: (_, keyId) => {
+    onSuccess: (_, uuid) => {
       // remove from cache
-      queryClient.removeQueries({ queryKey: KEYS_KEY_FACTORY.detail(keyId) });
+      queryClient.removeQueries({ queryKey: KEYS_KEY_FACTORY.detail(uuid) });
       // invalidate all list caches for this project
       queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
       queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });
