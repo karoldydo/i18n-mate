@@ -66,7 +66,7 @@ export interface ApiErrorResponse {
 
 Create constants in `src/shared/constants/export.constants.ts`:
 
-**Note:** The implementation uses centralized constants for validation patterns, error messages, and configuration. This ensures consistency between client-side validation and Edge Function constraints.
+**Note:** Currently we only centralize error message strings that are shared between the Edge Function and client-side validation logic. Additional limits or configuration values can be introduced here once they are needed by both environments.
 
 ```typescript
 /**
@@ -75,28 +75,6 @@ Create constants in `src/shared/constants/export.constants.ts`:
  * Centralized definitions for export functionality to ensure consistency
  * between Edge Function implementation and frontend validation.
  */
-
-/**
- * Maximum file size for exports (in bytes)
- * Currently set to 50MB to handle large projects
- */
-export const EXPORT_MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-
-/**
- * Maximum number of keys per project for export
- * Prevents timeout and memory issues
- */
-export const EXPORT_MAX_KEYS_LIMIT = 100000;
-
-/**
- * Export timeout in milliseconds (Edge Function limit)
- */
-export const EXPORT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-
-/**
- * ZIP compression level (0-9, where 9 is best compression)
- */
-export const EXPORT_ZIP_COMPRESSION_LEVEL = 6;
 
 /**
  * Error messages for export operations
@@ -109,16 +87,6 @@ export const EXPORT_ERROR_MESSAGES = {
   PROJECT_NOT_FOUND: 'Project not found or access denied',
   PROJECT_TOO_LARGE: 'Project too large to export',
 } as const;
-
-/**
- * Export file naming patterns
- */
-export const EXPORT_FILENAME_PATTERN = /^project-[a-zA-Z0-9_-]+-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.zip$/;
-
-/**
- * Supported locale file extensions
- */
-export const EXPORT_LOCALE_FILE_EXTENSION = '.json' as const;
 ```
 
 ### 3.3 New Zod Validation Schemas
