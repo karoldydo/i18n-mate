@@ -683,13 +683,12 @@ Create `src/shared/constants/translations.constants.ts` with centralized constan
  */
 
 // Re-export translation value constraints from keys constants for consistency
-import { KEY_VALIDATION, TRANSLATION_VALUE_MAX_LENGTH, TRANSLATION_VALUE_MIN_LENGTH } from './keys.constants';
+import { TRANSLATION_VALUE_MAX_LENGTH, TRANSLATION_VALUE_MIN_LENGTH } from './keys.constants';
 
 export { TRANSLATION_VALUE_MAX_LENGTH, TRANSLATION_VALUE_MIN_LENGTH };
 
 // Update source values
 export const TRANSLATIONS_UPDATE_SOURCE_VALUES = ['user', 'system'] as const;
-export type UpdateSourceType = (typeof TRANSLATIONS_UPDATE_SOURCE_VALUES)[number];
 
 // PostgreSQL error codes relevant to translations
 export const TRANSLATIONS_PG_ERROR_CODES = {
@@ -724,33 +723,6 @@ export const TRANSLATIONS_ERROR_MESSAGES = {
   VALUE_REQUIRED: 'Translation value cannot be empty',
   VALUE_TOO_LONG: `Translation value must be at most ${TRANSLATION_VALUE_MAX_LENGTH} characters`,
 } as const;
-
-// Validation utilities
-export const TRANSLATION_VALIDATION = {
-  /**
-   * Check if update source is valid
-   */
-  isValidUpdateSource: (source: string): source is UpdateSourceType => {
-    return TRANSLATIONS_UPDATE_SOURCE_VALUES.includes(source as UpdateSourceType);
-  },
-
-  /**
-   * Validate translation value (client-side)
-   * Same rules as KEY_VALIDATION.isValidTranslationValue
-   */
-  isValidValue: KEY_VALIDATION.isValidTranslationValue,
-
-  /**
-   * Sanitize translation value
-   * Trims whitespace and ensures valid format
-   */
-  sanitizeValue: (value: string): string => {
-    if (!value || typeof value !== 'string') {
-      return '';
-    }
-    return value.trim();
-  },
-};
 ```
 
 ### Step 3: Create Zod Validation Schemas
