@@ -790,6 +790,7 @@ Create `src/shared/constants/translation-jobs.constants.ts` with centralized con
  */
 
 // pagination defaults
+export const TRANSLATION_JOBS_MIN_LIMIT = 1;
 export const TRANSLATION_JOBS_DEFAULT_LIMIT = 20;
 export const TRANSLATION_JOBS_MAX_LIMIT = 100;
 export const TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT = 100;
@@ -803,8 +804,8 @@ export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN = 1;
 export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX = 4096;
 
 // polling configuration
-export const TRANSLATION_JOB_POLL_INTERVALS = [2000, 2000, 3000, 5000, 5000]; // milliseconds
-export const TRANSLATION_JOB_POLL_MAX_ATTEMPTS = 180; // 15 minutes max
+export const TRANSLATION_JOBS_POLL_INTERVALS = [2000, 2000, 3000, 5000, 5000]; // milliseconds
+export const TRANSLATION_JOBS_POLL_MAX_ATTEMPTS = 180; // 15 minutes max
 
 // postgresql error codes and constraints
 export const TRANSLATION_JOBS_PG_ERROR_CODES = {
@@ -820,33 +821,31 @@ export const TRANSLATION_JOBS_CONSTRAINTS = {
 
 // centralized error messages
 export const TRANSLATION_JOBS_ERROR_MESSAGES = {
-  // validation errors
-  INVALID_PROJECT_ID: 'Invalid project ID format',
+  ACTIVE_JOB_EXISTS: 'Another translation job is already active for this project',
+  ALL_MODE_NO_KEYS: 'All mode should not include specific key IDs',
+  CHECK_VIOLATION: 'Data validation failed',
+  DATABASE_ERROR: 'Database operation failed',
+  DATABASE_SCHEMA_ERROR: 'Database schema error',
+  EDGE_FUNCTION_ERROR: 'Translation service temporarily unavailable',
+  FOREIGN_KEY_VIOLATION: 'Referenced resource not found or access denied',
+  INSUFFICIENT_PRIVILEGE: 'Permission denied',
   INVALID_JOB_ID: 'Invalid job ID format',
   INVALID_KEY_ID: 'Invalid key ID format',
-  INVALID_TARGET_LOCALE: 'Target locale must be in BCP-47 format (e.g., "en" or "en-US")',
-  INVALID_MODE: 'Mode must be one of: all, selected, single',
-  ALL_MODE_NO_KEYS: 'All mode should not include specific key IDs',
-  SELECTED_MODE_REQUIRES_KEYS: 'Selected mode requires at least one key ID',
-  SINGLE_MODE_ONE_KEY: 'Single mode requires exactly one key ID',
-  INVALID_TEMPERATURE: `Temperature must be between ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN} and ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX}`,
   INVALID_MAX_TOKENS: `Max tokens must be between ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN} and ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX}`,
-
-  // business logic errors
-  TARGET_LOCALE_NOT_FOUND: 'Target locale does not exist in project',
-  TARGET_LOCALE_IS_DEFAULT: 'Target locale cannot be the default locale',
-  ACTIVE_JOB_EXISTS: 'Another translation job is already active for this project',
+  INVALID_MODE: 'Mode must be one of: all, selected, single',
+  INVALID_PROJECT_ID: 'Invalid project ID format',
+  INVALID_TARGET_LOCALE: 'Target locale must be in BCP-47 format (e.g., "en" or "en-US")',
+  INVALID_TEMPERATURE: `Temperature must be between ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN} and ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX}`,
   JOB_NOT_CANCELLABLE: 'Job is not in a cancellable state',
   JOB_NOT_FOUND: 'Translation job not found or access denied',
-
-  // edge function errors
-  EDGE_FUNCTION_ERROR: 'Translation service temporarily unavailable',
+  NO_DATA_RETURNED: 'No data returned from server',
   OPENROUTER_ERROR: 'Translation provider error',
   RATE_LIMIT_EXCEEDED: 'Rate limit exceeded, please try again later',
-
-  // generic errors
-  DATABASE_ERROR: 'Database operation failed',
-  NO_DATA_RETURNED: 'No data returned from server',
+  RESOURCE_ALREADY_EXISTS: 'Resource already exists',
+  SELECTED_MODE_REQUIRES_KEYS: 'Selected mode requires at least one key ID',
+  SINGLE_MODE_ONE_KEY: 'Single mode requires exactly one key ID',
+  TARGET_LOCALE_IS_DEFAULT: 'Target locale cannot be the default locale',
+  TARGET_LOCALE_NOT_FOUND: 'Target locale does not exist in project',
 } as const;
 
 // job status helpers
@@ -855,15 +854,15 @@ export const FINISHED_JOB_STATUSES = ['completed', 'failed', 'cancelled'] as con
 export const CANCELLABLE_JOB_STATUSES = ['pending', 'running'] as const;
 
 // validation utilities
-export const TRANSLATION_JOB_VALIDATION = {
+export const TRANSLATION_JOBS_VALIDATION = {
   isActiveStatus: (status: string): boolean => {
-    return ACTIVE_JOB_STATUSES.includes(status as any);
-  },
-  isFinishedStatus: (status: string): boolean => {
-    return FINISHED_JOB_STATUSES.includes(status as any);
+    return ACTIVE_JOB_STATUSES.includes(status as (typeof ACTIVE_JOB_STATUSES)[number]);
   },
   isCancellableStatus: (status: string): boolean => {
-    return CANCELLABLE_JOB_STATUSES.includes(status as any);
+    return CANCELLABLE_JOB_STATUSES.includes(status as (typeof CANCELLABLE_JOB_STATUSES)[number]);
+  },
+  isFinishedStatus: (status: string): boolean => {
+    return FINISHED_JOB_STATUSES.includes(status as (typeof FINISHED_JOB_STATUSES)[number]);
   },
 };
 ```
