@@ -922,14 +922,16 @@ Create `src/shared/constants/projects.constants.ts` with centralized constants, 
 
 // Validation patterns
 export const PROJECT_PREFIX_PATTERN = /^[a-z0-9._-]+$/;
-export const TRAILING_DOT_PATTERN = /\.$/;
+export const PROJECT_TRAILING_DOT_PATTERN = /\.$/;
 
 // Length constraints
 export const PROJECT_PREFIX_MIN_LENGTH = 2;
 export const PROJECT_PREFIX_MAX_LENGTH = 4;
 export const PROJECT_NAME_MIN_LENGTH = 1;
 export const PROJECT_NAME_MAX_LENGTH = 255;
+export const PROJECT_DESCRIPTION_MAX_LENGTH = 1000;
 export const PROJECT_LOCALE_LABEL_MAX_LENGTH = 64;
+export const PROJECT_LOCALE_LABEL_MIN_LENGTH = 1;
 
 // Pagination defaults
 export const PROJECTS_DEFAULT_LIMIT = 50;
@@ -958,40 +960,27 @@ export const PROJECT_SORT_OPTIONS = {
 
 // Centralized error messages
 export const PROJECTS_ERROR_MESSAGES = {
-  // Validation errors
-  NAME_REQUIRED: 'Project name is required',
-  PREFIX_TOO_SHORT: `Prefix must be at least ${PROJECT_PREFIX_MIN_LENGTH} characters`,
-  PREFIX_TOO_LONG: `Prefix must be at most ${PROJECT_PREFIX_MAX_LENGTH} characters`,
-  PREFIX_INVALID_FORMAT: 'Prefix can only contain lowercase letters, numbers, dots, underscores, and hyphens',
-  PREFIX_TRAILING_DOT: 'Prefix cannot end with a dot',
+  DATABASE_ERROR: 'Database operation failed',
+  DEFAULT_LOCALE_IMMUTABLE: 'Cannot modify default locale after creation',
+  DESCRIPTION_TOO_LONG: `Project description must be at most ${PROJECT_DESCRIPTION_MAX_LENGTH} characters`,
+  INVALID_FIELD_VALUE: 'Invalid field value',
+  INVALID_PROJECT_ID: 'Invalid project ID format',
   LOCALE_LABEL_REQUIRED: 'Default locale label is required',
   LOCALE_LABEL_TOO_LONG: `Default locale label must be at most ${PROJECT_LOCALE_LABEL_MAX_LENGTH} characters`,
-
-  // Database operation errors
-  PROJECT_NAME_EXISTS: 'Project with this name already exists',
+  NAME_REQUIRED: 'Project name is required',
+  NAME_TOO_LONG: `Project name must be at most ${PROJECT_NAME_MAX_LENGTH} characters`,
+  NO_DATA_RETURNED: 'No data returned from server',
   PREFIX_ALREADY_IN_USE: 'Prefix is already in use',
   PREFIX_IMMUTABLE: 'Cannot modify prefix after creation',
-  DEFAULT_LOCALE_IMMUTABLE: 'Cannot modify default locale after creation',
+  PREFIX_INVALID_FORMAT: 'Prefix can only contain lowercase letters, numbers, dots, underscores, and hyphens',
+  PREFIX_REQUIRED: 'Project prefix is required',
+  PREFIX_TOO_LONG: `Prefix must be at most ${PROJECT_PREFIX_MAX_LENGTH} characters`,
+  PREFIX_TOO_SHORT: `Prefix must be at least ${PROJECT_PREFIX_MIN_LENGTH} characters`,
+  PREFIX_TRAILING_DOT: 'Prefix cannot end with a dot',
+  PROJECT_NAME_EXISTS: 'Project with this name already exists',
   PROJECT_NOT_FOUND: 'Project not found or access denied',
-
-  // Generic errors
-  DATABASE_ERROR: 'Database operation failed',
-  NO_DATA_RETURNED: 'No data returned from server',
-  INVALID_FIELD_VALUE: 'Invalid field value',
   REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
 } as const;
-
-// Validation utilities
-export const PROJECT_VALIDATION = {
-  isValidPrefixClient: (prefix: string): boolean => {
-    if (!prefix || typeof prefix !== 'string') return false;
-    if (prefix.length < PROJECT_PREFIX_MIN_LENGTH || prefix.length > PROJECT_PREFIX_MAX_LENGTH) return false;
-    if (!PROJECT_PREFIX_PATTERN.test(prefix)) return false;
-    if (TRAILING_DOT_PATTERN.test(prefix)) return false;
-    return true;
-  },
-  // ... other validation utilities
-};
 ```
 
 Add to `src/shared/constants/index.ts`:
