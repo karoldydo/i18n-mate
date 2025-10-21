@@ -847,7 +847,7 @@ Create `src/shared/constants/keys.constants.ts` with centralized constants, patt
 // Validation patterns
 export const KEY_FORMAT_PATTERN = /^[a-z0-9._-]+$/;
 export const CONSECUTIVE_DOTS_PATTERN = /\.\./;
-export const TRAILING_DOT_PATTERN = /\.$/;
+export const KEY_TRAILING_DOT_PATTERN = /\.$/;
 
 // Length constraints
 export const KEY_NAME_MAX_LENGTH = 256;
@@ -915,7 +915,7 @@ export const KEY_VALIDATION = {
     if (key.length < KEY_NAME_MIN_LENGTH || key.length > KEY_NAME_MAX_LENGTH) return false;
     if (!KEY_FORMAT_PATTERN.test(key)) return false;
     if (CONSECUTIVE_DOTS_PATTERN.test(key)) return false;
-    if (TRAILING_DOT_PATTERN.test(key)) return false;
+    if (KEY_TRAILING_DOT_PATTERN.test(key)) return false;
     return true;
   },
 
@@ -925,21 +925,6 @@ export const KEY_VALIDATION = {
     if (trimmed.length < TRANSLATION_VALUE_MIN_LENGTH || trimmed.length > TRANSLATION_VALUE_MAX_LENGTH) return false;
     if (trimmed.includes('\n')) return false;
     return true;
-  },
-
-  startsWithPrefix: (key: string, prefix: string): boolean => {
-    return key.startsWith(`${prefix}.`);
-  },
-
-  extractKeyName: (fullKey: string, prefix: string): string => {
-    if (!KEY_VALIDATION.startsWithPrefix(fullKey, prefix)) {
-      return fullKey;
-    }
-    return fullKey.substring(prefix.length + 1);
-  },
-
-  buildFullKey: (prefix: string, keyName: string): string => {
-    return `${prefix}.${keyName}`;
   },
 };
 ```

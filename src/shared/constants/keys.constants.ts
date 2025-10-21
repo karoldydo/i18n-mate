@@ -91,23 +91,6 @@ export const KEYS_CONSTRAINTS = {
  */
 export const KEY_VALIDATION = {
   /**
-   * Build full key from prefix and name
-   */
-  buildFullKey: (prefix: string, keyName: string): string => {
-    return `${prefix}.${keyName}`;
-  },
-
-  /**
-   * Extract key name without prefix
-   */
-  extractKeyName: (fullKey: string, prefix: string): string => {
-    if (!KEY_VALIDATION.startsWithPrefix(fullKey, prefix)) {
-      return fullKey;
-    }
-    return fullKey.substring(prefix.length + 1);
-  },
-
-  /**
    * Client-side key format validation
    * Use for immediate feedback, but always verify server-side for critical operations
    *
@@ -136,13 +119,6 @@ export const KEY_VALIDATION = {
     if (trimmed.length < TRANSLATION_VALUE_MIN_LENGTH || trimmed.length > TRANSLATION_VALUE_MAX_LENGTH) return false;
     if (trimmed.includes('\n')) return false; // No newlines allowed
     return true;
-  },
-
-  /**
-   * Check if key starts with given prefix
-   */
-  startsWithPrefix: (key: string, prefix: string): boolean => {
-    return key.startsWith(`${prefix}.`);
   },
 };
 
@@ -179,46 +155,3 @@ export const KEYS_DEFAULT_PARAMS = {
   OFFSET: KEYS_MIN_OFFSET,
   SEARCH: undefined,
 } as const;
-
-/**
- * Creates a branded key name from a string with validation
- * Throws error if key format is invalid
- */
-export function createKeyName(key: string): string {
-  if (!KEY_VALIDATION.isValidFormatClient(key)) {
-    throw new Error(KEYS_ERROR_MESSAGES.KEY_INVALID_FORMAT);
-  }
-  return key;
-}
-
-/**
- * Type guard that checks if string is a valid key format
- */
-export function isValidKeyFormat(key: string): boolean {
-  return KEY_VALIDATION.isValidFormatClient(key);
-}
-
-/**
- * Type guard that checks if string is a valid translation value
- */
-export function isValidTranslationValue(value: string): boolean {
-  return KEY_VALIDATION.isValidTranslationValue(value);
-}
-
-/**
- * Sanitize and normalize translation value
- * Trims whitespace and ensures valid format
- */
-export function normalizeTranslationValue(value: string): string {
-  if (!value || typeof value !== 'string') {
-    throw new Error(KEYS_ERROR_MESSAGES.VALUE_REQUIRED);
-  }
-
-  const normalized = value.trim();
-
-  if (!isValidTranslationValue(normalized)) {
-    throw new Error(KEYS_ERROR_MESSAGES.VALUE_TOO_LONG);
-  }
-
-  return normalized;
-}
