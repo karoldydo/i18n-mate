@@ -3,81 +3,176 @@
  *
  * Central export point for all type definitions used in the i18n-mate application.
  * Re-exports database types and API DTOs for convenient importing throughout the codebase.
+ *
+ * Organization:
+ * - database.types.ts: Supabase-generated database schema types (DO NOT MODIFY)
+ * - types.ts: Shared types (API responses, pagination, authentication)
+ * - Feature-specific types in subdirectories:
+ *   - export/: Export-related types
+ *   - keys/: Key management types
+ *   - locales/: Locale management types
+ *   - projects/: Project management types
+ *   - telemetry/: Event tracking types
+ *   - translation-jobs/: Translation job types
+ *   - translations/: Translation value types
  */
 
-// Re-export all database types
+// ============================================================================
+// Database Types (Supabase-generated)
+// ============================================================================
+
 export type { CompositeTypes, Database, Enums, Json, Tables, TablesInsert, TablesUpdate } from './database.types';
 
 export { Constants } from './database.types';
 
-// Re-export all DTO and Command Model types
+// ============================================================================
+// Shared Types (API responses, pagination, authentication)
+// ============================================================================
+
+export type { ExportedTranslations, ExportTranslationsData } from './export';
+
 export type {
-  ApiErrorResponse,
-  ApiResponse,
-  ApiResult,
-  CancelTranslationJobRequest,
-  ConflictErrorResponse,
   CreateKeyRequest,
   CreateKeyResponse,
   CreateKeyRpcArgs,
-  CreateProjectLocaleAtomicRequest,
-  CreateProjectLocaleAtomicResponse,
-  CreateProjectLocaleRequest,
-  CreateProjectRpcArgs,
-  CreateProjectWithDefaultLocaleRequest,
-  CreateTelemetryEventRequest,
-  CreateTranslationJobRequest,
-  CreateTranslationJobResponse,
-  EventType,
-  ExportedTranslations,
-  ExportTranslationsData,
-  GetJobItemsParams,
-  ItemStatus,
-  JobStatus,
+  DeleteKeyArgs,
   Key,
   KeyCreatedEvent,
   KeyCreatedProperties,
   KeyDefaultViewListResponse,
   KeyDefaultViewResponse,
+  KeyId,
   KeyInsert,
   KeyPerLanguageViewListResponse,
   KeyPerLanguageViewResponse,
   KeyResponse,
   KeyUpdate,
-  LanguageAddedEvent,
-  LanguageAddedProperties,
   ListKeysDefaultViewArgs,
   ListKeysDefaultViewParams,
   ListKeysDefaultViewRpcArgs,
   ListKeysPerLanguageParams,
   ListKeysPerLanguageViewArgs,
   ListKeysPerLanguageViewRpcArgs,
+} from './keys';
+
+// ============================================================================
+// Export Feature Types
+// ============================================================================
+
+export type {
+  CreateProjectLocaleAtomicRequest,
+  CreateProjectLocaleAtomicResponse,
+  CreateProjectLocaleRequest,
+  LanguageAddedEvent,
+  LanguageAddedProperties,
   ListProjectLocalesWithDefaultArgs,
+  LocaleCode,
+  ProjectLocale,
+  ProjectLocaleInsert,
+  ProjectLocaleResponse,
+  ProjectLocaleUpdate,
+  ProjectLocaleWithDefault,
+  UpdateProjectLocaleRequest,
+} from './locales';
+
+// ============================================================================
+// Keys Feature Types
+// ============================================================================
+
+export type {
+  CreateProjectRpcArgs,
+  CreateProjectWithDefaultLocaleRequest,
   ListProjectsParams,
   ListProjectsWithCountsArgs,
-  ListTelemetryEventsParams,
-  ListTranslationJobItemsResponse,
-  ListTranslationJobsParams,
-  ListTranslationJobsResponse,
-  LocaleCode,
-  PaginationMetadata,
-  PaginationParams,
-  PasswordResetRequest,
-  PasswordResetResponse,
   Project,
   ProjectCreatedEvent,
   ProjectCreatedProperties,
   ProjectId,
   ProjectInsert,
   ProjectListResponse,
-  ProjectLocale,
-  ProjectLocaleInsert,
-  ProjectLocaleResponse,
-  ProjectLocaleUpdate,
-  ProjectLocaleWithDefault,
   ProjectResponse,
   ProjectUpdate,
   ProjectWithCounts,
+  UpdateProjectRequest,
+} from './projects';
+
+// ============================================================================
+// Locales Feature Types
+// ============================================================================
+
+export type {
+  CreateTelemetryEventRequest,
+  EventType,
+  ListTelemetryEventsParams,
+  TelemetryEvent,
+  TelemetryEventInsert,
+  TelemetryEventProperties,
+  TelemetryEventResponse,
+  TelemetryEventsParams,
+  TelemetryEventUnion,
+  TelemetryEventUpdate,
+} from './telemetry';
+
+// ============================================================================
+// Projects Feature Types
+// ============================================================================
+
+export type {
+  CancelTranslationJobRequest,
+  CheckActiveJobResponse,
+  CreateTranslationJobRequest,
+  CreateTranslationJobResponse,
+  GetJobItemsParams,
+  ItemStatus,
+  JobStatus,
+  ListTranslationJobItemsResponse,
+  ListTranslationJobsParams,
+  ListTranslationJobsResponse,
+  TranslationJob,
+  TranslationJobId,
+  TranslationJobInsert,
+  TranslationJobItem,
+  TranslationJobItemId,
+  TranslationJobItemInsert,
+  TranslationJobItemResponse,
+  TranslationJobItemUpdate,
+  TranslationJobParams,
+  TranslationJobResponse,
+  TranslationJobUpdate,
+  TranslationMode,
+} from './translation-jobs';
+
+// ============================================================================
+// Telemetry Feature Types
+// ============================================================================
+
+// Re-export type guards from translation-jobs
+export { isActiveJob, isFinishedJob } from './translation-jobs';
+
+// ============================================================================
+// Translation Jobs Feature Types
+// ============================================================================
+
+export type {
+  Translation,
+  TranslationInsert,
+  TranslationResponse,
+  TranslationUpdate,
+  UpdateSourceType,
+  UpdateTranslationParams,
+  UpdateTranslationRequest,
+} from './translations';
+
+export type {
+  ApiErrorResponse,
+  ApiResponse,
+  ApiResult,
+  ConflictErrorResponse,
+  PaginatedResponse,
+  PaginationMetadata,
+  PaginationParams,
+  PasswordResetRequest,
+  PasswordResetResponse,
   ResendVerificationRequest,
   ResendVerificationResponse,
   ResetPasswordRequest,
@@ -86,38 +181,13 @@ export type {
   SignInResponse,
   SignUpRequest,
   SignUpResponse,
-  TelemetryEvent,
-  TelemetryEventInsert,
-  TelemetryEventProperties,
-  TelemetryEventResponse,
-  TelemetryEventsParams,
-  TelemetryEventUnion,
-  TelemetryEventUpdate,
-  Translation,
-  TranslationCompletedEvent,
-  TranslationCompletedProperties,
-  TranslationInsert,
-  TranslationJob,
-  TranslationJobId,
-  TranslationJobInsert,
-  TranslationJobItem,
-  TranslationJobItemInsert,
-  TranslationJobItemResponse,
-  TranslationJobItemUpdate,
-  TranslationJobParams,
-  TranslationJobResponse,
-  TranslationJobUpdate,
-  TranslationMode,
-  TranslationResponse,
-  TranslationUpdate,
-  UpdateProjectLocaleRequest,
-  UpdateProjectRequest,
-  UpdateSourceType,
-  UpdateTranslationParams,
-  UpdateTranslationRequest,
   ValidationErrorResponse,
   VerifyEmailResponse,
 } from './types';
 
-// Re-export type guards
-export { isActiveJob, isApiErrorResponse, isApiSuccessResponse, isFinishedJob } from './types';
+// ============================================================================
+// Translations Feature Types
+// ============================================================================
+
+// Re-export type guards from shared types
+export { isApiErrorResponse, isApiSuccessResponse } from './types';

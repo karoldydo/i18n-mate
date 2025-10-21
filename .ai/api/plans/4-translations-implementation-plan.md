@@ -84,7 +84,19 @@ If no rows are affected (0 matches), return 409 Conflict and client must refetch
 
 ## 3. Used Types
 
-### 3.1 Existing Types (from `src/shared/types/types.ts`)
+**Note:** As of the latest refactoring, all types are organized by feature in separate directories under `src/shared/types/`.
+
+### 3.1 Existing Types
+
+**Import Path:** `@/shared/types` (central export) or `@/shared/types/translations` (feature-specific)
+
+**Shared Types** (from `src/shared/types/types.ts`):
+
+- `ApiErrorResponse` - Generic error response wrapper
+- `ValidationErrorResponse` - 400 validation error response
+- `ConflictErrorResponse` - 409 conflict error response
+
+**Translations Types** (from `src/shared/types/translations/index.ts`):
 
 ```typescript
 // Response DTOs

@@ -114,9 +114,22 @@ The mutation returns `void` (no content). The underlying Supabase API returns `{
 
 ## 3. Used Types
 
-### 3.1 Response DTOs
+**Note:** As of the latest refactoring, all types are organized by feature in separate directories under `src/shared/types/`.
 
-Create in `src/shared/types/types.ts`:
+### 3.1 Existing Types
+
+**Import Path:** `@/shared/types` (central export) or `@/shared/types/keys` (feature-specific)
+
+**Shared Types** (from `src/shared/types/types.ts`):
+
+- `PaginationParams` - Query parameters for pagination
+- `PaginationMetadata` - Response metadata with total count
+- `PaginatedResponse<T>` - Generic paginated response wrapper
+- `ApiErrorResponse` - Generic error response wrapper
+- `ValidationErrorResponse` - 400 validation error response
+- `ConflictErrorResponse` - 409 conflict error response
+
+**Keys Types** (from `src/shared/types/keys/index.ts`):
 
 ```typescript
 // List Keys Default View Response

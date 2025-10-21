@@ -136,7 +136,22 @@ Authorization: Bearer {access_token}
 
 ## 3. Used Types
 
-### 3.1 Existing Types (from `src/shared/types/types.ts`)
+**Note:** As of the latest refactoring, all types are organized by feature in separate directories under `src/shared/types/`.
+
+### 3.1 Existing Types
+
+**Import Path:** `@/shared/types` (central export) or `@/shared/types/translation-jobs` (feature-specific)
+
+**Shared Types** (from `src/shared/types/types.ts`):
+
+- `PaginationParams` - Query parameters for pagination
+- `PaginationMetadata` - Response metadata with total count
+- `PaginatedResponse<T>` - Generic paginated response wrapper
+- `ApiErrorResponse` - Generic error response wrapper
+- `ValidationErrorResponse` - 400 validation error response
+- `ConflictErrorResponse` - 409 conflict error response
+
+**Translation Jobs Types** (from `src/shared/types/translation-jobs/index.ts`):
 
 ```typescript
 // response dtos
