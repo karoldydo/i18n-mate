@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { CreateTranslationJobRequest, TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
+import type { TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
 
 import {
   TRANSLATION_VALUE_MAX_LENGTH,
@@ -53,13 +53,6 @@ export const UPDATE_TRANSLATION_QUERY_SCHEMA = GET_TRANSLATION_QUERY_SCHEMA.exte
 }) satisfies z.ZodType<
   Partial<Pick<TranslationResponse, 'updated_at'>> & Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>
 >;
-
-// bulk update query schema
-export const BULK_UPDATE_TRANSLATION_QUERY_SCHEMA = z.object({
-  key_ids: z.array(KEY_ID_SCHEMA).min(1, 'At least one key ID is required'),
-  project_id: PROJECT_ID_SCHEMA,
-  target_locale: LOCALE_CODE_SCHEMA,
-}) satisfies z.ZodType<Pick<CreateTranslationJobRequest, 'key_ids' | 'project_id' | 'target_locale'>>;
 
 // response schemas for runtime validation
 export const TRANSLATION_RESPONSE_SCHEMA = z.object({

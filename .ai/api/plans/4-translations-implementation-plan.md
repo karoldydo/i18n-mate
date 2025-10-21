@@ -18,7 +18,8 @@ The Translations API provides operations for managing translation values for spe
 
 1. **Get Translation** - `GET /rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale=eq.{locale}`
 2. **Update Translation (Inline Edit)** - `PATCH /rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale=eq.{locale}[&updated_at=eq.{timestamp}]`
-3. **Bulk Update Translations** - `PATCH /rest/v1/translations?project_id=eq.{project_id}&locale=eq.{locale}&key_id=in.({key_ids})`
+
+**Note:** Bulk update operations are handled internally by translation jobs and are not exposed as a client-facing API hook.
 
 ## 2. Request Details
 
@@ -81,35 +82,6 @@ PATCH /rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale
 
 If no rows are affected (0 matches), return 409 Conflict and client must refetch.
 
-### 2.3 Bulk Update Translations
-
-- **HTTP Method:** PATCH
-- **URL Structure:** `/rest/v1/translations?project_id=eq.{project_id}&locale=eq.{locale}&key_id=in.({key_ids})`
-- **Authentication:** Required
-- **Parameters:**
-  - Required (via query filters):
-    - `project_id` (UUID) - Project ID
-    - `locale` (string) - Target locale code
-    - `key_id` (string) - Comma-separated list of key UUIDs: `in.(uuid1,uuid2,uuid3...)`
-- **Request Body:**
-
-```json
-{
-  "is_machine_translated": true,
-  "updated_by_user_id": null,
-  "updated_source": "system",
-  "value": "Translated text"
-}
-```
-
-**Field Validation:**
-
-- Same validation rules as single update
-- All specified translations receive the same values
-- Used internally by translation jobs for batch processing
-
-**Note:** This endpoint is primarily used internally by translation jobs. Manual client calls are not recommended due to the risk of overwriting multiple translations with the same value.
-
 ## 3. Used Types
 
 ### 3.1 Existing Types (from `src/shared/types/types.ts`)
@@ -123,8 +95,6 @@ export type UpdateTranslationRequest = Pick<
   TranslationUpdate,
   'is_machine_translated' | 'updated_by_user_id' | 'updated_source' | 'value'
 >;
-
-export type BulkUpdateTranslationRequest = UpdateTranslationRequest;
 
 // Database types (from database.types.ts)
 export type Translation = Tables<'translations'>;
@@ -174,7 +144,7 @@ import {
   TRANSLATIONS_ERROR_MESSAGES,
   TRANSLATIONS_UPDATE_SOURCE_VALUES,
 } from '@/shared/constants';
-import type { CreateTranslationJobRequest, TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
+import type { TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
 
 // translation value validation (same as used in keys)
 const TRANSLATION_VALUE_SCHEMA = z
@@ -229,16 +199,6 @@ export const UPDATE_TRANSLATION_QUERY_SCHEMA =
     Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'> &
       Partial<Pick<TranslationResponse, 'updated_at'>>
   >;
-
-// bulk update query schema
-export const BULK_UPDATE_TRANSLATION_QUERY_SCHEMA =
-  z
-    .object({
-      key_ids: z.array(KEY_ID_SCHEMA).min(1, 'At least one key ID is required'),
-      locale: LOCALE_CODE_SCHEMA,
-      project_id: PROJECT_ID_SCHEMA,
-    })
-    satisfies z.ZodType<Pick<CreateTranslationJobRequest, 'key_ids' | 'locale' | 'project_id'>>;
 
 // response schemas for runtime validation
 export const TRANSLATION_RESPONSE_SCHEMA =
@@ -327,45 +287,7 @@ Update operations return the updated single object (no array wrapper):
 }
 ```
 
-### 4.3 Bulk Update Translations
-
-**Success Response (200 OK):**
-
-**Response Format Guidelines:**
-
-- **Bulk operations**: Return array of affected records (no wrapper)
-- Each object represents one updated translation record
-- Used for batch processing (translation jobs, bulk edits)
-- Array length matches number of successfully updated records
-
-Returns array of updated records:
-
-```json
-[
-  {
-    "is_machine_translated": true,
-    "key_id": "uuid1",
-    "locale": "pl",
-    "project_id": "uuid",
-    "updated_at": "2025-01-15T11:05:00Z",
-    "updated_by_user_id": null,
-    "updated_source": "system",
-    "value": "Translated text"
-  },
-  {
-    "is_machine_translated": true,
-    "key_id": "uuid2",
-    "locale": "pl",
-    "project_id": "uuid",
-    "updated_at": "2025-01-15T11:05:00Z",
-    "updated_by_user_id": null,
-    "updated_source": "system",
-    "value": "Translated text"
-  }
-]
-```
-
-### 4.4 Error Responses
+### 4.3 Error Responses
 
 All error responses follow the structure: `{ data: null, error: { code, message, details? } }`
 
@@ -475,20 +397,6 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 12. On success, updated translation data is returned
 13. TanStack Query updates cache with optimistic update
 14. Component displays success feedback
-
-### 5.3 Bulk Update Translations Flow
-
-1. Translation job or bulk operation requests multiple translation updates
-2. `useBulkUpdateTranslations` mutation hook receives update data and key IDs
-3. Hook validates data using `UPDATE_TRANSLATION_REQUEST_SCHEMA`
-4. Hook validates query params using `BULK_UPDATE_TRANSLATION_QUERY_SCHEMA`
-5. Hook constructs PostgREST filter: `key_id=in.(uuid1,uuid2,uuid3...)`
-6. Hook calls Supabase `.update(validatedData).eq('project_id', projectId).eq('locale', locale).in('key_id', keyIds)`
-7. Database triggers perform validation and trimming for each affected row
-8. RLS policy validates project ownership for all affected translations
-9. On success, array of updated translation records is returned
-10. TanStack Query invalidates related caches (per-language key view for the locale)
-11. Operation completes with success count
 
 ## 6. Security Considerations
 
@@ -717,6 +625,8 @@ gcTime: 15 * 60 * 1000,
 - Single translation: `['translations', projectId, keyId, locale]`
 - Use structured query keys for precise invalidation
 
+**Note:** Bulk update operations are handled internally by translation jobs and do not use client-side caching strategies.
+
 ### 8.3 Optimistic Updates
 
 **Single Translation Update:**
@@ -757,11 +667,7 @@ const updateMutation = useMutation({
 - Triggers execute quickly for validation and trimming
 - RLS policy checks use indexed foreign key relationships
 
-**Bulk Operations:**
-
-- Use PostgREST's `in` operator for efficient multi-row updates
-- Single query updates multiple rows atomically
-- More efficient than N individual update operations
+**Note:** Bulk operations are handled by translation jobs using direct database operations, not exposed as client hooks.
 
 ## 9. Implementation Steps
 
@@ -1181,104 +1087,6 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
 }
 ```
 
-**6.3 Create `src/features/translations/api/useBulkUpdateTranslations/useBulkUpdateTranslations.ts`:**
-
-```typescript
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
-
-import type {
-  ApiErrorResponse,
-  BulkUpdateTranslationsParams,
-  TranslationResponse,
-  UpdateTranslationRequest,
-} from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createApiErrorResponse } from '@/shared/utils';
-
-import { createDatabaseErrorResponse } from '../translations.errors';
-import { TRANSLATIONS_KEYS } from '../translations.key-factory';
-import {
-  BULK_UPDATE_TRANSLATION_QUERY_SCHEMA,
-  TRANSLATION_RESPONSE_SCHEMA,
-  UPDATE_TRANSLATION_REQUEST_SCHEMA,
-} from '../translations.schemas';
-
-/**
- * Update multiple translation values in a single atomic operation
- *
- * Performs bulk update of translations for multiple keys in the same locale
- * using PostgreSQL's IN operator for efficient multi-row updates. Primarily
- * used internally by translation jobs for batch processing. All affected
- * translations receive identical update data (value, metadata). Validates
- * all constraints and triggers cache invalidation for affected views.
- *
- * @param params - Bulk update parameters and context
- * @param params.projectId - Project UUID for all translations (required)
- * @param params.keyIds - Array of translation key UUIDs to update (required, min: 1)
- * @param params.locale - Target locale code in BCP-47 format (required)
- * @throws {ApiErrorResponse} 400 - Validation error (invalid IDs, empty key array, value constraints)
- * @throws {ApiErrorResponse} 403 - Project not owned by user
- * @throws {ApiErrorResponse} 500 - Database error during bulk update or no data returned
- * @returns TanStack Query mutation hook for bulk translation updates
- * @warning Not recommended for manual client use due to overwrite risk for multiple translations
- */
-export function useBulkUpdateTranslations(params: BulkUpdateTranslationsParams) {
-  const supabase = useSupabase();
-  const queryClient = useQueryClient();
-
-  return useMutation<TranslationResponse[], ApiErrorResponse, UpdateTranslationRequest>({
-    mutationFn: async (updateData) => {
-      // validate query parameters
-      const validatedQuery = BULK_UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
-        key_ids: params.keyIds,
-        locale: params.locale,
-        project_id: params.projectId,
-      });
-
-      // validate request data
-      const validatedInput = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(updateData);
-
-      const { data, error } = await supabase
-        .from('translations')
-        .update(validatedInput)
-        .eq('project_id', validatedQuery.project_id)
-        .eq('locale', validatedQuery.locale)
-        .in('key_id', validatedQuery.key_ids)
-        .select();
-
-      // handle database errors
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useBulkUpdateTranslations', 'Failed to bulk update translations');
-      }
-
-      // handle missing data
-      if (!data) {
-        throw createApiErrorResponse(500, 'No data returned from server');
-      }
-
-      // runtime validation of response data
-      const validatedResponse = z.array(TRANSLATION_RESPONSE_SCHEMA).parse(data);
-      return validatedResponse;
-    },
-    onSuccess: () => {
-      // invalidate per-language key view cache for the target locale
-      queryClient.invalidateQueries({
-        queryKey: ['keys', 'per-language', params.projectId, params.locale],
-      });
-
-      // invalidate individual translation caches for all affected keys
-      params.keyIds.forEach((keyId: string) => {
-        queryClient.invalidateQueries({
-          queryKey: TRANSLATIONS_KEYS.detail(params.projectId, keyId, params.locale),
-        });
-      });
-    },
-  });
-}
-```
-
 ### Step 7: Create API Index File
 
 Create `src/features/translations/api/index.ts`:
@@ -1287,7 +1095,6 @@ Create `src/features/translations/api/index.ts`:
 export * from './translations.errors';
 export * from './translations.key-factory';
 export * from './translations.schemas';
-export * from './useBulkUpdateTranslations';
 export * from './useTranslation';
 export * from './useUpdateTranslation';
 ```
@@ -1331,18 +1138,3 @@ Test scenarios:
 - Cache invalidation verification
 - **Edge case: network timeout during update**
 - **Edge case: partial update with mixed validation errors**
-
-**8.3 Create `src/features/translations/api/useBulkUpdateTranslations/useBulkUpdateTranslations.test.ts`:**
-
-Test scenarios:
-
-- Successful bulk update with multiple keys
-- Partial success (some keys not found) - **Critical: partial failure handling**
-- Validation error (invalid key IDs array)
-- Validation error (invalid update data)
-- Authorization error (403)
-- Database error handling
-- Cache invalidation for affected keys and locale view
-- **Performance test: large batch updates (100+ keys)**
-- **Edge case: empty key IDs array**
-- **Edge case: duplicate key IDs in request**
