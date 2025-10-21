@@ -6,8 +6,8 @@ import type { ApiErrorResponse, TranslationJobResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { checkActiveJobSchema, translationJobResponseSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { CHECK_ACTIVE_JOB_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * Check for active translation job in project
@@ -22,9 +22,11 @@ import { checkActiveJobSchema, translationJobResponseSchema } from '../translati
  * - Preventing multiple concurrent jobs
  *
  * @param projectId - Project UUID to check for active jobs
+ *
  * @throws {ApiErrorResponse} 400 - Invalid project ID format
  * @throws {ApiErrorResponse} 403 - Project not owned by user (via RLS)
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with active job array (empty if none active)
  */
 export function useActiveTranslationJob(projectId: string) {
@@ -33,8 +35,8 @@ export function useActiveTranslationJob(projectId: string) {
   return useQuery<TranslationJobResponse[], ApiErrorResponse>({
     gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
-      // Validate project ID
-      const validated = checkActiveJobSchema.parse({ project_id: projectId });
+      // validate project id
+      const validated = CHECK_ACTIVE_JOB_SCHEMA.parse({ project_id: projectId });
 
       const { data, error } = await supabase
         .from('translation_jobs')
@@ -47,11 +49,10 @@ export function useActiveTranslationJob(projectId: string) {
         throw createTranslationJobDatabaseErrorResponse(error, 'useActiveTranslationJob', 'Failed to check active job');
       }
 
-      // Runtime validation of response data
-      const jobs = z.array(translationJobResponseSchema).parse(data || []);
-      return jobs;
+      // runtime validation of response data
+      return z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data || []);
     },
-    queryKey: translationJobsKeys.active(projectId),
+    queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),
     staleTime: 2 * 1000, // 2 seconds for real-time polling
   });
 }

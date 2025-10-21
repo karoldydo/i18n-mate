@@ -21,10 +21,10 @@ export function createEdgeFunctionErrorResponse(
   statusCode: number,
   context?: string
 ): ApiErrorResponse {
-  const logPrefix = context ? `[${context}]` : '[handleEdgeFunctionError]';
-  console.error(`${logPrefix} Edge Function error:`, { message, statusCode });
+  const LOG_PREFIX = context ? `[${context}]` : '[handleEdgeFunctionError]';
+  console.error(`${LOG_PREFIX} Edge Function error:`, { message, statusCode });
 
-  // Map common Edge Function errors
+  // map common edge function errors
   if (statusCode === 429) {
     return createApiErrorResponse(429, TRANSLATION_JOBS_ERROR_MESSAGES.RATE_LIMIT_EXCEEDED);
   }
@@ -57,10 +57,10 @@ export function createTranslationJobDatabaseErrorResponse(
   context?: string,
   fallbackMessage?: string
 ): ApiErrorResponse {
-  const logPrefix = context ? `[${context}]` : '[handleTranslationJobDatabaseError]';
-  console.error(`${logPrefix} Database error:`, error);
+  const LOG_PREFIX = context ? `[${context}]` : '[handleTranslationJobDatabaseError]';
+  console.error(`${LOG_PREFIX} Database error:`, error);
 
-  // Handle trigger violations (business logic) - check for specific constraint names
+  // handle trigger violations (business logic) - check for specific constraint names
   if (
     error.message?.includes(TRANSLATION_JOBS_CONSTRAINTS.ACTIVE_JOB_UNIQUE) ||
     error.message?.includes('Only one active translation job allowed per project')
@@ -76,7 +76,7 @@ export function createTranslationJobDatabaseErrorResponse(
     return createApiErrorResponse(400, TRANSLATION_JOBS_ERROR_MESSAGES.TARGET_LOCALE_IS_DEFAULT);
   }
 
-  // Handle common PostgreSQL errors by code
+  // handle common postgresql errors by code
   switch (error.code) {
     case '42P01': // undefined_table
       return createApiErrorResponse(500, TRANSLATION_JOBS_ERROR_MESSAGES.DATABASE_SCHEMA_ERROR);
@@ -92,7 +92,7 @@ export function createTranslationJobDatabaseErrorResponse(
       break;
   }
 
-  // Generic database error
+  // generic database error
   return createApiErrorResponse(500, fallbackMessage || TRANSLATION_JOBS_ERROR_MESSAGES.DATABASE_ERROR, {
     original: error,
   });

@@ -5,8 +5,8 @@ import type { ApiErrorResponse, CreateTranslationJobRequest, CreateTranslationJo
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createEdgeFunctionErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { createTranslationJobResponseSchema, createTranslationJobSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA, CREATE_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * Create new translation job via Edge Function
@@ -33,6 +33,7 @@ import { createTranslationJobResponseSchema, createTranslationJobSchema } from '
  * @throws {ApiErrorResponse} 409 - Conflict error (active job exists, locale is default)
  * @throws {ApiErrorResponse} 429 - Rate limit exceeded
  * @throws {ApiErrorResponse} 500 - Edge Function error, OpenRouter API error
+ *
  * @returns TanStack Query mutation hook for creating translation jobs
  */
 export function useCreateTranslationJob() {
@@ -41,10 +42,10 @@ export function useCreateTranslationJob() {
 
   return useMutation<CreateTranslationJobResponse, ApiErrorResponse, CreateTranslationJobRequest>({
     mutationFn: async (jobData) => {
-      // Validate input with mode-specific rules
-      const validated = createTranslationJobSchema.parse(jobData);
+      // validate input with mode-specific rules
+      const validated = CREATE_TRANSLATION_JOB_SCHEMA.parse(jobData);
 
-      // Call Edge Function
+      // call edge function
       const { data, error } = await supabase.functions.invoke('translate', {
         body: validated,
       });
@@ -57,18 +58,17 @@ export function useCreateTranslationJob() {
         );
       }
 
-      // Runtime validation of response data
-      const validatedResponse = createTranslationJobResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: (_, variables) => {
-      // Invalidate active job cache for polling to start
+      // invalidate active job cache for polling to start
       queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.active(variables.project_id),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(variables.project_id),
       });
-      // Invalidate job list cache
+      // invalidate job list cache
       queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.lists(),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists(),
       });
     },
   });

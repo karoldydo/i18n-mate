@@ -139,7 +139,7 @@ Authorization: Bearer {access_token}
 ### 3.1 Existing Types (from `src/shared/types/types.ts`)
 
 ```typescript
-// Response DTOs
+// response dtos
 export type TranslationJobResponse = TranslationJob;
 export type TranslationJobItemResponse = TranslationJobItem & {
   keys: {
@@ -147,7 +147,7 @@ export type TranslationJobItemResponse = TranslationJobItem & {
   };
 };
 
-// Request DTOs
+// request dtos
 export interface CreateTranslationJobRequest {
   key_ids: string[];
   mode: TranslationMode;
@@ -171,7 +171,7 @@ export interface ListTranslationJobsParams extends PaginationParams {
   status?: JobStatus | JobStatus[];
 }
 
-// LLM Parameters
+// llm parameters
 export interface TranslationJobParams {
   max_tokens?: number;
   model?: string;
@@ -179,12 +179,12 @@ export interface TranslationJobParams {
   temperature?: number;
 }
 
-// Enums
+// enums
 export type JobStatus = Enums<'job_status'>; // 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
 export type ItemStatus = Enums<'item_status'>; // 'pending' | 'completed' | 'failed' | 'skipped'
 export type TranslationMode = Enums<'translation_mode'>; // 'all' | 'selected' | 'single'
 
-// Pagination
+// pagination
 export interface PaginationParams {
   limit?: number;
   offset?: number;
@@ -196,7 +196,7 @@ export interface PaginationMetadata {
   total: number;
 }
 
-// Error types
+// error types
 export interface ApiErrorResponse {
   data: null;
   error: {
@@ -227,184 +227,21 @@ export interface ConflictErrorResponse extends ApiErrorResponse {
 
 ### 3.2 New Zod Validation Schemas
 
-Create validation schemas in `src/features/translation-jobs/api/translation-jobs.schemas.ts`:
+Create validation schemas in `src/features/translation-jobs/api/translation-jobs.schemas.ts`.
+All exported constants now follow screaming snake case and each definition ends with
+`satisfies z.ZodType<...>` to guarantee parity with the DTOs in `src/shared/types/types.ts`.
 
 **Note:** The implementation uses constants from `src/shared/constants/translation-jobs.constants.ts` for validation parameters, error messages, and patterns. This ensures consistency between client-side validation and database constraints.
 
-```typescript
-import { z } from 'zod';
+Key exported schemas now include:
 
-import {
-  TRANSLATION_JOBS_DEFAULT_LIMIT,
-  TRANSLATION_JOBS_MAX_LIMIT,
-  TRANSLATION_JOBS_MIN_OFFSET,
-  TRANSLATION_JOBS_MAX_ITEMS_LIMIT,
-  TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT,
-  TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN,
-  TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX,
-  TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN,
-  TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX,
-  TRANSLATION_JOBS_ERROR_MESSAGES,
-} from '@/shared/constants';
+- `JOB_ID_SCHEMA`, `PROJECT_ID_SCHEMA`, `KEY_IDS_SCHEMA`, and `LOCALE_CODE_SCHEMA`
+- `TRANSLATION_MODE_SCHEMA`, `JOB_STATUS_SCHEMA`, and `ITEM_STATUS_SCHEMA`
+- `TRANSLATION_JOB_PARAMS_SCHEMA`, `CHECK_ACTIVE_JOB_SCHEMA`, and `LIST_TRANSLATION_JOBS_SCHEMA`
+- `CREATE_TRANSLATION_JOB_SCHEMA`, `CANCEL_TRANSLATION_JOB_SCHEMA`, and `GET_JOB_ITEMS_SCHEMA`
+- Response schemas: `TRANSLATION_JOB_RESPONSE_SCHEMA`, `TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA`, and `CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA`
 
-// Job ID validation
-export const jobIdSchema = z.string().uuid('Invalid job ID format');
-
-// Project ID validation
-export const projectIdSchema = z.string().uuid('Invalid project ID format');
-
-// Key IDs validation
-export const keyIdsSchema = z.array(z.string().uuid('Invalid key ID format'));
-
-// Locale code validation (BCP-47 format)
-const localeCodeSchema = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
-  message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
-});
-
-// Translation mode validation
-const translationModeSchema = z.enum(['all', 'selected', 'single'], {
-  errorMap: () => ({ message: TRANSLATION_JOBS_ERROR_MESSAGES.INVALID_MODE }),
-});
-
-// Job status validation
-const jobStatusSchema = z.enum(['pending', 'running', 'completed', 'failed', 'cancelled']);
-
-// Item status validation
-const itemStatusSchema = z.enum(['pending', 'completed', 'failed', 'skipped']);
-
-// LLM parameters validation
-export const translationJobParamsSchema = z
-  .object({
-    temperature: z
-      .number()
-      .min(TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN)
-      .max(TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX)
-      .optional(),
-    max_tokens: z
-      .number()
-      .int()
-      .min(TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN)
-      .max(TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX)
-      .optional(),
-    model: z.string().optional(),
-    provider: z.string().optional(),
-  })
-  .optional()
-  .nullable();
-
-// Check Active Job Schema
-export const checkActiveJobSchema = z.object({
-  project_id: projectIdSchema,
-});
-
-// List Translation Jobs Schema
-export const listTranslationJobsSchema = z.object({
-  project_id: projectIdSchema,
-  limit: z.number().int().min(1).max(TRANSLATION_JOBS_MAX_LIMIT).optional().default(TRANSLATION_JOBS_DEFAULT_LIMIT),
-  offset: z.number().int().min(TRANSLATION_JOBS_MIN_OFFSET).optional().default(TRANSLATION_JOBS_MIN_OFFSET),
-  status: z.union([jobStatusSchema, z.array(jobStatusSchema)]).optional(),
-  order: z
-    .enum(['created_at.asc', 'created_at.desc', 'status.asc', 'status.desc'])
-    .optional()
-    .default('created_at.desc'),
-});
-
-// Create Translation Job Schema with mode-specific validation
-export const createTranslationJobSchema = z
-  .object({
-    project_id: projectIdSchema,
-    target_locale: localeCodeSchema,
-    mode: translationModeSchema,
-    key_ids: keyIdsSchema,
-    params: translationJobParamsSchema,
-  })
-  .superRefine((data, ctx) => {
-    // Validate key_ids based on mode
-    if (data.mode === 'all' && data.key_ids.length > 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: TRANSLATION_JOBS_ERROR_MESSAGES.ALL_MODE_NO_KEYS,
-        path: ['key_ids'],
-      });
-    }
-
-    if (data.mode === 'selected' && data.key_ids.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: TRANSLATION_JOBS_ERROR_MESSAGES.SELECTED_MODE_REQUIRES_KEYS,
-        path: ['key_ids'],
-      });
-    }
-
-    if (data.mode === 'single' && data.key_ids.length !== 1) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: TRANSLATION_JOBS_ERROR_MESSAGES.SINGLE_MODE_ONE_KEY,
-        path: ['key_ids'],
-      });
-    }
-  });
-
-// Cancel Translation Job Schema
-export const cancelTranslationJobSchema = z.object({
-  job_id: jobIdSchema,
-  status: z.literal('cancelled'),
-});
-
-// Get Job Items Schema
-export const getJobItemsSchema = z.object({
-  job_id: jobIdSchema,
-  status: itemStatusSchema.optional(),
-  limit: z
-    .number()
-    .int()
-    .min(1)
-    .max(TRANSLATION_JOBS_MAX_ITEMS_LIMIT)
-    .optional()
-    .default(TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT),
-  offset: z.number().int().min(TRANSLATION_JOBS_MIN_OFFSET).optional().default(TRANSLATION_JOBS_MIN_OFFSET),
-});
-
-// Response Schemas for runtime validation
-export const translationJobResponseSchema = z.object({
-  id: z.string().uuid(),
-  project_id: z.string().uuid(),
-  target_locale: z.string(),
-  source_locale: z.string(),
-  mode: translationModeSchema,
-  status: jobStatusSchema,
-  provider: z.string().nullable(),
-  model: z.string().nullable(),
-  params: z.record(z.unknown()).nullable(),
-  started_at: z.string().nullable(),
-  finished_at: z.string().nullable(),
-  total_keys: z.number().nullable(),
-  completed_keys: z.number().nullable(),
-  failed_keys: z.number().nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
-});
-
-export const translationJobItemResponseSchema = z.object({
-  id: z.string().uuid(),
-  job_id: z.string().uuid(),
-  key_id: z.string().uuid(),
-  status: itemStatusSchema,
-  error_code: z.string().nullable(),
-  error_message: z.string().nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
-  keys: z.object({
-    full_key: z.string(),
-  }),
-});
-
-export const createTranslationJobResponseSchema = z.object({
-  job_id: z.string().uuid(),
-  message: z.string(),
-  status: jobStatusSchema,
-});
-```
+Each schema is defined with the same validation rules as the database layer and terminates with `satisfies z.ZodType<...>` to enforce structural parity with shared DTOs.
 
 ## 4. Response Details
 
@@ -680,7 +517,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 1. User submits translation request form
 2. `useCreateTranslationJob` mutation hook receives form data
-3. Hook validates data using `createTranslationJobSchema` with mode-specific rules
+3. Hook validates data using `CREATE_TRANSLATION_JOB_SCHEMA` with mode-specific rules
 4. If validation fails, return 400 error immediately
 5. Hook calls Supabase Edge Function `/functions/v1/translate` with validated data
 6. Edge Function performs server-side validation and business logic:
@@ -704,7 +541,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 1. User clicks cancel button on active job
 2. `useCancelTranslationJob` mutation hook receives job ID
 3. Hook validates job ID using UUID schema
-4. Hook calls Supabase `.update()` with `status: 'cancelled'` and `.eq('id', jobId)`
+4. Hook calls Supabase `.update()` with `status: 'cancelled'` and `.eq('id', job_id)`
 5. Database trigger checks if job is in cancellable state (pending/running)
 6. If job is not cancellable, trigger raises exception → hook returns 400
 7. RLS policy validates ownership through project foreign key
@@ -801,7 +638,7 @@ Zod validation errors are automatically converted to ApiErrorResponse format by 
 **Handling:**
 
 ```typescript
-// Example in Edge Function
+// example in edge function
 if (existingActiveJob) {
   return new Response(
     JSON.stringify({
@@ -854,20 +691,20 @@ if (existingActiveJob) {
 After creating a job (202 response), client implements exponential backoff polling:
 
 ```typescript
-// Example polling implementation
+// example polling implementation
 const pollActiveJob = async () => {
   const response = await useActiveTranslationJob(projectId);
   if (response.data.length === 0 || isFinishedJob(response.data[0])) {
-    // Job completed or no active job
+    // job completed or no active job
     stopPolling();
     invalidateJobsList();
   }
 };
 
-// Poll using exponential backoff intervals: [2000, 2000, 3000, 5000, 5000]ms
+// poll using exponential backoff intervals: [2000, 2000, 3000, 5000, 5000]ms
 const startPolling = () => {
   const intervals = [2000, 2000, 3000, 5000, 5000]; // milliseconds
-  // Implementation details...
+  // implementation details...
 };
 ```
 
@@ -899,15 +736,15 @@ const startPolling = () => {
 **TanStack Query Configuration:**
 
 ```typescript
-// Active job: Short cache for real-time updates
+// active job: short cache for real-time updates
 staleTime: 2 * 1000, // 2 seconds
 gcTime: 5 * 60 * 1000, // 5 minutes
 
-// Job history: Medium cache
+// job history: medium cache
 staleTime: 30 * 1000, // 30 seconds
 gcTime: 10 * 60 * 1000, // 10 minutes
 
-// Job items: Long cache (rarely changes after completion)
+// job items: long cache (rarely changes after completion)
 staleTime: 5 * 60 * 1000, // 5 minutes
 gcTime: 30 * 60 * 1000, // 30 minutes
 ```
@@ -952,24 +789,24 @@ Create `src/shared/constants/translation-jobs.constants.ts` with centralized con
  * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
  */
 
-// Pagination defaults
+// pagination defaults
 export const TRANSLATION_JOBS_DEFAULT_LIMIT = 20;
 export const TRANSLATION_JOBS_MAX_LIMIT = 100;
 export const TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT = 100;
 export const TRANSLATION_JOBS_MAX_ITEMS_LIMIT = 1000;
 export const TRANSLATION_JOBS_MIN_OFFSET = 0;
 
-// LLM parameter constraints
+// llm parameter constraints
 export const TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN = 0;
 export const TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX = 2;
 export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN = 1;
 export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX = 4096;
 
-// Polling configuration
+// polling configuration
 export const TRANSLATION_JOB_POLL_INTERVALS = [2000, 2000, 3000, 5000, 5000]; // milliseconds
 export const TRANSLATION_JOB_POLL_MAX_ATTEMPTS = 180; // 15 minutes max
 
-// PostgreSQL error codes and constraints
+// postgresql error codes and constraints
 export const TRANSLATION_JOBS_PG_ERROR_CODES = {
   CHECK_VIOLATION: '23514',
   FOREIGN_KEY_VIOLATION: '23503',
@@ -981,9 +818,9 @@ export const TRANSLATION_JOBS_CONSTRAINTS = {
   SOURCE_LOCALE_DEFAULT: 'validate_source_locale_is_default_trigger',
 } as const;
 
-// Centralized error messages
+// centralized error messages
 export const TRANSLATION_JOBS_ERROR_MESSAGES = {
-  // Validation errors
+  // validation errors
   INVALID_PROJECT_ID: 'Invalid project ID format',
   INVALID_JOB_ID: 'Invalid job ID format',
   INVALID_KEY_ID: 'Invalid key ID format',
@@ -995,29 +832,29 @@ export const TRANSLATION_JOBS_ERROR_MESSAGES = {
   INVALID_TEMPERATURE: `Temperature must be between ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN} and ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX}`,
   INVALID_MAX_TOKENS: `Max tokens must be between ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN} and ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX}`,
 
-  // Business logic errors
+  // business logic errors
   TARGET_LOCALE_NOT_FOUND: 'Target locale does not exist in project',
   TARGET_LOCALE_IS_DEFAULT: 'Target locale cannot be the default locale',
   ACTIVE_JOB_EXISTS: 'Another translation job is already active for this project',
   JOB_NOT_CANCELLABLE: 'Job is not in a cancellable state',
   JOB_NOT_FOUND: 'Translation job not found or access denied',
 
-  // Edge Function errors
+  // edge function errors
   EDGE_FUNCTION_ERROR: 'Translation service temporarily unavailable',
   OPENROUTER_ERROR: 'Translation provider error',
   RATE_LIMIT_EXCEEDED: 'Rate limit exceeded, please try again later',
 
-  // Generic errors
+  // generic errors
   DATABASE_ERROR: 'Database operation failed',
   NO_DATA_RETURNED: 'No data returned from server',
 } as const;
 
-// Job status helpers
+// job status helpers
 export const ACTIVE_JOB_STATUSES = ['pending', 'running'] as const;
 export const FINISHED_JOB_STATUSES = ['completed', 'failed', 'cancelled'] as const;
 export const CANCELLABLE_JOB_STATUSES = ['pending', 'running'] as const;
 
-// Validation utilities
+// validation utilities
 export const TRANSLATION_JOB_VALIDATION = {
   isActiveStatus: (status: string): boolean => {
     return ACTIVE_JOB_STATUSES.includes(status as any);
@@ -1066,10 +903,10 @@ export function createTranslationJobDatabaseErrorResponse(
   context?: string,
   fallbackMessage?: string
 ): ApiErrorResponse {
-  const logPrefix = context ? `[${context}]` : '[handleTranslationJobDatabaseError]';
-  console.error(`${logPrefix} Database error:`, error);
+  const LOG_PREFIX = context ? `[${context}]` : '[handleTranslationJobDatabaseError]';
+  console.error(`${LOG_PREFIX} Database error:`, error);
 
-  // Handle trigger violations (business logic)
+  // handle trigger violations (business logic)
   if (error.message.includes('prevent_multiple_active_jobs_trigger')) {
     return createApiErrorResponse(409, TRANSLATION_JOBS_ERROR_MESSAGES.ACTIVE_JOB_EXISTS);
   }
@@ -1077,17 +914,17 @@ export function createTranslationJobDatabaseErrorResponse(
     return createApiErrorResponse(400, 'Source locale must be the project default locale');
   }
 
-  // Handle check constraint violations
+  // handle check constraint violations
   if (error.code === TRANSLATION_JOBS_PG_ERROR_CODES.CHECK_VIOLATION) {
     return createApiErrorResponse(400, 'Invalid field value', { constraint: error.details });
   }
 
-  // Handle foreign key violations
+  // handle foreign key violations
   if (error.code === TRANSLATION_JOBS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
     return createApiErrorResponse(404, 'Referenced resource not found');
   }
 
-  // Generic database error
+  // generic database error
   return createApiErrorResponse(500, fallbackMessage || TRANSLATION_JOBS_ERROR_MESSAGES.DATABASE_ERROR, {
     original: error,
   });
@@ -1101,10 +938,10 @@ export function createEdgeFunctionErrorResponse(
   message: string,
   context?: string
 ): ApiErrorResponse {
-  const logPrefix = context ? `[${context}]` : '[handleEdgeFunctionError]';
-  console.error(`${logPrefix} Edge Function error:`, { statusCode, message });
+  const LOG_PREFIX = context ? `[${context}]` : '[handleEdgeFunctionError]';
+  console.error(`${LOG_PREFIX} Edge Function error:`, { statusCode, message });
 
-  // Map common Edge Function errors
+  // map common edge function errors
   if (statusCode === 429) {
     return createApiErrorResponse(429, TRANSLATION_JOBS_ERROR_MESSAGES.RATE_LIMIT_EXCEEDED);
   }
@@ -1121,7 +958,7 @@ export function createEdgeFunctionErrorResponse(
 
 ### Step 5: Create Query Keys Factory
 
-Create `src/features/translation-jobs/api/translation-jobs.keys.ts`:
+Create `src/features/translation-jobs/api/translation-jobs.key-factory.ts`:
 
 ```typescript
 import type { ListTranslationJobsParams } from '@/shared/types';
@@ -1130,16 +967,16 @@ import type { ListTranslationJobsParams } from '@/shared/types';
  * Query key factory for translation jobs
  * Follows TanStack Query best practices for structured query keys
  */
-export const translationJobsKeys = {
+export const TRANSLATION_JOBS_KEY_FACTORY = {
   all: ['translation-jobs'] as const,
-  active: (projectId: string) => [...translationJobsKeys.activeJobs(), projectId] as const,
-  activeJobs: () => [...translationJobsKeys.all, 'active'] as const,
-  detail: (jobId: string) => [...translationJobsKeys.details(), jobId] as const,
-  details: () => [...translationJobsKeys.all, 'detail'] as const,
-  items: (jobId: string, params?: any) => [...translationJobsKeys.jobItems(), jobId, params] as const,
-  jobItems: () => [...translationJobsKeys.all, 'items'] as const,
-  list: (params: ListTranslationJobsParams) => [...translationJobsKeys.lists(), params] as const,
-  lists: () => [...translationJobsKeys.all, 'list'] as const,
+  active: (projectId: string) => [...TRANSLATION_JOBS_KEY_FACTORY.activeJobs(), projectId] as const,
+  activeJobs: () => [...TRANSLATION_JOBS_KEY_FACTORY.all, 'active'] as const,
+  detail: (job_id: string) => [...TRANSLATION_JOBS_KEY_FACTORY.details(), job_id] as const,
+  details: () => [...TRANSLATION_JOBS_KEY_FACTORY.all, 'detail'] as const,
+  items: (job_id: string, params?: any) => [...TRANSLATION_JOBS_KEY_FACTORY.jobItems(), job_id, params] as const,
+  jobItems: () => [...TRANSLATION_JOBS_KEY_FACTORY.all, 'items'] as const,
+  list: (params: ListTranslationJobsParams) => [...TRANSLATION_JOBS_KEY_FACTORY.lists(), params] as const,
+  lists: () => [...TRANSLATION_JOBS_KEY_FACTORY.all, 'list'] as const,
 };
 ```
 
@@ -1153,8 +990,8 @@ import { z } from 'zod';
 import type { ApiErrorResponse, TranslationJobResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { checkActiveJobSchema, translationJobResponseSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { CHECK_ACTIVE_JOB_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * Check for active translation job in project
@@ -1169,8 +1006,8 @@ export function useActiveTranslationJob(projectId: string) {
   return useQuery<TranslationJobResponse[], ApiErrorResponse>({
     gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
-      // Validate project ID
-      const validated = checkActiveJobSchema.parse({ project_id: projectId });
+      // validate project id
+      const validated = CHECK_ACTIVE_JOB_SCHEMA.parse({ project_id: projectId });
 
       const { data, error } = await supabase
         .from('translation_jobs')
@@ -1183,11 +1020,11 @@ export function useActiveTranslationJob(projectId: string) {
         throw createTranslationJobDatabaseErrorResponse(error, 'useActiveTranslationJob', 'Failed to check active job');
       }
 
-      // Runtime validation of response data
-      const jobs = z.array(translationJobResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const jobs = z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data ?? []);
       return jobs;
     },
-    queryKey: translationJobsKeys.active(projectId),
+    queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),
     staleTime: 2 * 1000, // 2 seconds for real-time polling
   });
 }
@@ -1201,8 +1038,8 @@ import { z } from 'zod';
 import type { ApiErrorResponse, ListTranslationJobsParams, TranslationJobResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { listTranslationJobsSchema, translationJobResponseSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { LIST_TRANSLATION_JOBS_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * List response wrapper for translation jobs
@@ -1225,8 +1062,8 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
   return useQuery<TranslationJobListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listTranslationJobsSchema.parse(params);
+      // validate parameters
+      const validated = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
 
       let query = supabase
         .from('translation_jobs')
@@ -1234,7 +1071,7 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
         .eq('project_id', validated.project_id)
         .range(validated.offset, validated.offset + validated.limit - 1);
 
-      // Apply status filter if provided
+      // apply status filter if provided
       if (validated.status) {
         if (Array.isArray(validated.status)) {
           query = query.in('status', validated.status);
@@ -1243,7 +1080,7 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
         }
       }
 
-      // Apply sorting
+      // apply sorting
       const [field, direction] = validated.order.split('.');
       query = query.order(field, { ascending: direction === 'asc' });
 
@@ -1257,8 +1094,8 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
         );
       }
 
-      // Runtime validation of response data
-      const jobs = z.array(translationJobResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const jobs = z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data ?? []);
 
       return {
         data: jobs,
@@ -1269,7 +1106,7 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
         },
       };
     },
-    queryKey: translationJobsKeys.list(params),
+    queryKey: TRANSLATION_JOBS_KEY_FACTORY.list(params),
     staleTime: 30 * 1000, // 30 seconds
   });
 }
@@ -1282,8 +1119,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ApiErrorResponse, CreateTranslationJobRequest, CreateTranslationJobResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createEdgeFunctionErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { createTranslationJobSchema, createTranslationJobResponseSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { CREATE_TRANSLATION_JOB_SCHEMA, CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * Create new translation job via Edge Function
@@ -1300,10 +1137,10 @@ export function useCreateTranslationJob() {
 
   return useMutation<CreateTranslationJobResponse, ApiErrorResponse, CreateTranslationJobRequest>({
     mutationFn: async (jobData) => {
-      // Validate input
-      const validated = createTranslationJobSchema.parse(jobData);
+      // validate input
+      const validated = CREATE_TRANSLATION_JOB_SCHEMA.parse(jobData);
 
-      // Call Edge Function
+      // call edge function
       const { data, error } = await supabase.functions.invoke('translate', {
         body: validated,
       });
@@ -1316,18 +1153,17 @@ export function useCreateTranslationJob() {
         );
       }
 
-      // Runtime validation of response data
-      const validatedResponse = createTranslationJobResponseSchema.parse(data);
-      return validatedResponse;
+      // runtime validation of response data
+      return CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA.parse(data);
     },
     onSuccess: (_, variables) => {
-      // Invalidate active job cache for polling to start
+      // invalidate active job cache for polling to start
       queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.active(variables.project_id),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(variables.project_id),
       });
-      // Invalidate job list cache
+      // invalidate job list cache
       queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.lists(),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists(),
       });
     },
   });
@@ -1342,8 +1178,8 @@ import type { ApiErrorResponse, TranslationJobResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { cancelTranslationJobSchema, translationJobResponseSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { CANCEL_TRANSLATION_JOB_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * Cancel running translation job
@@ -1356,11 +1192,11 @@ export function useCancelTranslationJob() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<TranslationJobResponse, ApiErrorResponse, { jobId: string }>({
-    mutationFn: async ({ jobId }) => {
-      // Validate input
-      const validated = cancelTranslationJobSchema.parse({
-        job_id: jobId,
+  return useMutation<TranslationJobResponse, ApiErrorResponse, { job_id: string }>({
+    mutationFn: async ({ job_id }) => {
+      // validate input
+      const validated = CANCEL_TRANSLATION_JOB_SCHEMA.parse({
+        job_id: job_id,
         status: 'cancelled',
       });
 
@@ -1382,20 +1218,20 @@ export function useCancelTranslationJob() {
         throw createApiErrorResponse(404, 'Translation job not found or access denied');
       }
 
-      // Runtime validation of response data
-      const validatedResponse = translationJobResponseSchema.parse(data);
+      // runtime validation of response data
+      const validatedResponse = TRANSLATION_JOB_RESPONSE_SCHEMA.parse(data);
       return validatedResponse;
     },
     onSuccess: (data) => {
-      // Update specific job cache
-      queryClient.setQueryData(translationJobsKeys.detail(data.id), data);
-      // Invalidate active jobs cache (job is no longer active)
+      // update specific job cache
+      queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(data.id), data);
+      // invalidate active jobs cache (job is no longer active)
       queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.active(data.project_id),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(data.project_id),
       });
-      // Invalidate job list cache
+      // invalidate job list cache
       queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.lists(),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists(),
       });
     },
   });
@@ -1410,8 +1246,8 @@ import { z } from 'zod';
 import type { ApiErrorResponse, TranslationJobItemResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { getJobItemsSchema, translationJobItemResponseSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { GET_JOB_ITEMS_SCHEMA, TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * List response wrapper for translation job items
@@ -1429,7 +1265,7 @@ interface TranslationJobItemListResponse {
  * Get job items parameters
  */
 interface GetJobItemsParams {
-  jobId: string;
+  job_id: string;
   status?: string;
   limit?: number;
   offset?: number;
@@ -1447,9 +1283,9 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
   return useQuery<TranslationJobItemListResponse, ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = getJobItemsSchema.parse({
-        job_id: params.jobId,
+      // validate parameters
+      const validated = GET_JOB_ITEMS_SCHEMA.parse({
+        job_id: params.job_id,
         status: params.status,
         limit: params.limit,
         offset: params.offset,
@@ -1461,12 +1297,12 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
         .eq('job_id', validated.job_id)
         .range(validated.offset, validated.offset + validated.limit - 1);
 
-      // Apply status filter if provided
+      // apply status filter if provided
       if (validated.status) {
         query = query.eq('status', validated.status);
       }
 
-      // Order by creation time
+      // order by creation time
       query = query.order('created_at', { ascending: true });
 
       const { count, data, error } = await query;
@@ -1475,8 +1311,8 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
         throw createTranslationJobDatabaseErrorResponse(error, 'useTranslationJobItems', 'Failed to fetch job items');
       }
 
-      // Runtime validation of response data
-      const items = z.array(translationJobItemResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const items = z.array(TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA).parse(data ?? []);
 
       return {
         data: items,
@@ -1487,7 +1323,7 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
         },
       };
     },
-    queryKey: translationJobsKeys.items(params.jobId, params),
+    queryKey: TRANSLATION_JOBS_KEY_FACTORY.items(params.job_id, params),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -1507,23 +1343,23 @@ Create `src/features/translation-jobs/api/index.ts`:
  * @module features/translation-jobs/api
  */
 
-// Error Utilities
+// error utilities
 export { createTranslationJobDatabaseErrorResponse, createEdgeFunctionErrorResponse } from './translation-jobs.errors';
 
-// Query Keys
-export { translationJobsKeys } from './translation-jobs.keys';
+// query keys
+export { TRANSLATION_JOBS_KEY_FACTORY } from './translation-jobs.key-factory';
 
-// Validation Schemas
+// validation schemas
 export * from './translation-jobs.schemas';
 
-// Mutation Hooks
+// mutation hooks
 export { useCancelTranslationJob } from './useCancelTranslationJob/useCancelTranslationJob';
-export { useCreateTranslationJob } from './useCreateTranslationJob/useCreateTranslationJob';
+export * from './useCreateTranslationJob';
 
-// Query Hooks
-export { useActiveTranslationJob } from './useActiveTranslationJob/useActiveTranslationJob';
-export { useTranslationJobs } from './useTranslationJobs/useTranslationJobs';
-export { useTranslationJobItems } from './useTranslationJobItems/useTranslationJobItems';
+// query hooks
+export * from './useActiveTranslationJob';
+export * from './useTranslationJobs';
+export * from './useTranslationJobItems';
 ```
 
 ### Step 8: Create Polling Hook
@@ -1533,7 +1369,7 @@ Create `src/features/translation-jobs/hooks/useTranslationJobPolling.ts`:
 ```typescript
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useActiveTranslationJob, translationJobsKeys } from '../api';
+import { useActiveTranslationJob, TRANSLATION_JOBS_KEY_FACTORY } from '../api';
 import { TRANSLATION_JOB_POLL_INTERVALS, TRANSLATION_JOB_POLL_MAX_ATTEMPTS } from '@/shared/constants';
 
 /**
@@ -1554,7 +1390,7 @@ export function useTranslationJobPolling(projectId: string, enabled: boolean = t
 
   useEffect(() => {
     if (!enabled || !hasActiveJob || !isJobRunning) {
-      // Clear polling if no active job or job finished
+      // clear polling if no active job or job finished
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = undefined;
@@ -1575,7 +1411,7 @@ export function useTranslationJobPolling(projectId: string, enabled: boolean = t
       timeoutRef.current = setTimeout(() => {
         pollAttemptRef.current++;
         queryClient.invalidateQueries({
-          queryKey: translationJobsKeys.active(projectId),
+          queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),
         });
         scheduleNextPoll();
       }, interval);
@@ -1678,12 +1514,12 @@ The Translation Jobs Edge Function provides the core LLM translation processing 
 Required environment variables for Edge Function operation:
 
 ```typescript
-// OpenRouter Integration
+// openrouter integration
 OPENROUTER_API_KEY: string; // OpenRouter API authentication
 OPENROUTER_BASE_URL: string; // Default: "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL: string; // Default model (e.g., "google/gemini-2.5-flash-lite")
 
-// Rate Limiting
+// rate limiting
 RATE_LIMIT_REQUESTS_PER_MINUTE: number; // Default: 60
 RATE_LIMIT_TOKENS_PER_MINUTE: number; // Default: 100000
 ```
@@ -1736,33 +1572,33 @@ Detailed flow of Edge Function execution:
 Comprehensive error handling with proper HTTP status codes:
 
 ```typescript
-// Input Validation Errors (400)
+// input validation errors (400)
 - Invalid project_id format
 - Missing required fields
 - Invalid mode/key_ids combination
 - Invalid LLM parameters
 
-// Authentication Errors (401)
+// authentication errors (401)
 - Missing Authorization header
 - Invalid JWT token
 - Expired session
 
-// Authorization Errors (403)
+// authorization errors (403)
 - User doesn't own project
 - Project access denied
 
-// Business Logic Errors (400/409)
+// business logic errors (400/409)
 - Target locale doesn't exist (400)
 - Target locale is default locale (400)
 - Active job already exists (409)
 
-// External API Errors (500)
+// external api errors (500)
 - OpenRouter API unavailable
 - Rate limits exceeded (429 → 500)
 - Model errors or timeouts
 - Network connectivity issues
 
-// Database Errors (500)
+// database errors (500)
 - Connection failures
 - Constraint violations
 - Transaction rollback scenarios
@@ -1773,16 +1609,16 @@ Comprehensive error handling with proper HTTP status codes:
 Multi-level rate limiting to prevent abuse:
 
 ```typescript
-// Per-User Limits
+// per-user limits
 - 60 requests per minute per user
 - 100,000 tokens per minute per user
 - 5 concurrent jobs maximum
 
-// Per-Project Limits
+// per-project limits
 - 1 active job at any time
 - Max 10,000 keys per job
 
-// Global Limits
+// global limits
 - 10 concurrent Edge Function executions
 - Circuit breaker for OpenRouter API failures
 ```
@@ -1792,22 +1628,22 @@ Multi-level rate limiting to prevent abuse:
 Built-in logging and metrics collection:
 
 ```typescript
-// Structured Logging
+// structured logging
 console.log({
   level: 'info',
   event: 'job_started',
-  jobId: job.id,
+  job_id: job.id,
   projectId: job.project_id,
   keyCount: job.total_keys
 });
 
-// Performance Metrics
+// performance metrics
 - Job execution time
 - API response times
 - Token usage statistics
 - Error rates by category
 
-// Alerting Thresholds
+// alerting thresholds
 - Job failure rate > 5%
 - API response time > 30 seconds
 - Error rate > 1% for any error type
@@ -1818,23 +1654,23 @@ console.log({
 Comprehensive test coverage for Edge Function:
 
 ```typescript
-// Unit Tests
+// unit tests
 - Input validation scenarios
 - Error handling paths
 - Authentication/authorization logic
 
-// Integration Tests
+// integration tests
 - OpenRouter API mock responses
 - Database transaction testing
 - Job lifecycle state transitions
 - Concurrent job prevention
 
-// End-to-End Tests
+// end-to-end tests
 - Full translation job workflows
 - Error recovery scenarios
 - Rate limiting behavior
 
-// Performance Tests
+// performance tests
 - Large job handling (1000+ keys)
 - Concurrent request handling
 - Memory usage optimization

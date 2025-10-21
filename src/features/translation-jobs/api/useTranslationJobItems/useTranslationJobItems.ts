@@ -7,8 +7,8 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { calculatePaginationMetadata } from '@/shared/utils';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { getJobItemsSchema, translationJobItemResponseSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { GET_JOB_ITEMS_SCHEMA, TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * Fetch detailed item-level status for translation job
@@ -35,9 +35,11 @@ import { getJobItemsSchema, translationJobItemResponseSchema } from '../translat
  * @param params.status - Filter by item status (pending, completed, failed, skipped)
  * @param params.limit - Items per page (1-1000, default: 100)
  * @param params.offset - Pagination offset (min: 0, default: 0)
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid job_id, limit > 1000, negative offset)
  * @throws {ApiErrorResponse} 403 - Job not accessible (project not owned via RLS)
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with job items data and pagination metadata
  */
 export function useTranslationJobItems(params: GetJobItemsParams) {
@@ -46,8 +48,8 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
   return useQuery<ListTranslationJobItemsResponse, ApiErrorResponse>({
     gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = getJobItemsSchema.parse({
+      // validate parameters
+      const validated = GET_JOB_ITEMS_SCHEMA.parse({
         job_id: params.job_id,
         limit: params.limit,
         offset: params.offset,
@@ -60,12 +62,12 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
         .eq('job_id', validated.job_id)
         .range(validated.offset, validated.offset + validated.limit - 1);
 
-      // Apply status filter if provided
+      // apply status filter if provided
       if (validated.status) {
         query = query.eq('status', validated.status);
       }
 
-      // Order by creation time
+      // order by creation time
       query = query.order('created_at', { ascending: true });
 
       const { count, data, error } = await query;
@@ -74,15 +76,15 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
         throw createTranslationJobDatabaseErrorResponse(error, 'useTranslationJobItems', 'Failed to fetch job items');
       }
 
-      // Runtime validation of response data
-      const items = z.array(translationJobItemResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const items = z.array(TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA).parse(data || []);
 
       return {
         data: items,
         metadata: calculatePaginationMetadata(validated.offset, items.length, count || 0),
       };
     },
-    queryKey: translationJobsKeys.items(params.job_id, params),
+    queryKey: TRANSLATION_JOBS_KEY_FACTORY.items(params.job_id, params),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

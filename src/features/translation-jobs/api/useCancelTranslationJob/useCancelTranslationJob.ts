@@ -7,8 +7,8 @@ import { TRANSLATION_JOBS_ERROR_MESSAGES, TRANSLATION_JOBS_VALIDATION } from '@/
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { cancelTranslationJobSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { CANCEL_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * Context type for mutation callbacks
@@ -45,6 +45,7 @@ interface CancelTranslationJobVariables {
  * @throws {ApiErrorResponse} 400 - Job not in cancellable state (completed/failed/cancelled)
  * @throws {ApiErrorResponse} 404 - Job not found or access denied (via RLS)
  * @throws {ApiErrorResponse} 500 - Database error during update
+ *
  * @returns TanStack Query mutation hook for cancelling translation jobs
  */
 export function useCancelTranslationJob() {
@@ -58,13 +59,13 @@ export function useCancelTranslationJob() {
     CancelTranslationJobContext
   >({
     mutationFn: async ({ jobId }) => {
-      // Validate input
-      const validated = cancelTranslationJobSchema.parse({
+      // validate input
+      const validated = CANCEL_TRANSLATION_JOB_SCHEMA.parse({
         job_id: jobId,
         status: 'cancelled',
       });
 
-      // First, fetch the current job to verify it exists and is in a cancellable state
+      // fetch the current job to verify it exists and is in a cancellable state
       const { data: currentJob, error: fetchError } = await supabase
         .from('translation_jobs')
         .select('status')
@@ -79,12 +80,12 @@ export function useCancelTranslationJob() {
         throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
       }
 
-      // Verify the job is in a cancellable state (pending or running)
+      // verify the job is in a cancellable state (pending or running)
       if (!TRANSLATION_JOBS_VALIDATION.isCancellableStatus(currentJob.status)) {
         throw createApiErrorResponse(400, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_CANCELLABLE);
       }
 
-      // Update the job status to cancelled
+      // update the job status to cancelled
       const { data, error } = await supabase
         .from('translation_jobs')
         .update({
@@ -103,22 +104,24 @@ export function useCancelTranslationJob() {
         throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
       }
 
-      // Return data directly - it's already the correct Supabase type
+      // return data directly - it's already the correct supabase type
       return data;
     },
     onError: (_err, { jobId }, context) => {
-      // Rollback on error
+      // rollback on error
       if (context?.previousJob) {
-        queryClient.setQueryData(translationJobsKeys.active(context.previousJob.project_id), [context.previousJob]);
-        queryClient.setQueryData(translationJobsKeys.detail(jobId), context.previousJob);
+        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.active(context.previousJob.project_id), [
+          context.previousJob,
+        ]);
+        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId), context.previousJob);
       }
     },
     onMutate: async ({ jobId }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: translationJobsKeys.all });
+      // cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: TRANSLATION_JOBS_KEY_FACTORY.all });
 
-      // Get the current job from cache (assuming it's already loaded)
-      const currentJobData = queryClient.getQueryData(translationJobsKeys.detail(jobId)) as
+      // get the current job from cache (assuming it's already loaded)
+      const currentJobData = queryClient.getQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId)) as
         | TranslationJobResponse
         | undefined;
 
@@ -129,11 +132,11 @@ export function useCancelTranslationJob() {
           status: 'cancelled' as const,
         };
 
-        // Update active job cache (empty array since job is no longer active)
-        queryClient.setQueryData(translationJobsKeys.active(currentJobData.project_id), []);
+        // update active job cache (empty array since job is no longer active)
+        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.active(currentJobData.project_id), []);
 
-        // Update specific job cache
-        queryClient.setQueryData(translationJobsKeys.detail(jobId), updatedJob);
+        // update specific job cache
+        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId), updatedJob);
 
         return { previousJob: currentJobData };
       }
@@ -141,15 +144,15 @@ export function useCancelTranslationJob() {
       return {};
     },
     onSuccess: (data) => {
-      // Update specific job cache
-      queryClient.setQueryData(translationJobsKeys.detail(data.id), data);
-      // Invalidate active jobs cache (job is no longer active)
+      // update specific job cache
+      queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(data.id), data);
+      // invalidate active jobs cache (job is no longer active)
       queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.active(data.project_id),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(data.project_id),
       });
-      // Invalidate job list cache
+      // invalidate job list cache
       queryClient.invalidateQueries({
-        queryKey: translationJobsKeys.lists(),
+        queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists(),
       });
     },
   });

@@ -7,8 +7,8 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { calculatePaginationMetadata } from '@/shared/utils';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { translationJobsKeys } from '../translation-jobs.keys';
-import { listTranslationJobsSchema, translationJobResponseSchema } from '../translation-jobs.schemas';
+import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
+import { LIST_TRANSLATION_JOBS_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
  * Fetch paginated list of translation jobs for project
@@ -30,9 +30,11 @@ import { listTranslationJobsSchema, translationJobResponseSchema } from '../tran
  * @param params.offset - Pagination offset (min: 0, default: 0)
  * @param params.status - Filter by job status (single or array)
  * @param params.order - Sort order (default: 'created_at.desc')
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
  * @throws {ApiErrorResponse} 403 - Project not owned by user (via RLS)
  * @throws {ApiErrorResponse} 500 - Database error during fetch
+ *
  * @returns TanStack Query result with jobs data and pagination metadata
  */
 export function useTranslationJobs(params: ListTranslationJobsParams) {
@@ -41,8 +43,8 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
   return useQuery<ListTranslationJobsResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      // Validate parameters
-      const validated = listTranslationJobsSchema.parse(params);
+      // validate parameters
+      const validated = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
 
       let query = supabase
         .from('translation_jobs')
@@ -50,7 +52,7 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
         .eq('project_id', validated.project_id)
         .range(validated.offset, validated.offset + validated.limit - 1);
 
-      // Apply status filter if provided
+      // apply status filter if provided
       if (validated.status) {
         if (Array.isArray(validated.status)) {
           query = query.in('status', validated.status);
@@ -59,7 +61,7 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
         }
       }
 
-      // Apply sorting
+      // apply sorting
       const [field, direction] = validated.order.split('.');
       query = query.order(field, { ascending: direction === 'asc' });
 
@@ -73,15 +75,15 @@ export function useTranslationJobs(params: ListTranslationJobsParams) {
         );
       }
 
-      // Runtime validation of response data
-      const jobs = z.array(translationJobResponseSchema).parse(data || []);
+      // runtime validation of response data
+      const jobs = z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data || []);
 
       return {
         data: jobs,
         metadata: calculatePaginationMetadata(validated.offset, jobs.length, count || 0),
       };
     },
-    queryKey: translationJobsKeys.list(params),
+    queryKey: TRANSLATION_JOBS_KEY_FACTORY.list(params),
     staleTime: 30 * 1000, // 30 seconds
   });
 }
