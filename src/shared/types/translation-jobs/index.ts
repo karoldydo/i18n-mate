@@ -3,8 +3,19 @@
 import type { Enums, Tables, TablesInsert, TablesUpdate } from '../database.types';
 import type { PaginatedResponse, PaginationParams } from '../types';
 
-// Cancel translation job request
+// Mutation context for optimistic updates when cancelling a job
+export interface CancelTranslationJobContext {
+  previousJob?: TranslationJobResponse;
+}
+
+// Cancel translation job mutation variables
 export interface CancelTranslationJobRequest {
+  jobId: string;
+}
+
+// Cancel translation job RPC args (validated via Zod schema)
+export interface CancelTranslationJobRpcArgs {
+  job_id: string;
   status: 'cancelled';
 }
 
@@ -34,8 +45,8 @@ export interface GetJobItemsParams {
   offset?: number;
   status?: ItemStatus;
 }
-
 export type ItemStatus = Enums<'item_status'>;
+
 export type JobStatus = Enums<'job_status'>;
 
 // Paginated job items with key info

@@ -152,7 +152,7 @@ export type ProjectWithCounts = ProjectResponse & {
 };
 
 // Request DTOs
-export interface CreateProjectWithDefaultLocaleRequest {
+export interface CreateProjectRequest {
   default_locale: string;
   default_locale_label: string;
   description?: null | string;
@@ -161,6 +161,10 @@ export interface CreateProjectWithDefaultLocaleRequest {
 }
 
 export type CreateProjectRpcArgs = Database['public']['Functions']['create_project_with_default_locale']['Args'];
+
+export interface UpdateProjectContext {
+  previousProject?: ProjectResponse;
+}
 
 export type UpdateProjectRequest = Pick<ProjectUpdate, 'description' | 'name'>;
 
@@ -230,8 +234,8 @@ import {
   PROJECTS_MIN_OFFSET,
 } from '@/shared/constants';
 import type {
+  CreateProjectRequest,
   CreateProjectRpcArgs,
-  CreateProjectWithDefaultLocaleRequest,
   ListProjectsParams,
   ProjectResponse,
   ProjectWithCounts,
@@ -281,7 +285,7 @@ export const CREATE_PROJECT_REQUEST_SCHEMA = z
     name: z.string().min(1, 'Project name is required').trim(),
     prefix: PREFIX_SCHEMA,
   })
-  satisfies z.ZodType<CreateProjectWithDefaultLocaleRequest>;
+  satisfies z.ZodType<CreateProjectRequest>;
 
 // Create Project Schema with RPC parameter transformation (adds p_ prefix)
 // This schema automatically converts API request format to Supabase RPC parameter format
@@ -1249,7 +1253,7 @@ export function useProject(projectId: string) {
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiErrorResponse, CreateProjectWithDefaultLocaleRequest, ProjectResponse } from '@/shared/types';
+import type { ApiErrorResponse, CreateProjectRequest, ProjectResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
@@ -1275,7 +1279,7 @@ export function useCreateProject() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectWithDefaultLocaleRequest>({
+  return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectRequest>({
     mutationFn: async (payload) => {
       const body = CREATE_PROJECT_SCHEMA.parse(payload);
 
@@ -1303,20 +1307,13 @@ export function useCreateProject() {
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiErrorResponse, ProjectResponse, UpdateProjectRequest } from '@/shared/types';
+import type { ApiErrorResponse, ProjectResponse, UpdateProjectContext, UpdateProjectRequest } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
 import { PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
-
-/**
- * Context type for mutation callbacks
- */
-interface UpdateProjectContext {
-  previousProject?: ProjectResponse;
-}
 
 /**
  * Update a project's fields with optimistic UI

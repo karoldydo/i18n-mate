@@ -3,18 +3,14 @@
 import type { Database, Tables, TablesInsert, TablesUpdate } from '../database.types';
 
 // Recommended atomic approach with built-in fan-out verification
-export interface CreateProjectLocaleAtomicRequest {
+export interface CreateProjectLocaleRequest {
   p_label: string;
   p_locale: string;
   p_project_id: string;
 }
 
 // RPC function result, uses database generated type
-export type CreateProjectLocaleAtomicResponse =
-  Database['public']['Functions']['create_project_locale_atomic']['Returns'][0];
-
-// DEPRECATED: Use CreateProjectLocaleAtomicRequest instead - will be removed in v1.0
-export type CreateProjectLocaleRequest = Pick<ProjectLocaleInsert, 'label' | 'locale' | 'project_id'>;
+export type CreateProjectLocaleResponse = Database['public']['Functions']['create_project_locale_atomic']['Returns'][0];
 
 // Telemetry event emitted when a new locale is added
 export interface LanguageAddedEvent {
@@ -50,6 +46,11 @@ export type ProjectLocaleUpdate = TablesUpdate<'project_locales'>;
 export type ProjectLocaleWithDefault = ProjectLocaleResponse & {
   is_default: boolean;
 };
+
+// Mutation context for optimistic updates when updating a locale
+export interface UpdateProjectLocaleContext {
+  previousLocales?: ProjectLocaleWithDefault[];
+}
 
 // Only label is mutable
 export type UpdateProjectLocaleRequest = Pick<ProjectLocaleUpdate, 'label'>;

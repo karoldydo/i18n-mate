@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type {
-  CancelTranslationJobRequest,
+  CancelTranslationJobRpcArgs,
   CreateTranslationJobRequest,
   CreateTranslationJobResponse,
   GetJobItemsParams,
@@ -173,7 +173,7 @@ export const CREATE_TRANSLATION_JOB_SCHEMA = z
 export const CANCEL_TRANSLATION_JOB_SCHEMA = z.object({
   job_id: JOB_ID_SCHEMA,
   status: z.literal('cancelled'),
-}) satisfies z.ZodType<CancelTranslationJobRequest & Pick<GetJobItemsParams, 'job_id'>>;
+}) satisfies z.ZodType<CancelTranslationJobRpcArgs>;
 
 // get job items schema
 // validates parameters for fetching detailed item-level status within a translation job

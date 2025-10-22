@@ -130,9 +130,19 @@ export type ProjectLocaleWithDefault = ProjectLocaleResponse & {
 };
 
 // Request DTOs
-export type CreateProjectLocaleRequest = Pick<ProjectLocaleInsert, 'label' | 'locale' | 'project_id'>;
+export interface CreateProjectLocaleRequest {
+  p_label: string;
+  p_locale: string;
+  p_project_id: string;
+}
+
+export type CreateProjectLocaleResponse = Database['public']['Functions']['create_project_locale_atomic']['Returns'][0];
 
 export type UpdateProjectLocaleRequest = Pick<ProjectLocaleUpdate, 'label'>;
+
+export interface UpdateProjectLocaleContext {
+  previousLocales?: ProjectLocaleWithDefault[];
+}
 
 // RPC Function Arguments
 export interface ListProjectLocalesWithDefaultArgs {
@@ -1027,11 +1037,7 @@ export function useProjectLocales(projectId: string) {
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type {
-  ApiErrorResponse,
-  CreateProjectLocaleAtomicRequest,
-  CreateProjectLocaleAtomicResponse,
-} from '@/shared/types';
+import type { ApiErrorResponse, CreateProjectLocaleRequest, CreateProjectLocaleResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { LOCALE_NORMALIZATION } from '@/shared/constants';
@@ -1045,11 +1051,7 @@ export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<
-    CreateProjectLocaleAtomicResponse,
-    ApiErrorResponse,
-    Omit<CreateProjectLocaleAtomicRequest, 'p_project_id'>
-  >({
+  return useMutation<CreateProjectLocaleResponse, ApiErrorResponse, Omit<CreateProjectLocaleRequest, 'p_project_id'>>({
     mutationFn: async (payload) => {
       // normalize locale code before validation
       const normalized = LOCALE_NORMALIZATION.normalize(payload.p_locale);
@@ -1124,6 +1126,7 @@ import type {
   ApiErrorResponse,
   ProjectLocaleResponse,
   ProjectLocaleWithDefault,
+  UpdateProjectLocaleContext,
   UpdateProjectLocaleRequest,
 } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
@@ -1131,10 +1134,6 @@ import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../locales.errors';
 import { LOCALES_KEYS } from '../locales.key-factory';
 import { PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
-
-interface UpdateProjectLocaleContext {
-  previousLocales?: ProjectLocaleWithDefault[];
-}
 
 export function useUpdateProjectLocale(projectId: string, localeId: string) {
   const supabase = useSupabase();
@@ -1168,7 +1167,7 @@ export function useUpdateProjectLocale(projectId: string, localeId: string) {
       await queryClient.cancelQueries({ queryKey: LOCALES_KEYS.list(projectId) });
 
       // snapshot previous value
-      const PREVIOUS_LOCALES = queryClient.getQueryData<ProjectLocaleWithDefault[]>(LOCALES_KEYS.list(projectId));
+      const previousLocales = queryClient.getQueryData<ProjectLocaleWithDefault[]>(LOCALES_KEYS.list(projectId));
 
       // optimistically update
       queryClient.setQueryData(LOCALES_KEYS.list(projectId), (old: ProjectLocaleWithDefault[] | undefined) => {
@@ -1177,7 +1176,7 @@ export function useUpdateProjectLocale(projectId: string, localeId: string) {
         return old.map((locale) => (locale.id === localeId ? { ...locale, ...newData } : locale));
       });
 
-      return { previousLocales: PREVIOUS_LOCALES };
+      return { previousLocales };
     },
     onSettled: () => {
       // refetch to ensure consistency

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, ProjectResponse, UpdateProjectRequest } from '@/shared/types';
+import type { ApiErrorResponse, ProjectResponse, UpdateProjectContext, UpdateProjectRequest } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
@@ -9,13 +9,6 @@ import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
 import { PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
-
-/**
- * Context type for mutation callbacks
- */
-interface UpdateProjectContext {
-  previousProject?: ProjectResponse;
-}
 
 /**
  * Update a project's fields with optimistic UI

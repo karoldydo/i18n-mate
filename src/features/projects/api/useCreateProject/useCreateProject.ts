@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, CreateProjectWithDefaultLocaleRequest, ProjectResponse } from '@/shared/types';
+import type { ApiErrorResponse, CreateProjectRequest, ProjectResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
@@ -28,7 +28,7 @@ export function useCreateProject() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectWithDefaultLocaleRequest>({
+  return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectRequest>({
     mutationFn: async (payload) => {
       const body = CREATE_PROJECT_SCHEMA.parse(payload);
 

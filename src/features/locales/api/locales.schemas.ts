@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type {
-  CreateProjectLocaleAtomicRequest,
+  CreateProjectLocaleRequest,
   ListProjectLocalesWithDefaultArgs,
   ProjectLocaleWithDefault,
   UpdateProjectLocaleRequest,
@@ -31,7 +31,7 @@ export const CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA = z.object({
   p_label: LOCALE_LABEL_SCHEMA,
   p_locale: LOCALE_CODE_SCHEMA,
   p_project_id: z.string().uuid('Invalid project ID format'),
-}) satisfies z.ZodType<CreateProjectLocaleAtomicRequest>;
+}) satisfies z.ZodType<CreateProjectLocaleRequest>;
 
 // update project locale schema
 export const UPDATE_PROJECT_LOCALE_SCHEMA = z

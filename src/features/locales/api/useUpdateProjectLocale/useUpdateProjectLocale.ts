@@ -4,6 +4,7 @@ import type {
   ApiErrorResponse,
   ProjectLocaleResponse,
   ProjectLocaleWithDefault,
+  UpdateProjectLocaleContext,
   UpdateProjectLocaleRequest,
 } from '@/shared/types';
 
@@ -13,13 +14,6 @@ import { createApiErrorResponse } from '@/shared/utils';
 import { createDatabaseErrorResponse } from '../locales.errors';
 import { LOCALES_KEYS } from '../locales.key-factory';
 import { PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
-
-/**
- * Context type for mutation callbacks
- */
-interface UpdateProjectLocaleContext {
-  previousLocales?: ProjectLocaleWithDefault[];
-}
 
 /**
  * Update a project locale's label with optimistic UI updates
@@ -70,7 +64,7 @@ export function useUpdateProjectLocale(projectId: string, localeId: string) {
       await queryClient.cancelQueries({ queryKey: LOCALES_KEYS.list(projectId) });
 
       // snapshot previous value
-      const PREVIOUS_LOCALES = queryClient.getQueryData<ProjectLocaleWithDefault[]>(LOCALES_KEYS.list(projectId));
+      const previousLocales = queryClient.getQueryData<ProjectLocaleWithDefault[]>(LOCALES_KEYS.list(projectId));
 
       // optimistically update
       queryClient.setQueryData(LOCALES_KEYS.list(projectId), (old: ProjectLocaleWithDefault[] | undefined) => {
@@ -79,7 +73,7 @@ export function useUpdateProjectLocale(projectId: string, localeId: string) {
         return old.map((locale) => (locale.id === localeId ? { ...locale, ...newData } : locale));
       });
 
-      return { previousLocales: PREVIOUS_LOCALES };
+      return { previousLocales };
     },
     onSettled: () => {
       // refetch to ensure consistency

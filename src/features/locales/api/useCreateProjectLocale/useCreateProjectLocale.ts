@@ -1,10 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type {
-  ApiErrorResponse,
-  CreateProjectLocaleAtomicRequest,
-  CreateProjectLocaleAtomicResponse,
-} from '@/shared/types';
+import type { ApiErrorResponse, CreateProjectLocaleRequest, CreateProjectLocaleResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { LOCALE_NORMALIZATION } from '@/shared/constants';
@@ -47,11 +43,7 @@ export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
-  return useMutation<
-    CreateProjectLocaleAtomicResponse,
-    ApiErrorResponse,
-    Omit<CreateProjectLocaleAtomicRequest, 'p_project_id'>
-  >({
+  return useMutation<CreateProjectLocaleResponse, ApiErrorResponse, Omit<CreateProjectLocaleRequest, 'p_project_id'>>({
     mutationFn: async (payload) => {
       // normalize locale code before validation
       const normalized = LOCALE_NORMALIZATION.normalize(payload.p_locale);

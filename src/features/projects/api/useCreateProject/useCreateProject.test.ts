@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { CreateProjectWithDefaultLocaleRequest } from '@/shared/types';
+import type { CreateProjectRequest } from '@/shared/types';
 
 import {
   PROJECTS_CONSTRAINTS,
@@ -64,7 +64,7 @@ describe('useCreateProject', () => {
       }),
     });
 
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       description: 'Test project',
@@ -118,7 +118,7 @@ describe('useCreateProject', () => {
       }),
     });
 
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Minimal Project',
@@ -155,7 +155,7 @@ describe('useCreateProject', () => {
       }),
     });
 
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Existing Project',
@@ -192,7 +192,7 @@ describe('useCreateProject', () => {
       }),
     });
 
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'New Project',
@@ -217,7 +217,7 @@ describe('useCreateProject', () => {
   });
 
   it('should validate invalid prefix (too short)', async () => {
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',
@@ -234,7 +234,7 @@ describe('useCreateProject', () => {
   });
 
   it('should validate invalid prefix (too long)', async () => {
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',
@@ -251,7 +251,7 @@ describe('useCreateProject', () => {
   });
 
   it('should validate invalid prefix (ends with dot)', async () => {
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',
@@ -268,7 +268,7 @@ describe('useCreateProject', () => {
   });
 
   it('should validate invalid locale code format', async () => {
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'invalid',
       default_locale_label: 'Invalid',
       name: 'Test',
@@ -303,7 +303,7 @@ describe('useCreateProject', () => {
       }),
     });
 
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en-US',
       default_locale_label: 'English (US)',
       name: 'US Project',
@@ -343,7 +343,7 @@ describe('useCreateProject', () => {
       }),
     });
 
-    const projectData: CreateProjectWithDefaultLocaleRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',

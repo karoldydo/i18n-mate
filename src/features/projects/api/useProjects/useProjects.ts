@@ -16,7 +16,7 @@ import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.sc
  * enabled. Returns projects with aggregated locale and key counts. Data items
  * are validated at runtime and pagination metadata is computed from input params.
  *
- * @param listProjectsParams - Optional listing parameters (limit, offset, order)
+ * @param params - Optional listing parameters (limit, offset, order)
  * @param params.limit - Items per page (1-100, default: 50)
  * @param params.offset - Pagination offset (min: 0, default: 0)
  * @param params.order - Sort order (name.asc|desc, created_at.asc|desc, default: name.asc)
@@ -26,25 +26,18 @@ import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.sc
  *
  * @returns TanStack Query result with projects data and pagination metadata
  */
-export function useProjects(listProjectsParams: ListProjectsParams = {}) {
+export function useProjects(params: ListProjectsParams = {}) {
   const supabase = useSupabase();
 
   return useQuery<ProjectListResponse, ApiErrorResponse>({
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      const params = LIST_PROJECTS_SCHEMA.parse(listProjectsParams);
+      const { limit, offset, order } = LIST_PROJECTS_SCHEMA.parse(params);
 
       const { count, data, error } = await supabase
-        .rpc(
-          'list_projects_with_counts',
-          {
-            p_limit: params.limit,
-            p_offset: params.offset,
-          },
-          { count: 'exact' }
-        )
-        .order(params.order?.split('.')[0] || 'name', {
-          ascending: params.order?.endsWith('.asc') ?? true,
+        .rpc('list_projects_with_counts', { p_limit: limit, p_offset: offset }, { count: 'exact' })
+        .order(order?.split('.')[0] || 'name', {
+          ascending: order?.endsWith('.asc') ?? true,
         });
 
       if (error) {
@@ -57,13 +50,13 @@ export function useProjects(listProjectsParams: ListProjectsParams = {}) {
       return {
         data: projects,
         metadata: {
-          end: (params.offset || 0) + projects.length - 1,
-          start: params.offset || 0,
+          end: (offset || 0) + projects.length - 1,
+          start: offset || 0,
           total: count || 0,
         },
       };
     },
-    queryKey: PROJECTS_KEY_FACTORY.list(listProjectsParams),
+    queryKey: PROJECTS_KEY_FACTORY.list(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

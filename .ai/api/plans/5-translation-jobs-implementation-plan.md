@@ -177,7 +177,16 @@ export interface CreateTranslationJobResponse {
   status: JobStatus;
 }
 
+export interface CancelTranslationJobContext {
+  previousJob?: TranslationJobResponse;
+}
+
 export interface CancelTranslationJobRequest {
+  jobId: string;
+}
+
+export interface CancelTranslationJobRpcArgs {
+  job_id: string;
   status: 'cancelled';
 }
 
@@ -1196,7 +1205,12 @@ export function useCreateTranslationJob() {
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiErrorResponse, TranslationJobResponse } from '@/shared/types';
+import type {
+  ApiErrorResponse,
+  CancelTranslationJobContext,
+  CancelTranslationJobRequest,
+  TranslationJobResponse,
+} from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { TRANSLATION_JOBS_ERROR_MESSAGES, TRANSLATION_JOBS_VALIDATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
@@ -1204,20 +1218,6 @@ import { createApiErrorResponse } from '@/shared/utils';
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
 import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
 import { CANCEL_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
-
-/**
- * Context type for mutation callbacks
- */
-interface CancelTranslationJobContext {
-  previousJob?: TranslationJobResponse;
-}
-
-/**
- * Variables for cancelling a translation job
- */
-interface CancelTranslationJobVariables {
-  jobId: string;
-}
 
 /**
  * Cancel running translation job
@@ -1250,7 +1250,7 @@ export function useCancelTranslationJob() {
   return useMutation<
     TranslationJobResponse,
     ApiErrorResponse,
-    CancelTranslationJobVariables,
+    CancelTranslationJobRequest,
     CancelTranslationJobContext
   >({
     mutationFn: async ({ jobId }) => {

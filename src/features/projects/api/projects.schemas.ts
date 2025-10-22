@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import type {
+  CreateProjectRequest,
   CreateProjectRpcArgs,
-  CreateProjectWithDefaultLocaleRequest,
   ListProjectsParams,
   ProjectResponse,
   ProjectWithCounts,
@@ -61,7 +61,7 @@ export const CREATE_PROJECT_REQUEST_SCHEMA = z.object({
   description: z.string().trim().optional().nullable(),
   name: z.string().min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED).trim(),
   prefix: PREFIX_SCHEMA,
-}) satisfies z.ZodType<CreateProjectWithDefaultLocaleRequest>;
+}) satisfies z.ZodType<CreateProjectRequest>;
 
 // create project schema with rpc parameter transformation (adds p_ prefix)
 export const CREATE_PROJECT_SCHEMA = CREATE_PROJECT_REQUEST_SCHEMA.transform(

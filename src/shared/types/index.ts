@@ -60,9 +60,8 @@ export type {
 // ============================================================================
 
 export type {
-  CreateProjectLocaleAtomicRequest,
-  CreateProjectLocaleAtomicResponse,
   CreateProjectLocaleRequest,
+  CreateProjectLocaleResponse,
   LanguageAddedEvent,
   LanguageAddedProperties,
   ListProjectLocalesWithDefaultArgs,
@@ -72,6 +71,7 @@ export type {
   ProjectLocaleResponse,
   ProjectLocaleUpdate,
   ProjectLocaleWithDefault,
+  UpdateProjectLocaleContext,
   UpdateProjectLocaleRequest,
 } from './locales';
 
@@ -80,8 +80,8 @@ export type {
 // ============================================================================
 
 export type {
+  CreateProjectRequest,
   CreateProjectRpcArgs,
-  CreateProjectWithDefaultLocaleRequest,
   ListProjectsParams,
   ListProjectsWithCountsArgs,
   Project,
@@ -93,6 +93,7 @@ export type {
   ProjectResponse,
   ProjectUpdate,
   ProjectWithCounts,
+  UpdateProjectContext,
   UpdateProjectRequest,
 } from './projects';
 
@@ -118,7 +119,9 @@ export type {
 // ============================================================================
 
 export type {
+  CancelTranslationJobContext,
   CancelTranslationJobRequest,
+  CancelTranslationJobRpcArgs,
   CheckActiveJobResponse,
   CreateTranslationJobRequest,
   CreateTranslationJobResponse,

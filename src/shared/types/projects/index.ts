@@ -3,16 +3,16 @@
 import type { Database, Tables, TablesInsert, TablesUpdate } from '../database.types';
 import type { PaginatedResponse, PaginationParams } from '../types';
 
-export type CreateProjectRpcArgs = Database['public']['Functions']['create_project_with_default_locale']['Args'];
-
 // Primary interface for creating projects with atomic RPC approach
-export interface CreateProjectWithDefaultLocaleRequest {
+export interface CreateProjectRequest {
   default_locale: string;
   default_locale_label: string;
   description?: null | string;
   name: string;
   prefix: string;
 }
+
+export type CreateProjectRpcArgs = Database['public']['Functions']['create_project_with_default_locale']['Args'];
 
 // Query parameters for listing projects
 export interface ListProjectsParams extends PaginationParams {
@@ -61,6 +61,11 @@ export type ProjectWithCounts = ProjectResponse & {
   key_count: number;
   locale_count: number;
 };
+
+// Mutation context for optimistic updates when updating a project
+export interface UpdateProjectContext {
+  previousProject?: ProjectResponse;
+}
 
 // Only name and description are mutable
 export type UpdateProjectRequest = Pick<ProjectUpdate, 'description' | 'name'>;
