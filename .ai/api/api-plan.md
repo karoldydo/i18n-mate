@@ -34,43 +34,43 @@ This API plan leverages Supabase's built-in PostgREST API for standard CRUD oper
 
 ### 2.1 Sign Up
 
-[See details →](./specifications/2.1-authentication-signup.md)
+[See details →](./specifications/authentication/2.1-authentication-signup.md)
 
 Register new user account. Sends verification email. No session created until email verified.
 
 ### 2.2 Resend Verification Email
 
-[See details →](./specifications/2.2-authentication-resend-verification.md)
+[See details →](./specifications/authentication/2.2-authentication-resend-verification.md)
 
 Resend verification email for unverified accounts.
 
 ### 2.3 Verify Email
 
-[See details →](./specifications/2.3-authentication-verify-email.md)
+[See details →](./specifications/authentication/2.3-authentication-verify-email.md)
 
 Verify email using token from verification email.
 
 ### 2.4 Sign In
 
-[See details →](./specifications/2.4-authentication-signin.md)
+[See details →](./specifications/authentication/2.4-authentication-signin.md)
 
 Login with email and password. Requires verified email.
 
 ### 2.5 Sign Out
 
-[See details →](./specifications/2.5-authentication-signout.md)
+[See details →](./specifications/authentication/2.5-authentication-signout.md)
 
 Invalidate current session.
 
 ### 2.6 Request Password Reset
 
-[See details →](./specifications/2.6-authentication-request-password-reset.md)
+[See details →](./specifications/authentication/2.6-authentication-request-password-reset.md)
 
 Send password reset link to user email.
 
 ### 2.7 Reset Password
 
-[See details →](./specifications/2.7-authentication-reset-password.md)
+[See details →](./specifications/authentication/2.7-authentication-reset-password.md)
 
 Set new password using reset token.
 
@@ -80,31 +80,31 @@ Set new password using reset token.
 
 ### 3.1 List Projects
 
-[See details →](./specifications/3.1-projects-list.md)
+[See details →](./specifications/projects/3.1-projects-list.md)
 
 Get paginated list of user's projects sorted by name (ascending).
 
 ### 3.2 Get Project Details
 
-[See details →](./specifications/3.2-projects-get-details.md)
+[See details →](./specifications/projects/3.2-projects-get-details.md)
 
 Get single project by ID.
 
 ### 3.3 Create Project
 
-[See details →](./specifications/3.3-projects-create.md)
+[See details →](./specifications/projects/3.3-projects-create.md)
 
 Create new project with default locale. Auto-creates default locale in project_locales.
 
 ### 3.4 Update Project
 
-[See details →](./specifications/3.4-projects-update.md)
+[See details →](./specifications/projects/3.4-projects-update.md)
 
 Update project name and/or description. Cannot change prefix or default_locale (immutable).
 
 ### 3.5 Delete Project
 
-[See details →](./specifications/3.5-projects-delete.md)
+[See details →](./specifications/projects/3.5-projects-delete.md)
 
 Delete project and all related data (cascading delete).
 
@@ -114,25 +114,25 @@ Delete project and all related data (cascading delete).
 
 ### 4.1 List Project Locales
 
-[See details →](./specifications/4.1-locales-list.md)
+[See details →](./specifications/locales/4.1-locales-list.md)
 
 Get all locales for a project.
 
 ### 4.2 Add Locale to Project
 
-[See details →](./specifications/4.2-locales-add.md)
+[See details →](./specifications/locales/4.2-locales-add-atomic.md)
 
 Add new locale to project. Triggers fan-out: creates NULL translations for all existing keys.
 
 ### 4.3 Update Locale Label
 
-[See details →](./specifications/4.3-locales-update-label.md)
+[See details →](./specifications/locales/4.3-locales-update-label.md)
 
 Update locale label only. Cannot change locale code.
 
 ### 4.4 Delete Locale
 
-[See details →](./specifications/4.4-locales-delete.md)
+[See details →](./specifications/locales/4.4-locales-delete.md)
 
 Remove locale from project. Cannot delete default locale.
 
@@ -142,25 +142,25 @@ Remove locale from project. Cannot delete default locale.
 
 ### 5.1 List Keys (Default Language View)
 
-[See details →](./specifications/5.1-keys-list-default-view.md)
+[See details →](./specifications/keys/5.1-keys-list-default-view.md)
 
 List keys with default locale values and missing counts. Supports search and missing filter.
 
 ### 5.2 List Keys (Per-Language View)
 
-[See details →](./specifications/5.2-keys-list-per-language-view.md)
+[See details →](./specifications/keys/5.2-keys-list-per-language-view.md)
 
 List keys with values for selected locale. Supports search and missing filter.
 
 ### 5.3 Create Key with Default Value
 
-[See details →](./specifications/5.3-keys-create.md)
+[See details →](./specifications/keys/5.3-keys-create.md)
 
 Create key in default language with initial value. Triggers fan-out to all locales.
 
 ### 5.4 Delete Key
 
-[See details →](./specifications/5.4-keys-delete.md)
+[See details →](./specifications/keys/5.4-keys-delete.md)
 
 Delete key and all translations (cascading). Irreversible.
 
@@ -170,19 +170,19 @@ Delete key and all translations (cascading). Irreversible.
 
 ### 6.1 Get Translation
 
-[See details →](./specifications/6.1-translations-get.md)
+[See details →](./specifications/translations/6.1-translations-get.md)
 
 Get single translation record.
 
 ### 6.2 Update Translation (Inline Edit)
 
-[See details →](./specifications/6.2-translations-update.md)
+[See details →](./specifications/translations/6.2-translations-update.md)
 
 Update translation value (autosave). Updates metadata.
 
 ### 6.3 Bulk Update Translations
 
-[See details →](./specifications/6.3-translations-bulk-update.md)
+[See details →](./specifications/translations/6.3-translations-bulk-update.md)
 
 Update multiple translations at once (batch operation). Used internally by translation jobs.
 
@@ -192,31 +192,31 @@ Update multiple translations at once (batch operation). Used internally by trans
 
 ### 7.1 Check Active Job
 
-[See details →](./specifications/7.1-translation-jobs-check-active.md)
+[See details →](./specifications/translation-jobs/7.1-translation-jobs-check-active.md)
 
 Check if project has active translation job.
 
 ### 7.2 List Translation Jobs
 
-[See details →](./specifications/7.2-translation-jobs-list.md)
+[See details →](./specifications/translation-jobs/7.2-translation-jobs-list.md)
 
 Get translation job history for project.
 
 ### 7.3 Create Translation Job
 
-[See details →](./specifications/7.3-translation-jobs-create.md)
+[See details →](./specifications/translation-jobs/7.3-translation-jobs-create.md)
 
 Create and execute LLM translation job (Supabase Edge Function).
 
 ### 7.4 Cancel Translation Job
 
-[See details →](./specifications/7.4-translation-jobs-cancel.md)
+[See details →](./specifications/translation-jobs/7.4-translation-jobs-cancel.md)
 
 Cancel running translation job.
 
 ### 7.5 Get Job Items
 
-[See details →](./specifications/7.5-translation-jobs-get-items.md)
+[See details →](./specifications/translation-jobs/7.5-translation-jobs-get-items.md)
 
 Get detailed item-level status for translation job.
 
@@ -226,7 +226,7 @@ Get detailed item-level status for translation job.
 
 ### 8.1 Export Project Translations
 
-[See details →](./specifications/8.1-export-translations.md)
+[See details →](./specifications/export/8.1-export-translations.md)
 
 Export all translations as ZIP with `{locale}.json` files (Supabase Edge Function).
 
@@ -236,7 +236,7 @@ Export all translations as ZIP with `{locale}.json` files (Supabase Edge Functio
 
 ### 9.1 Get Project Telemetry
 
-[See details →](./specifications/9.1-telemetry-get.md)
+[See details →](./specifications/telemetry/9.1-telemetry-get.md)
 
 Get telemetry events for project (owner or service_role only).
 
