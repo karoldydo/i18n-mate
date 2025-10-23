@@ -54,15 +54,6 @@ The Project Locales API manages languages assigned to translation projects. It p
 - `p_locale` (required, string) - BCP-47 locale code (ll or ll-CC format, normalized automatically)
 - `p_label` (required, string) - Human-readable locale label (max 64 characters, trimmed)
 
-**Advantages of Atomic Approach:**
-
-- Built-in fan-out verification ensures all translation records are created
-- Better error reporting with specific error codes for troubleshooting
-- Atomic operation (all-or-nothing) prevents partial state
-- Automatic telemetry event emission for analytics
-- Enhanced retry logic for transient failures
-- Rollback on any step failure
-
 ### 2.3 Update Locale Label
 
 - **HTTP Method:** PATCH
@@ -642,7 +633,7 @@ Create `src/features/locales/api/locales.key-factory.ts`:
 **6.2 Create `src/features/locales/api/useCreateProjectLocale/useCreateProjectLocale.ts`:**
 
 - Normalize `p_locale` via `LOCALE_NORMALIZATION.normalize`, validate payload with `CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA`, call RPC, parse with `PROJECT_LOCALE_RESPONSE_SCHEMA`.
-- On success invalidate `LOCALES_KEYS.list(projectId)`; add targeted retry logic for transient fan‑out issues, skip retries for 401/403/404/409.
+- On success invalidate `LOCALES_KEYS.list(projectId)`; implement exponential backoff retry logic for transient fan-out issues (up to 2 retries for `FANOUT_INCOMPLETE`, 1 retry for `FANOUT_VERIFICATION_FAILED`), skip retries for authentication/authorization/conflict errors (401/403/404/409).
 
 **6.3 Create `src/features/locales/api/useUpdateProjectLocale/useUpdateProjectLocale.ts`:**
 
