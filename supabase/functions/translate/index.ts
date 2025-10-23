@@ -469,7 +469,20 @@ async function processTranslationJobInBackground(
       } catch (error) {
         console.error(`[processTranslationJob] Error translating key ${keyId}:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        await updateJobItem(supabase, jobId, keyId, 'failed', 'TRANSLATION_ERROR', errorMessage.substring(0, 255));
+
+        // Parse error message to extract error code (format: "code:status:message")
+        let errorCode = 'TRANSLATION_ERROR';
+        let cleanErrorMessage = errorMessage;
+
+        if (errorMessage.includes(':')) {
+          const parts = errorMessage.split(':');
+          if (parts.length >= 3) {
+            errorCode = parts[0].toUpperCase(); // Convert to uppercase for consistency
+            cleanErrorMessage = `${parts[1]}: ${parts[2]}`; // "status: message"
+          }
+        }
+
+        await updateJobItem(supabase, jobId, keyId, 'failed', errorCode, cleanErrorMessage.substring(0, 255));
         failedCount++;
       }
     }
@@ -564,7 +577,32 @@ Provide ONLY the translated text, without any explanation, quotes, or additional
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(`OpenRouter API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    const errorCode = errorData.error?.code || 'unknown_error';
+    const errorMessage = errorData.error?.message || 'Unknown error';
+
+    // Map OpenRouter error codes to application-specific error codes
+    let appErrorCode: string;
+    switch (errorCode) {
+      case 'insufficient_quota':
+      case 'rate_limit_exceeded':
+        appErrorCode = 'rate_limit';
+        break;
+      case 'invalid_request':
+      case 'model_disabled':
+      case 'model_not_available':
+      case 'model_not_found':
+      case 'validation_error':
+        if (errorCode === 'invalid_request' || errorCode === 'validation_error') {
+          appErrorCode = 'invalid_request';
+        } else {
+          appErrorCode = 'model_error';
+        }
+        break;
+      default:
+        appErrorCode = 'api_error';
+    }
+
+    throw new Error(`${appErrorCode}:${response.status}:${errorMessage}`);
   }
 
   const data = await response.json();

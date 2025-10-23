@@ -12,6 +12,7 @@ import type {
 import {
   PROJECT_LOCALE_LABEL_MAX_LENGTH,
   PROJECT_LOCALE_LABEL_MIN_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
   PROJECT_PREFIX_MAX_LENGTH,
   PROJECT_PREFIX_MIN_LENGTH,
   PROJECT_PREFIX_PATTERN,
@@ -59,7 +60,11 @@ export const CREATE_PROJECT_REQUEST_SCHEMA = z.object({
     .max(PROJECT_LOCALE_LABEL_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.LOCALE_LABEL_TOO_LONG)
     .trim(),
   description: z.string().trim().optional().nullable(),
-  name: z.string().min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED).trim(),
+  name: z
+    .string()
+    .min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED)
+    .max(PROJECT_NAME_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.NAME_TOO_LONG)
+    .trim(),
   prefix: PREFIX_SCHEMA,
 }) satisfies z.ZodType<CreateProjectRequest>;
 
@@ -79,7 +84,12 @@ export const UPDATE_PROJECT_SCHEMA = z
   .object({
     default_locale: z.never().optional(),
     description: z.string().trim().optional().nullable(),
-    name: z.string().min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED).trim().optional(),
+    name: z
+      .string()
+      .min(1, PROJECTS_ERROR_MESSAGES.NAME_REQUIRED)
+      .max(PROJECT_NAME_MAX_LENGTH, PROJECTS_ERROR_MESSAGES.NAME_TOO_LONG)
+      .trim()
+      .optional(),
     // prevent immutable fields
     prefix: z.never().optional(),
   })
