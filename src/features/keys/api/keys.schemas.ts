@@ -12,6 +12,7 @@ import {
   TRANSLATION_VALUE_MAX_LENGTH,
   TRANSLATION_VALUE_MIN_LENGTH,
 } from '@/shared/constants';
+import { LOCALE_CODE_PATTERN } from '@/shared/constants/locale.constants';
 
 // full key validation
 const FULL_KEY_SCHEMA = z
@@ -31,7 +32,7 @@ const TRANSLATION_VALUE_SCHEMA = z
   .transform((value) => value.trim());
 
 // locale code validation (bcp-47 format)
-const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
+const LOCALE_CODE_SCHEMA = z.string().regex(LOCALE_CODE_PATTERN, {
   message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
 });
 

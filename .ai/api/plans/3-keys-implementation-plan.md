@@ -38,14 +38,7 @@ The Keys API provides operations for managing translation keys within projects. 
     - `offset` (number) - Pagination offset (default: 0)
 - **Request Body:** None
 
-**Example Request:**
-
-```http
-GET /rest/v1/rpc/list_keys_default_view?project_id=550e8400-e29b-41d4-a716-446655440000&search=button&missing_only=false&limit=50&offset=0
-Authorization: Bearer {access_token}
-```
-
-Note: Raw RPC returns an array of rows and uses p\_-prefixed parameter names (e.g., p_project_id, p_limit). Client hooks map UI params to RPC params and wrap the result into `{ data, metadata }` using Supabase's exact count and pagination params.
+Note: Raw RPC returns an array of rows and uses p\_-prefixed parameter names (e.g., `p_project_id`, `p_limit`). Client hooks map UI params to RPC params and wrap the result into `{ data, metadata }` using Supabase exact count and pagination params.
 
 ### 2.2 List Keys (Per-Language View)
 
@@ -63,14 +56,7 @@ Note: Raw RPC returns an array of rows and uses p\_-prefixed parameter names (e.
     - `offset` (number) - Pagination offset (default: 0)
 - **Request Body:** None
 
-**Example Request:**
-
-```http
-GET /rest/v1/rpc/list_keys_per_language_view?project_id=550e8400-e29b-41d4-a716-446655440000&locale=pl&missing_only=true&limit=50&offset=0
-Authorization: Bearer {access_token}
-```
-
-Note: Raw RPC returns an array of rows and uses p\_-prefixed parameter names (e.g., p_project_id, p_locale, p_limit). Client hooks map UI params to RPC params and wrap the result into `{ data, metadata }` using Supabase's exact count and pagination params.
+Note: Raw RPC returns an array of rows and uses p\_-prefixed parameter names (e.g., `p_project_id`, `p_locale`, `p_limit`). Client hooks map UI params to RPC params and wrap the result into `{ data, metadata }` using Supabase exact count and pagination params.
 
 ### 2.3 Create Key with Default Value
 
@@ -131,159 +117,24 @@ The mutation returns `void` (no content). The underlying Supabase API returns `{
 
 **Keys Types** (from `src/shared/types/keys/index.ts`):
 
-```typescript
-// List Keys Default View Response
-export interface KeyDefaultViewResponse {
-  created_at: string;
-  full_key: string;
-  id: string;
-  missing_count: number;
-  value: string;
-}
-
-export interface KeyDefaultViewListResponse {
-  data: KeyDefaultViewResponse[];
-  metadata: PaginationMetadata;
-}
-
-// List Keys Per-Language View Response
-export interface KeyPerLanguageViewResponse {
-  full_key: string;
-  is_machine_translated: boolean;
-  key_id: string;
-  updated_at: string;
-  updated_by_user_id: string | null;
-  updated_source: string;
-  value: string | null;
-}
-
-export interface KeyPerLanguageViewListResponse {
-  data: KeyPerLanguageViewResponse[];
-  metadata: PaginationMetadata;
-}
-
-// Create Key Response
-export interface CreateKeyResponse {
-  key_id: string;
-}
-
-// Request DTOs
-export interface CreateKeyRequest {
-  default_value: string;
-  full_key: string;
-  project_id: string;
-}
-
-export interface ListKeysDefaultViewParams extends PaginationParams {
-  missing_only?: boolean; // Default: false, undefined treated as false
-  project_id: string;
-  search?: string; // If omitted/empty, no search filter applied
-}
-
-export interface ListKeysPerLanguageParams extends ListKeysDefaultViewParams {
-  locale: string; // Required BCP-47 locale code
-}
-```
+- `KeyDefaultViewResponse` / `KeyDefaultViewListResponse` — default view row shape and paginated wrapper with `PaginationMetadata`.
+- `KeyPerLanguageViewResponse` / `KeyPerLanguageViewListResponse` — per-locale row shape with `is_machine_translated`, `updated_*`, and value that may be null.
+- `CreateKeyRequest` / `CreateKeyResponse` — UI payload with `full_key`, `default_value`, `project_id` and RPC result containing `key_id`.
+- `ListKeysDefaultViewParams` / `ListKeysPerLanguageParams` — list query params (incl. `missing_only`, `search`, `project_id`, `locale`).
+- RPC args mirrors: `ListKeysDefaultViewRpcArgs` / `ListKeysPerLanguageViewRpcArgs` expose `p_`-prefixed fields used by Supabase.
 
 ### 3.2 Zod Validation Schemas
 
 Create validation schemas in `src/features/keys/api/keys.schemas.ts`:
 
-**Note:** The implementation now uses constants from `src/shared/constants/keys.constants.ts` for validation parameters, error messages, and patterns. This ensures consistency between client-side validation and database constraints.
+- `FULL_KEY_SCHEMA` — uses `KEY_FORMAT_PATTERN`, min/max, forbids `..` and trailing dot per `KEYS_ERROR_MESSAGES`.
+- `TRANSLATION_VALUE_SCHEMA` — trims and bounds length, disallows newlines for default values.
 
-```typescript
-import { z } from 'zod';
-
-import {
-  KEY_FORMAT_PATTERN,
-  KEY_NAME_MAX_LENGTH,
-  KEY_NAME_MIN_LENGTH,
-  KEYS_DEFAULT_LIMIT,
-  KEYS_MAX_LIMIT,
-  KEYS_MIN_OFFSET,
-  TRANSLATION_VALUE_MAX_LENGTH,
-  TRANSLATION_VALUE_MIN_LENGTH,
-  KEYS_ERROR_MESSAGES,
-} from '@/shared/constants';
-
-// full key validation
-const FULL_KEY_SCHEMA = z
-  .string()
-  .min(KEY_NAME_MIN_LENGTH, KEYS_ERROR_MESSAGES.KEY_REQUIRED)
-  .max(KEY_NAME_MAX_LENGTH, KEYS_ERROR_MESSAGES.KEY_TOO_LONG)
-  .regex(KEY_FORMAT_PATTERN, KEYS_ERROR_MESSAGES.KEY_INVALID_FORMAT)
-  .refine((value) => !value.includes('..'), KEYS_ERROR_MESSAGES.KEY_CONSECUTIVE_DOTS)
-  .refine((value) => !value.endsWith('.'), KEYS_ERROR_MESSAGES.KEY_TRAILING_DOT);
-
-// translation value validation
-const TRANSLATION_VALUE_SCHEMA = z
-  .string()
-  .min(TRANSLATION_VALUE_MIN_LENGTH, KEYS_ERROR_MESSAGES.VALUE_REQUIRED)
-  .max(TRANSLATION_VALUE_MAX_LENGTH, KEYS_ERROR_MESSAGES.VALUE_TOO_LONG)
-  .refine((value) => !value.includes('\n'), KEYS_ERROR_MESSAGES.VALUE_NO_NEWLINES)
-  .transform((value) => value.trim());
-
-// locale code validation (BCP-47 format)
-const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
-  message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
-});
-
-// project id validation
-export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
-
-// list keys default view schema
-export const LIST_KEYS_DEFAULT_VIEW_SCHEMA = z.object({
-  limit: z.number().int().min(1).max(KEYS_MAX_LIMIT).optional().default(KEYS_DEFAULT_LIMIT),
-  missing_only: z.boolean().optional().default(KEYS_DEFAULT_PARAMS.MISSING_ONLY),
-  offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_DEFAULT_PARAMS.OFFSET),
-  project_id: UUID_SCHEMA,
-  search: z.string().optional(),
-});
-
-// list keys per-language view schema
-export const LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA = LIST_KEYS_DEFAULT_VIEW_SCHEMA.extend({
-  locale: LOCALE_CODE_SCHEMA,
-});
-
-// create key request schema (api input format without p_ prefix)
-export const CREATE_KEY_REQUEST_SCHEMA = z.object({
-  default_value: TRANSLATION_VALUE_SCHEMA,
-  full_key: FULL_KEY_SCHEMA,
-  project_id: UUID_SCHEMA,
-});
-
-// create key schema with rpc parameter transformation (adds p_ prefix)
-export const CREATE_KEY_SCHEMA = CREATE_KEY_REQUEST_SCHEMA.transform((data) => ({
-  p_default_value: data.default_value,
-  p_full_key: data.full_key,
-  p_project_id: data.project_id,
-}));
-
-// response schemas for runtime validation
-export const KEY_DEFAULT_VIEW_RESPONSE_SCHEMA = z.object({
-  created_at: z.string(),
-  full_key: z.string(),
-  id: z.string().uuid(),
-  missing_count: z.number().int().min(0),
-  value: z.string(),
-});
-
-// key per-language view response schema
-export const KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA = z.object({
-  full_key: z.string(),
-  is_machine_translated: z.boolean(),
-  key_id: z.string().uuid(),
-  updated_at: z.string(),
-  updated_by_user_id: z.string().uuid().nullable(),
-  updated_source: z.enum(['user', 'system']),
-  value: z.string().nullable(),
-});
-
-// create key response schema
-export const CREATE_KEY_RESPONSE_SCHEMA = z.object({
-  key_id: z.string().uuid(),
-});
-```
+- `LOCALE_CODE_SCHEMA` — validates BCP‑47 (`ll` or `ll-CC`); `UUID_SCHEMA` — validates UUIDs for identifiers.
+- `LIST_KEYS_DEFAULT_VIEW_SCHEMA` — normalizes `limit`/`offset` and `missing_only`, requires `project_id`, optional `search`.
+- `LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA` — extends default view schema with required `locale`.
+- `CREATE_KEY_REQUEST_SCHEMA` — validates UI payload; `CREATE_KEY_SCHEMA` — maps to RPC args with `p_` prefixes.
+- `KEY_DEFAULT_VIEW_RESPONSE_SCHEMA` / `KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA` / `CREATE_KEY_RESPONSE_SCHEMA` — runtime response validation.
 
 ## 4. Response Details
 
@@ -536,12 +387,13 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ### 5.3 Create Key Flow
 
-1. User submits key creation form with full_key and default_value
-2. `useCreateKey` mutation hook receives form data
-3. Hook validates data using `CREATE_KEY_SCHEMA`
-4. If validation fails, return 400 error immediately
-5. Hook calls Supabase RPC `create_key_with_value` with validated data
-6. RPC function atomically:
+1. User submits key creation form with `full_key` and `default_value`.
+2. `useCreateKey` mutation hook receives form data.
+3. Hook validates data using `CREATE_KEY_SCHEMA`.
+4. Hook fetches project prefix by `project_id` and checks `full_key` starts with `${prefix}.`; on mismatch returns 400 `KEY_INVALID_PREFIX`.
+5. If validation fails otherwise, return 400 error immediately.
+6. Hook calls Supabase RPC `create_key_with_value` with validated data.
+7. RPC function atomically:
    - Validates key prefix matches project prefix (trigger `validate_key_prefix_insert_trigger`)
    - Inserts new key row in `keys` table
    - Inserts default locale translation with `updated_by_user_id = auth.uid()`
@@ -549,12 +401,11 @@ All error responses follow the structure: `{ data: null, error: { code, message,
    - Trigger `validate_translation_default_locale_insert_trigger` prevents NULL/empty for default locale
    - Trigger `fanout_translation_key_insert_trigger` creates NULL translations for all other locales
    - `key_created` telemetry event is emitted by trigger `emit_key_created_event` after insert into `keys`
-7. Database enforces unique constraint on (project_id, full_key)
-8. On conflict, PostgreSQL returns unique violation error → hook returns 409
-9. On prefix mismatch, trigger raises exception → hook returns 400
-10. On success, RPC returns `{ key_id }`
-11. TanStack Query invalidates key list caches (all views)
-12. Component displays success message or navigates
+8. Database enforces unique constraint on `(project_id, full_key)`.
+9. On conflict, PostgreSQL returns unique violation error → hook returns 409.
+10. On success, RPC returns `{ key_id }`.
+11. TanStack Query invalidates key list caches (all views).
+12. Component displays success message or navigates.
 
 ### 5.4 Delete Key Flow
 
@@ -566,7 +417,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 6. If unauthorized or not found, returns 404
 7. PostgreSQL CASCADE DELETE removes all related data:
    - All translations for this key (via ON DELETE CASCADE)
-8. On success, Supabase returns 204 No Content
+8. On success, hook returns `void` (Supabase provides affected `count`)
 9. TanStack Query invalidates all key-related caches
 10. Component refreshes list or navigates
 
@@ -634,7 +485,8 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 **Handling:**
 
-Zod validation errors are automatically converted to ApiErrorResponse format by the global QueryClient error handler configured in `src/app/config/queryClient/queryClient.ts`. This ensures consistent error format across all queries and mutations without requiring try/catch blocks in individual hooks.
+- Client hooks validate inputs with Zod and return standardized `ApiErrorResponse` via shared utilities without per-hook try/catch.
+- Validation runs before any Supabase call, ensuring consistent 400 responses for malformed payloads or params.
 
 **Result Format:**
 
@@ -661,9 +513,8 @@ Zod validation errors are automatically converted to ApiErrorResponse format by 
 
 **Handling:**
 
-- RPC returns empty result or error
-- Return 403 "Project not owned by user"
-- Distinguish from 404 to provide clear feedback
+- Return 403 `PROJECT_NOT_OWNED` when ownership checks fail; some flows (e.g., create pre-check) may surface 404 when project is not visible.
+- Distinguish from 404 to avoid leaking resource existence; delete treats missing as 404.
 
 ### 7.3 Conflict Errors (409)
 
@@ -678,20 +529,6 @@ Zod validation errors are automatically converted to ApiErrorResponse format by 
 - Return user-friendly message: "Key already exists in project"
 
 **Example:**
-
-```typescript
-const { data, error } = await supabase.rpc('create_key_with_value', validatedData);
-
-if (error) {
-  throw createDatabaseErrorResponse(error, 'useCreateKey', 'Failed to create key');
-}
-
-// The createDatabaseErrorResponse function handles the error mapping:
-// - 23505 with 'keys_unique_per_project' -> 409 'Key already exists in project'
-// - Trigger exception 'must start with project prefix' -> 400 'Key must start with project prefix'
-// - Trigger exception 'cannot be NULL or empty' -> 400 'Default locale value cannot be empty'
-// - 23514 check constraint -> 400 'Invalid field value'
-```
 
 ### 7.4 Database Trigger Errors (400)
 
@@ -718,16 +555,6 @@ if (error) {
 
 **Handling:**
 
-```typescript
-import { createApiErrorResponse } from '@/shared/utils';
-
-const { count, error } = await supabase.from('keys').delete().eq('id', keyId);
-
-if (count === 0) {
-  throw createApiErrorResponse(404, 'Key not found or access denied');
-}
-```
-
 ### 7.6 Server Errors (500)
 
 **Trigger Conditions:**
@@ -745,17 +572,6 @@ if (count === 0) {
 - Do not expose internal error details to client
 
 **Example:**
-
-```typescript
-const { data, error } = await supabase.rpc('create_key_with_value', validatedData);
-
-if (error) {
-  throw createDatabaseErrorResponse(error, 'useCreateKey', 'Failed to create key');
-}
-
-// The createDatabaseErrorResponse function logs the error and returns a structured ApiErrorResponse
-// For unknown errors, it returns a 500 status with the fallback message
-```
 
 ## 8. Performance Considerations
 
@@ -792,15 +608,8 @@ if (error) {
 
 **TanStack Query Configuration:**
 
-```typescript
-// List keys (default view): 3-minute cache
-staleTime: 3 * 60 * 1000,
-gcTime: 10 * 60 * 1000,
-
-// List keys (per-language view): 3-minute cache
-staleTime: 3 * 60 * 1000,
-gcTime: 10 * 60 * 1000,
-```
+- Default and per-language lists use `staleTime: 3m` and `gcTime: 10m` for freshness vs. memory.
+- Mutations invalidate list caches to keep both views consistent.
 
 **Cache Invalidation:**
 
@@ -841,113 +650,16 @@ gcTime: 10 * 60 * 1000,
 
 ### Step 1: Create Feature Directory Structure
 
-```bash
-mkdir -p src/features/keys/{api}
-```
+- Create `src/features/keys/api` to host schemas, errors, key factory, and hooks.
 
 ### Step 2: Create Keys Constants
 
-Create `src/shared/constants/keys.constants.ts` with centralized constants, patterns, and utilities:
+Create `src/shared/constants/keys.constants.ts` with centralized constants and utilities:
 
-```typescript
-/**
- * Keys Constants and Validation Patterns
- *
- * Centralized definitions for key validation patterns to ensure consistency
- * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
- */
-
-// Validation patterns
-export const KEY_FORMAT_PATTERN = /^[a-z0-9._-]+$/;
-export const CONSECUTIVE_DOTS_PATTERN = /\.\./;
-export const KEY_TRAILING_DOT_PATTERN = /\.$/;
-
-// Length constraints
-export const KEY_NAME_MAX_LENGTH = 256;
-export const KEY_NAME_MIN_LENGTH = 1;
-export const TRANSLATION_VALUE_MAX_LENGTH = 250;
-export const TRANSLATION_VALUE_MIN_LENGTH = 1;
-
-// Pagination defaults
-export const KEYS_DEFAULT_LIMIT = 50;
-export const KEYS_MAX_LIMIT = 100;
-export const KEYS_MIN_OFFSET = 0;
-
-// PostgreSQL error codes and constraints
-export const KEYS_PG_ERROR_CODES = {
-  CHECK_VIOLATION: '23514',
-  FOREIGN_KEY_VIOLATION: '23503',
-  UNIQUE_VIOLATION: '23505',
-} as const;
-
-export const KEYS_CONSTRAINTS = {
-  PROJECT_ID_FKEY: 'keys_project_id_fkey',
-  UNIQUE_PER_PROJECT: 'keys_unique_per_project',
-} as const;
-
-// Centralized error messages
-export const KEYS_ERROR_MESSAGES = {
-  // Validation errors
-  KEY_REQUIRED: 'Key name is required',
-  KEY_TOO_LONG: `Key name must be at most ${KEY_NAME_MAX_LENGTH} characters`,
-  KEY_INVALID_FORMAT: 'Key can only contain lowercase letters, numbers, dots, underscores, and hyphens',
-  KEY_CONSECUTIVE_DOTS: 'Key cannot contain consecutive dots',
-  KEY_TRAILING_DOT: 'Key cannot end with a dot',
-
-  VALUE_REQUIRED: 'Value cannot be empty',
-  VALUE_TOO_LONG: `Value must be at most ${TRANSLATION_VALUE_MAX_LENGTH} characters`,
-  VALUE_NO_NEWLINES: 'Value cannot contain newlines',
-
-  // Database operation errors
-  KEY_ALREADY_EXISTS: 'Key already exists in project',
-  KEY_INVALID_PREFIX: 'Key must start with project prefix',
-  DEFAULT_VALUE_EMPTY: 'Default locale value cannot be empty',
-  INVALID_PROJECT_ID: 'Invalid project_id',
-  PROJECT_NOT_OWNED: 'Project not owned by user',
-  KEY_NOT_FOUND: 'Key not found or access denied',
-
-  // Generic errors
-  DATABASE_ERROR: 'Database operation failed',
-  NO_DATA_RETURNED: 'No data returned from server',
-  INVALID_FIELD_VALUE: 'Invalid field value',
-  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
-} as const;
-
-// Default parameters
-export const KEYS_DEFAULT_PARAMS = {
-  LIMIT: KEYS_DEFAULT_LIMIT,
-  MISSING_ONLY: false,
-  OFFSET: KEYS_MIN_OFFSET,
-  SEARCH: undefined,
-} as const;
-
-// Validation utilities
-export const KEY_VALIDATION = {
-  isValidFormatClient: (key: string): boolean => {
-    if (!key || typeof key !== 'string') return false;
-    if (key.length < KEY_NAME_MIN_LENGTH || key.length > KEY_NAME_MAX_LENGTH) return false;
-    if (!KEY_FORMAT_PATTERN.test(key)) return false;
-    if (CONSECUTIVE_DOTS_PATTERN.test(key)) return false;
-    if (KEY_TRAILING_DOT_PATTERN.test(key)) return false;
-    return true;
-  },
-
-  isValidTranslationValue: (value: string): boolean => {
-    if (!value || typeof value !== 'string') return false;
-    const trimmed = value.trim();
-    if (trimmed.length < TRANSLATION_VALUE_MIN_LENGTH || trimmed.length > TRANSLATION_VALUE_MAX_LENGTH) return false;
-    if (trimmed.includes('\n')) return false;
-    return true;
-  },
-};
-```
-
-Add to `src/shared/constants/index.ts`:
-
-```typescript
-export * from './locale.constants';
-export * from './keys.constants';
-```
+- Patterns and lengths: `KEY_FORMAT_PATTERN`, `CONSECUTIVE_DOTS_PATTERN`, `KEY_TRAILING_DOT_PATTERN`, name/value min/max.
+- Pagination defaults: `KEYS_DEFAULT_LIMIT`, `KEYS_MAX_LIMIT`, `KEYS_MIN_OFFSET`, and `KEYS_DEFAULT_PARAMS`.
+- Error mapping: `KEYS_PG_ERROR_CODES`, `KEYS_CONSTRAINTS`, `KEYS_ERROR_MESSAGES` shared by schemas and error utils.
+- Helpers: `KEY_VALIDATION` with lightweight client checks; re-export via `src/shared/constants/index.ts`.
 
 ### Step 3: Create Zod Validation Schemas
 
@@ -957,400 +669,43 @@ Create `src/features/keys/api/keys.schemas.ts` with all validation schemas defin
 
 Create `src/features/keys/api/keys.errors.ts`:
 
-**Note:** The implementation now uses constants from `src/shared/constants/keys.constants.ts` for error codes, constraint names, and error messages. This ensures consistency across the application.
-
-```typescript
-import type { PostgrestError } from '@supabase/supabase-js';
-
-import type { ApiErrorResponse } from '@/shared/types';
-
-import { createApiErrorResponse } from '@/shared/utils';
-import { KEYS_PG_ERROR_CODES, KEYS_CONSTRAINTS, KEYS_ERROR_MESSAGES } from '@/shared/constants';
-
-/**
- * Handle database errors and convert them to API errors
- *
- * Provides consistent error handling for PostgreSQL errors including:
- * - Unique constraint violations (23505)
- * - Check constraint violations (23514)
- * - Trigger violations (prefix validation, empty default value)
- *
- * @param error - PostgrestError from Supabase
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object
- */
-export function createDatabaseErrorResponse(
-  error: PostgrestError,
-  context?: string,
-  fallbackMessage?: string
-): ApiErrorResponse {
-  const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
-  console.error(`${logPrefix} Database error:`, error);
-
-  // Handle unique constraint violations
-  if (error.code === KEYS_PG_ERROR_CODES.UNIQUE_VIOLATION) {
-    if (error.message.includes(KEYS_CONSTRAINTS.UNIQUE_PER_PROJECT)) {
-      return createApiErrorResponse(409, KEYS_ERROR_MESSAGES.KEY_ALREADY_EXISTS);
-    }
-  }
-
-  // Handle trigger violations
-  if (error.message.includes('must start with project prefix')) {
-    return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.KEY_INVALID_PREFIX);
-  }
-  if (error.message.includes('cannot be NULL or empty') || error.message.toLowerCase().includes('default_locale')) {
-    return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.DEFAULT_VALUE_EMPTY);
-  }
-
-  // Handle check constraint violations
-  if (error.code === KEYS_PG_ERROR_CODES.CHECK_VIOLATION) {
-    return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.INVALID_FIELD_VALUE, { constraint: error.details });
-  }
-
-  // Handle foreign key violations
-  if (error.code === KEYS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
-    if (error.message.includes(KEYS_CONSTRAINTS.PROJECT_ID_FKEY)) {
-      return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.INVALID_PROJECT_ID);
-    }
-    return createApiErrorResponse(400, KEYS_ERROR_MESSAGES.REFERENCED_RESOURCE_NOT_FOUND);
-  }
-
-  // Handle authorization errors (project not found or not owned)
-  if (error.message.includes('not found') || error.message.includes('access denied')) {
-    return createApiErrorResponse(403, KEYS_ERROR_MESSAGES.PROJECT_NOT_OWNED);
-  }
-
-  // Generic database error
-  return createApiErrorResponse(500, fallbackMessage || KEYS_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
-}
-```
+- Normalize common Postgres errors via `createDatabaseErrorResponse`: `23505` → 409 (`KEY_ALREADY_EXISTS`), `23514` → 400, FK issues → 400.
+- Map trigger messages to 400: prefix mismatch (`KEY_INVALID_PREFIX`), empty default value (`DEFAULT_VALUE_EMPTY`).
+- Return 403 for ownership/visibility issues; fall back to 500 `DATABASE_ERROR` with safe details.
 
 ### Step 5: Create Query Keys Factory
 
 Create `src/features/keys/api/keys.key-factory.ts`:
 
-```typescript
-import type { ListKeysDefaultViewParams, ListKeysPerLanguageParams } from '@/shared/types';
-
-// query key factory for keys, follows tanstack query best practices for structured query keys
-export const KEYS_KEY_FACTORY = {
-  all: ['keys'] as const,
-  defaultView: (projectId: string, params: Omit<ListKeysDefaultViewParams, 'project_id'>) =>
-    [...KEYS_KEY_FACTORY.defaultViews(projectId), params] as const,
-  defaultViews: (projectId: string) => [...KEYS_KEY_FACTORY.all, 'default', projectId] as const,
-  detail: (keyId: string) => [...KEYS_KEY_FACTORY.details(), keyId] as const,
-  details: () => [...KEYS_KEY_FACTORY.all, 'detail'] as const,
-  perLanguageView: (
-    projectId: string,
-    locale: string,
-    params: Omit<ListKeysPerLanguageParams, 'project_id' | 'locale'>
-  ) => [...KEYS_KEY_FACTORY.perLanguageViews(projectId, locale), params] as const,
-  perLanguageViews: (projectId: string, locale: string) =>
-    [...KEYS_KEY_FACTORY.all, 'per-language', projectId, locale] as const,
-};
-```
+- Provide structured keys: `all`, `defaultViews(projectId)`, `defaultView(projectId, params)`, `perLanguageViews(projectId, locale)`, `perLanguageView(projectId, locale, params)`, `details()`, `detail(id)`.
+- Use nested array keys to enable granular cache invalidation across default and per-language views.
 
 ### Step 6: Create TanStack Query Hooks
 
 **Implementation Notes:**
 
-- All hooks follow TanStack Query best practices with proper error handling
-- Use optimistic updates for better UX in mutation hooks
-- Implement proper cache invalidation strategies
-- Include TypeScript generics for type safety and RPC parameter handling
+- Hooks follow TanStack Query best practices with centralized error mapping and runtime validation.
+- No optimistic updates; rely on structured cache keys and targeted invalidation for consistency.
 
 **6.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.ts`:**
 
-```typescript
-import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
-import type { ApiErrorResponse, KeyDefaultViewListResponse, ListKeysDefaultViewParams } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-
-import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEYS_KEY_FACTORY } from '../keys.key-factory';
-import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from '../keys.schemas';
-
-/**
- * Fetch a paginated list of keys in default language view with missing counts
- *
- * Uses the RPC function `list_keys_default_view` with exact total counting
- * enabled. Returns keys with their default locale values and missing counts
- * for other locales. Data items are validated at runtime and pagination
- * metadata is computed from input params and result size.
- *
- * @param params - Query parameters for key listing
- * @param params.project_id - Project UUID to fetch keys from (required)
- * @param params.search - Search term for key name (case-insensitive contains, optional)
- * @param params.missing_only - Filter keys with missing translations (default: false)
- * @param params.limit - Items per page (1-100, default: 50)
- * @param params.offset - Pagination offset (min: 0, default: 0)
- *
- * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
- * @throws {ApiErrorResponse} 403 - Project not owned by user
- * @throws {ApiErrorResponse} 500 - Database error during fetch
- *
- * @returns TanStack Query result with keys data and pagination metadata
- */
-export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
-  const supabase = useSupabase();
-
-  return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    queryFn: async () => {
-      const { limit, missing_only, offset, project_id, search } = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
-
-      const { count, data, error } = await supabase.rpc(
-        'list_keys_default_view',
-        {
-          p_limit: limit,
-          p_missing_only: missing_only,
-          p_offset: offset,
-          p_project_id: project_id,
-          p_search: search,
-        },
-        { count: 'exact' }
-      );
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useKeysDefaultView', 'Failed to fetch keys');
-      }
-
-      // runtime validation of response data
-      const keys = z.array(KEY_DEFAULT_VIEW_RESPONSE_SCHEMA).parse(data || []);
-
-      return {
-        data: keys,
-        metadata: {
-          end: (offset || 0) + keys.length - 1,
-          start: offset || 0,
-          total: count || 0,
-        },
-      };
-    },
-    queryKey: KEYS_KEY_FACTORY.defaultView(params.project_id, {
-      limit: params.limit,
-      missing_only: params.missing_only,
-      offset: params.offset,
-      search: params.search,
-    }),
-    staleTime: 3 * 60 * 1000, // 3 minutes
-  });
-}
-```
+- Validate `ListKeysDefaultViewParams`, call RPC `list_keys_default_view`, and return `{ data, metadata }` with exact `count`.
+- Validate items via `KEY_DEFAULT_VIEW_RESPONSE_SCHEMA`; key with `KEYS_KEY_FACTORY.defaultView(...)`; 3m `staleTime`, 10m `gcTime`.
 
 **6.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.ts`:**
 
-```typescript
-import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
-import type { ApiErrorResponse, KeyPerLanguageViewListResponse, ListKeysPerLanguageParams } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-
-import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEYS_KEY_FACTORY } from '../keys.key-factory';
-import { KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA, LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA } from '../keys.schemas';
-
-/**
- * Fetch a paginated list of keys for a specific language with translation metadata
- *
- * Uses the RPC function `list_keys_per_language_view` with exact total counting
- * enabled. Returns keys with their translation values and metadata for the
- * specified locale. Data items are validated at runtime and pagination
- * metadata is computed from input params and result size.
- *
- * @param params - Query parameters for key listing per language
- * @param params.project_id - Project UUID to fetch keys from (required)
- * @param params.locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
- * @param params.search - Search term for key name (case-insensitive contains, optional)
- * @param params.missing_only - Filter keys with NULL values in selected locale (default: false)
- * @param params.limit - Items per page (1-100, default: 50)
- * @param params.offset - Pagination offset (min: 0, default: 0)
- *
- * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, malformed locale, limit > 100, negative offset)
- * @throws {ApiErrorResponse} 403 - Project not owned by user
- * @throws {ApiErrorResponse} 500 - Database error during fetch
- *
- * @returns TanStack Query result with keys data and pagination metadata
- */
-export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
-  const supabase = useSupabase();
-
-  return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    queryFn: async () => {
-      const { limit, locale, missing_only, offset, project_id, search } =
-        LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
-
-      const { count, data, error } = await supabase.rpc(
-        'list_keys_per_language_view',
-        {
-          p_limit: limit,
-          p_locale: locale,
-          p_missing_only: missing_only,
-          p_offset: offset,
-          p_project_id: project_id,
-          p_search: search,
-        },
-        { count: 'exact' }
-      );
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useKeysPerLanguageView', 'Failed to fetch keys');
-      }
-
-      // runtime validation of response data
-      const keys = z.array(KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA).parse(data || []);
-
-      return {
-        data: keys,
-        metadata: {
-          end: (offset || 0) + keys.length - 1,
-          start: offset || 0,
-          total: count || 0,
-        },
-      };
-    },
-    queryKey: KEYS_KEY_FACTORY.perLanguageView(params.project_id, params.locale, {
-      limit: params.limit,
-      missing_only: params.missing_only,
-      offset: params.offset,
-      search: params.search,
-    }),
-    staleTime: 3 * 60 * 1000, // 3 minutes
-  });
-}
-```
+- Validate `ListKeysPerLanguageParams` (incl. `locale`), call `list_keys_per_language_view`, and return `{ data, metadata }`.
+- Validate items with `KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA`; key via `KEYS_KEY_FACTORY.perLanguageView(...)` (3m/10m); map errors centrally.
 
 **6.3 Create `src/features/keys/api/useCreateKey/useCreateKey.ts`:**
 
-```typescript
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiErrorResponse, CreateKeyRequest, CreateKeyResponse } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
-import { createApiErrorResponse } from '@/shared/utils';
-
-import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEYS_KEY_FACTORY } from '../keys.key-factory';
-import { CREATE_KEY_RESPONSE_SCHEMA, CREATE_KEY_SCHEMA } from '../keys.schemas';
-
-/**
- * Create a new translation key with default value
- *
- * Uses the RPC function `create_key_with_value` to create a key and its
- * default translation value in a single transaction. The database enforces
- * prefix validation, uniqueness, and triggers automatic fan-out to all locales
- * with NULL values. Key name must start with project prefix and follow naming rules.
- *
- * @param projectId - Project UUID for cache invalidation (required)
- *
- * @throws {ApiErrorResponse} 400 - Validation error (invalid key format, empty value, prefix mismatch)
- * @throws {ApiErrorResponse} 409 - Conflict error (duplicate key name in project)
- * @throws {ApiErrorResponse} 500 - Database error or no data returned
- *
- * @returns TanStack Query mutation hook for creating keys
- */
-export function useCreateKey(projectId: string) {
-  const supabase = useSupabase();
-  const queryClient = useQueryClient();
-
-  return useMutation<CreateKeyResponse, ApiErrorResponse, CreateKeyRequest>({
-    mutationFn: async (payload) => {
-      const { p_default_value, p_full_key, p_project_id } = CREATE_KEY_SCHEMA.parse(payload);
-
-      const { data, error } = await supabase
-        .rpc('create_key_with_value', {
-          p_default_value,
-          p_full_key,
-          p_project_id,
-        })
-        .single();
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useCreateKey', 'Failed to create key');
-      }
-
-      if (!data) {
-        throw createApiErrorResponse(500, KEYS_ERROR_MESSAGES.NO_DATA_RETURNED);
-      }
-
-      return CREATE_KEY_RESPONSE_SCHEMA.parse(data);
-    },
-    onSuccess: () => {
-      // invalidate all key list caches for this project (default and all per-language views)
-      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
-      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });
-    },
-  });
-}
-```
+- Parse `CreateKeyRequest` with `CREATE_KEY_SCHEMA`, perform a client-side prefix check against project `prefix`, then call `create_key_with_value`; validate via `CREATE_KEY_RESPONSE_SCHEMA`.
+- On success, invalidate `KEYS_KEY_FACTORY.defaultViews(projectId)` and `KEYS_KEY_FACTORY.all`; map errors with `createDatabaseErrorResponse`.
 
 **6.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.ts`:**
 
-```typescript
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import type { ApiErrorResponse } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
-import { createApiErrorResponse } from '@/shared/utils';
-
-import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEYS_KEY_FACTORY } from '../keys.key-factory';
-import { UUID_SCHEMA } from '../keys.schemas';
-
-/**
- * Delete a translation key by ID
- *
- * Removes the key record and all associated translations via CASCADE DELETE.
- * Operation is irreversible and affects all locales in the project. RLS
- * policies ensure only project owners can delete keys. On success, related
- * caches are cleared and key lists are invalidated.
- *
- * @param projectId - Project UUID for cache invalidation (required)
- *
- * @throws {ApiErrorResponse} 400 - Validation error (invalid key ID format)
- * @throws {ApiErrorResponse} 404 - Key not found or access denied
- * @throws {ApiErrorResponse} 500 - Database error during deletion
- *
- * @returns TanStack Query mutation hook for deleting keys
- */
-export function useDeleteKey(projectId: string) {
-  const supabase = useSupabase();
-  const queryClient = useQueryClient();
-
-  return useMutation<unknown, ApiErrorResponse, string>({
-    mutationFn: async (uuid) => {
-      const id = UUID_SCHEMA.parse(uuid);
-
-      const { count, error } = await supabase.from('keys').delete().eq('id', id);
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useDeleteKey', 'Failed to delete key');
-      }
-
-      if (count === 0) {
-        throw createApiErrorResponse(404, KEYS_ERROR_MESSAGES.KEY_NOT_FOUND);
-      }
-
-      // return void (no content) to match rest 204 semantics
-    },
-    onSuccess: (_, uuid) => {
-      // remove from cache
-      queryClient.removeQueries({ queryKey: KEYS_KEY_FACTORY.detail(uuid) });
-      // invalidate all list caches for this project
-      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
-      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });
-    },
-  });
-}
-```
+- Create the hook with `projectId` for targeted invalidation; validate id via `UUID_SCHEMA`, delete by id from `keys`, and return `void` when `count > 0`.
+- On success, remove `detail(id)` cache and invalidate `KEYS_KEY_FACTORY.defaultViews(projectId)` and `KEYS_KEY_FACTORY.all`; map DB errors to standardized responses and surface 404 when nothing is deleted.
 
 After implementing each hook, add an `index.ts` inside its directory (for example, `useCreateKey/index.ts`) that re-exports the hook with `export * from './useCreateKey';` to support the barrel structure used by the keys API.
 
@@ -1358,15 +713,7 @@ After implementing each hook, add an `index.ts` inside its directory (for exampl
 
 Create `src/features/keys/api/index.ts`:
 
-```typescript
-export * from './keys.errors';
-export * from './keys.key-factory';
-export * from './keys.schemas';
-export * from './useCreateKey';
-export * from './useDeleteKey';
-export * from './useKeysDefaultView';
-export * from './useKeysPerLanguageView';
-```
+- Barrel‑export `keys.errors`, `keys.key-factory`, `keys.schemas`, and hooks to keep imports concise and tree‑shakable.
 
 ### Step 8: Write Unit Tests
 
