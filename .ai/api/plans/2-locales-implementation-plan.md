@@ -32,13 +32,6 @@ The Project Locales API manages languages assigned to translation projects. It p
   - Optional: None
 - **Request Body:** None
 
-**Example Request:**
-
-```http
-GET /rest/v1/rpc/list_project_locales_with_default?p_project_id=550e8400-e29b-41d4-a716-446655440000
-Authorization: Bearer {access_token}
-```
-
 ### 2.2 Add Locale to Project (Atomic - Recommended)
 
 - **HTTP Method:** POST
@@ -69,8 +62,6 @@ Authorization: Bearer {access_token}
 - Automatic telemetry event emission for analytics
 - Enhanced retry logic for transient failures
 - Rollback on any step failure
-
-**Alternative (Legacy):** Simple `POST /rest/v1/project_locales` is still available but **DEPRECATED**. Use atomic approach for production due to better verification and error handling. Legacy endpoint will be removed in v1.0.
 
 ### 2.3 Update Locale Label
 
@@ -105,8 +96,6 @@ Authorization: Bearer {access_token}
 
 ## 3. Used Types
 
-**Note:** As of the latest refactoring, all types are organized by feature in separate directories under `src/shared/types/`.
-
 ### 3.1 Existing Types
 
 **Import Path:** `@/shared/types` (central export) or `@/shared/types/locales` (feature-specific)
@@ -121,62 +110,10 @@ Authorization: Bearer {access_token}
 
 **Locales Types** (from `src/shared/types/locales/index.ts`):
 
-```typescript
-// Response DTOs
-export type ProjectLocaleResponse = ProjectLocale;
-
-export type ProjectLocaleWithDefault = ProjectLocaleResponse & {
-  is_default: boolean;
-};
-
-// Request DTOs
-export interface CreateProjectLocaleRequest {
-  p_label: string;
-  p_locale: string;
-  p_project_id: string;
-}
-
-export type CreateProjectLocaleResponse = Database['public']['Functions']['create_project_locale_atomic']['Returns'][0];
-
-export type UpdateProjectLocaleRequest = Pick<ProjectLocaleUpdate, 'label'>;
-
-export interface UpdateProjectLocaleContext {
-  previousLocales?: ProjectLocaleWithDefault[];
-}
-
-// RPC Function Arguments
-export interface ListProjectLocalesWithDefaultArgs {
-  p_project_id: string;
-}
-
-// Error types (already defined)
-export interface ApiErrorResponse {
-  data: null;
-  error: {
-    code: number;
-    details?: Record<string, unknown>;
-    message: string;
-  };
-}
-
-export interface ValidationErrorResponse extends ApiErrorResponse {
-  error: {
-    code: 400;
-    details: {
-      constraint: string;
-      field: string;
-    };
-    message: string;
-  };
-}
-
-export interface ConflictErrorResponse extends ApiErrorResponse {
-  error: {
-    code: 409;
-    message: string;
-  };
-}
-```
+- `ProjectLocaleResponse` is the canonical locale row; `ProjectLocaleWithDefault` adds `is_default` for list RPCs.
+- `CreateProjectLocaleRequest`/`CreateProjectLocaleResponse` match the `create_project_locale_atomic` RPC contract.
+- `UpdateProjectLocaleRequest` allows `label` only; `UpdateProjectLocaleContext` carries optional `previousLocales` for UI state.
+- `ListProjectLocalesWithDefaultArgs` defines `p_project_id` for the list RPC; error envelopes reuse `ApiErrorResponse` specializations.
 
 ### 3.2 New Zod Validation Schemas
 
@@ -184,61 +121,14 @@ Create validation schemas in `src/features/locales/api/locales.schemas.ts`:
 
 **Note:** The implementation relies on shared constants (`LOCALE_ERROR_MESSAGES`, `LOCALE_LABEL_MAX_LENGTH`, `LOCALE_NORMALIZATION`) to stay aligned with database constraints and normalization rules.
 
-```typescript
-import { z } from 'zod';
-import { LOCALE_ERROR_MESSAGES, LOCALE_LABEL_MAX_LENGTH, LOCALE_NORMALIZATION } from '@/shared/constants';
-
-// locale code validation (bcp-47 format: ll or ll-cc)
-const LOCALE_CODE_SCHEMA = z.string().refine((value) => LOCALE_NORMALIZATION.isValidFormatClient(value), {
-  message: LOCALE_ERROR_MESSAGES.INVALID_FORMAT,
-});
-
-// locale label validation
-const LOCALE_LABEL_SCHEMA = z
-  .string()
-  .min(1, LOCALE_ERROR_MESSAGES.LABEL_REQUIRED)
-  .max(LOCALE_LABEL_MAX_LENGTH, LOCALE_ERROR_MESSAGES.LABEL_TOO_LONG)
-  .trim();
-
-// list project locales with default schema
-export const LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA = z.object({
-  p_project_id: z.string().uuid('Invalid project ID format'),
-});
-
-// create project locale atomic request schema
-export const CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA = z.object({
-  p_label: LOCALE_LABEL_SCHEMA,
-  p_locale: LOCALE_CODE_SCHEMA,
-  p_project_id: z.string().uuid('Invalid project ID format'),
-});
-
-// update project locale schema
-export const UPDATE_PROJECT_LOCALE_SCHEMA = z
-  .object({
-    label: LOCALE_LABEL_SCHEMA.optional(),
-    // prevent immutable field modification
-    locale: z.never().optional(),
-  })
-  .strict();
-
-// UUID schema
-export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
-
-// project locale response schema
-export const PROJECT_LOCALE_RESPONSE_SCHEMA = z.object({
-  created_at: z.string(),
-  id: z.string().uuid(),
-  label: z.string(),
-  locale: z.string(),
-  project_id: z.string().uuid(),
-  updated_at: z.string(),
-});
-
-// project locale with default flag schema
-export const PROJECT_LOCALE_WITH_DEFAULT_SCHEMA = PROJECT_LOCALE_RESPONSE_SCHEMA.extend({
-  is_default: z.boolean(),
-});
-```
+- Define schemas in `src/features/locales/api/locales.schemas.ts` using shared constants for consistency with DB.
+- `LOCALE_CODE_SCHEMA` validates BCP‑47 subset and uses `LOCALE_NORMALIZATION.isValidFormatClient`.
+- `LOCALE_LABEL_SCHEMA` trims and bounds label length with `LOCALE_LABEL_MAX_LENGTH` and `LOCALE_ERROR_MESSAGES`.
+- `LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA` enforces a UUID `p_project_id`.
+- `CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA` validates `p_label`, `p_locale`, and `p_project_id` for RPC.
+- `UPDATE_PROJECT_LOCALE_SCHEMA` is strict, allowing `label` only and rejecting `locale` via `z.never()`.
+- `UUID_SCHEMA` standardizes identifier validation.
+- `PROJECT_LOCALE_RESPONSE_SCHEMA` and `PROJECT_LOCALE_WITH_DEFAULT_SCHEMA` validate list/create results at runtime.
 
 ## 4. Response Details
 
@@ -272,12 +162,6 @@ export const PROJECT_LOCALE_WITH_DEFAULT_SCHEMA = PROJECT_LOCALE_RESPONSE_SCHEMA
 ### 4.2 Add Locale to Project (Atomic)
 
 **Success Response (201 Created):**
-
-**Response Format Guidelines:**
-
-- **Single object format**: Creation endpoints return the newly created object directly
-- PostgREST returns a single object for INSERT operations with `.single()` or when using `Accept: application/vnd.pgrst.object+json` header
-- No wrapper object for creation responses (only list endpoints use `{ data, metadata }` format)
 
 ```json
 {
@@ -323,8 +207,6 @@ export const PROJECT_LOCALE_WITH_DEFAULT_SCHEMA = PROJECT_LOCALE_RESPONSE_SCHEMA
 ### 4.3 Update Locale Label
 
 **Success Response (200 OK):**
-
-Update operations return the updated single object (no array wrapper):
 
 ```json
 {
@@ -559,7 +441,8 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 **Handling:**
 
-Zod validation errors are automatically converted to ApiErrorResponse format by the global QueryClient error handler configured in `src/app/config/queryClient/queryClient.ts`. This ensures consistent error format across all queries and mutations without requiring try/catch blocks in individual hooks.
+- Convert Zod issues into standardized `ApiErrorResponse` via `createApiErrorResponse` at hook boundaries.
+- Prevent backend calls on known-invalid input by validating early with `zod` schemas.
 
 **Result Format:**
 
@@ -602,18 +485,8 @@ Zod validation errors are automatically converted to ApiErrorResponse format by 
 - Parse error message to determine conflict type
 - Return user-friendly message: "Locale already exists for this project"
 
-**Example:**
-
-```typescript
-const { data, error } = await supabase.from('project_locales').insert(validatedData).select().single();
-
-if (error) {
-  throw createDatabaseErrorResponse(error, 'useCreateProjectLocale', 'Failed to add locale');
-}
-
-// The createDatabaseErrorResponse function handles the error mapping:
-// - 23505 with 'project_locales_unique_per_project' -> 409 'Locale already exists for this project'
-```
+• Map `23505` on `project_locales_unique_per_project` to 409 using `createDatabaseErrorResponse` with a clear message.
+• Skip retries on conflicts; prompt user to choose a different `locale`.
 
 ### 7.4 Database Trigger Errors (400)
 
@@ -636,15 +509,8 @@ if (error) {
 
 **Handling:**
 
-```typescript
-import { createApiErrorResponse } from '@/shared/utils';
-
-const { data, error } = await supabase.from('project_locales').select('*').eq('id', localeId).maybeSingle();
-
-if (!data) {
-  throw createApiErrorResponse(404, 'Locale not found or access denied');
-}
-```
+- If an operation yields no row, return 404 via `createApiErrorResponse(404, 'Locale not found or access denied')`.
+- Treat RLS denials as 404 to avoid leaking resource existence.
 
 ### 7.6 Server Errors (500)
 
@@ -661,18 +527,8 @@ if (!data) {
 - Return generic message to user: "An unexpected error occurred. Please try again."
 - Do not expose internal error details to client
 
-**Example:**
-
-```typescript
-const { data, error } = await supabase.from('project_locales').insert(validatedData).select().single();
-
-if (error) {
-  throw createDatabaseErrorResponse(error, 'useCreateProjectLocale', 'Failed to add locale');
-}
-
-// The createDatabaseErrorResponse function logs the error and returns a structured ApiErrorResponse
-// For unknown errors, it returns a 500 status with the fallback message
-```
+• Normalize unknown server errors to 500 using `createDatabaseErrorResponse` with a safe fallback message.
+• Log detailed context in development; never expose internal details in client-facing messages.
 
 ## 8. Performance Considerations
 
@@ -699,15 +555,8 @@ if (error) {
 
 **TanStack Query Configuration:**
 
-```typescript
-// List project locales: 10-minute cache
-staleTime: 10 * 60 * 1000,
-gcTime: 30 * 60 * 1000,
-
-// Single locale: 15-minute cache (rarely accessed)
-staleTime: 15 * 60 * 1000,
-gcTime: 30 * 60 * 1000,
-```
+- Lists: set `staleTime` ≈ 10 minutes and `gcTime` ≈ 30 minutes for low-churn data.
+- Single-locale: use `staleTime` ≈ 15 minutes; same `gcTime` heuristic as lists.
 
 **Cache Invalidation:**
 
@@ -719,33 +568,8 @@ gcTime: 30 * 60 * 1000,
 
 **Update Locale Label:**
 
-```typescript
-const updateMutation = useMutation({
-  mutationFn: updateLocale,
-  onMutate: async (newData) => {
-    // Cancel outgoing refetches
-    await queryClient.cancelQueries({ queryKey: ['project-locales', projectId] });
-
-    // Snapshot previous value
-    const previousLocales = queryClient.getQueryData(['project-locales', projectId]);
-
-    // Optimistically update
-    queryClient.setQueryData(['project-locales', projectId], (old) => {
-      return old?.map((locale) => (locale.id === localeId ? { ...locale, ...newData } : locale));
-    });
-
-    return { previousLocales };
-  },
-  onError: (err, newData, context) => {
-    // Rollback on error
-    queryClient.setQueryData(['project-locales', projectId], context.previousLocales);
-  },
-  onSettled: () => {
-    // Refetch to ensure consistency
-    queryClient.invalidateQueries({ queryKey: ['project-locales', projectId] });
-  },
-});
-```
+- Use `onMutate` to snapshot and apply temporary `label` updates, with `onError` rollback and `onSettled` invalidation.
+- Keep logic minimal; always revalidate by invalidating `LOCALES_KEYS.list(projectId)` after settle.
 
 ### 8.4 Database Performance
 
@@ -764,138 +588,20 @@ const updateMutation = useMutation({
 
 ### Step 1: Create Feature Directory Structure
 
-```bash
-mkdir -p src/features/locales/api
-```
+- Create `src/features/locales/api` and subfolders for hooks and barrels.
 
 ### Step 2: Create Locales Constants
 
 Create `src/shared/constants/locale.constants.ts` with centralized constants, patterns, and utilities:
 
-```typescript
-/**
- * Locale Constants and Validation Patterns
- *
- * Centralized definitions for locale validation patterns to ensure consistency
- * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
- *
- * All patterns follow BCP-47 subset: ll or ll-CC format only.
- */
-
-/**
- * BCP-47 locale pattern - matches ll or ll-CC format only
- * Examples: en, en-US, pl, pl-PL, es, es-ES
- *
- * Pattern breakdown:
- * - ^[a-z]{2} : exactly 2 lowercase letters (language code)
- * - (-[A-Z]{2})? : optionally followed by dash and 2 uppercase letters (country code)
- * - $ : end of string
- *
- * Note: This pattern expects normalized input (language lowercase, country uppercase)
- */
-export const LOCALE_CODE_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
-
-/**
- * Raw locale pattern for input validation (before normalization)
- * Accepts mixed case input that will be normalized by database triggers
- * Examples: en, EN, en-us, EN-US, En-Us
- */
-export const LOCALE_CODE_INPUT_PATTERN = /^[a-zA-Z]{2}(-[a-zA-Z]{2})?$/;
-
-/**
- * PostgreSQL domain constraint pattern (used in migrations)
- * Must match LOCALE_CODE_PATTERN exactly for consistency
- */
-export const LOCALE_CODE_DOMAIN_PATTERN = '^[a-z]{2}(-[A-Z]{2})?$';
-
-/**
- * Maximum length for locale code (BCP-47 ll-CC format)
- */
-export const LOCALE_CODE_MAX_LENGTH = 5;
-
-/**
- * Maximum length for locale label (human-readable name)
- */
-export const LOCALE_LABEL_MAX_LENGTH = 64;
-
-const MULTIPLE_REGION_SEPARATOR_PATTERN = /.*-.*-.*/;
-const LANGUAGE_COUNTRY_PATTERN = /^([a-zA-Z]{2})-([a-zA-Z]{2})$/;
-const LANGUAGE_ONLY_PATTERN = /^[a-zA-Z]{2}$/;
-
-const normalizeLocale = (locale: string): string => {
-  if (!locale) return locale;
-
-  if (LANGUAGE_COUNTRY_PATTERN.test(locale)) {
-    const match = locale.match(LANGUAGE_COUNTRY_PATTERN);
-    if (match) {
-      const [, language, region] = match;
-      return `${language.toLowerCase()}-${region.toUpperCase()}`;
-    }
-  }
-
-  if (LANGUAGE_ONLY_PATTERN.test(locale)) {
-    return locale.toLowerCase();
-  }
-
-  return locale;
-};
-
-/**
- * Locale normalization patterns and utilities
- */
-export const LOCALE_NORMALIZATION = {
-  /**
-   * Client-side locale validation (matches database rules)
-   * Use for immediate feedback, but always verify server-side for critical operations
-   *
-   * Rules implemented:
-   * - Must be 2-5 characters long
-   * - Format: ll or ll-CC (language-country)
-   * - Only letters and one dash allowed
-   * - Maximum one dash (no multiple regions)
-   */
-  isValidFormatClient: (locale: string): boolean => {
-    if (!locale || typeof locale !== 'string') return false;
-    if (locale.length > LOCALE_CODE_MAX_LENGTH) return false;
-    if (!LOCALE_CODE_INPUT_PATTERN.test(locale)) return false;
-    if (MULTIPLE_REGION_SEPARATOR_PATTERN.test(locale)) return false; // Max one dash
-    const normalized = normalizeLocale(locale);
-    return LOCALE_CODE_PATTERN.test(normalized);
-  },
-
-  /** Pattern for language-country format (needs normalization) */
-  LANGUAGE_COUNTRY: LANGUAGE_COUNTRY_PATTERN,
-
-  /** Pattern for language-only format */
-  LANGUAGE_ONLY: LANGUAGE_ONLY_PATTERN,
-
-  /**
-   * Normalize function (TypeScript implementation)
-   * Converts locale to database format: language lowercase, region uppercase
-   * Examples: "en-us" -> "en-US", "PL" -> "pl", "EN-GB" -> "en-GB"
-   */
-  normalize: normalizeLocale,
-};
-
-/**
- * Error messages for locale validation
- */
-export const LOCALE_ERROR_MESSAGES = {
-  ALREADY_EXISTS: 'Locale already exists for this project',
-  INVALID_FORMAT: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
-  LABEL_REQUIRED: 'Locale label is required',
-  LABEL_TOO_LONG: `Locale label must be at most ${LOCALE_LABEL_MAX_LENGTH} characters`,
-  TOO_LONG: `Locale code must be at most ${LOCALE_CODE_MAX_LENGTH} characters`,
-} as const;
-```
+- Provide `LOCALE_CODE_PATTERN`, `LOCALE_CODE_INPUT_PATTERN`, and `LOCALE_CODE_DOMAIN_PATTERN` aligned with DB domains.
+- Expose `LOCALE_CODE_MAX_LENGTH` and `LOCALE_LABEL_MAX_LENGTH` reflecting UI and DB limits.
+- Implement `LOCALE_NORMALIZATION` with `isValidFormatClient` and `normalize` to mirror server normalization.
+- Define `LOCALE_ERROR_MESSAGES` for consistent validation messages across UI and schemas.
 
 Add to `src/shared/constants/index.ts`:
 
-```typescript
-export * from './locale.constants';
-export * from './keys.constants';
-export * from './projects.constants';
-```
+- Re-export `./locale.constants` (and existing feature constants) to keep imports consistent.
 
 ### Step 3: Create Zod Validation Schemas
 
@@ -907,78 +613,15 @@ Create `src/features/locales/api/locales.errors.ts`:
 
 **Note:** The implementation now uses constants from `src/shared/constants/locale.constants.ts` for error codes, constraint names, and error messages. This ensures consistency across the application.
 
-```typescript
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ApiErrorResponse } from '@/shared/types';
-import { createApiErrorResponse } from '@/shared/utils';
-import { LOCALES_PG_ERROR_CODES, LOCALES_CONSTRAINTS, LOCALE_ERROR_MESSAGES } from '@/shared/constants';
-
-/**
- * Handle database errors and convert them to API errors
- *
- * Provides consistent error handling for PostgreSQL errors including:
- * - Unique constraint violations (23505)
- * - Check constraint violations (23514)
- * - Foreign key violations (23503)
- * - Trigger violations (default locale deletion)
- *
- * @param error - PostgrestError from Supabase
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object
- */
-export function createDatabaseErrorResponse(
-  error: PostgrestError,
-  context?: string,
-  fallbackMessage?: string
-): ApiErrorResponse {
-  const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
-  console.error(`${logPrefix} Database error:`, error);
-
-  // Handle unique constraint violations
-  if (error.code === LOCALES_PG_ERROR_CODES.UNIQUE_VIOLATION) {
-    if (error.message.includes(LOCALES_CONSTRAINTS.UNIQUE_PER_PROJECT)) {
-      return createApiErrorResponse(409, LOCALE_ERROR_MESSAGES.ALREADY_EXISTS);
-    }
-  }
-
-  // Handle trigger violations (default locale deletion)
-  if (error.message.includes('Cannot delete default_locale')) {
-    return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.DEFAULT_LOCALE_IMMUTABLE);
-  }
-
-  // Handle check constraint violations
-  if (error.code === LOCALES_PG_ERROR_CODES.CHECK_VIOLATION) {
-    return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.INVALID_FIELD_VALUE, { constraint: error.details });
-  }
-
-  // Handle foreign key violations
-  if (error.code === LOCALES_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
-    return createApiErrorResponse(404, LOCALE_ERROR_MESSAGES.PROJECT_NOT_FOUND);
-  }
-
-  // Generic database error
-  return createApiErrorResponse(500, fallbackMessage || LOCALE_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
-}
-```
+- Provide `createDatabaseErrorResponse` to normalize Postgres errors: map `23505` → 409, `23514` → 400, `23503` → 404, triggers → 400.
+- Use `createApiErrorResponse` for generic 500s with safe fallback; accept optional `context` for structured logs.
 
 ### Step 5: Create Query Keys Factory
 
 Create `src/features/locales/api/locales.key-factory.ts`:
 
-```typescript
-/**
- * Query key factory for project locales
- * Follows TanStack Query best practices for structured query keys
- */
-export const LOCALES_KEYS = {
-  all: ['project-locales'] as const,
-  detail: (id: string) => [...LOCALES_KEYS.details(), id] as const,
-  details: () => [...LOCALES_KEYS.all, 'detail'] as const,
-  list: (projectId: string) => [...LOCALES_KEYS.lists(), projectId] as const,
-  lists: () => [...LOCALES_KEYS.all, 'list'] as const,
-};
-```
+- Expose `all`, `lists`, `list(projectId)`, `details`, and `detail(id)` to standardize cache keys.
+- Keep key parts stable and ordered for consistent invalidation across hooks.
 
 **Note:** Properties are ordered alphabetically for consistency and easier code navigation.
 
@@ -993,245 +636,30 @@ export const LOCALES_KEYS = {
 
 **6.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.ts`:**
 
-```typescript
-import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
-
-import type { ApiErrorResponse, ProjectLocaleWithDefault } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createApiErrorResponse } from '@/shared/utils';
-
-import { createDatabaseErrorResponse } from '../locales.errors';
-import { LOCALES_KEYS } from '../locales.key-factory';
-import { LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA, PROJECT_LOCALE_WITH_DEFAULT_SCHEMA } from '../locales.schemas';
-
-export function useProjectLocales(projectId: string) {
-  const supabase = useSupabase();
-
-  return useQuery<ProjectLocaleWithDefault[], ApiErrorResponse>({
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    queryFn: async () => {
-      const { p_project_id } = LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA.parse({ project_id: projectId });
-
-      const { data, error } = await supabase.rpc('list_project_locales_with_default', { p_project_id });
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useProjectLocales', 'Failed to fetch project locales');
-      }
-
-      if (!data) {
-        throw createApiErrorResponse(500, 'No data returned from server');
-      }
-
-      return z.array(PROJECT_LOCALE_WITH_DEFAULT_SCHEMA).parse(data);
-    },
-    queryKey: LOCALES_KEYS.list(projectId),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-  });
-}
-```
+- Validate `projectId` with `LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA`, call RPC `list_project_locales_with_default`, parse with `PROJECT_LOCALE_WITH_DEFAULT_SCHEMA`.
+- Configure `queryKey` via `LOCALES_KEYS.list(projectId)` with `staleTime` ≈ 10m and `gcTime` ≈ 30m.
 
 **6.2 Create `src/features/locales/api/useCreateProjectLocale/useCreateProjectLocale.ts`:**
 
-```typescript
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-import type { ApiErrorResponse, CreateProjectLocaleRequest, CreateProjectLocaleResponse } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { LOCALE_NORMALIZATION } from '@/shared/constants';
-import { createApiErrorResponse } from '@/shared/utils';
-
-import { createAtomicLocaleErrorResponse } from '../locales.errors';
-import { LOCALES_KEYS } from '../locales.key-factory';
-import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } from '../locales.schemas';
-
-export function useCreateProjectLocale(projectId: string) {
-  const supabase = useSupabase();
-  const queryClient = useQueryClient();
-
-  return useMutation<CreateProjectLocaleResponse, ApiErrorResponse, Omit<CreateProjectLocaleRequest, 'p_project_id'>>({
-    mutationFn: async (payload) => {
-      // normalize locale code before validation
-      const normalized = LOCALE_NORMALIZATION.normalize(payload.p_locale);
-
-      // validate input with normalized locale
-      const { p_label, p_locale, p_project_id } = CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA.parse({
-        ...payload,
-        p_locale: normalized,
-        p_project_id: projectId,
-      });
-
-      const { data, error } = await supabase
-        .rpc('create_project_locale_atomic', { p_label, p_locale, p_project_id })
-        .single();
-
-      if (error) {
-        throw createAtomicLocaleErrorResponse(error, 'useCreateProjectLocale', 'Failed to add locale');
-      }
-
-      if (!data) {
-        throw createApiErrorResponse(500, 'No data returned from atomic locale creation');
-      }
-
-      return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
-    },
-    onSuccess: () => {
-      // invalidate project locales list cache
-      queryClient.invalidateQueries({ queryKey: LOCALES_KEYS.list(projectId) });
-    },
-    // enhanced retry logic for atomic operations
-    retry: (failureCount, error) => {
-      // don't retry authentication/authorization errors
-      if (error?.error?.code === 401 || error?.error?.code === 403 || error?.error?.code === 404) {
-        return false;
-      }
-
-      // retry fan-out failures up to 2 times (transient issues)
-      if (error?.error?.details?.code === 'FANOUT_INCOMPLETE' && failureCount < 2) {
-        return true;
-      }
-
-      // retry verification failures once
-      if (error?.error?.details?.code === 'FANOUT_VERIFICATION_FAILED' && failureCount < 1) {
-        return true;
-      }
-
-      // don't retry conflict errors (locale already exists)
-      if (error?.error?.code === 409) {
-        return false;
-      }
-
-      // default retry once for other errors
-      return failureCount < 1;
-    },
-    retryDelay: (attemptIndex) => {
-      // exponential backoff with jitter, max 5 seconds
-      const BASE_DELAY = 1000;
-      const MAX_DELAY = 5000;
-      const EXPONENTIAL_DELAY = BASE_DELAY * Math.pow(2, attemptIndex);
-      const JITTER = Math.random() * 500; // add 0-500ms jitter
-      return Math.min(EXPONENTIAL_DELAY + JITTER, MAX_DELAY);
-    },
-  });
-}
-```
+- Normalize `p_locale` via `LOCALE_NORMALIZATION.normalize`, validate payload with `CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA`, call RPC, parse with `PROJECT_LOCALE_RESPONSE_SCHEMA`.
+- On success invalidate `LOCALES_KEYS.list(projectId)`; add targeted retry logic for transient fan‑out issues, skip retries for 401/403/404/409.
 
 **6.3 Create `src/features/locales/api/useUpdateProjectLocale/useUpdateProjectLocale.ts`:**
 
-```typescript
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type {
-  ApiErrorResponse,
-  ProjectLocaleResponse,
-  ProjectLocaleWithDefault,
-  UpdateProjectLocaleContext,
-  UpdateProjectLocaleRequest,
-} from '@/shared/types';
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createApiErrorResponse } from '@/shared/utils';
-import { createDatabaseErrorResponse } from '../locales.errors';
-import { LOCALES_KEYS } from '../locales.key-factory';
-import { PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
-
-export function useUpdateProjectLocale(projectId: string, localeId: string) {
-  const supabase = useSupabase();
-  const queryClient = useQueryClient();
-
-  return useMutation<ProjectLocaleResponse, ApiErrorResponse, UpdateProjectLocaleRequest, UpdateProjectLocaleContext>({
-    mutationFn: async (payload) => {
-      const id = UUID_SCHEMA.parse(localeId);
-      const body = UPDATE_PROJECT_LOCALE_SCHEMA.parse(payload);
-
-      const { data, error } = await supabase.from('project_locales').update(body).eq('id', id).select().single();
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useUpdateProjectLocale', 'Failed to update locale');
-      }
-
-      if (!data) {
-        throw createApiErrorResponse(404, 'Locale not found or access denied');
-      }
-
-      return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
-    },
-    onError: (_err, _newData, context) => {
-      // rollback on error
-      if (context?.previousLocales) {
-        queryClient.setQueryData(LOCALES_KEYS.list(projectId), context.previousLocales);
-      }
-    },
-    onMutate: async (newData) => {
-      // cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: LOCALES_KEYS.list(projectId) });
-
-      // snapshot previous value
-      const previousLocales = queryClient.getQueryData<ProjectLocaleWithDefault[]>(LOCALES_KEYS.list(projectId));
-
-      // optimistically update
-      queryClient.setQueryData(LOCALES_KEYS.list(projectId), (old: ProjectLocaleWithDefault[] | undefined) => {
-        // guard clause: prevent errors if cache is empty
-        if (!old) return old;
-        return old.map((locale) => (locale.id === localeId ? { ...locale, ...newData } : locale));
-      });
-
-      return { previousLocales };
-    },
-    onSettled: () => {
-      // refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: LOCALES_KEYS.list(projectId) });
-    },
-  });
-}
-```
+- Validate `localeId` with `UUID_SCHEMA` and payload with `UPDATE_PROJECT_LOCALE_SCHEMA`; update by `id` and parse with `PROJECT_LOCALE_RESPONSE_SCHEMA`.
+- Optionally apply optimistic UI for `label` changes with snapshot/rollback; always invalidate `LOCALES_KEYS.list(projectId)` on settle.
 
 **6.4 Create `src/features/locales/api/useDeleteProjectLocale/useDeleteProjectLocale.ts`:**
 
-```typescript
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiErrorResponse } from '@/shared/types';
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createDatabaseErrorResponse } from '../locales.errors';
-import { LOCALES_KEYS } from '../locales.key-factory';
-import { UUID_SCHEMA } from '../locales.schemas';
-
-export function useDeleteProjectLocale(projectId: string) {
-  const supabase = useSupabase();
-  const queryClient = useQueryClient();
-
-  return useMutation<unknown, ApiErrorResponse, string>({
-    mutationFn: async (uuid) => {
-      const id = UUID_SCHEMA.parse(uuid);
-
-      const { error } = await supabase.from('project_locales').delete().eq('id', id);
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useDeleteProjectLocale', 'Failed to delete locale');
-      }
-    },
-    onSuccess: () => {
-      // invalidate project locales list cache
-      queryClient.invalidateQueries({ queryKey: LOCALES_KEYS.list(projectId) });
-    },
-  });
-}
-```
+- Validate `uuid` with `UUID_SCHEMA`, perform delete, and map DB errors with `createDatabaseErrorResponse`.
+- Invalidate `LOCALES_KEYS.list(projectId)` on success to refresh list data.
 
 ### Step 7: Create API Index File
 
 Create `src/features/locales/api/index.ts`:
 
-```typescript
-export { createAtomicLocaleErrorResponse, createDatabaseErrorResponse } from './locales.errors';
-export { LOCALES_KEYS } from './locales.key-factory';
-export * from './locales.schemas';
-export * from './useCreateProjectLocale';
-export * from './useDeleteProjectLocale';
-export * from './useProjectLocales';
-export * from './useUpdateProjectLocale';
-export { LOCALE_NORMALIZATION } from '@/shared/constants';
-```
+- Export `createAtomicLocaleErrorResponse`, `createDatabaseErrorResponse`, `LOCALES_KEYS`, all schemas, and hooks.
+- Re-export `LOCALE_NORMALIZATION` from shared constants for consumers needing client-side normalization.
 
 **Organization:**
 
