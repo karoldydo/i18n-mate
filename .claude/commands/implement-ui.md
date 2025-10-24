@@ -8,15 +8,18 @@ First, review the implementation plan:
 
 Now review the implementation rules:
 
-<implementation_rules>
-{{frontend-rules}} <- replace with reference to frontend rules (e.g., @shared.mdc, @frontend.mdc, @astro.mdc, @react.mdc, @ui-shadcn-helper.mdc)
+<implementation_rules>\
+[Shared rules](../../.cursor/rules/shared.mdc)\
+[Frontend rules](../../.cursor/rules/frontend.mdc)\
+[UI Shadcn Helper rules](../../.cursor/rules/shadcn.mdc)\
 </implementation_rules>
 
 Review the defined types:
-
 <type_definitions>\
-{{types}} (this value will be provided as a parameter to the command)\
-</type_definitions>
+ [Index](../../src/shared/types/index.ts)\
+ [Database types](../../src/shared/types/database.types.ts)\
+ [Type Definitions](../../src/shared/types/types.ts)\
+ </type_definitions>
 
 Implement the plan according to the following approach:
 
