@@ -2,6 +2,28 @@ import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+const RATE_LIMIT_JOBS_PER_MINUTE = 10;
+const RATE_LIMIT_CONCURRENT_JOBS_PER_USER = 3;
+const RATE_LIMIT_WINDOW_MINUTES = 60 * 1000; // 1 minute in ms
+
+const TRANSLATION_MAX_LENGTH = 250;
+const ERROR_MESSAGE_MAX_LENGTH = 255;
+const DEFAULT_MAX_TOKENS = 256;
+
+// Error codes enum for translation job items
+const enum TranslationErrorCode {
+  API_ERROR = 'API_ERROR',
+  INVALID_REQUEST = 'INVALID_REQUEST',
+  MODEL_ERROR = 'MODEL_ERROR',
+  RATE_LIMIT = 'RATE_LIMIT',
+  SOURCE_NOT_FOUND = 'SOURCE_NOT_FOUND',
+  TRANSLATION_ERROR = 'TRANSLATION_ERROR',
+}
+
+// =============================================================================
 // Types
 // =============================================================================
 
@@ -221,7 +243,56 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
       );
     }
 
-    // 3. Check for active jobs (prevent concurrent translation jobs)
+    // 3. Rate limiting checks
+    const oneMinuteAgo = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES).toISOString();
+
+    // Check rate limits per user
+    const { data: recentJobs, error: rateLimitError } = await supabase
+      .from('translation_jobs')
+      .select('id, created_at')
+      .eq('project_id', validatedData.project_id)
+      .gte('created_at', oneMinuteAgo);
+
+    if (rateLimitError) {
+      console.error('[translate] Rate limit check error:', rateLimitError);
+      return createResponse(500, errorResponse(500, 'Database operation failed'));
+    }
+
+    // Rate limit: max jobs per minute per project
+    if (recentJobs && recentJobs.length >= RATE_LIMIT_JOBS_PER_MINUTE) {
+      return createResponse(429, errorResponse(429, 'Rate limit exceeded: too many jobs in the last minute'));
+    }
+
+    // Check concurrent jobs per user (across all projects)
+    const { data: userProjects, error: userProjectsError } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('owner_user_id', userId);
+
+    if (userProjectsError || !userProjects) {
+      console.error('[translate] User projects fetch error:', userProjectsError);
+      return createResponse(500, errorResponse(500, 'Database operation failed'));
+    }
+
+    const projectIds = userProjects.map((p) => p.id);
+
+    const { data: userActiveJobs, error: userActiveError } = await supabase
+      .from('translation_jobs')
+      .select('id')
+      .in('project_id', projectIds)
+      .in('status', ['pending', 'running']);
+
+    if (userActiveError) {
+      console.error('[translate] User active jobs check error:', userActiveError);
+      return createResponse(500, errorResponse(500, 'Database operation failed'));
+    }
+
+    // Rate limit: max concurrent jobs per user
+    if (userActiveJobs && userActiveJobs.length >= RATE_LIMIT_CONCURRENT_JOBS_PER_USER) {
+      return createResponse(429, errorResponse(429, 'Rate limit exceeded: too many concurrent jobs'));
+    }
+
+    // 5. Check for active jobs (prevent concurrent translation jobs per project)
     const { data: activeJobs, error: activeJobsError } = await supabase
       .from('translation_jobs')
       .select('id')
@@ -242,7 +313,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
     // Job Initialization
     // ==========================================================================
 
-    // 4. Create translation_jobs record
+    // 6. Create translation_jobs record
     const { data: jobData, error: jobCreateError } = await supabase
       .from('translation_jobs')
       .insert({
@@ -274,7 +345,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
 
     const jobId = jobData.id;
 
-    // 5. Get keys to translate based on mode
+    // 7. Get keys to translate based on mode
     let keyIds: string[] = [];
 
     if (validatedData.mode === 'all') {
@@ -336,7 +407,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
     // Background Processing (Non-blocking)
     // ==========================================================================
 
-    // Start background job processing without waiting
+    // 8. Start background job processing without waiting
     processTranslationJobInBackground(
       jobId,
       validatedData.project_id,
@@ -350,7 +421,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
       console.error('[translate] Background processing error:', error);
     });
 
-    // 7. Return 202 Accepted immediately
+    // 9. Return 202 Accepted immediately
     return createResponse(202, {
       job_id: jobId,
       message: 'Translation job created',
@@ -423,7 +494,14 @@ async function processTranslationJobInBackground(
 
         if (sourceError || !sourceTranslation) {
           console.warn(`[processTranslationJob] Source translation not found for key ${keyId}`);
-          await updateJobItem(supabase, jobId, keyId, 'skipped', 'SOURCE_NOT_FOUND', 'Source translation not found');
+          await updateJobItem(
+            supabase,
+            jobId,
+            keyId,
+            'skipped',
+            TranslationErrorCode.SOURCE_NOT_FOUND,
+            'Source translation not found'
+          );
           failedCount++;
           continue;
         }
@@ -440,9 +518,15 @@ async function processTranslationJobInBackground(
           params
         );
 
-        // Validate translation
-        if (!translatedValue || translatedValue.length === 0 || translatedValue.length > 250) {
-          throw new Error('Invalid translation: too short or too long');
+        // Validate translation: max 250 chars, no newlines
+        if (!translatedValue || translatedValue.length === 0) {
+          throw new Error('Invalid translation: empty or null');
+        }
+        if (translatedValue.length > TRANSLATION_MAX_LENGTH) {
+          throw new Error(`Invalid translation: too long (max ${TRANSLATION_MAX_LENGTH} characters)`);
+        }
+        if (translatedValue.includes('\n')) {
+          throw new Error('Invalid translation: contains newlines');
         }
 
         // Upsert translation
@@ -471,7 +555,7 @@ async function processTranslationJobInBackground(
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
         // Parse error message to extract error code (format: "code:status:message")
-        let errorCode = 'TRANSLATION_ERROR';
+        let errorCode = TranslationErrorCode.TRANSLATION_ERROR;
         let cleanErrorMessage = errorMessage;
 
         if (errorMessage.includes(':')) {
@@ -482,7 +566,14 @@ async function processTranslationJobInBackground(
           }
         }
 
-        await updateJobItem(supabase, jobId, keyId, 'failed', errorCode, cleanErrorMessage.substring(0, 255));
+        await updateJobItem(
+          supabase,
+          jobId,
+          keyId,
+          'failed',
+          errorCode,
+          cleanErrorMessage.substring(0, ERROR_MESSAGE_MAX_LENGTH)
+        );
         failedCount++;
       }
     }
@@ -555,7 +646,7 @@ Source text: "${sourceValue}"
 Provide ONLY the translated text, without any explanation, quotes, or additional text.`;
 
   const requestBody = {
-    max_tokens: params?.max_tokens || 256,
+    max_tokens: params?.max_tokens || DEFAULT_MAX_TOKENS,
     messages: [
       {
         content: prompt,
@@ -581,25 +672,23 @@ Provide ONLY the translated text, without any explanation, quotes, or additional
     const errorMessage = errorData.error?.message || 'Unknown error';
 
     // Map OpenRouter error codes to application-specific error codes
-    let appErrorCode: string;
+    let appErrorCode: TranslationErrorCode;
     switch (errorCode) {
       case 'insufficient_quota':
       case 'rate_limit_exceeded':
-        appErrorCode = 'rate_limit';
+        appErrorCode = TranslationErrorCode.RATE_LIMIT;
         break;
       case 'invalid_request':
+      case 'validation_error':
+        appErrorCode = TranslationErrorCode.INVALID_REQUEST;
+        break;
       case 'model_disabled':
       case 'model_not_available':
       case 'model_not_found':
-      case 'validation_error':
-        if (errorCode === 'invalid_request' || errorCode === 'validation_error') {
-          appErrorCode = 'invalid_request';
-        } else {
-          appErrorCode = 'model_error';
-        }
+        appErrorCode = TranslationErrorCode.MODEL_ERROR;
         break;
       default:
-        appErrorCode = 'api_error';
+        appErrorCode = TranslationErrorCode.API_ERROR;
     }
 
     throw new Error(`${appErrorCode}:${response.status}:${errorMessage}`);
@@ -623,7 +712,7 @@ async function updateJobItem(
   jobId: string,
   keyId: string,
   status: 'completed' | 'failed' | 'pending' | 'skipped',
-  errorCode: null | string,
+  errorCode: null | TranslationErrorCode,
   errorMessage: null | string
 ): Promise<void> {
   const updateData: Record<string, unknown> = {

@@ -21,7 +21,7 @@ export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX = 4096;
 
 // Polling configuration
 export const TRANSLATION_JOBS_POLL_INTERVALS = [2000, 2000, 3000, 5000, 5000]; // milliseconds
-export const TRANSLATION_JOBS_POLL_MAX_ATTEMPTS = 180; // 15 minutes max
+export const TRANSLATION_JOBS_POLL_MAX_ATTEMPTS = 360; // 30 minutes max
 
 // PostgreSQL error codes and constraints
 export const TRANSLATION_JOBS_PG_ERROR_CODES = {

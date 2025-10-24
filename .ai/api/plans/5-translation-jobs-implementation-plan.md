@@ -34,13 +34,6 @@ The Translation Jobs API provides comprehensive management of LLM-powered transl
   - Optional: None (status and limit are hardcoded for optimization)
 - **Request Body:** None
 
-**Example Request:**
-
-```http
-GET /rest/v1/translation_jobs?project_id=eq.550e8400-e29b-41d4-a716-446655440000&status=in.(pending,running)&limit=1
-Authorization: Bearer {access_token}
-```
-
 ### 2.2 List Translation Jobs
 
 - **HTTP Method:** GET
@@ -55,13 +48,6 @@ Authorization: Bearer {access_token}
     - `status` (JobStatus or JobStatus[]) - Filter by job status
     - `order` (string) - Sort order (default: `created_at.desc`)
 - **Request Body:** None
-
-**Example Request:**
-
-```http
-GET /rest/v1/translation_jobs?project_id=eq.550e8400-e29b-41d4-a716-446655440000&order=created_at.desc&limit=20&offset=0
-Authorization: Bearer {access_token}
-```
 
 ### 2.3 Create Translation Job
 
@@ -127,13 +113,6 @@ Authorization: Bearer {access_token}
     - `offset` (number) - Pagination offset (default: 0)
 - **Request Body:** None
 
-**Example Request:**
-
-```http
-GET /rest/v1/translation_job_items?job_id=eq.550e8400-e29b-41d4-a716-446655440000&select=*,keys(full_key)
-Authorization: Bearer {access_token}
-```
-
 ## 3. Used Types
 
 **Note:** As of the latest refactoring, all types are organized by feature in separate directories under `src/shared/types/`.
@@ -153,119 +132,22 @@ Authorization: Bearer {access_token}
 
 **Translation Jobs Types** (from `src/shared/types/translation-jobs/index.ts`):
 
-```typescript
-// response dtos
-export type TranslationJobResponse = TranslationJob;
-export type TranslationJobItemResponse = TranslationJobItem & {
-  keys: {
-    full_key: string;
-  };
-};
-
-// request dtos
-export interface CreateTranslationJobRequest {
-  key_ids: string[];
-  mode: TranslationMode;
-  params?: TranslationJobParams | null;
-  project_id: string;
-  target_locale: string;
-}
-
-export interface CreateTranslationJobResponse {
-  job_id: string;
-  message: string;
-  status: JobStatus;
-}
-
-export interface CancelTranslationJobContext {
-  previousJob?: TranslationJobResponse;
-}
-
-export interface CancelTranslationJobRequest {
-  jobId: string;
-}
-
-export interface CancelTranslationJobRpcArgs {
-  job_id: string;
-  status: 'cancelled';
-}
-
-export interface ListTranslationJobsParams extends PaginationParams {
-  project_id: string;
-  status?: JobStatus | JobStatus[];
-}
-
-// llm parameters
-export interface TranslationJobParams {
-  max_tokens?: number;
-  model?: string;
-  provider?: string;
-  temperature?: number;
-}
-
-// enums
-export type JobStatus = Enums<'job_status'>; // 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
-export type ItemStatus = Enums<'item_status'>; // 'pending' | 'completed' | 'failed' | 'skipped'
-export type TranslationMode = Enums<'translation_mode'>; // 'all' | 'selected' | 'single'
-
-// pagination
-export interface PaginationParams {
-  limit?: number;
-  offset?: number;
-}
-
-export interface PaginationMetadata {
-  end: number;
-  start: number;
-  total: number;
-}
-
-// error types
-export interface ApiErrorResponse {
-  data: null;
-  error: {
-    code: number;
-    details?: Record<string, unknown>;
-    message: string;
-  };
-}
-
-export interface ValidationErrorResponse extends ApiErrorResponse {
-  error: {
-    code: 400;
-    details: {
-      constraint: string;
-      field: string;
-    };
-    message: string;
-  };
-}
-
-export interface ConflictErrorResponse extends ApiErrorResponse {
-  error: {
-    code: 409;
-    message: string;
-  };
-}
-```
+- `TranslationJobResponse`, `TranslationJobItemResponse` (includes `keys.full_key`) define canonical payloads for lists and details.
+- `CreateTranslationJobRequest`, `CreateTranslationJobResponse` capture job creation input/output and `job_id` for tracking.
+- `CancelTranslationJobRequest`, `CancelTranslationJobRpcArgs` describe cancellation inputs and allowed status literal.
+- `ListTranslationJobsParams` extends `PaginationParams` with `project_id` and optional `status` filter (single or array).
+- `TranslationJobParams` defines optional LLM settings: `max_tokens`, `temperature`, `model`, `provider`.
+- Enums `JobStatus`, `ItemStatus`, `TranslationMode` mirror DB enum domains and gate allowed transitions.
 
 ### 3.2 New Zod Validation Schemas
 
-Create validation schemas in `src/features/translation-jobs/api/translation-jobs.schemas.ts`.
-All exported constants now follow screaming snake case and each definition ends with
-`satisfies z.ZodType<...>` to guarantee parity with the DTOs in `src/shared/types/types.ts`.
+Schemas are defined in `src/features/translation-jobs/api/translation-jobs.schemas.ts` and mirror DB rules using shared constants.
 
-**Note:** The implementation uses constants from `src/shared/constants/translation-jobs.constants.ts` for validation parameters, error messages, and patterns. This ensures consistency between client-side validation and database constraints.
-
-Key exported schemas now include:
-
-- `JOB_ID_SCHEMA`, `PROJECT_ID_SCHEMA`, `KEY_IDS_SCHEMA`, and `LOCALE_CODE_SCHEMA`
-- `TRANSLATION_MODE_SCHEMA`, `JOB_STATUS_SCHEMA`, and `ITEM_STATUS_SCHEMA`
-- `TRANSLATION_JOB_PARAMS_SCHEMA`, `CHECK_ACTIVE_JOB_SCHEMA`, and `LIST_TRANSLATION_JOBS_SCHEMA`
-- `CREATE_TRANSLATION_JOB_SCHEMA`, `CANCEL_TRANSLATION_JOB_SCHEMA`, and `GET_JOB_ITEMS_SCHEMA`
-- Response schemas: `TRANSLATION_JOB_RESPONSE_SCHEMA`, `TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA`, and `CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA`
-
-Each schema is defined with the same validation rules as the database layer and terminates with `satisfies z.ZodType<...>` to enforce structural parity with shared DTOs.
+- IDs/locales: `JOB_ID_SCHEMA`, `PROJECT_ID_SCHEMA`, `KEY_IDS_SCHEMA`, `LOCALE_CODE_SCHEMA` validate formats and lengths.
+- Enums: `TRANSLATION_MODE_SCHEMA`, `JOB_STATUS_SCHEMA`, `ITEM_STATUS_SCHEMA` restrict values to allowed domains.
+- Queries: `TRANSLATION_JOB_PARAMS_SCHEMA`, `CHECK_ACTIVE_JOB_SCHEMA`, `LIST_TRANSLATION_JOBS_SCHEMA` enforce bounds and defaults.
+- Mutations: `CREATE_TRANSLATION_JOB_SCHEMA`, `CANCEL_TRANSLATION_JOB_SCHEMA`, `GET_JOB_ITEMS_SCHEMA` validate mode rules and pagination.
+- Responses: `TRANSLATION_JOB_RESPONSE_SCHEMA`, `TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA`, `CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA` ensure runtime payloads are typed and safe.
 
 ## 4. Response Details
 
@@ -368,8 +250,6 @@ Each schema is defined with the same validation rules as the database layer and 
 ### 4.4 Cancel Translation Job
 
 **Success Response (200 OK):**
-
-Single object (using `.maybeSingle()` or singular Accept header):
 
 ```json
 {
@@ -547,6 +427,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 6. Edge Function performs server-side validation and business logic:
    - Validates project ownership and target locale existence
    - Checks for active jobs (409 conflict prevention)
+   - Applies rate‑limiting checks (per‑project jobs/minute and per‑user concurrent jobs across owned projects)
    - Creates `translation_jobs` record with `status = 'pending'`
    - Creates `translation_job_items` records for each key
    - Begins asynchronous LLM translation process
@@ -649,7 +530,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 **Handling:**
 
-Zod validation errors are automatically converted to ApiErrorResponse format by the global QueryClient error handler configured in `src/app/config/queryClient/queryClient.ts`.
+- Client maps Zod issues to `ApiErrorResponse` via a shared error layer; all endpoints use the `{ data: null, error: { code, message, details? } }` envelope.
 
 ### 7.2 Business Logic Errors (400/409)
 
@@ -661,21 +542,9 @@ Zod validation errors are automatically converted to ApiErrorResponse format by 
 
 **Handling:**
 
-```typescript
-// example in edge function
-if (existingActiveJob) {
-  return new Response(
-    JSON.stringify({
-      data: null,
-      error: {
-        code: 409,
-        message: 'Another translation job is already active for this project',
-      },
-    }),
-    { status: 409, headers: { 'Content-Type': 'application/json' } }
-  );
-}
-```
+- Return `409` for active job conflicts and `400` for rule violations with clear `message`; avoid exposing internal trigger names.
+- Keep responses consistent and preserve partial results where possible.
+- On rate‑limit breaches, respond `429` with a clear message (per‑project minutes quota or per‑user concurrent jobs cap).
 
 ### 7.3 Authorization Errors (403/404)
 
@@ -707,30 +576,15 @@ if (existingActiveJob) {
 - Job status is set to 'failed' only if critical errors prevent continuation
 - Partial completion is preserved (completed translations remain valid)
 - Error codes align with OpenRouter error responses for debugging
+- Errors are normalized to internal enum codes for items (`RATE_LIMIT`, `INVALID_REQUEST`, `MODEL_ERROR`, `API_ERROR`), improving consistency in UI.
 
 ### 7.5 Polling and Real-time Updates
 
 **Frontend Polling Strategy:**
 
-After creating a job (202 response), client implements exponential backoff polling:
-
-```typescript
-// example polling implementation
-const pollActiveJob = async () => {
-  const response = await useActiveTranslationJob(projectId);
-  if (response.data.length === 0 || isFinishedJob(response.data[0])) {
-    // job completed or no active job
-    stopPolling();
-    invalidateJobsList();
-  }
-};
-
-// poll using exponential backoff intervals: [2000, 2000, 3000, 5000, 5000]ms
-const startPolling = () => {
-  const intervals = [2000, 2000, 3000, 5000, 5000]; // milliseconds
-  // implementation details...
-};
-```
+- After a `202` response, poll the active job using exponential backoff (e.g., 2s → 2s → 3s → 5s → 5s) and stop when finished or not present.
+- Invalidate job lists and related caches upon completion or cancellation to refresh UI.
+- Limit polling attempts to approximately 30 minutes to avoid indefinite background activity.
 
 ## 8. Performance Considerations
 
@@ -757,21 +611,9 @@ const startPolling = () => {
 
 ### 8.2 Caching Strategy
 
-**TanStack Query Configuration:**
-
-```typescript
-// active job: short cache for real-time updates
-staleTime: 2 * 1000, // 2 seconds
-gcTime: 5 * 60 * 1000, // 5 minutes
-
-// job history: medium cache
-staleTime: 30 * 1000, // 30 seconds
-gcTime: 10 * 60 * 1000, // 10 minutes
-
-// job items: long cache (rarely changes after completion)
-staleTime: 5 * 60 * 1000, // 5 minutes
-gcTime: 30 * 60 * 1000, // 30 minutes
-```
+- Active job: short staleness (~2s) with GC (~5m) to support live updates.
+- Job history: medium staleness (~30s) with GC (~10m) for efficient browsing.
+- Job items: longer staleness (~5m) with GC (~30m) as items stabilize after completion.
 
 **Cache Invalidation:**
 
@@ -797,760 +639,69 @@ gcTime: 30 * 60 * 1000, // 30 minutes
 
 ### Step 1: Create Feature Directory Structure
 
-```bash
-mkdir -p src/features/translation-jobs/{api,components,hooks}
-```
+- Create `src/features/translation-jobs/{api,components,hooks}` and ensure `api/index.ts` re‑exports hooks and utilities.
 
 ### Step 2: Create Translation Jobs Constants
 
-Create `src/shared/constants/translation-jobs.constants.ts` with centralized constants, patterns, and utilities:
+Create `src/shared/constants/translation-jobs.constants.ts` with centralized constants:
 
-```typescript
-/**
- * Translation Jobs Constants and Validation Patterns
- *
- * Centralized definitions for translation job validation patterns to ensure consistency
- * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
- */
-
-// pagination defaults
-export const TRANSLATION_JOBS_MIN_LIMIT = 1;
-export const TRANSLATION_JOBS_DEFAULT_LIMIT = 20;
-export const TRANSLATION_JOBS_MAX_LIMIT = 100;
-export const TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT = 100;
-export const TRANSLATION_JOBS_MAX_ITEMS_LIMIT = 1000;
-export const TRANSLATION_JOBS_MIN_OFFSET = 0;
-
-// llm parameter constraints
-export const TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN = 0;
-export const TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX = 2;
-export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN = 1;
-export const TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX = 4096;
-
-// polling configuration
-export const TRANSLATION_JOBS_POLL_INTERVALS = [2000, 2000, 3000, 5000, 5000]; // milliseconds
-export const TRANSLATION_JOBS_POLL_MAX_ATTEMPTS = 180; // 15 minutes max
-
-// postgresql error codes and constraints
-export const TRANSLATION_JOBS_PG_ERROR_CODES = {
-  CHECK_VIOLATION: '23514',
-  FOREIGN_KEY_VIOLATION: '23503',
-  UNIQUE_VIOLATION: '23505',
-} as const;
-
-export const TRANSLATION_JOBS_CONSTRAINTS = {
-  ACTIVE_JOB_UNIQUE: 'prevent_multiple_active_jobs_trigger',
-  SOURCE_LOCALE_DEFAULT: 'validate_source_locale_is_default_trigger',
-} as const;
-
-// centralized error messages
-export const TRANSLATION_JOBS_ERROR_MESSAGES = {
-  ACTIVE_JOB_EXISTS: 'Another translation job is already active for this project',
-  ALL_MODE_NO_KEYS: 'All mode should not include specific key IDs',
-  CHECK_VIOLATION: 'Data validation failed',
-  DATABASE_ERROR: 'Database operation failed',
-  DATABASE_SCHEMA_ERROR: 'Database schema error',
-  EDGE_FUNCTION_ERROR: 'Translation service temporarily unavailable',
-  FOREIGN_KEY_VIOLATION: 'Referenced resource not found or access denied',
-  INSUFFICIENT_PRIVILEGE: 'Permission denied',
-  INVALID_JOB_ID: 'Invalid job ID format',
-  INVALID_KEY_ID: 'Invalid key ID format',
-  INVALID_MAX_TOKENS: `Max tokens must be between ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN} and ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX}`,
-  INVALID_MODE: 'Mode must be one of: all, selected, single',
-  INVALID_PROJECT_ID: 'Invalid project ID format',
-  INVALID_TARGET_LOCALE: 'Target locale must be in BCP-47 format (e.g., "en" or "en-US")',
-  INVALID_TEMPERATURE: `Temperature must be between ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN} and ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX}`,
-  JOB_NOT_CANCELLABLE: 'Job is not in a cancellable state',
-  JOB_NOT_FOUND: 'Translation job not found or access denied',
-  NO_DATA_RETURNED: 'No data returned from server',
-  OPENROUTER_ERROR: 'Translation provider error',
-  RATE_LIMIT_EXCEEDED: 'Rate limit exceeded, please try again later',
-  RESOURCE_ALREADY_EXISTS: 'Resource already exists',
-  SELECTED_MODE_REQUIRES_KEYS: 'Selected mode requires at least one key ID',
-  SINGLE_MODE_ONE_KEY: 'Single mode requires exactly one key ID',
-  TARGET_LOCALE_IS_DEFAULT: 'Target locale cannot be the default locale',
-  TARGET_LOCALE_NOT_FOUND: 'Target locale does not exist in project',
-} as const;
-
-// job status helpers
-export const ACTIVE_JOB_STATUSES = ['pending', 'running'] as const;
-export const FINISHED_JOB_STATUSES = ['completed', 'failed', 'cancelled'] as const;
-export const CANCELLABLE_JOB_STATUSES = ['pending', 'running'] as const;
-
-// validation utilities
-export const TRANSLATION_JOBS_VALIDATION = {
-  isActiveStatus: (status: string): boolean => {
-    return ACTIVE_JOB_STATUSES.includes(status as (typeof ACTIVE_JOB_STATUSES)[number]);
-  },
-  isCancellableStatus: (status: string): boolean => {
-    return CANCELLABLE_JOB_STATUSES.includes(status as (typeof CANCELLABLE_JOB_STATUSES)[number]);
-  },
-  isFinishedStatus: (status: string): boolean => {
-    return FINISHED_JOB_STATUSES.includes(status as (typeof FINISHED_JOB_STATUSES)[number]);
-  },
-};
-```
-
-Add to `src/shared/constants/index.ts`:
-
-```typescript
-export * from './keys.constants';
-export * from './locale.constants';
-export * from './projects.constants';
-export * from './translation-jobs.constants';
-```
+- Define pagination defaults, polling backoff, and LLM parameter bounds.
+- Provide `TRANSLATION_JOBS_PG_ERROR_CODES`, `TRANSLATION_JOBS_CONSTRAINTS`, and `TRANSLATION_JOBS_ERROR_MESSAGES` for consistent messaging.
+- Expose helpers `ACTIVE_JOB_STATUSES`, `FINISHED_JOB_STATUSES`, `CANCELLABLE_JOB_STATUSES` and guards in `TRANSLATION_JOBS_VALIDATION`.
+- Re‑export from `src/shared/constants/index.ts` to keep imports cohesive.
+- Extend constants used across the Edge Function and client: `DEFAULT_MAX_TOKENS`, `TRANSLATION_MAX_LENGTH` (250), `ERROR_MESSAGE_MAX_LENGTH` (255), and increase poll window (`TRANSLATION_JOBS_POLL_MAX_ATTEMPTS`) to ~30 minutes.
 
 ### Step 3: Create Zod Validation Schemas
 
-Create `src/features/translation-jobs/api/translation-jobs.schemas.ts` with all validation schemas defined in section 3.2.
+- Implement `src/features/translation-jobs/api/translation-jobs.schemas.ts` covering IDs, enums, queries, mutations, and responses (see section 3.2).
+- Normalize defaults and enforce mode rules to match DB/domain constraints.
 
 ### Step 4: Create Error Handling Utilities
 
-Create `src/features/translation-jobs/api/translation-jobs.errors.ts`:
-
-```typescript
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ApiErrorResponse } from '@/shared/types';
-import { createApiErrorResponse } from '@/shared/utils';
-import {
-  TRANSLATION_JOBS_PG_ERROR_CODES,
-  TRANSLATION_JOBS_CONSTRAINTS,
-  TRANSLATION_JOBS_ERROR_MESSAGES,
-} from '@/shared/constants';
-
-/**
- * Handle database errors and convert them to API errors for translation jobs
- */
-export function createTranslationJobDatabaseErrorResponse(
-  error: PostgrestError,
-  context?: string,
-  fallbackMessage?: string
-): ApiErrorResponse {
-  const LOG_PREFIX = context ? `[${context}]` : '[handleTranslationJobDatabaseError]';
-  console.error(`${LOG_PREFIX} Database error:`, error);
-
-  // handle trigger violations (business logic)
-  if (error.message.includes('prevent_multiple_active_jobs_trigger')) {
-    return createApiErrorResponse(409, TRANSLATION_JOBS_ERROR_MESSAGES.ACTIVE_JOB_EXISTS);
-  }
-  if (error.message.includes('validate_source_locale_is_default_trigger')) {
-    return createApiErrorResponse(400, 'Source locale must be the project default locale');
-  }
-
-  // handle check constraint violations
-  if (error.code === TRANSLATION_JOBS_PG_ERROR_CODES.CHECK_VIOLATION) {
-    return createApiErrorResponse(400, 'Invalid field value', { constraint: error.details });
-  }
-
-  // handle foreign key violations
-  if (error.code === TRANSLATION_JOBS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
-    return createApiErrorResponse(404, 'Referenced resource not found');
-  }
-
-  // generic database error
-  return createApiErrorResponse(500, fallbackMessage || TRANSLATION_JOBS_ERROR_MESSAGES.DATABASE_ERROR, {
-    original: error,
-  });
-}
-
-/**
- * Handle Edge Function errors
- */
-export function createEdgeFunctionErrorResponse(
-  statusCode: number,
-  message: string,
-  context?: string
-): ApiErrorResponse {
-  const LOG_PREFIX = context ? `[${context}]` : '[handleEdgeFunctionError]';
-  console.error(`${LOG_PREFIX} Edge Function error:`, { statusCode, message });
-
-  // map common edge function errors
-  if (statusCode === 429) {
-    return createApiErrorResponse(429, TRANSLATION_JOBS_ERROR_MESSAGES.RATE_LIMIT_EXCEEDED);
-  }
-  if (statusCode === 409) {
-    return createApiErrorResponse(409, TRANSLATION_JOBS_ERROR_MESSAGES.ACTIVE_JOB_EXISTS);
-  }
-  if (statusCode >= 500) {
-    return createApiErrorResponse(500, TRANSLATION_JOBS_ERROR_MESSAGES.EDGE_FUNCTION_ERROR);
-  }
-
-  return createApiErrorResponse(statusCode, message);
-}
-```
+- Add `src/features/translation-jobs/api/translation-jobs.errors.ts` that maps DB/Edge errors to `ApiErrorResponse` with stable messages.
+- Use `TRANSLATION_JOBS_PG_ERROR_CODES`, `TRANSLATION_JOBS_CONSTRAINTS`, and `TRANSLATION_JOBS_ERROR_MESSAGES`; avoid leaking internal details.
 
 ### Step 5: Create Query Keys Factory
 
 Create `src/features/translation-jobs/api/translation-jobs.key-factory.ts`:
 
-```typescript
-import type { ListTranslationJobsParams } from '@/shared/types';
-
-/**
- * Query key factory for translation jobs
- * Follows TanStack Query best practices for structured query keys
- */
-export const TRANSLATION_JOBS_KEY_FACTORY = {
-  all: ['translation-jobs'] as const,
-  active: (projectId: string) => [...TRANSLATION_JOBS_KEY_FACTORY.activeJobs(), projectId] as const,
-  activeJobs: () => [...TRANSLATION_JOBS_KEY_FACTORY.all, 'active'] as const,
-  detail: (job_id: string) => [...TRANSLATION_JOBS_KEY_FACTORY.details(), job_id] as const,
-  details: () => [...TRANSLATION_JOBS_KEY_FACTORY.all, 'detail'] as const,
-  items: (job_id: string, params?: any) => [...TRANSLATION_JOBS_KEY_FACTORY.jobItems(), job_id, params] as const,
-  jobItems: () => [...TRANSLATION_JOBS_KEY_FACTORY.all, 'items'] as const,
-  list: (params: ListTranslationJobsParams) => [...TRANSLATION_JOBS_KEY_FACTORY.lists(), params] as const,
-  lists: () => [...TRANSLATION_JOBS_KEY_FACTORY.all, 'list'] as const,
-};
-```
+- Provide structured keys: `all`, `active(projectId)`, `list(params)`, `detail(jobId)`, and `items(jobId, params?)`.
+- Ensure key builders are pure/stable to support targeted invalidation and polling.
 
 ### Step 6: Create TanStack Query Hooks
 
-**6.1 Create `src/features/translation-jobs/api/useActiveTranslationJob/useActiveTranslationJob.ts`:**
+**6.1 Active Job Hook** (`useActiveTranslationJob`)
 
-```typescript
-import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
-import type { ApiErrorResponse, TranslationJobResponse } from '@/shared/types';
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
-import { CHECK_ACTIVE_JOB_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
+- Validate `project_id` (`CHECK_ACTIVE_JOB_SCHEMA`), query `pending`/`running`, return array; short `staleTime` and project‑scoped key.
 
-/**
- * Check for active translation job in project
- *
- * Fast lookup optimized for polling during translation progress.
- * Uses composite index on (project_id, status) for O(log n) performance.
- * Returns array that may be empty if no active job exists.
- */
-export function useActiveTranslationJob(projectId: string) {
-  const supabase = useSupabase();
+**6.2 Jobs List Hook** (`useTranslationJobs`)
 
-  return useQuery<TranslationJobResponse[], ApiErrorResponse>({
-    gcTime: 5 * 60 * 1000, // 5 minutes
-    queryFn: async () => {
-      // validate project id
-      const validated = CHECK_ACTIVE_JOB_SCHEMA.parse({ project_id: projectId });
+- Validate with `LIST_TRANSLATION_JOBS_SCHEMA`, select with sorting + pagination, and return data with `PaginationMetadata`.
+- Use `TRANSLATION_JOBS_KEY_FACTORY.list(params)` and medium `staleTime`.
 
-      const { data, error } = await supabase
-        .from('translation_jobs')
-        .select('*')
-        .eq('project_id', validated.project_id)
-        .in('status', ['pending', 'running'])
-        .limit(1);
+**Step 5: Create Job Mutation Hook** (`src/features/translation-jobs/api/useCreateTranslationJob/useCreateTranslationJob.ts`)
 
-      if (error) {
-        throw createTranslationJobDatabaseErrorResponse(error, 'useActiveTranslationJob', 'Failed to check active job');
-      }
+- Validate input with `CREATE_TRANSLATION_JOB_SCHEMA` and call `/functions/v1/translate`.
+- Parse `CreateTranslationJobResponse` and refresh caches using `TRANSLATION_JOBS_KEY_FACTORY` after success.
 
-      // runtime validation of response data
-      const jobs = z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data ?? []);
-      return jobs;
-    },
-    queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),
-    staleTime: 2 * 1000, // 2 seconds for real-time polling
-  });
-}
-```
+**Step 6: Create Cancel Mutation Hook** (`src/features/translation-jobs/api/useCancelTranslationJob/useCancelTranslationJob.ts`)
 
-**6.2 Create `src/features/translation-jobs/api/useTranslationJobs/useTranslationJobs.ts`:**
+- Validate job ID with `CANCEL_TRANSLATION_JOB_SCHEMA`, enforce cancellable states, and update status to `cancelled`.
+- Refresh related caches via `TRANSLATION_JOBS_KEY_FACTORY` and stop client polling on success.
 
-```typescript
-import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
+**Step 7: Create Query Hooks**
 
-import type { ApiErrorResponse, ListTranslationJobsParams, ListTranslationJobsResponse } from '@/shared/types';
+- `useActiveTranslationJob`, `useTranslationJobs`, `useTranslationJobItems` perform validated queries, return typed data, and expose pagination metadata where applicable.
 
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { calculatePaginationMetadata } from '@/shared/utils';
-
-import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
-import { LIST_TRANSLATION_JOBS_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
-
-/**
- * Fetch paginated list of translation jobs for project
- *
- * Provides comprehensive job history with filtering and sorting capabilities.
- * Supports pagination with total count for UI pagination controls.
- * Jobs are sorted by creation date (newest first) by default.
- *
- * Features:
- * - Pagination with limit/offset
- * - Status filtering (single status or array of statuses)
- * - Sorting by created_at or status (asc/desc)
- * - Total count for pagination metadata
- * - Runtime validation of response data
- *
- * @param params - Query parameters for job listing
- * @param params.project_id - Project UUID to fetch jobs from (required)
- * @param params.limit - Items per page (1-100, default: 20)
- * @param params.offset - Pagination offset (min: 0, default: 0)
- * @param params.status - Filter by job status (single or array)
- * @param params.order - Sort order (default: 'created_at.desc')
- *
- * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
- * @throws {ApiErrorResponse} 403 - Project not owned by user (via RLS)
- * @throws {ApiErrorResponse} 500 - Database error during fetch
- *
- * @returns TanStack Query result with jobs data and pagination metadata
- */
-export function useTranslationJobs(params: ListTranslationJobsParams) {
-  const supabase = useSupabase();
-
-  return useQuery<ListTranslationJobsResponse, ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    queryFn: async () => {
-      const { limit, offset, order, project_id, status } = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
-
-      let query = supabase
-        .from('translation_jobs')
-        .select('*', { count: 'exact' })
-        .eq('project_id', project_id)
-        .range(offset, offset + limit - 1);
-
-      // apply status filter if provided
-      if (status) {
-        if (Array.isArray(status)) {
-          query = query.in('status', status);
-        } else {
-          query = query.eq('status', status);
-        }
-      }
-
-      // apply sorting
-      const [field, direction] = order.split('.');
-      query = query.order(field, { ascending: direction === 'asc' });
-
-      const { count, data, error } = await query;
-
-      if (error) {
-        throw createTranslationJobDatabaseErrorResponse(
-          error,
-          'useTranslationJobs',
-          'Failed to fetch translation jobs'
-        );
-      }
-
-      // runtime validation of response data
-      const jobs = z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data || []);
-
-      return {
-        data: jobs,
-        metadata: calculatePaginationMetadata(offset, jobs.length, count || 0),
-      };
-    },
-    queryKey: TRANSLATION_JOBS_KEY_FACTORY.list(params),
-    staleTime: 30 * 1000, // 30 seconds
-  });
-}
-```
-
-**6.3 Create `src/features/translation-jobs/api/useCreateTranslationJob/useCreateTranslationJob.ts`:**
-
-```typescript
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiErrorResponse, CreateTranslationJobRequest, CreateTranslationJobResponse } from '@/shared/types';
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createEdgeFunctionErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
-import { CREATE_TRANSLATION_JOB_SCHEMA, CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
-
-/**
- * Create new translation job via Edge Function
- *
- * Calls the /functions/v1/translate Edge Function which handles:
- * - Server-side validation and business logic
- * - Job and job items creation
- * - Asynchronous LLM translation processing
- * - Returns 202 immediately while processing continues in background
- */
-export function useCreateTranslationJob() {
-  const supabase = useSupabase();
-  const queryClient = useQueryClient();
-
-  return useMutation<CreateTranslationJobResponse, ApiErrorResponse, CreateTranslationJobRequest>({
-    mutationFn: async (jobData) => {
-      const body = CREATE_TRANSLATION_JOB_SCHEMA.parse(jobData);
-
-      const { data, error } = await supabase.functions.invoke('translate', {
-        body,
-      });
-
-      if (error) {
-        throw createEdgeFunctionErrorResponse(
-          error.status || 500,
-          error.message || 'Translation service error',
-          'useCreateTranslationJob'
-        );
-      }
-
-      return CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA.parse(data);
-    },
-    onSuccess: (_, { project_id }) => {
-      // invalidate active job cache for polling to start
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(project_id),
-      });
-      // invalidate job list cache
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists(),
-      });
-    },
-  });
-}
-```
-
-**6.4 Create `src/features/translation-jobs/api/useCancelTranslationJob/useCancelTranslationJob.ts`:**
-
-```typescript
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type {
-  ApiErrorResponse,
-  CancelTranslationJobContext,
-  CancelTranslationJobRequest,
-  TranslationJobResponse,
-} from '@/shared/types';
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { TRANSLATION_JOBS_ERROR_MESSAGES, TRANSLATION_JOBS_VALIDATION } from '@/shared/constants';
-import { createApiErrorResponse } from '@/shared/utils';
-
-import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
-import { CANCEL_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
-
-/**
- * Cancel running translation job
- *
- * Updates job status to 'cancelled' and sets finished_at timestamp.
- * Edge Function will check cancellation flag and stop processing between API calls.
- * Completed translations are preserved.
- *
- * Cancellation conditions:
- * - Job must be in 'pending' or 'running' status
- * - User must own the project (enforced by RLS)
- * - Database triggers validate state transitions
- *
- * After successful cancellation:
- * - Updates specific job cache with new status
- * - Invalidates active job cache (job no longer active)
- * - Invalidates job list cache to show updated status
- * - Client should stop polling active job status
- *
- * @throws {ApiErrorResponse} 400 - Job not in cancellable state (completed/failed/cancelled)
- * @throws {ApiErrorResponse} 404 - Job not found or access denied (via RLS)
- * @throws {ApiErrorResponse} 500 - Database error during update
- *
- * @returns TanStack Query mutation hook for cancelling translation jobs
- */
-export function useCancelTranslationJob() {
-  const supabase = useSupabase();
-  const queryClient = useQueryClient();
-
-  return useMutation<
-    TranslationJobResponse,
-    ApiErrorResponse,
-    CancelTranslationJobRequest,
-    CancelTranslationJobContext
-  >({
-    mutationFn: async ({ jobId }) => {
-      const { job_id } = CANCEL_TRANSLATION_JOB_SCHEMA.parse({
-        job_id: jobId,
-        status: 'cancelled',
-      });
-
-      // fetch the current job to verify it exists and is in a cancellable state
-      const { data: currentJob, error: fetchError } = await supabase
-        .from('translation_jobs')
-        .select('status')
-        .eq('id', job_id)
-        .maybeSingle();
-
-      if (fetchError) {
-        throw createTranslationJobDatabaseErrorResponse(fetchError, 'useCancelTranslationJob', 'Failed to fetch job');
-      }
-
-      if (!currentJob) {
-        throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
-      }
-
-      // verify the job is in a cancellable state (pending or running)
-      if (!TRANSLATION_JOBS_VALIDATION.isCancellableStatus(currentJob.status)) {
-        throw createApiErrorResponse(400, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_CANCELLABLE);
-      }
-
-      const { data, error } = await supabase
-        .from('translation_jobs')
-        .update({
-          finished_at: new Date().toISOString(),
-          status: 'cancelled',
-        })
-        .eq('id', job_id)
-        .select('*')
-        .maybeSingle();
-
-      if (error) {
-        throw createTranslationJobDatabaseErrorResponse(error, 'useCancelTranslationJob', 'Failed to cancel job');
-      }
-
-      if (!data) {
-        throw createApiErrorResponse(404, TRANSLATION_JOBS_ERROR_MESSAGES.JOB_NOT_FOUND);
-      }
-
-      return data;
-    },
-    onError: (_err, { jobId }, context) => {
-      // rollback on error
-      if (context?.previousJob) {
-        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.active(context.previousJob.project_id), [
-          context.previousJob,
-        ]);
-        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId), context.previousJob);
-      }
-    },
-    onMutate: async ({ jobId }) => {
-      // cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: TRANSLATION_JOBS_KEY_FACTORY.all });
-
-      // get the current job from cache (assuming it's already loaded)
-      const currentJobData = queryClient.getQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId)) as
-        | TranslationJobResponse
-        | undefined;
-
-      if (currentJobData) {
-        const updatedJob = {
-          ...currentJobData,
-          finished_at: new Date().toISOString(),
-          status: 'cancelled' as const,
-        };
-
-        // update active job cache (empty array since job is no longer active)
-        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.active(currentJobData.project_id), []);
-
-        // update specific job cache
-        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId), updatedJob);
-
-        return { previousJob: currentJobData };
-      }
-
-      return {};
-    },
-    onSuccess: (data) => {
-      // update specific job cache
-      queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(data.id), data);
-      // invalidate active jobs cache (job is no longer active)
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(data.project_id),
-      });
-      // invalidate job list cache
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists(),
-      });
-    },
-  });
-}
-```
-
-**6.5 Create `src/features/translation-jobs/api/useTranslationJobItems/useTranslationJobItems.ts`:**
-
-```typescript
-import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
-
-import type { ApiErrorResponse, GetJobItemsParams, ListTranslationJobItemsResponse } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { calculatePaginationMetadata } from '@/shared/utils';
-
-import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
-import { GET_JOB_ITEMS_SCHEMA, TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
-
-/**
- * Fetch detailed item-level status for translation job
- *
- * Includes key information via JOIN for displaying full_key names.
- * Used for debugging failed translations and showing detailed progress.
- *
- * Features:
- * - Item-level status tracking (pending, completed, failed, skipped)
- * - Key name resolution via LEFT JOIN to keys table
- * - Error code and message display for failed items
- * - Pagination with total count
- * - Optional status filtering
- * - Ordered by creation time for predictable display
- *
- * This hook is essential for:
- * - Debugging translation failures
- * - Showing detailed job progress
- * - Displaying error messages per key
- * - Monitoring job execution status
- *
- * @param params - Query parameters for job items
- * @param params.job_id - Translation job UUID to fetch items from (required)
- * @param params.status - Filter by item status (pending, completed, failed, skipped)
- * @param params.limit - Items per page (1-1000, default: 100)
- * @param params.offset - Pagination offset (min: 0, default: 0)
- *
- * @throws {ApiErrorResponse} 400 - Validation error (invalid job_id, limit > 1000, negative offset)
- * @throws {ApiErrorResponse} 403 - Job not accessible (project not owned via RLS)
- * @throws {ApiErrorResponse} 500 - Database error during fetch
- *
- * @returns TanStack Query result with job items data and pagination metadata
- */
-export function useTranslationJobItems(params: GetJobItemsParams) {
-  const supabase = useSupabase();
-
-  return useQuery<ListTranslationJobItemsResponse, ApiErrorResponse>({
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    queryFn: async () => {
-      const { job_id, limit, offset, status } = GET_JOB_ITEMS_SCHEMA.parse({
-        job_id: params.job_id,
-        limit: params.limit,
-        offset: params.offset,
-        status: params.status,
-      });
-
-      let query = supabase
-        .from('translation_job_items')
-        .select('*, keys(full_key)', { count: 'exact' })
-        .eq('job_id', job_id)
-        .range(offset, offset + limit - 1);
-
-      // apply status filter if provided
-      if (status) {
-        query = query.eq('status', status);
-      }
-
-      // order by creation time
-      query = query.order('created_at', { ascending: true });
-
-      const { count, data, error } = await query;
-
-      if (error) {
-        throw createTranslationJobDatabaseErrorResponse(error, 'useTranslationJobItems', 'Failed to fetch job items');
-      }
-
-      // runtime validation of response data
-      const items = z.array(TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA).parse(data || []);
-
-      return {
-        data: items,
-        metadata: calculatePaginationMetadata(offset, items.length, count || 0),
-      };
-    },
-    queryKey: TRANSLATION_JOBS_KEY_FACTORY.items(params.job_id, params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-```
+- Items hook: validate with `GET_JOB_ITEMS_SCHEMA`, join `keys(full_key)`, optional `status` filter, and return typed data with `PaginationMetadata` using `TRANSLATION_JOBS_KEY_FACTORY.items(jobId, params)` and longer `staleTime`.
 
 ### Step 7: Create API Index File
 
-Create `src/features/translation-jobs/api/index.ts`:
-
-```typescript
-/**
- * Translation Jobs API
- *
- * This module provides TanStack Query hooks for managing LLM translation jobs.
- * All hooks use the shared Supabase client from context and follow React Query best practices.
- *
- * @module features/translation-jobs/api
- */
-
-// error utilities
-export { createTranslationJobDatabaseErrorResponse, createEdgeFunctionErrorResponse } from './translation-jobs.errors';
-
-// query keys
-export { TRANSLATION_JOBS_KEY_FACTORY } from './translation-jobs.key-factory';
-
-// validation schemas
-export * from './translation-jobs.schemas';
-
-// mutation hooks
-export { useCancelTranslationJob } from './useCancelTranslationJob/useCancelTranslationJob';
-export * from './useCreateTranslationJob';
-
-// query hooks
-export * from './useActiveTranslationJob';
-export * from './useTranslationJobs';
-export * from './useTranslationJobItems';
-```
+Create `src/features/translation-jobs/api/index.ts` re‑exporting: error utilities, `TRANSLATION_JOBS_KEY_FACTORY`, validation schemas, mutation hooks, and query hooks for a single import surface.
 
 ### Step 8: Create Polling Hook
 
-Create `src/features/translation-jobs/hooks/useTranslationJobPolling.ts`:
-
-```typescript
-import { useEffect, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useActiveTranslationJob, TRANSLATION_JOBS_KEY_FACTORY } from '../api';
-import { TRANSLATION_JOB_POLL_INTERVALS, TRANSLATION_JOB_POLL_MAX_ATTEMPTS } from '@/shared/constants';
-
-/**
- * Custom hook for polling active translation job with exponential backoff
- *
- * Automatically starts/stops polling based on job status.
- * Uses exponential backoff to reduce server load for long-running jobs.
- */
-export function useTranslationJobPolling(projectId: string, enabled: boolean = true) {
-  const queryClient = useQueryClient();
-  const activeJobQuery = useActiveTranslationJob(projectId);
-  const pollAttemptRef = useRef(0);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-
-  const activeJob = activeJobQuery.data?.[0];
-  const hasActiveJob = Boolean(activeJob);
-  const isJobRunning = activeJob?.status === 'pending' || activeJob?.status === 'running';
-
-  useEffect(() => {
-    if (!enabled || !hasActiveJob || !isJobRunning) {
-      // clear polling if no active job or job finished
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = undefined;
-      }
-      pollAttemptRef.current = 0;
-      return;
-    }
-
-    const scheduleNextPoll = () => {
-      if (pollAttemptRef.current >= TRANSLATION_JOB_POLL_MAX_ATTEMPTS) {
-        console.warn('Translation job polling max attempts reached');
-        return;
-      }
-
-      const intervalIndex = Math.min(pollAttemptRef.current, TRANSLATION_JOB_POLL_INTERVALS.length - 1);
-      const interval = TRANSLATION_JOB_POLL_INTERVALS[intervalIndex];
-
-      timeoutRef.current = setTimeout(() => {
-        pollAttemptRef.current++;
-        queryClient.invalidateQueries({
-          queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),
-        });
-        scheduleNextPoll();
-      }, interval);
-    };
-
-    scheduleNextPoll();
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [projectId, enabled, hasActiveJob, isJobRunning, queryClient]);
-
-  return {
-    activeJob,
-    hasActiveJob,
-    isJobRunning,
-    isPolling: Boolean(timeoutRef.current),
-    pollAttempt: pollAttemptRef.current,
-  };
-}
-```
+- Implement `src/features/translation-jobs/hooks/useTranslationJobPolling.ts` to poll active jobs with exponential backoff, auto‑stop on completion, and trigger cache refresh via query keys.
 
 ### Step 9: Write Unit Tests
 
@@ -1627,168 +778,40 @@ The Translation Jobs Edge Function provides the core LLM translation processing 
 
 ### 10.2 Environment Variables
 
-Required environment variables for Edge Function operation:
+Required environment variables:
 
-```typescript
-// openrouter integration
-OPENROUTER_API_KEY: string; // OpenRouter API authentication
-OPENROUTER_BASE_URL: string; // Default: "https://openrouter.ai/api/v1"
-OPENROUTER_MODEL: string; // Default model (e.g., "google/gemini-2.5-flash-lite")
-
-// rate limiting
-RATE_LIMIT_REQUESTS_PER_MINUTE: number; // Default: 60
-RATE_LIMIT_TOKENS_PER_MINUTE: number; // Default: 100000
-```
+- `OPENROUTER_API_KEY`, `OPENROUTER_BASE_URL`, `OPENROUTER_MODEL` for provider access and defaults.
+- `RATE_LIMIT_REQUESTS_PER_MINUTE`, `RATE_LIMIT_TOKENS_PER_MINUTE` to enforce per‑user quotas.
 
 ### 10.3 Request Processing Flow
 
-Detailed flow of Edge Function execution:
+Execution flow:
 
-```typescript
-1. **Authentication & Authorization**
-   - Extract JWT token from Authorization header
-   - Validate user session with Supabase Auth
-   - Extract user_id for ownership validation
-
-2. **Input Validation**
-   - Validate request body using Zod schemas
-   - Check required fields: project_id, target_locale, mode, key_ids
-   - Validate mode-specific rules (all/selected/single)
-
-3. **Business Logic Validation**
-   - Verify project ownership (user owns project)
-   - Validate target_locale exists in project_locales
-   - Ensure target_locale ≠ project.default_locale
-   - Check for active jobs (prevent concurrent jobs)
-
-4. **Job Initialization**
-   - Create translation_jobs record (status: 'pending')
-   - Create translation_job_items for selected keys
-   - Set job status to 'running' and started_at timestamp
-
-5. **Background Processing**
-   - For each key in parallel batches:
-     a. Fetch source value from translations table
-     b. Build translation context and prompt
-     c. Call OpenRouter API with LLM parameters
-     d. Parse and validate translation response
-     e. Update translations table with new value
-     f. Update translation_job_items status
-     g. Increment job counters (completed_keys/failed_keys)
-
-6. **Job Completion**
-   - Update job status ('completed' or 'failed')
-   - Set finished_at timestamp
-   - Emit telemetry event (translation_completed)
-   - Return job summary
-```
+- Authenticate, validate input with Zod, and assert project ownership before job creation.
+- Enforce rate‑limits: per‑project jobs created in the last minute and per‑user concurrent jobs across owned projects (respond `429` on breach).
+- Initialize job and items, process keys in batches with provider calls, and update translations and item statuses.
+- Validate outputs (max 250 chars, no newlines), finalize status and timestamps, emit telemetry, and return a concise summary.
 
 ### 10.4 Error Handling Strategy
 
 Comprehensive error handling with proper HTTP status codes:
 
-```typescript
-// input validation errors (400)
-- Invalid project_id format
-- Missing required fields
-- Invalid mode/key_ids combination
-- Invalid LLM parameters
-
-// authentication errors (401)
-- Missing Authorization header
-- Invalid JWT token
-- Expired session
-
-// authorization errors (403)
-- User doesn't own project
-- Project access denied
-
-// business logic errors (400/409)
-- Target locale doesn't exist (400)
-- Target locale is default locale (400)
-- Active job already exists (409)
-
-// external api errors (500)
-- OpenRouter API unavailable
-- Rate limits exceeded (429 → 500)
-- Model errors or timeouts
-- Network connectivity issues
-
-// database errors (500)
-- Connection failures
-- Constraint violations
-- Transaction rollback scenarios
-```
+- Validation errors `400`, auth `401/403`, conflicts `409`, provider/network `5xx`, and DB `500` with consistent messages.
+- Record per‑item failures, preserve partial success, and avoid leaking internals in responses.
 
 ### 10.5 Rate Limiting Implementation
 
 Multi-level rate limiting to prevent abuse:
 
-```typescript
-// per-user limits
-- 60 requests per minute per user
-- 100,000 tokens per minute per user
-- 5 concurrent jobs maximum
-
-// per-project limits
-- 1 active job at any time
-- Max 10,000 keys per job
-
-// global limits
-- 10 concurrent Edge Function executions
-- Circuit breaker for OpenRouter API failures
-```
+- Per‑project: up to 10 jobs per minute; enforce single active job at a time; max 10k keys/job.
+- Per‑user: up to 3 concurrent jobs across all owned projects (function‑level); provider‑level quotas remain enforced via OpenRouter.
+- Global: cap concurrent executions and use a circuit breaker for provider failures.
 
 ### 10.7 Monitoring and Observability
 
-Built-in logging and metrics collection:
-
-```typescript
-// structured logging
-console.log({
-  level: 'info',
-  event: 'job_started',
-  job_id: job.id,
-  projectId: job.project_id,
-  keyCount: job.total_keys
-});
-
-// performance metrics
-- Job execution time
-- API response times
-- Token usage statistics
-- Error rates by category
-
-// alerting thresholds
-- Job failure rate > 5%
-- API response time > 30 seconds
-- Error rate > 1% for any error type
-```
+- Built‑in structured logs for lifecycle events; collect execution times, API latencies, token usage, and error rates.
+- Alerts when failure rate > 5%, response time > 30s, or any error type > 1%.
 
 ### 10.8 Testing Strategy
 
-Comprehensive test coverage for Edge Function:
-
-```typescript
-// unit tests
-- Input validation scenarios
-- Error handling paths
-- Authentication/authorization logic
-
-// integration tests
-- OpenRouter API mock responses
-- Database transaction testing
-- Job lifecycle state transitions
-- Concurrent job prevention
-
-// end-to-end tests
-- Full translation job workflows
-- Error recovery scenarios
-- Rate limiting behavior
-
-// performance tests
-- Large job handling (1000+ keys)
-- Concurrent request handling
-- Memory usage optimization
-- Timeout behavior verification
-```
+- Cover unit, integration, end‑to‑end, and performance tests: validation, auth, lifecycle, concurrency, provider failures, and timeouts.

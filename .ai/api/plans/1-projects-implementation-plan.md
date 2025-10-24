@@ -426,8 +426,8 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 **Handling:**
 
-- Global `QueryClient` converts `Zod` validation errors into standardized `ApiError` (400) and disables retries; other errors may retry up to three times.
-- Configuration lives in `src/app/config/queryClient/queryClient.ts` and is applied via `QueryClientProvider` in `src/app/main.tsx`.
+- Global `QueryClient` maps `Zod` issues to standardized `ApiErrorResponse` (400) and disables retries for validation; other errors may retry up to three times.
+- Configured in `src/app/config/queryClient/queryClient.ts` and applied via `QueryClientProvider` in `src/app/main.tsx`.
 
 **Result Format:**
 
