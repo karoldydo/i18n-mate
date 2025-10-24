@@ -1,5 +1,6 @@
 import { AlertCircle, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import type { ProjectWithCounts } from '@/shared/types';
 
@@ -29,6 +30,7 @@ interface ProjectListTableProps {
  * Integrates with TanStack Query for data fetching and loading states.
  */
 export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: ProjectListTableProps) {
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const pageSize = 50;
 
@@ -37,6 +39,10 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
     offset: page * pageSize,
     order: 'name.asc',
   });
+
+  const handleRowClick = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
+  };
 
   const projects = data?.data || [];
   const total = data?.metadata.total || 0;
@@ -95,7 +101,7 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
           </TableHeader>
           <TableBody>
             {projects.map((project) => (
-              <TableRow key={project.id}>
+              <TableRow className="cursor-pointer" key={project.id} onClick={() => handleRowClick(project.id)}>
                 <TableCell>
                   <div>
                     <p className="font-medium">{project.name}</p>
@@ -108,7 +114,7 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
                 <TableCell>{project.default_locale}</TableCell>
                 <TableCell className="text-right">{project.locale_count}</TableCell>
                 <TableCell className="text-right">{project.key_count}</TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button aria-label={`Actions for ${project.name}`} size="icon" variant="ghost">

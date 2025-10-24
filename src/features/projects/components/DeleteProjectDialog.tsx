@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
 import type { ProjectWithCounts } from '@/shared/types';
@@ -29,6 +30,7 @@ interface DeleteProjectDialogProps {
  */
 export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProjectDialogProps) {
   const deleteProject = useDeleteProject();
+  const navigate = useNavigate();
 
   const handleDelete = () => {
     deleteProject.mutate(project.id, {
@@ -38,6 +40,7 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
       onSuccess: () => {
         toast.success('Project deleted successfully');
         onOpenChange(false);
+        navigate('/projects');
       },
     });
   };
@@ -47,18 +50,21 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Project</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>
-              Are you sure you want to delete <span className="font-semibold">{project.name}</span>?
-            </p>
-            <p className="text-destructive">
-              This action cannot be undone. This will permanently delete the project and all associated data including:
-            </p>
-            <ul className="list-inside list-disc space-y-1 pl-4">
-              <li>{project.locale_count} language(s)</li>
-              <li>{project.key_count} translation key(s)</li>
-              <li>All translations and metadata</li>
-            </ul>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2">
+              <p>
+                Are you sure you want to delete <span className="font-semibold">{project.name}</span>?
+              </p>
+              <p className="text-destructive">
+                This action cannot be undone. This will permanently delete the project and all associated data
+                including:
+              </p>
+              <ul className="list-inside list-disc space-y-1 pl-4">
+                <li>{project.locale_count} language(s)</li>
+                <li>{project.key_count} translation key(s)</li>
+                <li>All translations and metadata</li>
+              </ul>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

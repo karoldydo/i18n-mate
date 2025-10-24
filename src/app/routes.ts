@@ -10,6 +10,12 @@ const ProjectListPage = lazy(() =>
   }))
 );
 
+const ProjectDetailsPage = lazy(() =>
+  import('../features/projects/routes/ProjectDetailsPage').then((module) => ({
+    default: module.ProjectDetailsPage,
+  }))
+);
+
 const router = createBrowserRouter([
   {
     Component: App,
@@ -18,6 +24,10 @@ const router = createBrowserRouter([
   {
     Component: ProjectListPage,
     path: '/projects',
+  },
+  {
+    Component: ProjectDetailsPage,
+    path: '/projects/:id',
   },
 ]);
 
