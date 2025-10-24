@@ -140,289 +140,43 @@ Assumptions:
 - Save metadata is a global rule: LLM → is_machine_translated=true, updated_source=system, updated_by_user_id=null, updated_at set; manual edit → `is_machine_translated=false`, `updated_source=user`, `updated_by_user_id=<user_id>`, `updated_at` set.
 - Access condition: a session is created only after email verification (no session before verification).
 
-## 5. User Stories
+## 5. Functional Requirements (User Stories)
 
-**Section 5 convention:** full logic description in 3.X, and **US** contain concise acceptance criteria with references to the relevant paragraphs.
+### Feature: Authorization and Authentication
 
-ID: US-001  
-Title: Account registration  
-Description: As a new user, I want to create an account to gain access to the application.  
-Acceptance criteria:
+**Description:** User account management including registration, login, email verification, and password reset functionality.
 
-- Providing a valid email and password creates an account and sends a verification email.
-- An existing email returns a readable error without creating an account.
-- Invalid email/password return validation messages.
-- **Reference:** 3.1
+**[User Stories Details →](./user-stories/1-auth-user-stories.md)**
 
-ID: US-002  
-Title: Email verification  
-Description: As a user, I want to confirm my email so I can log in.  
-Acceptance criteria:
+### Feature: Projects
 
-- Clicking a valid link verifies the account and enables login.
-- An expired/invalid link returns a message and allows resending the email.
-- **No user session is created until verification.**
-- **Reference:** 3.1
+**Description:** CRUD operations for managing translation projects with unique prefixes and default languages.
 
-ID: US-003  
-Title: Login  
-Description: As a user, I want to log in to use the application.  
-Acceptance criteria:
+**[User Stories Details →](./user-stories/2-projects-user-stories.md)**
 
-- Correct credentials **and a verified email** provide a session and access to the application.
-- Incorrect credentials do not log in and return a message.
-- **Reference:** 3.1
+### Feature: Languages/Locales
 
-ID: US-004  
-Title: Logout  
-Description: As a user, I want to log out to end the session.  
-Acceptance criteria:
+**Description:** BCP-47 compliant language management with normalization and per-language key views.
 
-- Logging out invalidates the session and redirects to the login screen.
-- **Reference:** 3.1
+**[User Stories Details →](./user-stories/3-locales-user-stories.md)**
 
-ID: US-005  
-Title: Password reset  
-Description: As a user, I want to reset my password if I lose it.  
-Acceptance criteria:
+### Feature: Keys and Translation Values
 
-- Send a reset link to the provided email (if the account exists).
-- The link allows setting a new password; an expired/invalid link returns an error.
-- **Reference:** 3.1
+**Description:** Key management in default language with automatic fan-out, inline editing with autosave, and value constraints.
 
-ID: US-010  
-Title: Create a project  
-Description: As a user, I want to create a project with a name, a 2–4 character prefix, and a default language.  
-Acceptance criteria:
+**[User Stories Details →](./user-stories/4-keys-user-stories.md)**
 
-- Prefix `[a-z0-9._-]`, 2–4 characters; **unique within the user scope**; **does not end with a dot**.
-- Default language is set on creation and is immutable thereafter.
-- **After creation, navigate to the project's key list.**
-- **Reference:** 3.2
+### Feature: LLM Translations
 
-ID: US-011  
-Title: Edit a project  
-Description: As a user, I want to change the project's name/description.  
-Acceptance criteria:
+**Description:** AI-powered translation using OpenRouter with progress tracking and error handling.
 
-- You can update the name/description; you cannot change the prefix or the default language.
-- **Reference:** 3.2
+**[User Stories Details →](./user-stories/5-translations-user-stories.md)**
 
-ID: US-012  
-Title: Delete a project  
-Description: As a user, I want to delete a project along with its translations.  
-Acceptance criteria:
+### Feature: Translation Export
 
-- The operation is irreversible and requires confirmation.
-- **Reference:** 3.2
+**Description:** ZIP export functionality for i18next-compatible JSON files with missing value handling.
 
-ID: US-013  
-Title: Project list  
-Description: As a user, I want to see a list of projects with basic information.  
-Acceptance criteria:
-
-- **Columns and behavior as per 3.2.**
-- **Pagination 50/page, sorting ascending by name.**
-- **Reference:** 3.2
-
-ID: US-020  
-Title: Add a language to a project  
-Description: As a user, I want to add a language compliant with BCP-47.  
-Acceptance criteria:
-
-- **Validation only for the locale/region pair and normalization: locale lowercase / REGION UPPERCASE; other sub-tags (script/variant/extension) are rejected.**
-- Duplicates within the project are blocked with a message.
-- After adding, all keys appear as missing (automatically created via database triggers with NULL values).
-- **Reference:** 3.3
-
-ID: US-021  
-Title: Update a language  
-Description: As a user, I want to update the language **label**.  
-Acceptance criteria:
-
-- Changing the label does not affect translation values.
-- **Reference:** 3.3
-
-ID: US-022  
-Title: Delete a language  
-Description: As a user, I want to remove a language from the project.  
-Acceptance criteria:
-
-- The default language cannot be removed.
-- The operation requires confirmation and is irreversible.
-- **Reference:** 3.3, 3.6
-
-ID: US-023  
-Title: Language list  
-Description: As a user, I want to see a list of languages assigned to the project.  
-Acceptance criteria:
-
-- The row shows the normalized BCP-47 identifier and the language label.
-- The default language is marked and has no delete action available.
-- Edit and delete actions are available for other languages.
-- **Reference:** 3.3
-
-ID: US-024  
-Title: Enter the key view for a selected language  
-Description: As a user, I want to select a language from the language list and navigate to the key list for that language.  
-Acceptance criteria:
-
-- Clicking a language in the list (3.3) opens the **per-language key view** (3.4).
-- Navigation back to the language list is available (e.g., breadcrumb/"Back" — according to the app's UX).
-- **Reference:** 3.3, 3.4
-
-ID: US-025  
-Title: Per-language key view — editing and filtering  
-Description: As a user, I want to browse and edit translation values in the selected language with a "missing" filter.  
-Acceptance criteria:
-
-- The list shows the full key and **the value in the selected language**.
-- **The "missing" filter applies to the selected language**; search "contains, case-insensitive"; ascending sort by key; pagination 50/page.
-- Inline editing works like in US-033; save metadata as per 3.5.
-- **Reference:** 3.4, 3.5
-
-ID: US-029  
-Title: Key list  
-Description: As a user, I want to browse the list of keys in the project.  
-Acceptance criteria:
-
-- The list shows keys with the project prefix and values in the default language.
-- Each row shows the status of missing values in other languages (missing = empty string).
-- Pagination 50/page, ascending sort by key, missing filter and a search by key.
-- **Reference:** 3.4
-
-ID: US-030  
-Title: Add a key in the default language  
-Description: As a user, I want to add a new key and value in the default language.  
-Acceptance criteria:
-
-- Validation of key format and uniqueness; **the full key is unique within the project**; it includes the project prefix.
-- **Disallow consecutive dots (`..`) anywhere in the key and trailing dots.**
-- **Maximum key length: 256 characters.**
-- Value up to 250 characters, no newline; **NULL not allowed in the default language** (empty strings are auto-converted to NULL).
-- After adding, the key exists in all languages (missing outside the default) - database triggers automatically create NULL translations for all locales.
-- **Reference:** 3.4
-
-ID: US-031  
-Title: Edit a value in the default language  
-Description: As a user, I want to edit a key's value in the default language with autosave.  
-Acceptance criteria:
-
-- Autosave; visible "saved" indicator.
-- Saving updates the metadata `updated_at` and `updated_source=user`, `updated_by_user_id=<user_id>` and sets `is_machine_translated=false`.
-- **Reference:** 3.4, 3.5
-
-ID: US-032  
-Title: Delete a key (cascading)  
-Description: As a user, I want to delete a key in the default language, which cascades to delete values in other languages.  
-Acceptance criteria:
-
-- Type-to-confirm modal with a summary of the effects.
-- After deletion, it is possible to immediately reuse the same key name.
-- **Reference:** 3.4
-
-ID: US-033  
-Title: Edit a value in a non-default language  
-Description: As a user, I want to edit translation values for added languages.  
-Acceptance criteria:
-
-- Limit of 250 characters, no newline, NULL = missing (empty strings are auto-converted to NULL).
-- Autosave and metadata update; **set `is_machine_translated=false`, `updated_source=user`, `updated_by_user_id=<user_id>`.**
-- **Reference:** 3.4, 3.5
-
-ID: US-034  
-Title: Missing filter  
-Description: As a user, I want to filter the list by missing values in the selected language.  
-Acceptance criteria:
-
-- Enabling the filter shows only keys with a NULL value.
-- **Reference:** 3.4
-
-ID: US-035  
-Title: Search by key  
-Description: As a user, I want to search for keys by a fragment of the name.  
-Acceptance criteria:
-
-- Semantics of contains, case-insensitive in the MVP **(in practice no effect, because keys are lowercase)**.
-- Search works together with the missing filter.
-- **Reference:** 3.4
-
-ID: US-036  
-Title: Pagination and sorting  
-Description: As a user, I want to browse the key list paginated by 50 and sorted ascending by key.  
-Acceptance criteria:
-
-- Fixed number of 50 items per page; stable sorting.
-- **Reference:** 3.4
-
-ID: US-040  
-Title: LLM translation — all keys  
-Description: As a user, I want to translate all values from the default language into a selected language.  
-Acceptance criteria:
-
-- Overwrite warning for existing values and required acceptance.
-- After confirmation, a modal opens with a progress bar and information about the ongoing translation.
-- After completion, a success toast is displayed; results and metadata are saved: `is_machine_translated=true`, `updated_source=system`, `updated_by_user_id=null`.
-- **The target language cannot be the project's default language.**
-- **Reference:** 3.5
-
-ID: US-041  
-Title: LLM translation — selected keys  
-Description: As a user, I want to translate selected keys into a chosen language.  
-Acceptance criteria:
-
-- Select any set of keys; rules as in US-040 (metadata and prohibition of the default language as the target).
-- **Reference:** 3.5
-
-ID: US-042  
-Title: LLM translation — a single key  
-Description: As a user, I want to translate a single key directly from the list/editing.  
-Acceptance criteria:
-
-- Rules as in US-040; the result overwrites the existing value in the target language; metadata as in US-040.
-- **The target language cannot be the project's default language.**
-- **Reference:** 3.5
-
-ID: US-050  
-Title: ZIP export of all translations  
-Description: As a user, I want to download a ZIP with {locale}.json for the selected project.  
-Acceptance criteria:
-
-- {locale}.json files contain dotted keys, stably sorted, UTF-8/LF.
-- **Reference:** 3.6
-
-ID: US-051  
-Title: Export with missing values  
-Description: As a user, I want missing values to be included as empty strings.  
-Acceptance criteria:
-
-- Missing in {locale}.json files represented as "".
-- **Reference:** 3.6
-
-ID: US-060  
-Title: Login requirement and email verification  
-Description: As a user, I want to have access to the application only after logging in and confirming my email.  
-Acceptance criteria:
-
-- A non-logged-in user sees the login screen.
-- An unverified account does not obtain a session; a screen/message is visible with the action to resend the email.
-- **Reference:** 3.1
-
-ID: US-080  
-Title: Resilience to OpenRouter errors  
-Description: As a user, I want 429/5xx errors to be communicated with a readable toast so I know the translation failed.  
-Acceptance criteria:
-
-- Errors during translation return an error toast and do not save changes.
-- **Reference:** 3.5, 3.7
-
-ID: US-090  
-Title: Locale normalization (global rule)  
-Description: As a user, I want consistent language identifiers.  
-Acceptance criteria:
-
-- **Across the entire application** normalization applies: locale lowercase / REGION UPPERCASE; **only locale/region sub-tags (script/variant/extension) are allowed**; other attempts are rejected according to validation.
-- **Reference:** 3.3
+**[User Stories Details →](./user-stories/6-export-user-stories.md)**
 
 ## 6. Success Metrics
 
