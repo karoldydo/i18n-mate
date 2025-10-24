@@ -22,6 +22,12 @@ const ProjectLocalesPage = lazy(() =>
   }))
 );
 
+const KeysListPage = lazy(() =>
+  import('../features/keys/routes/KeysListPage').then((module) => ({
+    default: module.KeysListPage,
+  }))
+);
+
 const router = createBrowserRouter([
   {
     Component: App,
@@ -38,6 +44,10 @@ const router = createBrowserRouter([
   {
     Component: ProjectLocalesPage,
     path: '/projects/:projectId/locales',
+  },
+  {
+    Component: KeysListPage,
+    path: '/projects/:projectId/keys',
   },
 ]);
 

@@ -13,11 +13,11 @@ interface ProjectNavigationProps {
  * Provides navigation tabs for Keys, Locales, Translation Jobs, and Telemetry views.
  * Manages active state and handles navigation to respective routes.
  */
-export function ProjectNavigation({ activeTab = 'keys', projectId }: ProjectNavigationProps) {
+export function ProjectNavigation({ activeTab, projectId }: ProjectNavigationProps) {
   const navigate = useNavigate();
 
   return (
-    <Tabs defaultValue={activeTab} value={activeTab}>
+    <Tabs value={activeTab}>
       <TabsList aria-label="Project sections" className="grid w-full grid-cols-4" role="navigation">
         <TabsTrigger aria-label="Navigate to keys" onClick={() => navigate(`/projects/${projectId}/keys`)} value="keys">
           Keys
