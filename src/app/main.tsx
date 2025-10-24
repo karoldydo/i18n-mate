@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import '@/shared/styles/index.css';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
+import { Toaster } from 'sonner';
 
 import { supabaseClient } from '@/shared/api/supabase.client';
 
@@ -28,6 +29,7 @@ createRoot(root).render(
     <SupabaseProvider>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Toaster />
       </QueryClientProvider>
     </SupabaseProvider>
   </StrictMode>

@@ -103,6 +103,25 @@ export const LOCALE_NORMALIZATION = {
 };
 
 /**
+ * PostgreSQL error codes relevant to locale operations
+ */
+export const LOCALE_PG_ERROR_CODES = {
+  /** Check constraint violation */
+  CHECK_VIOLATION: '23514',
+  /** Foreign key violation */
+  FOREIGN_KEY_VIOLATION: '23503',
+  /** Unique constraint violation */
+  UNIQUE_VIOLATION: '23505',
+} as const;
+
+/**
+ * Database constraint names for locales
+ */
+export const LOCALE_CONSTRAINTS = {
+  UNIQUE_PER_PROJECT: 'idx_project_locales_project_locale_unique',
+} as const;
+
+/**
  * Error messages for locale validation
  */
 export const LOCALE_ERROR_MESSAGES = {

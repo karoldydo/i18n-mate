@@ -170,52 +170,27 @@ KeysPerLanguagePage (main page component)
 
 ## 5. Types
 
-### New ViewModel Types
+### IMPORTANT: Verify Existing Types Before Creating New Ones
 
-```typescript
-// Translation editing state for inline editing
-interface TranslationEditState {
-  keyId: string;
-  value: string;
-  isSaving: boolean;
-  error?: string;
-}
+**Before implementing any component, MUST verify:**
 
-// Metadata display for translation provenance
-interface KeyTranslationMetadata {
-  isMachineTranslated: boolean;
-  updatedAt: string;
-  updatedSource: 'user' | 'system';
-  updatedByUserId: string | null;
-}
+1. **Check for existing types in `src/shared/types/` and `src/features/keys/api/` (or similar)**
+   - Use `KeyPerLanguageViewResponse` directly from existing API types
+   - Use `ListKeysPerLanguageParams` from API if it exists
+   - DO NOT create type aliases or duplicate interfaces
+   - DO NOT create unnecessary view model types when API types suffice
 
-// Combined row data for table display
-interface KeyTranslationRowData extends KeyPerLanguageViewResponse {
-  metadata: KeyTranslationMetadata;
-}
+2. **Use existing types directly in components:**
+   - For data display: use `KeyPerLanguageViewResponse` type
+   - For API queries: use existing params types
+   - Only create minimal UI state types if absolutely necessary (e.g., editing state)
 
-// Search and filter state for the view
-interface KeysPerLanguageFilters {
-  search: string;
-  missingOnly: boolean;
-}
+### API Types to Verify and Use
 
-// Page-level state combining filters and editing
-interface KeysPerLanguagePageState {
-  filters: KeysPerLanguageFilters;
-  editing: TranslationEditState | null;
-  pagination: {
-    page: number;
-    pageSize: number;
-  };
-}
-```
-
-### API Types (from existing definitions)
-
-- `KeyPerLanguageViewResponse` - Database composite type for individual key data
-- `KeyPerLanguageViewListResponse` - Paginated response wrapper
-- `ListKeysPerLanguageParams` - Query parameters for the API call
+- `KeyPerLanguageViewResponse`: Database composite type for individual key data (use directly)
+- `KeyPerLanguageViewListResponse`: Paginated response wrapper (use directly)
+- `ListKeysPerLanguageParams`: Query parameters for the API call (verify existence, use directly)
+- `ApiErrorResponse`: From `@/shared/types`
 
 ## 6. State Management
 
@@ -272,7 +247,7 @@ Integration with `useKeysPerLanguageView` hook:
 
 ## 8. User Interactions
 
-### Primary Interactions:
+### Primary Interactions
 
 1. **Navigation**: Back button to return to default keys view
 2. **Search**: Real-time debounced search with 300ms delay
@@ -280,14 +255,14 @@ Integration with `useKeysPerLanguageView` hook:
 4. **Inline Editing**: Double-click or Enter to edit, Escape to cancel, Enter to save
 5. **Pagination**: Page navigation with maintained filters
 
-### Autosave Behavior:
+### Autosave Behavior
 
 - Debounced save (500ms after last change)
 - Visual saving indicator during API call
 - Error display on save failure with retry option
 - Optimistic UI updates with rollback on error
 
-### Keyboard Navigation:
+### Keyboard Navigation
 
 - Tab navigation through table cells
 - Enter to start editing
@@ -296,24 +271,24 @@ Integration with `useKeysPerLanguageView` hook:
 
 ## 9. Conditions and Validation
 
-### Parameter Validation:
+### Parameter Validation
 
 - **Project ID**: Must be valid UUID format, user must own project
 - **Locale**: Must be BCP-47 compliant, must exist in project, cannot be default language
 
-### Translation Value Validation:
+### Translation Value Validation
 
 - **Maximum Length**: 250 characters
 - **Content Rules**: No newline characters
 - **Empty Handling**: Empty strings converted to NULL (missing)
 - **Default Language Block**: Cannot edit default language translations in this view
 
-### Filter Validation:
+### Filter Validation
 
 - **Search**: No length limits, case-insensitive contains matching
 - **Missing Filter**: Boolean toggle, defaults to false
 
-### Pagination Validation:
+### Pagination Validation
 
 - **Page Size**: Fixed at 50 items per page
 - **Page Bounds**: Cannot navigate beyond available pages
@@ -321,24 +296,24 @@ Integration with `useKeysPerLanguageView` hook:
 
 ## 10. Error Handling
 
-### Network Errors:
+### Network Errors
 
 - Query failures display error toast with retry option
 - Automatic retry for transient failures (3 attempts)
 - Fallback to cached data when available
 
-### Validation Errors:
+### Validation Errors
 
 - Inline validation with red error text below input
 - Form cannot be saved with validation errors
 - Clear error messages on correction
 
-### Permission Errors:
+### Permission Errors
 
 - Redirect to appropriate error page or login
 - Clear error messaging for access denied
 
-### Data Consistency:
+### Data Consistency
 
 - Version conflict detection (if implemented)
 - Stale data warnings for long-editing sessions
@@ -346,9 +321,18 @@ Integration with `useKeysPerLanguageView` hook:
 
 ## 11. Implementation Steps
 
+**PREREQUISITE: Before starting implementation, verify existing code:**
+
+- Check for existing types in `src/features/keys/api/` or similar location
+- Check `src/shared/types/` for existing TypeScript types
+- Use existing types directly - DO NOT create duplicates or aliases
+- No schemas needed for this view (no create/update forms, only inline editing)
+
 1. **Create page component structure** with routing and basic layout
 2. **Implement state management hook** for filters, editing, and pagination
+   - **VERIFY**: Use existing `KeyPerLanguageViewResponse` type (DO NOT create aliases)
 3. **Build table components** starting with read-only display
+   - **VERIFY**: Use existing response types directly
 4. **Add search and filter functionality** with debounced queries
 5. **Implement inline editing** with validation and autosave
 6. **Add pagination controls** with proper state synchronization

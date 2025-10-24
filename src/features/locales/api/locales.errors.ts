@@ -2,6 +2,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 
 import type { ApiErrorResponse } from '@/shared/types';
 
+import { LOCALE_CONSTRAINTS, LOCALE_ERROR_MESSAGES, LOCALE_PG_ERROR_CODES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 /**
@@ -91,9 +92,9 @@ export function createDatabaseErrorResponse(
   console.error(`${LOG_PREFIX} Database error:`, error);
 
   // handle unique constraint violations
-  if (error.code === '23505') {
-    if (error.message.includes('project_locales_unique_per_project')) {
-      return createApiErrorResponse(409, 'Locale already exists for this project');
+  if (error.code === LOCALE_PG_ERROR_CODES.UNIQUE_VIOLATION) {
+    if (error.message.includes(LOCALE_CONSTRAINTS.UNIQUE_PER_PROJECT)) {
+      return createApiErrorResponse(409, LOCALE_ERROR_MESSAGES.ALREADY_EXISTS);
     }
   }
 
@@ -103,12 +104,12 @@ export function createDatabaseErrorResponse(
   }
 
   // handle check constraint violations
-  if (error.code === '23514') {
-    return createApiErrorResponse(400, 'Invalid field value', { constraint: error.details });
+  if (error.code === LOCALE_PG_ERROR_CODES.CHECK_VIOLATION) {
+    return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.INVALID_FORMAT, { constraint: error.details });
   }
 
   // handle foreign key violations
-  if (error.code === '23503') {
+  if (error.code === LOCALE_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
     return createApiErrorResponse(404, 'Project not found');
   }
 

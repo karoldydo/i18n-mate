@@ -128,7 +128,10 @@ KeysListPage (main page component)
 - **Main elements**: Shadcn Dialog with form fields for key name and default value
 - **Handled interactions**: Form submission, validation feedback, success handling
 - **Handled validation**: Key format validation, uniqueness checking, value requirements
-- **Types**: CreateKeyRequest form data
+- **IMPORTANT - Types and Schemas**:
+  - **VERIFY** existing schema in keys API schemas file and use it
+  - Use `CreateKeyRequest` type from API (DO NOT create aliases)
+  - DO NOT create duplicate schema in component file
 - **Props**: open: boolean, onOpenChange: (open: boolean) => void, projectId: string, projectPrefix: string
 
 ### KeyForm
@@ -151,50 +154,26 @@ KeysListPage (main page component)
 
 ## 5. Types
 
-### New View Model Types
+### IMPORTANT: Verify Existing Types Before Creating New Ones
 
-```typescript
-// Form data for creating new keys
-export interface CreateKeyFormData {
-  keySuffix: string; // The part after project prefix (e.g., "home.title")
-  defaultValue: string;
-}
+**Before implementing any component, MUST verify:**
 
-// Extended table row data with editing state
-export interface KeyTableRowViewModel extends KeyDefaultViewResponse {
-  isEditing: boolean;
-  editValue: string;
-  editError?: string;
-}
+1. **Check for existing types in `src/shared/types/` and `src/features/keys/api/` (or similar)**
+   - Use `CreateKeyRequest` directly from existing API types
+   - Use `KeyDefaultViewResponse` from API response types
+   - DO NOT create type aliases or duplicate interfaces
+   - DO NOT create unnecessary view model types when API types suffice
 
-// Search and filter state for the view
-export interface KeysListFilters {
-  search: string;
-  missingOnly: boolean;
-  page: number;
-  pageSize: number;
-}
+2. **Use existing types directly in components:**
+   - For AddKeyDialog: use `CreateKeyRequest` type
+   - For data display: use `KeyDefaultViewResponse` type
+   - Only create minimal UI state types if absolutely necessary
 
-// Complete view model combining all state
-export interface KeysListViewModel {
-  keys: KeyDefaultViewResponse[];
-  filters: KeysListFilters;
-  pagination: PaginationMetadata;
-  isLoading: boolean;
-  editingKeyId: string | null;
-  dialogs: {
-    addKey: boolean;
-    deleteKey: boolean;
-  };
-  selectedKeyForDelete: KeyDefaultViewResponse | null;
-}
-```
+### API Integration Types to Verify and Use
 
-### API Integration Types
-
-- **Request Types**: CreateKeyRequest, ListKeysDefaultViewParams
-- **Response Types**: KeyDefaultViewListResponse, CreateKeyResponse
-- **Error Types**: ApiErrorResponse with specific error codes (400, 401, 403, 404, 409, 500)
+- **Request Types**: `CreateKeyRequest`, `ListKeysDefaultViewParams` (check if exist in API layer, use directly)
+- **Response Types**: `KeyDefaultViewListResponse`, `CreateKeyResponse`, `KeyDefaultViewResponse` (use directly)
+- **Error Types**: `ApiErrorResponse` from `@/shared/types`
 
 ## 6. State Management
 
@@ -351,6 +330,12 @@ No additional custom hooks required beyond existing API hooks and basic state ma
 
 ## 11. Implementation Steps
 
+**PREREQUISITE: Before starting implementation, verify existing code:**
+
+- Check for existing Zod schemas in `src/features/keys/api/` or similar location
+- Check `src/shared/types/` for existing TypeScript types
+- Use existing schemas and types directly - DO NOT create duplicates or aliases
+
 1. **Set up routing and basic page structure**
    - Add lazy-loaded route in routes.ts with projectId parameter
    - Create KeysListPage component with basic layout and loading states
@@ -375,7 +360,9 @@ No additional custom hooks required beyond existing API hooks and basic state ma
    - Add character counter and validation feedback
 
 5. **Create add key functionality**
+   - **VERIFY**: Check for existing schemas before implementing
    - Implement AddKeyDialog with Shadcn Dialog
+   - **VERIFY**: Use existing schema and `CreateKeyRequest` type (DO NOT create aliases)
    - Create KeyForm component with validation
    - Integrate useCreateKey hook with error handling
    - Add success feedback and navigation to new key

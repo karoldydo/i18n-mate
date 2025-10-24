@@ -118,7 +118,10 @@ ProjectDetailsView (Page Component)
 - **Main elements:** Shadcn/ui Dialog with form, input fields, and action buttons.
 - **Handled interactions:** Form submission, validation feedback, dialog open/close.
 - **Handled validation:** Required name field, optional description field, length limits.
-- **Types:** UpdateProjectRequest, form state interfaces.
+- **IMPORTANT - Types and Schemas:**
+  - **VERIFY** existing `UPDATE_PROJECT_SCHEMA` in `projects.schemas.ts` and use it
+  - Use `UpdateProjectRequest` type from `@/shared/types` (DO NOT create aliases)
+  - DO NOT create duplicate schema in component file
 - **Props:** project (ProjectResponse), isOpen (boolean), onClose (function), onSubmit (function), isPending (boolean).
 
 ### DeleteProjectDialog
@@ -132,48 +135,26 @@ ProjectDetailsView (Page Component)
 
 ## 5. Types
 
-### View-Specific Types
+### IMPORTANT: Verify Existing Types Before Creating New Ones
 
-```typescript
-// Route parameters interface
-interface ProjectDetailsRouteParams {
-  id: string;
-}
+**Before implementing any component, MUST verify:**
 
-// Statistics interface for project metrics
-interface ProjectStats {
-  keyCount: number;
-  localeCount: number;
-}
+1. **Check for existing types in `src/shared/types/` and `src/features/projects/api/`**
+   - Use `UpdateProjectRequest` directly from existing API types
+   - Use `ProjectResponse` and `ProjectWithCounts` from `@/shared/types`
+   - DO NOT create type aliases like `type EditProjectFormData = UpdateProjectRequest`
+   - DO NOT create duplicate interfaces when existing types already satisfy requirements
 
-// Navigation tab identifiers
-type ProjectTab = 'keys' | 'locales' | 'jobs' | 'telemetry';
-
-// Form state for edit dialog
-interface EditProjectFormData {
-  name: string;
-  description: string | null;
-}
-
-// Dialog state management
-interface ProjectDialogsState {
-  edit: boolean;
-  delete: boolean;
-}
-
-// View model combining API data with computed properties
-interface ProjectDetailsViewModel extends ProjectResponse {
-  stats: ProjectStats;
-  canEdit: boolean; // Always true for owners due to RLS
-  canDelete: boolean; // Always true for owners due to RLS
-}
-```
+2. **Use existing types directly in components:**
+   - For EditProjectDialog: use `UpdateProjectRequest` type
+   - For data display: use `ProjectResponse` or `ProjectWithCounts` type
+   - For stats: check if existing types already provide needed data
 
 ### Existing Types Used
 
-- `ProjectResponse`: From `@/shared/types/projects`
-- `ProjectId`: Branded type from `@/shared/types/projects`
-- `UpdateProjectRequest`: From `@/shared/types/projects`
+- `ProjectResponse`: From `@/shared/types` (use directly)
+- `ProjectWithCounts`: From `@/shared/types` (includes key_count and locale_count)
+- `UpdateProjectRequest`: From `@/shared/types` (use directly, DO NOT create aliases)
 - `ApiErrorResponse`: From `@/shared/types`
 
 ## 6. State Management
@@ -262,13 +243,21 @@ State variables:
 
 ## 11. Implementation Steps
 
+**PREREQUISITE: Before starting implementation, verify existing code:**
+
+- Check `src/features/projects/api/projects.schemas.ts` for existing Zod schemas
+- Check `src/shared/types/` for existing TypeScript types
+- Use existing schemas and types directly - DO NOT create duplicates or aliases
+
 1. Create project details route in `src/app/routes.ts`
 2. Implement `ProjectDetailsView` page component with data fetching
 3. Create `ProjectDetailsLayout` component for consistent structure
 4. Implement `ProjectHeader` with title, actions, and stats sections
 5. Build `ProjectNavigation` with tab-based routing to subviews
 6. Create `ProjectMetadata` component for immutable property display
-7. Implement `EditProjectDialog` with form validation and submission
+7. **Implement `EditProjectDialog` with form validation and submission**
+   - **VERIFY**: Import and use `UPDATE_PROJECT_SCHEMA` from API
+   - **VERIFY**: Use `UpdateProjectRequest` type directly (DO NOT create aliases)
 8. Build `DeleteProjectDialog` with confirmation and warning messages
 9. Add loading states and error boundaries
 10. Implement responsive design and accessibility features

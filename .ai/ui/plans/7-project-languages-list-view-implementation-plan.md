@@ -87,12 +87,13 @@ ProjectLocalesPage (Route Component)
 ### AddLocaleDialog
 
 - **Component description**: Modal dialog for adding new locales with form validation and submission.
-- **Main elements**: Shadcn Dialog with form inputs, validation messages, loading states. Uses a LocaleSelector dropdown populated from the common primary language subtags (IETF language tags; see Wikipedia “List of common primary language subtags”), providing normalized BCP-47 codes.
+- **Main elements**: Shadcn Dialog with form inputs, validation messages, loading states. Uses a LocaleSelector dropdown populated from the common primary language subtags (IETF language tags; see Wikipedia "List of common primary language subtags"), providing normalized BCP-47 codes.
 - **Handled interactions**: Form submission, input validation, dialog open/close.
 - **Handled validation**: BCP-47 locale format, label length (1-64 chars), duplicate prevention.
-- **Types**:
-  - DTO: CreateProjectLocaleRequest
-  - ViewModel: AddLocaleForm { locale: string, label: string, errors: FormErrors, isSubmitting: boolean }
+- **IMPORTANT - Types and Schemas**:
+  - **VERIFY** existing schema in locales API schemas file and use it
+  - Use `CreateProjectLocaleRequest` type from API (DO NOT create aliases)
+  - DO NOT create duplicate schema in component file
 - **Props**: open: boolean, onOpenChange: (open: boolean) => void, onSubmit: (data: CreateProjectLocaleRequest) => void
 
 ### EditLocaleDialog
@@ -101,9 +102,10 @@ ProjectLocalesPage (Route Component)
 - **Main elements**: Shadcn Dialog with single label input field, validation messages.
 - **Handled interactions**: Form submission, input validation, dialog management.
 - **Handled validation**: Label length validation (1-64 chars), required field.
-- **Types**:
-  - DTO: UpdateProjectLocaleRequest
-  - ViewModel: EditLocaleForm { id: string, label: string, errors: FormErrors, isSubmitting: boolean }
+- **IMPORTANT - Types and Schemas**:
+  - **VERIFY** existing schema in locales API schemas file and use it
+  - Use `UpdateProjectLocaleRequest` type from API (DO NOT create aliases)
+  - DO NOT create duplicate schema in component file
 - **Props**: open: boolean, onOpenChange: (open: boolean) => void, locale: ProjectLocaleWithDefault | null, onSubmit: (data: UpdateProjectLocaleRequest) => void
 
 ### DeleteLocaleDialog
@@ -119,83 +121,27 @@ ProjectLocalesPage (Route Component)
 
 ## 5. Types
 
-### Database Types (from Supabase)
+### IMPORTANT: Verify Existing Types Before Creating New Ones
 
-```typescript
-export type ProjectLocaleWithDefault = {
-  id: string; // UUID
-  project_id: string; // UUID
-  locale: string; // Normalized BCP-47 code (ll or ll-CC)
-  label: string; // Human-readable language name (max 64 chars)
-  is_default: boolean; // Marks project's default language
-  created_at: string; // ISO timestamp
-  updated_at: string; // ISO timestamp
-};
-```
+**Before implementing any component, MUST verify:**
 
-### Request/Response Types
+1. **Check for existing types in `src/shared/types/` and `src/features/locales/api/` (or similar)**
+   - Use `CreateProjectLocaleRequest` and `UpdateProjectLocaleRequest` directly from existing API types
+   - Use `ProjectLocaleWithDefault` from `@/shared/types` if it exists
+   - DO NOT create type aliases or duplicate interfaces
+   - DO NOT create unnecessary view model types when API types suffice
 
-```typescript
-export type CreateProjectLocaleRequest = {
-  p_locale: string; // BCP-47 code (normalized client-side)
-  p_label: string; // Language label (1-64 chars)
-  p_project_id: string; // Project UUID (added automatically)
-};
+2. **Use existing types directly in components:**
+   - For AddLocaleDialog: use `CreateProjectLocaleRequest` type
+   - For EditLocaleDialog: use `UpdateProjectLocaleRequest` type
+   - For data display: use existing response types
 
-export type UpdateProjectLocaleRequest = {
-  label: string; // Updated language label (1-64 chars)
-};
+### Existing Types to Verify and Use
 
-export type CreateProjectLocaleResponse = ProjectLocale;
-```
-
-### View Model Types
-
-```typescript
-export type LocaleListViewModel = {
-  locales: ProjectLocaleWithDefault[];
-  isLoading: boolean;
-  error: ApiErrorResponse | null;
-  projectId: string;
-};
-
-export type LocaleTableRowViewModel = {
-  id: string;
-  locale: string;
-  label: string;
-  isDefault: boolean;
-  canEdit: boolean;
-  canDelete: boolean;
-  actionHandlers: {
-    onEdit: () => void;
-    onDelete: () => void;
-    onNavigate: () => void;
-  };
-};
-
-export type AddLocaleFormViewModel = {
-  formData: {
-    locale: string;
-    label: string;
-  };
-  validation: {
-    locale: { isValid: boolean; error?: string };
-    label: { isValid: boolean; error?: string };
-  };
-  isSubmitting: boolean;
-};
-
-export type EditLocaleFormViewModel = {
-  locale: ProjectLocaleWithDefault;
-  formData: {
-    label: string;
-  };
-  validation: {
-    label: { isValid: boolean; error?: string };
-  };
-  isSubmitting: boolean;
-};
-```
+- `ProjectLocaleWithDefault`: Check `@/shared/types` (use directly)
+- `CreateProjectLocaleRequest`: Check API types (use directly, DO NOT create aliases)
+- `UpdateProjectLocaleRequest`: Check API types (use directly, DO NOT create aliases)
+- `ApiErrorResponse`: From `@/shared/types`
 
 ## 6. State Management
 
@@ -342,6 +288,12 @@ The view uses TanStack Query for server state management and local React state f
 
 ## 11. Implementation Steps
 
+**PREREQUISITE: Before starting implementation, verify existing code:**
+
+- Check for existing Zod schemas in `src/features/locales/api/` or similar location
+- Check `src/shared/types/` for existing TypeScript types
+- Use existing schemas and types directly - DO NOT create duplicates or aliases
+
 1. **Set up route and basic component structure**
    - Create ProjectLocalesPage component with route definition
    - Add TypeScript types and imports
@@ -354,13 +306,16 @@ The view uses TanStack Query for server state management and local React state f
    - Implement loading and error states
 
 3. **Add locale management dialogs**
+   - **VERIFY**: Check for existing schemas before creating forms
    - Create AddLocaleDialog with form validation
+   - **VERIFY**: Use existing schema and `CreateProjectLocaleRequest` type (DO NOT create aliases)
    - Create EditLocaleDialog for label updates
+   - **VERIFY**: Use existing schema and `UpdateProjectLocaleRequest` type (DO NOT create aliases)
    - Create DeleteLocaleDialog with confirmation
    - Implement dialog state management in main component
 
 4. **Implement form validation and submission**
-   - Add Zod schemas for form validation
+   - **VERIFY**: Use existing Zod schemas from API layer (DO NOT create new schemas)
    - Implement real-time validation feedback
    - Connect forms to API mutations with error handling
    - Add optimistic updates and cache invalidation

@@ -14,7 +14,7 @@ Now review the implementation rules:
 [UI Shadcn Helper rules](../../.cursor/rules/shadcn.mdc)\
 </implementation_rules>
 
-Review the defined types:
+Review the defined types:\
 <type_definitions>\
  [Index](../../src/shared/types/index.ts)\
  [Database types](../../src/shared/types/database.types.ts)\

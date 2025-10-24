@@ -23,10 +23,13 @@ import {
   PROJECTS_MIN_OFFSET,
 } from '@/shared/constants';
 
-// locale code validation (bcp-47 format)
-const LOCALE_CODE_SCHEMA = z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
-  message: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
-});
+// locale code validation: BCP-47 format, accepts mixed case, normalized by DB trigger
+const LOCALE_CODE_INPUT_PATTERN = /^[a-zA-Z]{2}(-[a-zA-Z]{2})?$/;
+const LOCALE_CODE_SCHEMA = z
+  .string()
+  .min(1, 'Default locale is required')
+  .max(5, 'Locale code must be at most 5 characters')
+  .regex(LOCALE_CODE_INPUT_PATTERN, 'Locale must be in BCP-47 format (e.g., "en" or "en-US")');
 
 // prefix validation
 const PREFIX_SCHEMA = z

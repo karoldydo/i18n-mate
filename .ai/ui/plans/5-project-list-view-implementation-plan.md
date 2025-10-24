@@ -56,7 +56,10 @@ ProjectListPage (main page component)
   - Prefix: 2-4 characters, [a-z0-9._-], no trailing dot, unique per user
   - Default locale: BCP-47 format (ll or ll-CC)
   - Locale label: required, max 64 characters
-- **Types**: CreateProjectRequest, form validation schema
+- **IMPORTANT - Types and Schemas**:
+  - **VERIFY** existing `CREATE_PROJECT_REQUEST_SCHEMA` in `projects.schemas.ts` and use it
+  - Use `CreateProjectRequest` type from `@/shared/types` (DO NOT create aliases)
+  - DO NOT create duplicate schema in component file
 - **Props**: open: boolean, onOpenChange: (open: boolean) => void
 
 ### EditProjectDialog
@@ -67,7 +70,10 @@ ProjectListPage (main page component)
 - **Handled validation**:
   - Name: required, unique per user (excluding current project)
   - Description: optional
-- **Types**: UpdateProjectRequest, form validation schema
+- **IMPORTANT - Types and Schemas**:
+  - **VERIFY** existing `UPDATE_PROJECT_SCHEMA` in `projects.schemas.ts` and use it
+  - Use `UpdateProjectRequest` type from `@/shared/types` (DO NOT create aliases)
+  - DO NOT create duplicate schema in component file
 - **Props**: project: ProjectWithCounts, open: boolean, onOpenChange: (open: boolean) => void
 
 ### DeleteProjectDialog
@@ -81,43 +87,24 @@ ProjectListPage (main page component)
 
 ## 5. Types
 
-### New View Model Types
+### IMPORTANT: Verify Existing Types Before Creating New Ones
 
-```typescript
-// Form state for create project dialog
-export interface CreateProjectFormData {
-  name: string;
-  description?: string;
-  prefix: string;
-  default_locale: string;
-  default_locale_label: string;
-}
+**Before implementing any component, MUST verify:**
 
-// Form state for edit project dialog
-export interface EditProjectFormData {
-  name: string;
-  description?: string;
-}
+1. **Check for existing types in `src/shared/types/` and `src/features/projects/api/`**
+   - Use `CreateProjectRequest` and `UpdateProjectRequest` directly from existing API types
+   - DO NOT create type aliases like `type CreateProjectFormData = CreateProjectRequest`
+   - DO NOT create duplicate interfaces when existing types already satisfy requirements
 
-// Table column configuration
-export interface ProjectTableColumn {
-  key: keyof ProjectWithCounts;
-  label: string;
-  sortable: boolean;
-}
-
-// Pagination state for the view
-export interface ProjectListPaginationState {
-  page: number;
-  pageSize: number;
-  total: number;
-}
-```
+2. **Use existing types directly in components:**
+   - For CreateProjectDialog: use `CreateProjectRequest` type
+   - For EditProjectDialog: use `UpdateProjectRequest` type
+   - For data display: use `ProjectWithCounts` type
 
 ### API Integration Types
 
-- **Request Types**: CreateProjectRequest, UpdateProjectRequest
-- **Response Types**: ProjectListResponse, ProjectResponse
+- **Request Types**: CreateProjectRequest, UpdateProjectRequest (use from `@/shared/types`)
+- **Response Types**: ProjectListResponse, ProjectResponse (use from `@/shared/types`)
 - **Error Types**: ApiErrorResponse with specific error codes (400, 401, 404, 409)
 
 ## 6. State Management
@@ -211,10 +198,20 @@ No custom hooks required beyond the existing API hooks.
 
 ### UI-Level Validation
 
-- **Form Validation**: Zod schemas matching API requirements
-- **Real-time Feedback**: Error messages displayed immediately
-- **Submit Prevention**: Disabled submit button when validation fails
-- **Confirmation Dialog**: Required for destructive delete action
+**IMPORTANT: Verify Existing Schemas Before Creating New Ones**
+
+1. **Check for existing Zod schemas in `src/features/projects/api/projects.schemas.ts`**
+   - Use `CREATE_PROJECT_REQUEST_SCHEMA` for CreateProjectDialog
+   - Use `UPDATE_PROJECT_SCHEMA` for EditProjectDialog
+   - DO NOT duplicate schema definitions in component files
+   - DO NOT create custom schemas when API schemas already exist
+
+2. **Implementation:**
+   - Import schemas from `../api/projects.schemas`
+   - Use with `zodResolver` in react-hook-form
+   - Real-time feedback with error messages displayed immediately
+   - Submit prevention via disabled submit button when validation fails
+   - Confirmation dialog required for destructive delete action
 
 ## 10. Error Handling
 
@@ -244,6 +241,12 @@ No custom hooks required beyond the existing API hooks.
 
 ## 11. Implementation Steps
 
+**PREREQUISITE: Before starting implementation, verify existing code:**
+
+- Check `src/features/projects/api/projects.schemas.ts` for existing Zod schemas
+- Check `src/shared/types/` for existing TypeScript types
+- Use existing schemas and types directly - DO NOT create duplicates or aliases
+
 1. **Set up routing and basic page structure**
    - Add lazy-loaded route in routes.ts
    - Create ProjectListPage component with basic layout
@@ -256,15 +259,19 @@ No custom hooks required beyond the existing API hooks.
 3. **Add table actions and dialogs**
    - Create action buttons in table rows
    - Implement dialog state management
-   - Add form validation schemas
+   - **VERIFY**: Use existing schemas from `projects.schemas.ts` (DO NOT create new schemas)
 
 4. **Implement create project functionality**
    - Create CreateProjectDialog with form
+   - **VERIFY**: Import and use `CREATE_PROJECT_REQUEST_SCHEMA` from API
+   - **VERIFY**: Use `CreateProjectRequest` type directly (DO NOT create aliases)
    - Integrate useCreateProject hook
    - Add navigation logic after creation
 
 5. **Implement edit project functionality**
    - Create EditProjectDialog with form
+   - **VERIFY**: Import and use `UPDATE_PROJECT_SCHEMA` from API
+   - **VERIFY**: Use `UpdateProjectRequest` type directly (DO NOT create aliases)
    - Integrate useUpdateProject hook
    - Add success feedback
 

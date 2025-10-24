@@ -90,62 +90,26 @@ TranslationJobsPage (main page component)
 
 ## 5. Types
 
-### New View Model Types
+### IMPORTANT: Verify Existing Types Before Creating New Ones
 
-```typescript
-// Job display information optimized for UI rendering
-export interface JobDisplayInfo {
-  id: string;
-  mode: TranslationMode;
-  target_locale: string;
-  status: JobStatus;
-  created_at: string;
-  started_at?: string;
-  finished_at?: string;
-  completed_keys: number;
-  failed_keys: number;
-  total_keys: number;
-  progress_percentage: number;
-  can_cancel: boolean;
-}
+**Before implementing any component, MUST verify:**
 
-// Progress modal state management
-export interface JobProgressState {
-  job: TranslationJobResponse;
-  isPolling: boolean;
-  lastUpdate: Date;
-  pollingInterval: number;
-  retryCount: number;
-}
+1. **Check for existing types in `src/shared/types/` and `src/features/translation-jobs/api/` (or similar)**
+   - Use `TranslationJobResponse` directly from existing API types
+   - Use `ListTranslationJobsParams` and other request types from API
+   - DO NOT create type aliases or duplicate interfaces
+   - DO NOT create unnecessary view model types when API types suffice
 
-// Cancel dialog state
-export interface CancelJobState {
-  job: TranslationJobResponse;
-  isLoading: boolean;
-  error?: string;
-}
+2. **Use existing types directly in components:**
+   - For data display: use `TranslationJobResponse` type
+   - For API queries: use existing params types
+   - Only create minimal UI state types if absolutely necessary (e.g., polling state)
 
-// Table sorting configuration
-export interface JobTableSortConfig {
-  column: 'created_at' | 'status' | 'mode' | 'target_locale';
-  direction: 'asc' | 'desc';
-}
+### API Integration Types to Verify and Use
 
-// Pagination state for job list
-export interface JobListPaginationState {
-  page: number;
-  pageSize: number;
-  total: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-}
-```
-
-### API Integration Types
-
-- **Request Types**: ListTranslationJobsParams, CancelTranslationJobRequest
-- **Response Types**: ListTranslationJobsResponse, CheckActiveJobResponse, TranslationJobResponse
-- **Error Types**: ApiErrorResponse with specific codes (400, 401, 403, 404, 409)
+- **Request Types**: `ListTranslationJobsParams`, `CancelTranslationJobRequest` (verify existence, use directly)
+- **Response Types**: `ListTranslationJobsResponse`, `CheckActiveJobResponse`, `TranslationJobResponse` (use directly)
+- **Error Types**: `ApiErrorResponse` from `@/shared/types`
 
 ## 6. State Management
 
@@ -278,14 +242,23 @@ Custom hooks required:
 
 ## 11. Implementation Steps
 
+**PREREQUISITE: Before starting implementation, verify existing code:**
+
+- Check for existing types in `src/features/translation-jobs/api/` or similar location
+- Check `src/shared/types/` for existing TypeScript types
+- Use existing types directly - DO NOT create duplicates or aliases
+- No schemas needed for this view (no create forms, only cancel action)
+
 1. **Set up routing and basic page structure**
    - Add lazy-loaded route in routes.ts with project ID parameter
    - Create TranslationJobsPage component with basic layout and header
    - Implement project ID validation and error handling
+   - **VERIFY**: Use existing `TranslationJobResponse` type (DO NOT create aliases)
 
 2. **Implement job list table with basic display**
    - Set up Shadcn DataTable with job columns (mode, target_locale, status, created_at)
    - Integrate useTranslationJobs hook with pagination
+   - **VERIFY**: Use existing response types directly
    - Add basic table sorting and pagination controls
 
 3. **Add job status and progress indicators**

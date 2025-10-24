@@ -61,46 +61,25 @@ ProjectTelemetryPage (main page component)
 
 ## 5. Types
 
-### TelemetryEventViewModel
+### IMPORTANT: Verify Existing Types Before Creating New Ones
 
-```typescript
-interface TelemetryEventViewModel {
-  id: string;
-  created_at: string;
-  event_name: EventType;
-  formatted_properties: string; // Human-readable format of event properties
-  project_id: string;
-}
-```
+**Before implementing any component, MUST verify:**
 
-### TelemetryKPIsViewModel
+1. **Check for existing types in `src/shared/types/` and `src/features/telemetry/api/` (or similar)**
+   - Use `TelemetryEventResponse` or similar directly from existing API types
+   - DO NOT create type aliases or duplicate interfaces
+   - DO NOT create unnecessary view model types when API types suffice
 
-```typescript
-interface TelemetryKPIsViewModel {
-  multiLanguageProjectsPercentage: number; // Projects with ≥2 languages after 7 days
-  averageKeysPerLanguage: number; // Average keys per language after 7 days
-  llmTranslationsPercentage: number; // Percentage of translations using LLM after 7 days
-}
-```
+2. **Use existing types directly in components:**
+   - For data display: use existing telemetry event response types
+   - For API queries: use existing params types
+   - Only create minimal UI state types if absolutely necessary (e.g., table state, KPI calculations)
 
-### TelemetryPageParams
+### API Types to Verify and Use
 
-```typescript
-interface TelemetryPageParams {
-  projectId: string; // UUID from URL params
-}
-```
-
-### TelemetryTableState
-
-```typescript
-interface TelemetryTableState {
-  page: number;
-  limit: number;
-  sortBy: 'created_at' | 'event_name';
-  sortOrder: 'asc' | 'desc';
-}
-```
+- `TelemetryEventResponse`: Check API types (use directly)
+- `ListTelemetryEventsParams`: Check API types (use directly)
+- `ApiErrorResponse`: From `@/shared/types`
 
 ## 6. State Management
 
@@ -153,11 +132,20 @@ const {
 
 ## 11. Implementation Steps
 
+**PREREQUISITE: Before starting implementation, verify existing code:**
+
+- Check for existing types in `src/features/telemetry/api/` or similar location
+- Check `src/shared/types/` for existing TypeScript types
+- Use existing types directly - DO NOT create duplicates or aliases
+- No schemas needed for this view (read-only display)
+
 1. Create the main `ProjectTelemetryPage` component with routing setup
+   - **VERIFY**: Use existing `TelemetryEventResponse` type (DO NOT create aliases)
 2. Implement `useTelemetryPageState` hook for local UI state management
 3. Create `TelemetryKPIs` component with KPI calculation logic
 4. Implement `useTelemetryKPIs` hook for client-side metric calculations
 5. Build `TelemetryDataTable` component using Shadcn/ui DataTable
+   - **VERIFY**: Use existing event types directly
 6. Create `TelemetryEventRow` component for individual event display
 7. Add responsive design and accessibility features
 8. Implement error boundaries and loading states
