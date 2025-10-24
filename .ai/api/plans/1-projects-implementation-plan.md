@@ -471,10 +471,6 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - Parse error message to determine which field caused conflict
 - Return user-friendly message: "Project with this name already exists" or "Prefix is already in use"
 
-Summary:
-
-- Map Postgres 23505 to 409; use constraint name to choose message (duplicate name vs prefix) and surface a concise, user-friendly error.
-
 ### 7.4 Database Trigger Errors (400)
 
 **Trigger Conditions:**
@@ -514,10 +510,6 @@ Summary:
 - Log full error details to console (development)
 - Return generic message to user: "An unexpected error occurred. Please try again."
 - Do not expose internal error details to client
-
-Summary:
-
-- Unknown or unclassified database issues are logged for diagnostics and surfaced as 500 with a generic, localized user-facing message.
 
 ## 8. Performance Considerations
 

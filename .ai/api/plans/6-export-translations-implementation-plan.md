@@ -13,9 +13,9 @@ The Export Translations endpoint provides a streamlined way to export all projec
 - **Automatic File Naming**: Dynamic filename generation with project name and timestamp
 - **Edge Function Implementation**: Leverages Supabase Edge Functions for serverless execution
 
-### Endpoint Summary
+### Endpoints Summary
 
-**Export Project Translations** - `GET /functions/v1/export-translations?project_id={project_id}`
+1. **Export Project Translations** - `GET /functions/v1/export-translations?project_id={project_id}`
 
 ## 2. Request Details
 
@@ -45,23 +45,20 @@ The Export Translations endpoint provides a streamlined way to export all projec
 - `ExportTranslationsData`: map of locale code to `ExportedTranslations` aggregated for ZIP generation.
 - `ApiErrorResponse`: `{ data: null, error: { code, message, details? } }` used across client and server for standardized errors.
 
-### 3.2 New Constants and Validation
-
-Create constants in `src/shared/constants/export.constants.ts`:
-
-- `EXPORT_ERROR_MESSAGES`: centralizes shared messages (e.g., `AUTHENTICATION_REQUIRED`, `INVALID_PROJECT_ID`, `PROJECT_NOT_FOUND`).
-- Keep only values needed cross-environment; expand when both client and Edge need new constants.
-
-### 3.3 New Zod Validation Schemas
+### 3.2 New Zod Validation Schemas
 
 Create validation schemas in `src/features/export/api/export.schemas.ts`:
 
 - `EXPORT_TRANSLATIONS_SCHEMA`: validates `{ project_id }` as UUID and surfaces `EXPORT_ERROR_MESSAGES.INVALID_PROJECT_ID` on failure.
 - Align with Edge Function query parsing for a single source of truth.
 
+**Note:** Export-specific constants are defined in `src/shared/constants/export.constants.ts` and include `EXPORT_ERROR_MESSAGES` for centralized error messaging.
+
 ## 4. Response Details
 
-### 4.1 Success Response (200 OK)
+### 4.1 Export Project Translations
+
+**Success Response (200 OK):**
 
 **Response Headers:**
 
@@ -189,7 +186,7 @@ The frontend will handle this endpoint differently than standard TanStack Query 
 
 ## 7. Error Handling
 
-### 7.1 Input Validation Errors (400)
+### 7.1 Client-Side Validation Errors (400)
 
 **Trigger Conditions:**
 
@@ -199,8 +196,25 @@ The frontend will handle this endpoint differently than standard TanStack Query 
 
 **Handling:**
 
+- Client hooks validate inputs with Zod and return standardized `ApiErrorResponse` via shared utilities.
 - If `project_id` is missing, return `400` with `ApiErrorResponse` using `EXPORT_ERROR_MESSAGES.PROJECT_ID_REQUIRED`.
 - Validate UUID via `EXPORT_TRANSLATIONS_SCHEMA`; on failure, return `400` with the first validation issue message.
+
+**Result Format:**
+
+```json
+{
+  "data": null,
+  "error": {
+    "code": 400,
+    "details": {
+      "constraint": "uuid",
+      "field": "project_id"
+    },
+    "message": "Project ID must be a valid UUID"
+  }
+}
+```
 
 ### 7.2 Authorization Errors (401/404)
 
@@ -213,9 +227,11 @@ The frontend will handle this endpoint differently than standard TanStack Query 
 
 **Handling:**
 
-- RLS enforces ownership; convert inaccessible or missing projects into a `404` to avoid existence leaks.
+- Supabase returns empty result set for SELECT queries
+- Return 404 "Project not found or access denied" to avoid leaking existence
+- Do not distinguish between "doesn't exist" and "access denied"
 
-### 7.3 Processing Errors (500)
+### 7.3 Server Errors (500)
 
 **Trigger Conditions:**
 
@@ -227,34 +243,50 @@ The frontend will handle this endpoint differently than standard TanStack Query 
 
 **Handling:**
 
-- Catch-all handler logs the error and returns `500` `ApiErrorResponse` with generic `error.message` and optional minimal `error.details`.
+- Log full error details to console (development)
+- Return generic message to user: "An unexpected error occurred. Please try again."
+- Do not expose internal error details to client
 
 ## 8. Performance Considerations
 
-### 8.1 Database Optimization
+### 8.1 Query Optimization
 
-- **Efficient Queries:** Use JOIN operations instead of multiple queries
-- **Index Usage:** Leverage existing indexes on project_id, key_id, and locale
-- **Result Streaming:** Process results row-by-row for large datasets
-- **Connection Pooling:** Utilize Supabase's built-in connection management
+**Indexing:**
 
-### 8.2 Memory Management
+- Primary key index on `id` (auto-created)
+- Foreign key indexes on `project_id`, `key_id`, and `locale` for efficient filtering
+- Indexes defined in `supabase/migrations/20251013143200_create_indexes.sql`
 
-- **Streaming ZIP Creation:** Avoid loading entire ZIP in memory for large projects
-- **Incremental Processing:** Process locales one at a time to minimize memory footprint
-- **Buffer Management:** Use appropriate buffer sizes for optimal performance
+**Efficient Queries:**
 
-### 8.3 Caching Strategy
+- Use JOIN operations instead of multiple queries
+- Leverage existing indexes on project_id, key_id, and locale
+- Result streaming for large datasets
+- Connection pooling via Supabase's built-in management
 
-- **Server-Side Caching:** 5-minute TTL keyed by `project_id` + `max(updated_at)` to avoid stale exports.
-- **Cache Invalidation:** Clear cache when translations are updated to ensure fresh ZIPs.
-- **Edge Caching:** Leverage Supabase Edge Function caching for repeated downloads.
+### 8.2 Caching Strategy
+
+**Edge Function Caching:**
+
+- Server-side caching with 5-minute TTL keyed by `project_id` + `max(updated_at)`
+- Cache invalidation when translations are updated to ensure fresh exports
+- Leverage Supabase Edge Function caching for repeated downloads
+
+### 8.3 Memory Management
+
+**ZIP Generation:**
+
+- Streaming ZIP creation to avoid loading entire archive in memory
+- Incremental processing of locales to minimize memory footprint
+- Appropriate buffer sizes for optimal performance
 
 ### 8.4 Large Project Handling
 
-- **Streaming Threshold:** Use streaming for projects with >10,000 keys
-- **Compression Optimization:** Utilize ZIP compression for smaller file sizes
-- **Timeout Protection:** Set appropriate timeouts for Edge Function execution
+**Streaming Thresholds:**
+
+- Use streaming for projects with >10,000 keys
+- ZIP compression for smaller file sizes
+- Appropriate timeouts for Edge Function execution
 
 ## 9. Implementation Steps
 
@@ -292,9 +324,7 @@ The frontend will handle this endpoint differently than standard TanStack Query 
 
 ### Step 7: Implement ZIP Generation
 
-Add ZIP creation and response streaming after data retrieval:
-
-- Add `{locale}.json` entries to the archive with alphabetically sorted keys and UTF‑8 JSON content.
+- Add `{locale}.json` entries to the archive with alphabetically sorted keys and UTF-8 JSON content.
 - Generate a ZIP buffer and return `200` with `Content-Type: application/zip` and `Content-Disposition` filename `project-{name}-{timestamp}.zip`.
 
 ### Step 8: Create Frontend Export Hook
@@ -315,7 +345,7 @@ Add ZIP creation and response streaming after data retrieval:
 - Verify file download behavior and error handling
 - Aim for 90% coverage threshold as per project requirements
 
-**Create `src/features/export/api/useExportTranslations/useExportTranslations.test.ts`:**
+**9.1 Create `src/features/export/api/useExportTranslations/useExportTranslations.test.ts`:**
 
 Test scenarios:
 

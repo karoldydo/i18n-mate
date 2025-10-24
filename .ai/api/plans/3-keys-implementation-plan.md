@@ -528,8 +528,6 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - Check constraint name `keys_unique_per_project`
 - Return user-friendly message: "Key already exists in project"
 
-**Example:**
-
 ### 7.4 Database Trigger Errors (400)
 
 **Trigger Conditions:**
@@ -570,8 +568,6 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - Log full error details to console (development)
 - Return generic message to user: "An unexpected error occurred. Please try again."
 - Do not expose internal error details to client
-
-**Example:**
 
 ## 8. Performance Considerations
 
