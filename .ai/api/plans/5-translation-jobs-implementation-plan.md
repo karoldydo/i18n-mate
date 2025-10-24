@@ -16,7 +16,7 @@ The Translation Jobs API provides comprehensive management of LLM-powered transl
 ### Endpoints Summary
 
 1. **Check Active Job** - `GET /rest/v1/translation_jobs?project_id=eq.{project_id}&status=in.(pending,running)&limit=1`
-2. **List Translation Jobs** - `GET /rest/v1/translation_jobs?project_id=eq.{project_id}&order=created_at.desc&limit=20`
+2. **List Translation Jobs** - `GET /rest/v1/translation_jobs?project_id=eq.{project_id}&order=created_at.desc&limit=50`
 3. **Create Translation Job** - `POST /functions/v1/translate`
 4. **Cancel Translation Job** - `PATCH /rest/v1/translation_jobs?id=eq.{job_id}`
 5. **Get Job Items** - `GET /rest/v1/translation_job_items?job_id=eq.{job_id}&select=*,keys(full_key)`
@@ -37,7 +37,7 @@ The Translation Jobs API provides comprehensive management of LLM-powered transl
 ### 2.2 List Translation Jobs
 
 - **HTTP Method:** GET
-- **URL Structure:** `/rest/v1/translation_jobs?project_id=eq.{project_id}&order=created_at.desc&limit=20`
+- **URL Structure:** `/rest/v1/translation_jobs?project_id=eq.{project_id}&order=created_at.desc&limit=50`
 - **Authentication:** Required
 - **Parameters:**
   - Required:

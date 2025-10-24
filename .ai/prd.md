@@ -11,7 +11,7 @@ MVP scope:
 - Languages: adding to a project, **deleting**; **editing the label only**; BCP-47 validation and normalization.
 - Keys and values: adding keys only in the default language, inline editing with autosave, 250-character limit, no multiline, empty values mean missing **(does not apply to the default language — there the value cannot be empty)**.
 - LLM translations (OpenRouter): translate all/selected/single key; confirmation warning and a modal with progress information; **the target language cannot be the project's default language**.
-- Export: ZIP with {lang}.json files (dotted keys, i18next-friendly), stable sorting, UTF-8/LF.
+- Export: ZIP with {locale}.json files (dotted keys, i18next-friendly), stable sorting, UTF-8/LF.
 
 Definitions:
 
@@ -59,13 +59,17 @@ User assumptions: no roles in the MVP; the target user is a frontend developer m
 - **After creating a project, navigate to the project's key list.**
 - Project list: **columns: name, default language, number of languages, number of keys**; rows sorted ascending by name, pagination 50/page.
 
+**[Implementation Details →](./api/plans/1-projects-implementation-plan.md)**
+
 ### 3.3 Languages
 
 - **Add/delete languages assigned to the project; edit the label only.**
-- **BCP-47 validation for the language/region pair and normalization to language lowercase / REGION UPPERCASE. Other sub-tags (script/variant/extension) are rejected.**
+- **BCP-47 validation for locale codes using subset format (ll or ll-CC) with normalization to locale lowercase / REGION UPPERCASE. Other sub-tags (script/variant/extension) are rejected.**
 - Keys **are created only in the default language and are automatically mirrored 1:1 to all locales via database triggers (fan-out mechanism) — see 3.4.**
 - Language list: normalized locale and label in the row, default language mark, and edit/delete actions consistent with the constraints (cannot delete the default language).
 - **Navigation:** clicking a language navigates to the **key view for the selected language** (details in 3.4).
+
+**[Implementation Details →](./api/plans/2-locales-implementation-plan.md)**
 
 ### 3.4 Keys and Translation Values
 
@@ -79,6 +83,8 @@ User assumptions: no roles in the MVP; the target user is a frontend developer m
   - **Per-language view:** after selecting a language in 3.3, the list shows keys with the prefix and **values in the selected language**; the **"missing" filter applies to the selected language**; search and sorting work the same as in the default view; inline editing and metadata as in 3.5.
 - Key list: rows sorted ascending by key, pagination 50/page, missing filter and a search over the key (**contains, case-insensitive in the MVP — in practice no effect, because keys are lowercase**).
 
+**[Implementation Details →](./api/plans/3-keys-implementation-plan.md)**
+
 ### 3.5 Translations Using an LLM
 
 - Actions: translate all/selected/single into **a specified project language (other than the default language)**.
@@ -88,13 +94,18 @@ User assumptions: no roles in the MVP; the target user is a frontend developer m
 - **Metadata for each value (after save):**
   - **LLM:** `is_machine_translated=true`, `updated_at` auto-updated by database trigger, `updated_source=system`, `updated_by_user_id=null`.
   - **Manual edit (any language, including default):** `is_machine_translated=false`, `updated_at` auto-updated by database trigger, `updated_source=user`, `updated_by_user_id=<user_id>`.
-  - **Note:** The `updated_at` field is automatically set by the database trigger `update_translations_updated_at` on any UPDATE operation, ensuring accurate timestamps without application-level logic.
+
+**[Implementation Details →](./api/plans/4-translations-implementation-plan.md)**
+
+- **Note:** The `updated_at` field is automatically set by the database trigger `update_translations_updated_at` on any UPDATE operation, ensuring accurate timestamps without application-level logic.
 
 ### 3.6 Translation Export
 
-- ZIP contains {lang}.json files (flat, dotted keys), stably sorted, UTF-8/LF.
+- ZIP contains {locale}.json files (flat, dotted keys), stably sorted, UTF-8/LF.
 - Export from the UI for the selected project; no external API.
-- **Languages removed from the project are not included in the ZIP (no corresponding `{lang}.json` file).**
+- **Languages removed from the project are not included in the ZIP (no corresponding `{locale}.json` file).**
+
+**[Implementation Details →](./api/plans/6-export-translations-implementation-plan.md)**
 
 ### 3.7 Non-functional Requirements
 
@@ -374,10 +385,10 @@ Acceptance criteria:
 
 ID: US-050  
 Title: ZIP export of all translations  
-Description: As a user, I want to download a ZIP with {lang}.json for the selected project.  
+Description: As a user, I want to download a ZIP with {locale}.json for the selected project.  
 Acceptance criteria:
 
-- {lang}.json files contain dotted keys, stably sorted, UTF-8/LF.
+- {locale}.json files contain dotted keys, stably sorted, UTF-8/LF.
 - **Reference:** 3.6
 
 ID: US-051  
@@ -385,7 +396,7 @@ Title: Export with missing values
 Description: As a user, I want missing values to be included as empty strings.  
 Acceptance criteria:
 
-- Missing in {lang}.json files represented as "".
+- Missing in {locale}.json files represented as "".
 - **Reference:** 3.6
 
 ID: US-060  
@@ -422,3 +433,5 @@ Acceptance criteria:
 - **Finding:** the `translation_completed` event is logged for all modes: "all", "selected", "single key".
 - **Data source:** events are stored in the **application's internal telemetry**; no external analytics API.
 - **Event Collection:** Telemetry events are emitted via database triggers immediately after entity creation/modification (e.g., `emit_key_created_event_trigger` on keys insert). This ensures atomic event capture and eliminates the need for application-level event tracking.
+
+**[Implementation Details →](./api/plans/7-telemetry-implementation-plan.md)**
