@@ -36,7 +36,7 @@ ProjectLocalesPage (Route Component)
 ├── AddLocaleDialog (shadcn/ui Dialog)
 │ ├── DialogHeader ("Add Language")
 │ ├── LocaleForm
-│ │ ├── LocaleInput (with BCP-47 validation)
+│ │ ├── LocaleSelector (dropdown with common primary language subtags per IETF; BCP-47 validation and normalization)
 │ │ └── LabelInput (with length validation)
 │ └── DialogFooter (Cancel/Submit buttons)
 ├── EditLocaleDialog (shadcn/ui Dialog)
@@ -87,7 +87,7 @@ ProjectLocalesPage (Route Component)
 ### AddLocaleDialog
 
 - **Component description**: Modal dialog for adding new locales with form validation and submission.
-- **Main elements**: Shadcn Dialog with form inputs, validation messages, loading states.
+- **Main elements**: Shadcn Dialog with form inputs, validation messages, loading states. Uses a LocaleSelector dropdown populated from the common primary language subtags (IETF language tags; see Wikipedia “List of common primary language subtags”), providing normalized BCP-47 codes.
 - **Handled interactions**: Form submission, input validation, dialog open/close.
 - **Handled validation**: BCP-47 locale format, label length (1-64 chars), duplicate prevention.
 - **Types**:
@@ -250,7 +250,7 @@ The view uses TanStack Query for server state management and local React state f
 1. **Adding a Language**:
    - User clicks "Add Language" button
    - Add dialog opens with empty form
-   - User enters locale code (auto-normalized) and label
+   - User selects a locale from LocaleSelector (auto-normalized BCP-47 code) and enters a label
    - Real-time validation provides feedback
    - On submit: validation runs, API call made, success closes dialog and updates list
 
@@ -268,7 +268,7 @@ The view uses TanStack Query for server state management and local React state f
 
 4. **Navigating to Key View**:
    - User clicks anywhere on locale row (except action buttons)
-   - Navigation occurs to `/projects/{projectId}/locales/{localeId}/keys`
+   - Navigation occurs to `/projects/{projectId}/keys/{locale}`
    - Breadcrumb navigation available to return to languages list
 
 5. **Handling Validation Errors**:

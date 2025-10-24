@@ -96,9 +96,9 @@ Key design principles include responsiveness (Tailwind CSS breakpoints), WCAG 2.
 
 ### 4.3 Navigation Responsiveness
 
-- **Mobile**: Collapsible navigation drawer
-- **Tablet**: Side navigation with tabs
-- **Desktop**: Full side navigation
+- **Mobile**: Collapsible navigation drawer with accessible semantics. Drawer toggled by a button with `aria-controls` and `aria-expanded`; focus is trapped inside when open; `Esc` closes; return focus to the trigger after close; provide off-canvas container with `role="dialog"`/`aria-modal="true"` and labelled header. Ensure tab order includes a visible "Skip to content" link.
+- **Tablet**: Side navigation with tabs using appropriate roles (`nav`, `tablist`, `tab`, `tabpanel`) and `aria-selected`; keyboard support: Left/Right (or Up/Down) to move between tabs, `Enter`/`Space` to activate, focus outline visible.
+- **Desktop**: Full side navigation kept visible; maintain the same keyboard patterns as tablet; ensure landmarks (`header`, `nav`, `main`) and skip-links are present for fast navigation by assistive tech.
 
 ## 5. Key Components
 
@@ -122,6 +122,6 @@ Key design principles include responsiveness (Tailwind CSS breakpoints), WCAG 2.
 
 ### 5.4 Business-Specific Components
 
-- **LocaleSelector**: Dropdown for language selection with BCP-47 validation
-- **TranslationStatus**: Component displaying translation status (manual/machine translated, missing)
+- **LocaleSelector**: Dropdown for language selection with BCP-47 validation. The list is populated from the common primary language subtags (IETF language tags – see Wikipedia “List of common primary language subtags”). Used everywhere language selection is needed: creating a project (choosing default language), adding a language to a project, and any header where quick locale switching is required (e.g., per‑language keys view). Normalizes to BCP‑47 (e.g., `en`, `en-US`) and prevents invalid entries.
+- **TranslationStatus**: Consistent component rendering translation provenance/status across views. States: missing, manual, machine-translated (with optional timestamp and user). Used in the per‑language keys table (status column/metadata) and anywhere a status badge is shown; ensures unified ARIA labels/tooltips and colors. The default keys view shows aggregated missing counts and typically does not render per‑row TranslationStatus.
 - **ExportButton**: Button with loading state for ZIP export

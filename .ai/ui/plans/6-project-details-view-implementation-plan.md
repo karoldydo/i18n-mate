@@ -23,7 +23,9 @@ ProjectDetailsView (Page Component)
 │ │ └── ProjectStats (Key count, Locale count display)
 │ ├── ProjectNavigation (Tab navigation to subviews)
 │ │ ├── KeysTab (Navigation to keys view)
-│ │ └── LocalesTab (Navigation to locales view)
+│ │ ├── LocalesTab (Navigation to locales view)
+│ │ ├── JobsTab (Navigation to translation jobs)
+│ │ └── TelemetryTab (Navigation to project telemetry)
 │ └── ProjectMetadata (Immutable details display)
 │ ├── ProjectPrefix (Display prefix with info tooltip)
 │ ├── ProjectDefaultLocale (Display default language)
@@ -94,8 +96,8 @@ ProjectDetailsView (Page Component)
 
 ### ProjectNavigation
 
-- **Component description:** Tab-based navigation to project subviews (keys and locales) with active state management.
-- **Main elements:** Shadcn/ui Tabs component with Keys and Locales tabs.
+- **Component description:** Tab-based navigation to project subviews (keys, locales, translation jobs, telemetry) with active state management.
+- **Main elements:** Shadcn/ui Tabs component with Keys, Locales, Jobs, and Telemetry tabs.
 - **Handled interactions:** Tab switching, navigation to subview routes.
 - **Handled validation:** None.
 - **Types:** None.
@@ -145,7 +147,7 @@ interface ProjectStats {
 }
 
 // Navigation tab identifiers
-type ProjectTab = 'keys' | 'locales';
+type ProjectTab = 'keys' | 'locales' | 'jobs' | 'telemetry';
 
 // Form state for edit dialog
 interface EditProjectFormData {
@@ -212,7 +214,9 @@ State variables:
 3. **Delete Project:** Click delete button → open confirmation → confirm → optimistic update → navigate to project list → show success toast
 4. **Navigate to Keys:** Click Keys tab → navigate to `/projects/:id/keys`
 5. **Navigate to Locales:** Click Locales tab → navigate to `/projects/:id/locales`
-6. **Error Recovery:** Failed operations show error toasts with retry options where applicable
+6. **Navigate to Jobs:** Click Jobs tab → navigate to `/projects/:id/translation-jobs`
+7. **Navigate to Telemetry:** Click Telemetry tab → navigate to `/projects/:id/telemetry`
+8. **Error Recovery:** Failed operations show error toasts with retry options where applicable
 
 ## 9. Conditions and Validation
 

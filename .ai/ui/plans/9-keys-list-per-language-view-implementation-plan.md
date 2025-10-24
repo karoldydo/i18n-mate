@@ -20,7 +20,8 @@ KeysPerLanguagePage (main page component)
 ├── PageHeader
 │ ├── PageTitle (with locale info)
 │ ├── BackToKeysButton
-│ └── LocaleInfoBadge
+│ ├── LocaleInfoBadge
+│ └── LocaleSelector (optional switcher for quick locale change; BCP-47 normalized)
 ├── SearchAndFilterBar
 │ ├── SearchInput
 │ └── MissingFilterToggle
@@ -53,7 +54,7 @@ KeysPerLanguagePage (main page component)
 ### PageHeader
 
 - **Component description**: Header section displaying the page title with locale information and navigation controls
-- **Main elements**: Title text with locale badge, back navigation button, and locale info display
+- **Main elements**: Title text with locale badge, back navigation button, locale info display, and optional LocaleSelector to switch between project locales (BCP-47 normalized)
 - **Handled interactions**: Back button navigation to default keys view
 - **Handled validation**: None
 - **Types**: Locale string, project name string
@@ -133,8 +134,8 @@ KeysPerLanguagePage (main page component)
 
 ### MetadataCell
 
-- **Component description**: Cell displaying translation metadata (machine/manual, timestamp, user)
-- **Main elements**: Icons/badges for translation source, formatted timestamp, user info tooltip
+- **Component description**: Cell displaying translation metadata (machine/manual, timestamp, user) using the shared TranslationStatus component for consistent status rendering and ARIA labels
+- **Main elements**: TranslationStatus badge/icon, formatted timestamp, user info tooltip
 - **Handled interactions**: Hover for detailed tooltip
 - **Handled validation**: None
 - **Types**: Metadata object (is_machine_translated, updated_at, updated_by_user_id, updated_source)

@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The project list view displays all user projects with management capabilities including create, edit, and delete operations. It provides a paginated table showing project information (name, default language, language count, key count) with inline actions for project management. After creating a project, users are automatically navigated to the project's key list view.
+The project list view displays all user projects with management capabilities including create, edit, and delete operations. It provides a paginated table showing project information (name, default language, language count, key count) with inline actions for project management. After creating a project, users are automatically navigated to the project's details view.
 
 ## 2. View Routing
 
@@ -49,7 +49,7 @@ ProjectListPage (main page component)
 ### CreateProjectDialog
 
 - **Component description**: Modal dialog for creating new projects with form validation
-- **Main elements**: Shadcn Dialog with form fields (name, description, prefix, default locale, locale label)
+- **Main elements**: Shadcn Dialog with form fields (name, description, prefix, default locale, locale label). Uses a LocaleSelector dropdown populated from the common primary language subtags (IETF language tags) to choose the default locale with BCP‑47 normalization.
 - **Handled interactions**: Form submission, validation, success navigation
 - **Handled validation**:
   - Name: required, unique per user
@@ -151,7 +151,7 @@ No custom hooks required beyond the existing API hooks.
 - **Endpoint**: POST /rest/v1/rpc/create_project_with_default_locale
 - **Request**: CreateProjectRequest
 - **Response**: ProjectResponse
-- **Side Effects**: Navigation to `/projects/{id}/keys`
+- **Side Effects**: Navigation to `/projects/{id}`
 
 ### Update Project
 
@@ -179,7 +179,7 @@ No custom hooks required beyond the existing API hooks.
 
 - **Open**: Pre-fill form with empty values
 - **Form Validation**: Real-time validation with error messages
-- **Submit**: Create project, show success toast, navigate to keys view
+- **Submit**: Create project, show success toast, navigate to project details view
 - **Cancel**: Close dialog without changes
 
 ### Edit Project Dialog
