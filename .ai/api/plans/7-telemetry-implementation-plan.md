@@ -43,13 +43,6 @@ The Telemetry Events API provides read-only access to application events and KPI
     - `order` (string) - Sort order (default: `created_at.desc`)
 - **Request Body:** None
 
-**Example Request:**
-
-```http
-GET /rest/v1/telemetry_events?project_id=eq.550e8400-e29b-41d4-a716-446655440000&order=created_at.desc&limit=100
-Authorization: Bearer {access_token}
-```
-
 ## 2.2 How Telemetry Events Are Created
 
 Telemetry events are created **automatically** by the database. No manual POST endpoint is needed for UI use.
@@ -88,8 +81,6 @@ Telemetry events are created **automatically** by the database. No manual POST e
 
 ## 3. Used Types
 
-**Note:** As of the latest refactoring, all types are organized by feature in separate directories under `src/shared/types/`.
-
 ### 3.1 Existing Types
 
 **Import Path:** `@/shared/types` (central export) or `@/shared/types/telemetry` (feature-specific)
@@ -101,198 +92,31 @@ Telemetry events are created **automatically** by the database. No manual POST e
 - `ApiErrorResponse` - Generic error response wrapper
 - `ValidationErrorResponse` - 400 validation error response
 
-**Telemetry Types** (from `src/shared/types/telemetry/index.ts`):
+- `EventType`: enum type representing telemetry event names ('project_created', 'language_added', 'key_created', 'translation_completed')
+- `TelemetryEventResponse`: canonical telemetry event payload used across hooks
+- `TelemetryEvent`: database table type from Supabase generated types
+- `CreateTelemetryEventRequest`: input for event creation with event_name, project_id, and properties
+- `ProjectCreatedProperties`: event properties containing locale_count
+- `LanguageAddedProperties`: event properties containing locale code and locale_count
+- `KeyCreatedProperties`: event properties containing full_key and key_count
+- `TranslationCompletedProperties`: event properties containing completed_keys, failed_keys, mode, and target_locale
+- `TelemetryEventProperties`: union type of all event-specific property types
+- `TelemetryEventUnion`: union type of all complete telemetry event types
+- `ProjectCreatedEvent`: complete event structure for project creation events
+- `LanguageAddedEvent`: complete event structure for language addition events
+- `KeyCreatedEvent`: complete event structure for key creation events
+- `TranslationCompletedEvent`: complete event structure for translation completion events
 
-```typescript
-// Base types
-export type EventType = Enums<'event_type'>; // 'project_created' | 'language_added' | 'key_created' | 'translation_completed'
-
-// Response DTOs
-export type TelemetryEventResponse = TelemetryEvent;
-
-export type TelemetryEvent = Tables<'telemetry_events'>;
-
-// Request DTOs
-export type CreateTelemetryEventRequest = Pick<TelemetryEventInsert, 'event_name' | 'project_id' | 'properties'>;
-
-// Event-specific property types
-export interface ProjectCreatedProperties {
-  locale_count: number;
-}
-
-export interface LanguageAddedProperties {
-  locale: string;
-  locale_count: number;
-}
-
-export interface KeyCreatedProperties {
-  full_key: string;
-  key_count: number;
-}
-
-export interface TranslationCompletedProperties {
-  completed_keys: number;
-  failed_keys: number;
-  mode: TranslationMode; // 'all' | 'selected' | 'single'
-  target_locale: string;
-}
-
-// Union type for properties
-export type TelemetryEventProperties =
-  | ProjectCreatedProperties
-  | LanguageAddedProperties
-  | KeyCreatedProperties
-  | TranslationCompletedProperties;
-
-// Union type for all telemetry events
-export type TelemetryEventUnion =
-  | ProjectCreatedEvent
-  | LanguageAddedEvent
-  | KeyCreatedEvent
-  | TranslationCompletedEvent;
-
-// Event types with full structure
-export interface ProjectCreatedEvent {
-  created_at: string;
-  event_name: 'project_created';
-  project_id: string;
-  properties: ProjectCreatedProperties;
-}
-
-export interface LanguageAddedEvent {
-  created_at: string;
-  event_name: 'language_added';
-  project_id: string;
-  properties: LanguageAddedProperties;
-}
-
-export interface KeyCreatedEvent {
-  created_at: string;
-  event_name: 'key_created';
-  project_id: string;
-  properties: KeyCreatedProperties;
-}
-
-export interface TranslationCompletedEvent {
-  created_at: string;
-  event_name: 'translation_completed';
-  project_id: string;
-  properties: TranslationCompletedProperties;
-}
-
-// Error types (already defined in shared types)
-export interface ApiErrorResponse {
-  data: null;
-  error: {
-    code: number;
-    details?: Record<string, unknown>;
-    message: string;
-  };
-}
-
-export interface ValidationErrorResponse extends ApiErrorResponse {
-  error: {
-    code: 400;
-    details: {
-      constraint: string;
-      field: string;
-    };
-    message: string;
-  };
-}
-```
-
-### 3.2 New Types and Schemas
-
-Create in `src/features/telemetry/api/telemetry.schemas.ts`:
-
-**Note:** We only need validation for the GET endpoint. Event creation is handled automatically by the database.
-
-```typescript
-import { z } from 'zod';
-
-import {
-  TELEMETRY_DEFAULT_LIMIT,
-  TELEMETRY_ERROR_MESSAGES,
-  TELEMETRY_EVENT_TYPES,
-  TELEMETRY_MAX_LIMIT,
-  TELEMETRY_MIN_OFFSET,
-  TELEMETRY_SORT_OPTIONS,
-} from '@/shared/constants';
-import type { EventType, Json, ListTelemetryEventsParams, TelemetryEventResponse } from '@/shared/types';
-
-const JSON_SCHEMA: z.ZodType<Json> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(JSON_SCHEMA),
-    z.record(z.union([JSON_SCHEMA, z.undefined()])),
-  ])
-);
-
-// event name enum (for response validation)
-export const EVENT_NAME_SCHEMA = z.enum([
-  TELEMETRY_EVENT_TYPES.PROJECT_CREATED,
-  TELEMETRY_EVENT_TYPES.LANGUAGE_ADDED,
-  TELEMETRY_EVENT_TYPES.KEY_CREATED,
-  TELEMETRY_EVENT_TYPES.TRANSLATION_COMPLETED,
-]) satisfies z.ZodType<EventType>;
-
-// list telemetry events schema
-export const LIST_TELEMETRY_EVENTS_SCHEMA = z.object({
-  limit: z
-    .number()
-    .int()
-    .min(1)
-    .max(TELEMETRY_MAX_LIMIT, TELEMETRY_ERROR_MESSAGES.LIMIT_TOO_HIGH)
-    .optional()
-    .default(TELEMETRY_DEFAULT_LIMIT),
-  offset: z
-    .number()
-    .int()
-    .min(TELEMETRY_MIN_OFFSET, TELEMETRY_ERROR_MESSAGES.NEGATIVE_OFFSET)
-    .optional()
-    .default(TELEMETRY_MIN_OFFSET),
-  order: z
-    .enum([TELEMETRY_SORT_OPTIONS.CREATED_AT_ASC, TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC])
-    .optional()
-    .default(TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC),
-  project_id: z.string().uuid(TELEMETRY_ERROR_MESSAGES.INVALID_PROJECT_ID),
-}) satisfies z.ZodType<ListTelemetryEventsParams>;
-
-// response schema for runtime validation
-export const TELEMETRY_EVENT_RESPONSE_SCHEMA = z.object({
-  created_at: z.string(),
-  event_name: EVENT_NAME_SCHEMA,
-  id: z.string().uuid(),
-  project_id: z.string().uuid(),
-  properties: JSON_SCHEMA.nullable(),
-}) satisfies z.ZodType<TelemetryEventResponse>;
-```
-
-### 3.3 New Interface Types
-
-Create in `src/shared/types/types.ts` (if not already present):
-
-```typescript
-/**
- * List Telemetry Events Query Parameters
- */
-export interface ListTelemetryEventsParams extends PaginationParams {
-  order?: 'created_at.asc' | 'created_at.desc';
-  project_id: string;
-}
-```
+- `EVENT_NAME_SCHEMA`: validates event names against allowed telemetry event types
+- `LIST_TELEMETRY_EVENTS_SCHEMA`: validates list query parameters with limit, offset, order, and project_id constraints
+- `TELEMETRY_EVENT_RESPONSE_SCHEMA`: runtime validation for telemetry event response payloads
+- `ListTelemetryEventsParams`: interface extending pagination params with optional order and required project_id
 
 ## 4. Response Details
 
 ### 4.1 List Telemetry Events
 
 **Success Response (200 OK):**
-
-Returns an array of telemetry events (Supabase PostgREST default for SELECT queries without `.single()`):
 
 ```json
 [
@@ -493,23 +317,7 @@ Telemetry events are created automatically as side effects of user actions. Here
 
 **Handling:**
 
-Zod validation errors are automatically converted to ApiErrorResponse format by the global QueryClient error handler configured in `src/app/config/queryClient/queryClient.ts`. This ensures consistent error format across all queries and mutations without requiring try/catch blocks in individual hooks.
-
-**Result Format:**
-
-```json
-{
-  "data": null,
-  "error": {
-    "code": 400,
-    "details": {
-      "constraint": "enum",
-      "field": "event_name"
-    },
-    "message": "Invalid event name. Must be one of the allowed telemetry events"
-  }
-}
-```
+Zod validation errors are automatically converted to `ApiErrorResponse` format by the global `QueryClient` error handler configured in `src/app/config/queryClient/queryClient.ts`. This ensures consistent error format across all queries and mutations without requiring try/catch blocks in individual hooks.
 
 ### 7.2 Authorization Errors (403/404)
 
@@ -533,23 +341,7 @@ Zod validation errors are automatically converted to ApiErrorResponse format by 
 
 **Handling:**
 
-```typescript
-import { createApiErrorResponse } from '@/shared/utils';
-
-const { data, error } = await supabase
-  .from('telemetry_events')
-  .select('*')
-  .eq('project_id', projectId)
-  .order('created_at', { ascending: false })
-  .limit(limit)
-  .range(offset, offset + limit - 1);
-
-if (error) {
-  throw createDatabaseErrorResponse(error, 'useTelemetryEvents', 'Failed to fetch telemetry events');
-}
-
-// Empty array is valid (no events yet), not an error
-```
+Treat empty SELECT results as 404 to avoid leaking existence. Use `createDatabaseErrorResponse` function to map database errors to standardized `ApiErrorResponse` format.
 
 ### 7.4 Server Errors (500)
 
@@ -565,19 +357,6 @@ if (error) {
 - Log full error details to console (development)
 - Return generic message to user: "An unexpected error occurred. Please try again."
 - Do not expose internal error details to client
-
-**Example:**
-
-```typescript
-const { data, error } = await supabase.from('telemetry_events').insert(validatedData).select('id,created_at').single();
-
-if (error) {
-  throw createDatabaseErrorResponse(error, 'useCreateTelemetryEvent', 'Failed to create telemetry event');
-}
-
-// The createDatabaseErrorResponse function logs the error and returns a structured ApiErrorResponse
-// For unknown errors, it returns a 500 status with the fallback message
-```
 
 ## 8. Performance Considerations
 
@@ -607,20 +386,11 @@ if (error) {
 
 **TanStack Query Configuration:**
 
-```typescript
-// List telemetry events: 5-minute cache (frequently changing data)
-staleTime: 5 * 60 * 1000,
-gcTime: 10 * 60 * 1000,
-
-// No caching for mutations (create event)
-// Events are append-only, no need for optimistic updates
-```
+List queries use `staleTime: 5 * 60 * 1000` and `gcTime: 10 * 60 * 1000` for telemetry events. No caching configured for mutations since events are append-only and created automatically.
 
 **Cache Invalidation:**
 
-- Create event → optionally invalidate list cache (usually not needed since events are historical)
-- Consider not invalidating cache for background/automated events to reduce refetch load
-- Only invalidate if user action triggers event creation (manual logging)
+Create event optionally invalidates list cache (usually not needed since events are historical). Consider not invalidating cache for background/automated events to reduce refetch load. Only invalidate if user action triggers event creation.
 
 ### 8.3 Partitioning Strategy
 
@@ -662,66 +432,7 @@ mkdir -p src/features/telemetry/api
 
 ### Step 2: Create Telemetry Constants
 
-Create `src/shared/constants/telemetry.constants.ts` with centralized constants, patterns, and utilities:
-
-```typescript
-/**
- * Telemetry Constants and Validation Patterns
- *
- * Centralized definitions for telemetry event types and validation to ensure consistency
- * between TypeScript validation (Zod schemas) and PostgreSQL enum constraints.
- */
-
-// Event types (must match database enum: event_type)
-export const TELEMETRY_EVENT_TYPES = {
-  KEY_CREATED: 'key_created',
-  LANGUAGE_ADDED: 'language_added',
-  PROJECT_CREATED: 'project_created',
-  TRANSLATION_COMPLETED: 'translation_completed',
-} as const;
-
-// Pagination defaults
-export const TELEMETRY_DEFAULT_LIMIT = 100;
-export const TELEMETRY_MAX_LIMIT = 1000;
-export const TELEMETRY_MIN_OFFSET = 0;
-
-// Sorting options
-export const TELEMETRY_SORT_OPTIONS = {
-  CREATED_AT_ASC: 'created_at.asc',
-  CREATED_AT_DESC: 'created_at.desc',
-} as const;
-
-// PostgreSQL error codes
-export const TELEMETRY_PG_ERROR_CODES = {
-  CHECK_VIOLATION: '23514',
-  FOREIGN_KEY_VIOLATION: '23503',
-  UNIQUE_VIOLATION: '23505',
-} as const;
-
-// Centralized error messages
-export const TELEMETRY_ERROR_MESSAGES = {
-  // Generic errors
-  DATABASE_ERROR: 'Database operation failed',
-  // Validation errors
-  INVALID_EVENT_NAME: 'Invalid event name. Must be one of the allowed telemetry events',
-  INVALID_PROJECT_ID: 'Invalid project ID format',
-  LIMIT_TOO_HIGH: `Limit must be at most ${TELEMETRY_MAX_LIMIT}`,
-  NEGATIVE_OFFSET: 'Offset must be non-negative',
-
-  // Database operation errors
-  PROJECT_NOT_FOUND: 'Project not found or access denied',
-  PARTITION_ERROR: 'Failed to insert event into partition',
-} as const;
-```
-
-Add to `src/shared/constants/index.ts`:
-
-```typescript
-export * from './keys.constants';
-export * from './locale.constants';
-export * from './projects.constants';
-export * from './telemetry.constants';
-```
+Create `src/shared/constants/telemetry.constants.ts` with centralized constants, patterns, and utilities for telemetry event types, pagination defaults, sorting options, PostgreSQL error codes, and error messages. Add to `src/shared/constants/index.ts` to export telemetry constants alongside other feature constants.
 
 ### Step 3: Create Zod Validation Schemas
 
@@ -729,177 +440,20 @@ Create `src/features/telemetry/api/telemetry.schemas.ts` with all validation sch
 
 ### Step 4: Create Error Handling Utilities
 
-Create `src/features/telemetry/api/telemetry.errors.ts`:
-
-```typescript
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ApiErrorResponse } from '@/shared/types';
-import { createApiErrorResponse } from '@/shared/utils';
-import { TELEMETRY_PG_ERROR_CODES, TELEMETRY_ERROR_MESSAGES } from '@/shared/constants';
-
-/**
- * Handle database errors and convert them to API errors
- *
- * Provides consistent error handling for PostgreSQL errors including:
- * - Check constraint violations (23514)
- * - Foreign key violations (23503)
- * - Partition errors
- *
- * @param error - PostgrestError from Supabase
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object
- */
-export function createDatabaseErrorResponse(
-  error: PostgrestError,
-  context?: string,
-  fallbackMessage?: string
-): ApiErrorResponse {
-  const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
-  console.error(`${logPrefix} Database error:`, error);
-
-  // handle check constraint violations (invalid enum value)
-  if (error.code === TELEMETRY_PG_ERROR_CODES.CHECK_VIOLATION) {
-    return createApiErrorResponse(400, TELEMETRY_ERROR_MESSAGES.INVALID_EVENT_NAME, { constraint: error.details });
-  }
-
-  // handle foreign key violations (project not found)
-  if (error.code === TELEMETRY_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
-    return createApiErrorResponse(404, TELEMETRY_ERROR_MESSAGES.PROJECT_NOT_FOUND);
-  }
-
-  // handle partition errors
-  if (error.message.includes('partition') || error.message.includes('no partition')) {
-    return createApiErrorResponse(500, TELEMETRY_ERROR_MESSAGES.PARTITION_ERROR, { original: error });
-  }
-
-  // generic database error
-  return createApiErrorResponse(500, fallbackMessage || TELEMETRY_ERROR_MESSAGES.DATABASE_ERROR, { original: error });
-}
-```
+Create `src/features/telemetry/api/telemetry.errors.ts` with `createDatabaseErrorResponse` function that maps PostgreSQL errors (check constraint violations, foreign key violations, partition errors) to standardized `ApiErrorResponse` objects with appropriate HTTP status codes and user-friendly messages.
 
 ### Step 5: Create Query Keys Factory
 
-Create `src/features/telemetry/api/telemetry.key-factory.ts`:
-
-```typescript
-import type { TelemetryEventsParams } from '@/shared/types';
-
-export const TELEMETRY_KEYS = {
-  all: ['telemetry-events'] as const,
-  list: (projectId: string, params?: TelemetryEventsParams) => [...TELEMETRY_KEYS.lists(), projectId, params] as const,
-  lists: () => [...TELEMETRY_KEYS.all, 'list'] as const,
-};
-```
-
-**Note:** The factory stays close to TanStack Query guidance (top-level `all`, `lists`, `list`) and provides a local params helper for clarity.
+Create `src/features/telemetry/api/telemetry.key-factory.ts` with `TELEMETRY_KEYS` factory providing structured query keys for telemetry events following TanStack Query guidance with top-level `all`, `lists`, and `list` methods.
 
 ### Step 6: Create TanStack Query Hook
 
-**Implementation Notes:**
-
-- Only one hook needed: `useTelemetryEvents` for reading events
-- No mutation hook needed (events created automatically by database)
-- No optimistic updates needed (read-only, append-only data)
-- Optional cache invalidation (telemetry is historical data)
-- Include TypeScript generics for type safety
-
-**6.1 Create `src/features/telemetry/api/useTelemetryEvents/useTelemetryEvents.ts`:**
-
-```typescript
-import { useQuery } from '@tanstack/react-query';
-
-import type { ApiErrorResponse, TelemetryEventResponse, TelemetryEventsParams } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-
-import { createDatabaseErrorResponse } from '../telemetry.errors';
-import { TELEMETRY_KEYS } from '../telemetry.key-factory';
-import { LIST_TELEMETRY_EVENTS_SCHEMA, TELEMETRY_EVENT_RESPONSE_SCHEMA } from '../telemetry.schemas';
-
-export function useTelemetryEvents(projectId: string, params?: TelemetryEventsParams) {
-  const supabase = useSupabase();
-
-  return useQuery<TelemetryEventResponse[], ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    queryFn: async () => {
-      const { limit, offset, order, project_id } = LIST_TELEMETRY_EVENTS_SCHEMA.parse({
-        project_id: projectId,
-        ...params,
-      });
-
-      let query = supabase
-        .from('telemetry_events')
-        .select('*')
-        .eq('project_id', project_id)
-        .order('created_at', { ascending: order === 'created_at.asc' })
-        .limit(limit);
-
-      // add offset if provided
-      if (offset && offset > 0) {
-        query = query.range(offset, offset + limit - 1);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useTelemetryEvents', 'Failed to fetch telemetry events');
-      }
-
-      return TELEMETRY_EVENT_RESPONSE_SCHEMA.array().parse(data || []);
-    },
-    queryKey: TELEMETRY_KEYS.list(projectId, params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-```
-
-**Note:** No mutation hook needed. Telemetry events are created automatically by database triggers and RPC functions.
+Create `useTelemetryEvents` hook for reading telemetry events with validation, error handling, and appropriate caching configuration. No mutation hook needed since telemetry events are created automatically by database triggers and RPC functions.
 
 ### Step 7: Create API Index File
 
-Create `src/features/telemetry/api/index.ts`:
-
-```typescript
-export { createDatabaseErrorResponse } from './telemetry.errors';
-export { TELEMETRY_KEYS } from './telemetry.key-factory';
-export * from './telemetry.schemas';
-export * from './useTelemetryEvents';
-```
-
-**Organization:**
-
-- Error utilities remain first for reuse across features
-- `TELEMETRY_KEYS` exposes the TanStack Query key factory in a single place
-- Zod schemas (`EVENT_NAME_SCHEMA`, `LIST_TELEMETRY_EVENTS_SCHEMA`, `TELEMETRY_EVENT_RESPONSE_SCHEMA`) re-export with shared-type parity
-- Each schema uses `satisfies z.ZodType<...>` to lock runtime validation to the shared DTO contracts
-- Hook barrels (`export * from './useTelemetryEvents'`) keep consumer imports concise
-- Comments were removed to keep the barrel minimal and eslint-friendly
+Create `src/features/telemetry/api/index.ts` as barrel export for telemetry API components including error utilities, query key factory, validation schemas, and hooks.
 
 ### Step 8: Write Unit Tests
 
-**Testing Strategy:**
-
-- Use Vitest with Testing Library for comprehensive test coverage
-- Co-locate tests with source files (`Hook.test.ts` next to `Hook.ts`)
-- Mock Supabase client using test utilities from `src/test/`
-- Test both success and error scenarios with telemetry-specific edge cases
-- Verify cache behavior, partitioning, and event property validation
-- Aim for 90% coverage threshold as per project requirements
-
-**8.1 Create `src/features/telemetry/api/useTelemetryEvents/useTelemetryEvents.test.ts`:**
-
-Test scenarios:
-
-- Successful list fetch with default params (100 limit, 0 offset, created_at.desc order)
-- Successful list fetch with custom pagination (limit=50, offset=100)
-- Successful list fetch with sorting (asc/desc)
-- Empty results (no events yet for project)
-- Validation error for invalid project ID (not UUID)
-- Validation error for limit too high (> 1000)
-- Validation error for negative offset
-- Database error handling
-- Multiple events with different event_name types
-- RLS access denied (appears as empty array or error)
-
-**Note:** No tests needed for event creation hook since it doesn't exist. Telemetry event creation is tested at the database level (trigger tests, RPC function tests).
+Write comprehensive unit tests for telemetry API using Vitest and Testing Library. Co-locate tests with source files, mock Supabase client, and test success/error scenarios including validation, pagination, sorting, and RLS access control. No tests needed for event creation since it happens automatically at database level.

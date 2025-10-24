@@ -186,6 +186,9 @@ language plpgsql as $$
 declare
   v_key_count int;
 begin
+  -- ensure partition exists before insert
+  perform ensure_telemetry_partition_exists();
+
   select count(*) into v_key_count from keys where project_id = new.project_id;
   insert into telemetry_events (project_id, event_name, properties)
   values (
@@ -194,6 +197,12 @@ begin
     jsonb_build_object('full_key', new.full_key, 'key_count', v_key_count)
   );
   return new;
+exception
+  when others then
+    -- log error but don't fail key creation
+    raise warning 'Failed to emit key_created event for project %: %',
+      new.project_id, sqlerrm;
+    return new;
 end;
 $$;
 

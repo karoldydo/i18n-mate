@@ -69,6 +69,9 @@ BEGIN
     RETURNING project_locales.id INTO v_locale_id;
 
     -- 3. Emit project_created telemetry event
+    -- Ensure partition exists before insert
+    PERFORM ensure_telemetry_partition_exists();
+
     INSERT INTO telemetry_events (event_name, project_id, properties)
     VALUES ('project_created', v_project_id, jsonb_build_object(
       'locale_count', 1,
@@ -144,6 +147,9 @@ DECLARE
   v_locale_count INTEGER;
   v_is_default BOOLEAN;
 BEGIN
+  -- Ensure partition exists before insert
+  PERFORM ensure_telemetry_partition_exists();
+
   -- Count total locales for this project
   SELECT COUNT(*) INTO v_locale_count
   FROM project_locales

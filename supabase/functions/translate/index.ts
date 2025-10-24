@@ -591,20 +591,49 @@ async function processTranslationJobInBackground(
       })
       .eq('id', jobId);
 
-    // Log telemetry
+    // Log telemetry with improved error handling
+    const telemetryEvent = {
+      event_name: 'translation_completed' as const,
+      project_id: projectId,
+      properties: {
+        completed_keys: completedCount,
+        failed_keys: failedCount,
+        mode: mode,
+        target_locale: targetLocale,
+      },
+    };
+
     try {
-      await supabase.from('telemetry_events').insert({
-        event_name: 'translation_completed',
-        project_id: projectId,
-        properties: {
-          completed_keys: completedCount,
-          failed_keys: failedCount,
-          mode: mode,
-          target_locale: targetLocale,
-        },
-      });
+      const { error: telemetryError } = await supabase.from('telemetry_events').insert(telemetryEvent);
+
+      if (telemetryError) {
+        console.error('[processTranslationJob] Telemetry insert failed:', {
+          completedCount,
+          error: telemetryError,
+          event: telemetryEvent,
+          failedCount,
+          jobId,
+          projectId,
+          totalKeys: keyIds.length,
+        });
+        // TODO: Consider adding retry logic or storing failed telemetry events
+        // in a separate table for later processing
+      } else {
+        console.log('[processTranslationJob] Telemetry event logged successfully:', {
+          completedKeys: completedCount,
+          eventName: telemetryEvent.event_name,
+          failedKeys: failedCount,
+          jobId,
+          projectId,
+        });
+      }
     } catch (err) {
-      console.warn('[processTranslationJob] Telemetry insert failed:', err);
+      console.error('[processTranslationJob] Unexpected error during telemetry insert:', {
+        error: err,
+        event: telemetryEvent,
+        jobId,
+        projectId,
+      });
     }
   } catch (error) {
     console.error('[processTranslationJob] Fatal error:', error);

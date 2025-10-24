@@ -29,16 +29,29 @@ CREATE OR REPLACE FUNCTION emit_language_added_event()
 RETURNS TRIGGER
 SECURITY DEFINER
 LANGUAGE plpgsql AS $$
+DECLARE
+  v_locale_count INTEGER;
+  v_is_default BOOLEAN;
 BEGIN
-  -- Insert telemetry event for language addition
+  -- Ensure partition exists before insert
+  PERFORM ensure_telemetry_partition_exists();
+
+  -- Count total locales for this project
+  SELECT COUNT(*) INTO v_locale_count
+  FROM project_locales
+  WHERE project_id = NEW.project_id;
+
+  -- Check if this is the default locale
+  SELECT (NEW.locale = p.default_locale) INTO v_is_default
+  FROM projects p
+  WHERE p.id = NEW.project_id;
+
+  -- Insert telemetry event with enhanced metadata
   INSERT INTO telemetry_events (event_name, project_id, properties)
   VALUES ('language_added', NEW.project_id, jsonb_build_object(
     'locale', NEW.locale,
-    'locale_count', (
-      SELECT COUNT(*)
-      FROM project_locales
-      WHERE project_id = NEW.project_id
-    )
+    'locale_count', v_locale_count,
+    'is_default', COALESCE(v_is_default, false)
   ));
 
   RETURN NEW;

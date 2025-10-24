@@ -71,6 +71,66 @@ comment on function create_next_telemetry_partition is
   'Automatically creates telemetry_events partition for 2 months ahead; runs monthly via pg_cron';
 
 -- ---------------------------------------------------------------------
+-- ensure telemetry partition exists function
+-- ---------------------------------------------------------------------
+
+-- ensures partition exists for current timestamp before insert
+-- creates partition if missing, with improved error handling
+--
+-- rationale:
+--   - prevents telemetry insert failures due to missing partitions
+--   - fallback mechanism when pg_cron fails to create partitions
+--   - lightweight check before expensive partition creation
+create or replace function ensure_telemetry_partition_exists(
+  p_timestamp timestamptz default now()
+)
+returns void
+language plpgsql
+security definer
+as $$
+declare
+  partition_name text;
+  start_date text;
+  end_date text;
+  partition_exists boolean := false;
+begin
+  -- calculate partition details for the given timestamp
+  partition_name := 'telemetry_events_' || to_char(date_trunc('month', p_timestamp), 'YYYY_MM');
+  start_date := to_char(date_trunc('month', p_timestamp), 'YYYY-MM-DD');
+  end_date := to_char(date_trunc('month', p_timestamp) + interval '1 month', 'YYYY-MM-DD');
+
+  -- check if partition table exists
+  select exists(
+    select 1 from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = partition_name
+      and c.relkind = 'r'
+  ) into partition_exists;
+
+  if not partition_exists then
+    -- create partition if it doesn't exist
+    execute format(
+      'create table if not exists %I partition of telemetry_events for values from (%L) to (%L)',
+      partition_name, start_date, end_date
+    );
+
+    raise notice 'Emergency partition creation: % (range: % to %)',
+      partition_name, start_date, end_date;
+  end if;
+
+exception
+  when others then
+    -- log error but don't fail the calling transaction
+    raise warning 'Failed to ensure telemetry partition exists for %: %',
+      p_timestamp, sqlerrm;
+end;
+$$;
+
+comment on function ensure_telemetry_partition_exists(timestamptz) is
+  'Ensures telemetry_events partition exists for given timestamp; creates if missing. Used as fallback when pg_cron fails to create partitions automatically.';
+
+-- ---------------------------------------------------------------------
 -- schedule automatic partition creation
 -- ---------------------------------------------------------------------
 
