@@ -29,13 +29,6 @@ The Export Translations endpoint provides a streamlined way to export all projec
     - `project_id` (UUID) - Project ID to export translations for
 - **Request Body:** None
 
-**Example Request:**
-
-```http
-GET /functions/v1/export-translations?project_id=550e8400-e29b-41d4-a716-446655440000
-Authorization: Bearer {access_token}
-```
-
 **Parameter Validation:**
 
 - `project_id` must be a valid UUID format
@@ -47,72 +40,24 @@ Authorization: Bearer {access_token}
 
 ### 3.1 Existing Types
 
-**Import Path:** `@/shared/types` (central export) or `@/shared/types/export` (feature-specific)
-
-**Shared Types** (from `src/shared/types/types.ts`):
-
-- `ApiErrorResponse` - Generic error response wrapper
-- `ValidationErrorResponse` - 400 validation error response
-
-**Export Types** (from `src/shared/types/export/index.ts`):
-
-```typescript
-// Export Response Types
-export type ExportedTranslations = Record<string, string>;
-
-export type ExportTranslationsData = Record<string, ExportedTranslations>;
-
-// Error types
-export interface ApiErrorResponse {
-  data: null;
-  error: {
-    code: number;
-    details?: Record<string, unknown>;
-    message: string;
-  };
-}
-```
+- Import from `@/shared/types` (central) or `@/shared/types/export` (feature-specific) for consistency between app and Edge Function.
+- `ExportedTranslations`: flat `Record<string, string>` used per-locale to represent dotted keys to string values.
+- `ExportTranslationsData`: map of locale code to `ExportedTranslations` aggregated for ZIP generation.
+- `ApiErrorResponse`: `{ data: null, error: { code, message, details? } }` used across client and server for standardized errors.
 
 ### 3.2 New Constants and Validation
 
 Create constants in `src/shared/constants/export.constants.ts`:
 
-**Note:** Currently we only centralize error message strings that are shared between the Edge Function and client-side validation logic. Additional limits or configuration values can be introduced here once they are needed by both environments.
-
-```typescript
-/**
- * Export Constants and Configuration
- *
- * Centralized definitions for export functionality to ensure consistency
- * between Edge Function implementation and frontend validation.
- */
-
-/**
- * Error messages for export operations
- */
-export const EXPORT_ERROR_MESSAGES = {
-  AUTHENTICATION_REQUIRED: 'Authentication required',
-  EXPORT_GENERATION_FAILED: 'Export generation failed',
-  INVALID_PROJECT_ID: 'Invalid project ID format',
-  PROJECT_ID_REQUIRED: 'Project ID is required',
-  PROJECT_NOT_FOUND: 'Project not found or access denied',
-  PROJECT_TOO_LARGE: 'Project too large to export',
-} as const;
-```
+- `EXPORT_ERROR_MESSAGES`: centralizes shared messages (e.g., `AUTHENTICATION_REQUIRED`, `INVALID_PROJECT_ID`, `PROJECT_NOT_FOUND`).
+- Keep only values needed cross-environment; expand when both client and Edge need new constants.
 
 ### 3.3 New Zod Validation Schemas
 
 Create validation schemas in `src/features/export/api/export.schemas.ts`:
 
-```typescript
-import { z } from 'zod';
-import { EXPORT_ERROR_MESSAGES } from '@/shared/constants';
-
-// export translations request schema
-export const EXPORT_TRANSLATIONS_SCHEMA = z.object({
-  project_id: z.string().uuid(EXPORT_ERROR_MESSAGES.INVALID_PROJECT_ID),
-});
-```
+- `EXPORT_TRANSLATIONS_SCHEMA`: validates `{ project_id }` as UUID and surfaces `EXPORT_ERROR_MESSAGES.INVALID_PROJECT_ID` on failure.
+- Align with Edge Function query parsing for a single source of truth.
 
 ## 4. Response Details
 
@@ -125,23 +70,15 @@ export const EXPORT_TRANSLATIONS_SCHEMA = z.object({
 
 **ZIP Archive Contents:**
 
-```text
-en.json
-pl.json
-de.json
-```
+- One JSON file per locale named `{locale}.json` (e.g., `en.json`, `pl.json`).
 
-**Individual JSON File Format (`en.json` example):**
+**Individual JSON File Format:**
 
-```json
-{
-  "app.home.subtitle": "Get started now",
-  "app.home.title": "Welcome Home",
-  "app.settings.label": "Settings"
-}
-```
+- Flat JSON with dotted keys (i18next-compatible), string values only; keys sorted alphabetically.
 
 ### 4.2 Error Responses
+
+All error responses follow the structure: `{ data: null, error: { code, message, details? } }`
 
 **401 Unauthorized:**
 
@@ -174,10 +111,7 @@ de.json
   "data": null,
   "error": {
     "code": 500,
-    "details": {
-      "original": "detailed error information"
-    },
-    "message": "Export generation failed"
+    "message": "An unexpected error occurred"
   }
 }
 ```
@@ -197,15 +131,7 @@ de.json
 
 3. **Data Retrieval:**
    - Query all active project locales (exclude any marked as deleted)
-   - For each locale, execute optimized query:
-
-     ```sql
-     SELECT k.full_key, t.value
-     FROM keys k
-     JOIN translations t ON k.id = t.key_id
-     WHERE k.project_id = $1 AND t.locale = $2
-     ORDER BY k.full_key ASC
-     ```
+   - For each locale, run a JOIN selecting `k.full_key` and `t.value` filtered by `project_id` and locale, ordered by key ascending.
 
 4. **Data Transformation:**
    - Build flat JSON objects for each locale
@@ -273,25 +199,8 @@ The frontend will handle this endpoint differently than standard TanStack Query 
 
 **Handling:**
 
-```typescript
-const { project_id } = url.searchParams;
-
-if (!project_id) {
-  return new Response(
-    JSON.stringify({
-      data: null,
-      error: {
-        code: 400,
-        message: 'Project ID is required',
-      },
-    }),
-    { status: 400, headers: { 'Content-Type': 'application/json' } }
-  );
-}
-
-// Validate UUID format using Zod
-const validated = EXPORT_TRANSLATIONS_SCHEMA.parse(url.searchParams);
-```
+- If `project_id` is missing, return `400` with `ApiErrorResponse` using `EXPORT_ERROR_MESSAGES.PROJECT_ID_REQUIRED`.
+- Validate UUID via `EXPORT_TRANSLATIONS_SCHEMA`; on failure, return `400` with the first validation issue message.
 
 ### 7.2 Authorization Errors (401/404)
 
@@ -304,7 +213,7 @@ const validated = EXPORT_TRANSLATIONS_SCHEMA.parse(url.searchParams);
 
 **Handling:**
 
-RLS policies automatically handle project ownership validation. If a project is not accessible, the query returns empty results, which we convert to a 404 response to avoid leaking project existence information.
+- RLS enforces ownership; convert inaccessible or missing projects into a `404` to avoid existence leaks.
 
 ### 7.3 Processing Errors (500)
 
@@ -318,33 +227,7 @@ RLS policies automatically handle project ownership validation. If a project is 
 
 **Handling:**
 
-All server errors are caught and logged, with generic error messages returned to prevent information leakage:
-
-### 7.4 Edge Function Error Handling
-
-```typescript
-// Error handling pattern within Edge Function
-try {
-  // Main export logic
-} catch (error) {
-  console.error('Export failed:', error);
-
-  return new Response(
-    JSON.stringify({
-      data: null,
-      error: {
-        code: 500,
-        message: 'Export generation failed',
-        details: { original: error.message },
-      },
-    }),
-    {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    }
-  );
-}
-```
+- Catch-all handler logs the error and returns `500` `ApiErrorResponse` with generic `error.message` and optional minimal `error.details`.
 
 ## 8. Performance Considerations
 
@@ -363,9 +246,9 @@ try {
 
 ### 8.3 Caching Strategy
 
-- **Server-Side Caching:** Implement 5-minute TTL cache keyed by `project_id` + `max(updated_at)`
-- **Cache Invalidation:** Clear cache when translations are updated
-- **Edge Caching:** Leverage Supabase Edge Function caching capabilities
+- **Server-Side Caching:** 5-minute TTL keyed by `project_id` + `max(updated_at)` to avoid stale exports.
+- **Cache Invalidation:** Clear cache when translations are updated to ensure fresh ZIPs.
+- **Edge Caching:** Leverage Supabase Edge Function caching for repeated downloads.
 
 ### 8.4 Large Project Handling
 
@@ -377,418 +260,49 @@ try {
 
 ### Step 1: Create Edge Function Structure
 
-```bash
-mkdir -p supabase/functions/export-translations
-```
-
-Update `supabase/functions/deno.json` to include JSZip dependency:
-
-```json
-{
-  "imports": {
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.0",
-    "jszip": "https://esm.sh/jszip@3.10.1",
-    "zod": "https://esm.sh/zod@3.22.4"
-  }
-}
-```
+- Create `supabase/functions/export-translations` and configure `supabase/functions/deno.json` imports for `@supabase/supabase-js`, `jszip`, and `zod`.
+- Ensure required env vars (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) are available to the function runtime.
 
 ### Step 2: Create Edge Function Implementation
 
-Create `supabase/functions/export-translations/index.ts`:
-
-```typescript
-import { createClient } from '@supabase/supabase-js';
-import { z } from 'zod';
-
-// =============================================================================
-// Types
-// =============================================================================
-
-interface ApiErrorResponse {
-  data: null;
-  error: {
-    code: number;
-    details?: Record<string, unknown>;
-    message: string;
-  };
-}
-
-interface ExportedTranslations {
-  [key: string]: string;
-}
-
-interface ExportTranslationsData {
-  [locale: string]: ExportedTranslations;
-}
-
-type SupabaseClient = ReturnType<typeof createClient>;
-
-// =============================================================================
-// Validation Schema
-// =============================================================================
-
-const exportRequestSchema = z.object({
-  project_id: z.string().uuid('Invalid project ID format'),
-});
-
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-function createResponse(status: number, body: Uint8Array | object, headers: HeadersInit = {}) {
-  const defaultHeaders = { 'Content-Type': 'application/json' };
-  const finalHeaders = { ...defaultHeaders, ...headers };
-
-  const responseBody = body instanceof Uint8Array ? body : JSON.stringify(body);
-
-  return new Response(responseBody, {
-    status,
-    headers: finalHeaders,
-  });
-}
-
-function errorResponse(code: number, message: string, details?: Record<string, unknown>): ApiErrorResponse {
-  return {
-    data: null,
-    error: {
-      code,
-      message,
-      ...(details && { details }),
-    },
-  };
-}
-
-// =============================================================================
-// Main Handler
-// =============================================================================
-
-async function handleExportRequest(req: Request): Promise<Response> {
-  try {
-    // Validate request method
-    if (req.method !== 'GET') {
-      return createResponse(405, errorResponse(405, 'Method not allowed'));
-    }
-
-    // Implementation details in steps below
-    // ...
-  } catch (error) {
-    console.error('[export-translations] Unexpected error:', error);
-    return createResponse(500, errorResponse(500, 'Export generation failed'));
-  }
-}
-
-// =============================================================================
-// Deno HTTP Handler
-// =============================================================================
-
-Deno.serve(handleExportRequest);
-```
+- Implement `supabase/functions/export-translations/index.ts` with `Deno.serve` exposing `handleExportRequest` for `GET` requests.
+- Add helpers `createResponse` and `errorResponse` to standardize JSON/binary responses using `ApiErrorResponse`.
+- Define `exportRequestSchema` to validate `project_id` as UUID server-side.
 
 ### Step 3: Implement Request Validation
 
-Add request validation logic to the main handler:
-
-```typescript
-// Extract query parameters
-const url = new URL(req.url);
-const project_id = url.searchParams.get('project_id');
-
-if (!project_id) {
-  return createResponse(400, errorResponse(400, 'Project ID is required'));
-}
-
-// Validate query parameters using Zod
-let validatedParams: { project_id: string };
-try {
-  validatedParams = exportRequestSchema.parse({ project_id });
-} catch (error) {
-  if (error instanceof z.ZodError) {
-    const issue = error.issues[0];
-    return createResponse(
-      400,
-      errorResponse(400, issue.message, {
-        constraint: 'validation',
-        field: issue.path.join('.'),
-      })
-    );
-  }
-  return createResponse(400, errorResponse(400, 'Request validation failed'));
-}
-
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('[export-translations] Missing Supabase configuration');
-  return createResponse(500, errorResponse(500, 'Service configuration error'));
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-```
+- Parse `project_id` from the URL; return `400` with `EXPORT_ERROR_MESSAGES.PROJECT_ID_REQUIRED` when missing.
+- Validate using `exportRequestSchema`; map the first Zod issue to `ApiErrorResponse` with `400`.
+- Initialize Supabase via `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; return `500` on misconfiguration.
 
 ### Step 4: Implement Authentication & Authorization
 
-Add JWT token validation following the established pattern:
-
-```typescript
-// Extract and verify authorization
-const authHeader = req.headers.get('Authorization');
-if (!authHeader?.startsWith('Bearer ')) {
-  return createResponse(401, errorResponse(401, 'Missing or invalid authorization'));
-}
-
-const token = authHeader.slice(7);
-
-// Verify JWT and get user ID
-const {
-  data: { user },
-  error: authError,
-} = await supabase.auth.getUser(token);
-
-if (authError || !user) {
-  return createResponse(401, errorResponse(401, 'Invalid or expired token'));
-}
-
-const userId = user.id;
-```
+- Read `Authorization` header with `Bearer` token; return `401` for missing/invalid header.
+- Verify token via `supabase.auth.getUser(token)`; extract `user.id` or return `401` on error/expired token.
 
 ### Step 5: Implement Data Retrieval
 
-Add database queries for project verification and translations data:
-
-```typescript
-// ==========================================================================
-// Project Validation & Data Retrieval
-// ==========================================================================
-
-// 1. Verify project ownership and get project details
-const { data: project, error: projectError } = await supabase
-  .from('projects')
-  .select('id, name')
-  .eq('id', validatedParams.project_id)
-  .eq('owner_user_id', userId)
-  .maybeSingle();
-
-if (projectError) {
-  console.error('[export-translations] Project fetch error:', projectError);
-  return createResponse(500, errorResponse(500, 'Database operation failed'));
-}
-
-if (!project) {
-  return createResponse(404, errorResponse(404, 'Project not found or access denied'));
-}
-
-// 2. Get all project locales
-const { data: locales, error: localesError } = await supabase
-  .from('project_locales')
-  .select('locale')
-  .eq('project_id', validatedParams.project_id)
-  .order('locale');
-
-if (localesError) {
-  console.error('[export-translations] Locales fetch error:', localesError);
-  return createResponse(500, errorResponse(500, 'Failed to fetch project locales'));
-}
-
-if (!locales || locales.length === 0) {
-  console.warn('[export-translations] No locales found for project:', validatedParams.project_id);
-  return createResponse(404, errorResponse(404, 'No locales found for project'));
-}
-
-// 3. Get translations for each locale
-const translationsData: ExportTranslationsData = {};
-
-for (const { locale } of locales) {
-  const { data: translations, error: translationsError } = await supabase
-    .from('keys')
-    .select(
-      `
-      full_key,
-      translations!left(value)
-    `
-    )
-    .eq('project_id', validatedParams.project_id)
-    .eq('translations.locale', locale)
-    .order('full_key');
-
-  if (translationsError) {
-    console.error(`[export-translations] Translations fetch error for locale ${locale}:`, translationsError);
-    return createResponse(500, errorResponse(500, `Failed to fetch translations for locale ${locale}`));
-  }
-
-  // Build flat JSON object for this locale
-  translationsData[locale] = {};
-  for (const row of translations || []) {
-    // Handle both cases: translation exists (row.translations[0]) or doesn't exist (null)
-    const translationValue = row.translations?.[0]?.value || '';
-    translationsData[locale][row.full_key] = translationValue;
-  }
-}
-```
+- Verify project ownership and read `project.name`; return `404` if not found or not owned by the user.
+- Select all project locales ordered by code; return `404` if none exist.
+- Per locale, fetch `full_key` and translation `value` in one joined query; build flat `ExportedTranslations` with empty string for missing values.
 
 ### Step 6: Add ZIP Library Import
 
-First, update the imports at the top of the file to include JSZip:
-
-```typescript
-import { createClient } from '@supabase/supabase-js';
-import { z } from 'zod';
-import JSZip from 'jszip';
-```
+- Import `jszip` and initialize a `JSZip` instance for in-memory archive creation.
 
 ### Step 7: Implement ZIP Generation
 
 Add ZIP creation and response streaming after data retrieval:
 
-```typescript
-// ==========================================================================
-// ZIP Generation & Response
-// ==========================================================================
-
-try {
-  // Create ZIP archive
-  const zip = new JSZip();
-
-  // Add JSON files for each locale
-  for (const [locale, translations] of Object.entries(translationsData)) {
-    // Sort keys alphabetically for consistent output
-    const sortedTranslations: ExportedTranslations = {};
-    Object.keys(translations)
-      .sort()
-      .forEach((key) => {
-        sortedTranslations[key] = translations[key];
-      });
-
-    const jsonContent = JSON.stringify(sortedTranslations, null, 2);
-    zip.file(`${locale}.json`, jsonContent);
-  }
-
-  // Generate ZIP file
-  const zipBuffer = await zip.generateAsync({
-    type: 'uint8array',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 6 },
-  });
-
-  // Create filename with timestamp
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  const sanitizedProjectName = project.name.replace(/[^a-zA-Z0-9-_]/g, '_');
-  const filename = `project-${sanitizedProjectName}-${timestamp}.zip`;
-
-  // Return ZIP file
-  return createResponse(200, zipBuffer, {
-    'Content-Type': 'application/zip',
-    'Content-Disposition': `attachment; filename="${filename}"`,
-  });
-} catch (zipError) {
-  console.error('[export-translations] ZIP generation error:', zipError);
-  return createResponse(500, errorResponse(500, 'Failed to generate export file'));
-}
-```
+- Add `{locale}.json` entries to the archive with alphabetically sorted keys and UTF‑8 JSON content.
+- Generate a ZIP buffer and return `200` with `Content-Type: application/zip` and `Content-Disposition` filename `project-{name}-{timestamp}.zip`.
 
 ### Step 8: Create Frontend Export Hook
 
-Create `src/features/export/api/useExportTranslations/useExportTranslations.ts`:
-
-```typescript
-import { useMutation } from '@tanstack/react-query';
-
-import type { ApiErrorResponse } from '@/shared/types';
-
-import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { createApiErrorResponse } from '@/shared/utils';
-
-import { createEdgeFunctionErrorResponse } from '../export.errors';
-import { EXPORT_TRANSLATIONS_SCHEMA } from '../export.schemas';
-
-/**
- * Export project translations as ZIP file
- *
- * Triggers download of ZIP archive containing JSON files for each locale.
- * Uses browser download API to save file with auto-generated filename.
- *
- * @param projectId - UUID of the project to export
- * @throws {ApiErrorResponse} 400 - Invalid project ID format
- * @throws {ApiErrorResponse} 401 - Authentication required
- * @throws {ApiErrorResponse} 404 - Project not found or access denied
- * @throws {ApiErrorResponse} 500 - Export generation failed
- * @returns TanStack Query mutation hook for exporting translations
- */
-export function useExportTranslations(projectId: string) {
-  const supabase = useSupabase();
-
-  return useMutation<unknown, ApiErrorResponse>({
-    mutationFn: async () => {
-      const { project_id } = EXPORT_TRANSLATIONS_SCHEMA.parse({ project_id: projectId });
-
-      // get current session for authentication
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw createApiErrorResponse(401, 'Authentication required');
-      }
-
-      // get supabase configuration from environment
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        throw createApiErrorResponse(500, 'Supabase configuration missing');
-      }
-
-      // call edge function with authenticated fetch
-      const functionUrl = `${supabaseUrl}/functions/v1/export-translations?project_id=${project_id}`;
-
-      const response = await fetch(functionUrl, {
-        headers: {
-          apikey: supabaseAnonKey,
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        if (response.headers.get('content-type')?.includes('application/json')) {
-          const errorData = await response.json();
-          throw createEdgeFunctionErrorResponse(
-            errorData.error?.message || 'Export generation failed',
-            response.status,
-            'useExportTranslations'
-          );
-        }
-        throw createEdgeFunctionErrorResponse('Export generation failed', response.status, 'useExportTranslations');
-      }
-
-      // handle successful zip response
-      const blob = await response.blob();
-
-      // extract filename from content-disposition header or generate fallback
-      let filename = `export-${projectId}-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.zip`;
-      const contentDisposition = response.headers.get('Content-Disposition');
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
-        }
-      }
-
-      // trigger browser download
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    },
-  });
-}
-```
+- Implement `src/features/export/api/useExportTranslations/useExportTranslations.ts` exposing `useExportTranslations(projectId)` as a mutation.
+- Validate with `EXPORT_TRANSLATIONS_SCHEMA`, get session via `useSupabase`, and call the Edge Function with `Authorization` and `apikey` headers.
+- On success, read the ZIP `Blob`, derive filename from `Content-Disposition` (fallback uses `projectId` + timestamp), and trigger a browser download.
+- On failure, parse JSON errors when present and throw via `createEdgeFunctionErrorResponse` mapped to `ApiErrorResponse`.
 
 ### Step 9: Write Unit Tests
 
