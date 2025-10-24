@@ -18,6 +18,7 @@ Before we begin, review the following information:
 3. Type definitions (check every type):
 
    <type_definitions>
+   [Index](../../src/shared/types/index.ts)
    [Database types](../../src/shared/types/database.types.ts)
    [Type Definitions](../../src/shared/types/types.ts)
    </type_definitions>
