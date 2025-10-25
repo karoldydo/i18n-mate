@@ -34,6 +34,12 @@ const KeysPerLanguagePage = lazy(() =>
   }))
 );
 
+const TranslationJobsPage = lazy(() =>
+  import('../features/translation-jobs/routes/TranslationJobsPage').then((module) => ({
+    default: module.TranslationJobsPage,
+  }))
+);
+
 const router = createBrowserRouter([
   {
     Component: App,
@@ -58,6 +64,10 @@ const router = createBrowserRouter([
   {
     Component: KeysPerLanguagePage,
     path: '/projects/:projectId/keys/:locale',
+  },
+  {
+    Component: TranslationJobsPage,
+    path: '/projects/:id/translation-jobs',
   },
 ]);
 
