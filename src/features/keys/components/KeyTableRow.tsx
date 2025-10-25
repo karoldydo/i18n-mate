@@ -6,33 +6,46 @@ import { Button } from '@/shared/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
 import { TableCell, TableRow } from '@/shared/ui/table';
 
-import { ValueCell } from './ValueCell';
+import { TranslationValueCell } from './TranslationValueCell';
 
 interface KeyTableRowProps {
+  editError?: string;
   isEditing: boolean;
+  isSaving: boolean;
   keyData: KeyDefaultViewResponse;
   onDelete: () => void;
-  onEditCancel: () => void;
-  onEditSave: (newValue: string) => void;
+  onEditEnd: () => void;
   onEditStart: () => void;
+  onValueChange: (newValue: string) => void;
 }
 
 /**
  * KeyTableRow - Individual table row representing a single key with inline editing
  *
- * Displays key name, editable value cell, missing count, and action menu.
- * Supports inline editing for values with save/cancel actions.
+ * Displays key name, editable value cell with autosave, missing count, and action menu.
+ * Supports inline editing for values with autosave functionality.
  */
-export function KeyTableRow({ isEditing, keyData, onDelete, onEditCancel, onEditSave, onEditStart }: KeyTableRowProps) {
+export function KeyTableRow({
+  editError,
+  isEditing,
+  isSaving,
+  keyData,
+  onDelete,
+  onEditEnd,
+  onEditStart,
+  onValueChange,
+}: KeyTableRowProps) {
   return (
     <TableRow>
       <TableCell className="font-mono text-sm">{keyData.full_key}</TableCell>
       <TableCell>
-        <ValueCell
+        <TranslationValueCell
+          error={editError}
           isEditing={isEditing}
-          onCancel={onEditCancel}
+          isSaving={isSaving}
+          onEditEnd={onEditEnd}
           onEditStart={onEditStart}
-          onSave={onEditSave}
+          onValueChange={onValueChange}
           value={keyData.value}
         />
       </TableCell>

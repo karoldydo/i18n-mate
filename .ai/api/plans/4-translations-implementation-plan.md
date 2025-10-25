@@ -75,7 +75,7 @@ The Translations API provides operations for managing translation values for spe
 ### 3.1 Existing Types
 
 - Import via `@/shared/types` or feature-specific `@/shared/types/translations` depending on usage.
-- `TranslationResponse` models a translation row; `UpdateTranslationRequest` includes editable fields (`is_machine_translated`, `updated_by_user_id`, `updated_source`, `value`).
+- `TranslationResponse` models a translation row; `UpdateTranslationRequest` includes all parameters (`project_id`, `key_id`, `locale`) and editable fields (`is_machine_translated`, `updated_by_user_id`, `updated_source`, `value`).
 - Supabase-generated `Translation` and `TranslationUpdate` mirror the `translations` table for reads and partial updates.
 - Error wrappers (`ApiErrorResponse`, `ValidationErrorResponse`, `ConflictErrorResponse`) provide a consistent error envelope across the feature.
 
@@ -84,7 +84,9 @@ The Translations API provides operations for managing translation values for spe
 - `TRANSLATION_VALUE_SCHEMA` enforces trimming, max length, and no-newline rules consistent with DB triggers.
 - `LOCALE_CODE_SCHEMA` validates BCP-47; `PROJECT_ID_SCHEMA`, `KEY_ID_SCHEMA`, `USER_ID_SCHEMA` validate UUIDs.
 - `UPDATE_SOURCE_SCHEMA` restricts values to `user` or `system` via `TRANSLATIONS_UPDATE_SOURCE_VALUES`.
-- `GET_TRANSLATION_QUERY_SCHEMA` guards `project_id`, `key_id`, `locale`; `UPDATE_TRANSLATION_REQUEST_SCHEMA` validates PATCH body.
+- `GET_TRANSLATION_QUERY_SCHEMA` guards `project_id`, `key_id`, `locale`.
+- `UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA` validates only the PATCH body fields (editable fields without URL params).
+- `UPDATE_TRANSLATION_REQUEST_SCHEMA` validates the full update request including all parameters (`project_id`, `key_id`, `locale`, optional `updated_at`) and body fields.
 - `UPDATE_TRANSLATION_QUERY_SCHEMA` adds optional `updated_at`; `TRANSLATION_RESPONSE_SCHEMA` runtime-validates response payloads.
 
 ## 4. Response Details
@@ -221,19 +223,19 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ### 5.2 Update Translation (Inline Edit) Flow
 
-1. User edits translation value in inline editor
-2. `useUpdateTranslation` mutation hook receives new value and metadata
-3. Hook validates data using `UPDATE_TRANSLATION_REQUEST_SCHEMA`
-4. Hook validates query params using `UPDATE_TRANSLATION_QUERY_SCHEMA`
-5. Hook calls Supabase `.update(validatedData).eq('project_id', projectId).eq('key_id', keyId).eq('locale', locale)`
-6. If optimistic locking is enabled, adds `.eq('updated_at', timestamp)` to WHERE clause
-7. Database trigger `trim_translation_value_insert_trigger` auto-trims value and converts empty to NULL
-8. Database trigger `validate_translation_default_locale_insert_trigger` prevents NULL for default locale
-9. RLS policy validates project ownership
-10. If optimistic lock fails (0 rows affected), hook returns 409
-11. If unauthorized or not found, hook returns 404
-12. On success, updated translation data is returned
-13. TanStack Query updates cache with optimistic update
+1. User edits translation value in inline editor with autosave (500ms debounce)
+2. `useUpdateTranslation` mutation hook receives all parameters (`project_id`, `key_id`, `locale`) and new value with metadata in the payload
+3. Hook validates body data using `UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA` (only editable fields)
+4. Hook calls Supabase `.update(validatedData).eq('project_id', projectId).eq('key_id', keyId).eq('locale', locale)`
+5. If optimistic locking is enabled (via optional `updated_at` in payload), adds `.eq('updated_at', timestamp)` to WHERE clause
+6. Database trigger `trim_translation_value_insert_trigger` auto-trims value and converts empty to NULL
+7. Database trigger `validate_translation_default_locale_insert_trigger` prevents NULL for default locale
+8. RLS policy validates project ownership
+9. If optimistic lock fails (0 rows affected), hook returns 409
+10. If unauthorized or not found, hook returns 404
+11. On success, updated translation data is returned
+12. TanStack Query updates cache with optimistic update
+13. Hook invalidates both per-language view cache (`['keys', 'per-language', projectId, locale]`) and default view cache (`['keys', 'default', projectId]`)
 14. Component displays success feedback
 
 ## 6. Security Considerations
@@ -397,8 +399,9 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 **Cache Invalidation:**
 
-- Update translation → invalidate single translation cache
-- Update translation → invalidate per-language key view cache for that locale
+- Update translation → invalidate single translation cache (`TRANSLATIONS_KEYS.detail`)
+- Update translation → invalidate per-language key view cache for that locale (`['keys', 'per-language', projectId, locale]`)
+- Update translation → invalidate default key view cache (`['keys', 'default', projectId]`)
 - Bulk update → invalidate per-language key view cache for target locale
 - Use specific cache keys for fine-grained invalidation
 
@@ -448,7 +451,7 @@ Create `src/features/translations/api/translations.schemas.ts` with all validati
 ### Step 6: Create TanStack Query Hooks
 
 - `useTranslation(projectId, keyId, locale)` validates inputs (`GET_TRANSLATION_QUERY_SCHEMA`), fetches a single row, returns `null` when absent, and caches under `TRANSLATIONS_KEYS.detail`.
-- `useUpdateTranslation(params)` validates query/body (`UPDATE_TRANSLATION_*`), applies optional `updated_at`, performs optimistic cache update with rollback, and invalidates detail and related keys on settle.
+- `useUpdateTranslation()` accepts all parameters in the mutation payload (`project_id`, `key_id`, `locale`, optional `updated_at`, and body fields), validates body using `UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA`, applies optional `updated_at` for optimistic locking, performs optimistic cache update with rollback, and invalidates detail and related key view caches (both per-language and default views) on settle.
 
 ### Step 7: Create API Index File
 

@@ -39,12 +39,24 @@ export const GET_TRANSLATION_QUERY_SCHEMA = z.object({
   project_id: PROJECT_ID_SCHEMA,
 }) satisfies z.ZodType<Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>>;
 
-// update translation request schema
-export const UPDATE_TRANSLATION_REQUEST_SCHEMA = z.object({
+// update translation request body schema (only the body fields, not URL params)
+export const UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA = z.object({
   is_machine_translated: z.boolean(),
   updated_by_user_id: USER_ID_SCHEMA.nullable(),
   updated_source: UPDATE_SOURCE_SCHEMA,
   value: TRANSLATION_VALUE_SCHEMA,
+});
+
+// full update translation request schema (with URL params)
+export const UPDATE_TRANSLATION_REQUEST_SCHEMA = z.object({
+  is_machine_translated: z.boolean(),
+  key_id: KEY_ID_SCHEMA,
+  locale: LOCALE_CODE_SCHEMA,
+  project_id: PROJECT_ID_SCHEMA,
+  updated_at: z.string().datetime().optional(),
+  updated_by_user_id: USER_ID_SCHEMA.nullable(),
+  updated_source: UPDATE_SOURCE_SCHEMA,
+  value: TRANSLATION_VALUE_SCHEMA.nullable(),
 }) satisfies z.ZodType<UpdateTranslationRequest>;
 
 // update translation query schema (with optimistic locking)

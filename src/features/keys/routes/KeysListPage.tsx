@@ -34,7 +34,8 @@ export function KeysListPage() {
   const { projectId } = useParams<keyof RouteParams>();
   const navigate = useNavigate();
   const [editingKeyId, setEditingKeyId] = useState<null | string>(null);
-  const [currentKeyId, setCurrentKeyId] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState<null | string>(null);
   const [addKeyDialogOpen, setAddKeyDialogOpen] = useState(false);
   const [deleteKeyDialogOpen, setDeleteKeyDialogOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<KeyDefaultViewResponse | null>(null);
@@ -64,11 +65,7 @@ export function KeysListPage() {
   });
 
   // mutation for updating translation values
-  const updateTranslationMutation = useUpdateTranslation({
-    keyId: currentKeyId,
-    locale: project?.default_locale || '',
-    projectId: validProjectId,
-  });
+  const updateTranslationMutation = useUpdateTranslation();
 
   // invalid project ID
   if (!validation.success) {
@@ -126,32 +123,45 @@ export function KeysListPage() {
 
   const totalPages = Math.ceil(keysData.metadata.total / pageSize);
 
-  // handle save edit
+  // handle save edit with autosave
   const handleSaveEdit = (keyId: string, newValue: string) => {
     if (!project?.default_locale) {
       toast.error('Failed to update translation: project default locale not found');
       return;
     }
 
-    setCurrentKeyId(keyId);
+    setIsSaving(true);
 
     updateTranslationMutation.mutate(
       {
         is_machine_translated: false,
-        updated_by_user_id: null, // will be set by the hook
+        key_id: keyId,
+        locale: project.default_locale,
+        project_id: validProjectId,
+        updated_by_user_id: null, // will be set by the backend
         updated_source: 'user',
-        value: newValue,
+        value: newValue || null, // empty string becomes NULL
       },
       {
-        onError: ({ error }) => {
-          toast.error(error.message);
+        onError: ({ error: apiError }) => {
+          setIsSaving(false);
+          setEditError(apiError.message);
+          toast.error(apiError.message);
         },
         onSuccess: () => {
+          setIsSaving(false);
+          setEditError(null);
           toast.success('Translation updated successfully');
-          setEditingKeyId(null);
         },
       }
     );
+  };
+
+  // handle edit end (exit edit mode)
+  const handleEditEnd = () => {
+    setEditingKeyId(null);
+    setEditError(null);
+    setIsSaving(false);
   };
 
   // handle delete key
@@ -188,11 +198,13 @@ export function KeysListPage() {
             searchValue={searchValue}
           />
           <KeysDataTable
+            editError={editError ?? undefined}
             editingKeyId={editingKeyId}
             isLoading={isLoading}
+            isSaving={isSaving}
             keys={keysData.data}
             onDeleteKey={handleDeleteKey}
-            onEditCancel={() => setEditingKeyId(null)}
+            onEditEnd={handleEditEnd}
             onEditSave={handleSaveEdit}
             onEditStart={setEditingKeyId}
             onPageChange={setPage}

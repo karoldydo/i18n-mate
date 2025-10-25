@@ -22,8 +22,14 @@ export interface UpdateTranslationParams {
   updatedAt?: string; // ISO 8601 timestamp for optimistic locking
 }
 
-// Update translation request
-export type UpdateTranslationRequest = Pick<
-  TranslationUpdate,
-  'is_machine_translated' | 'updated_by_user_id' | 'updated_source' | 'value'
->;
+// Update translation request with all parameters
+export interface UpdateTranslationRequest {
+  is_machine_translated: boolean;
+  key_id: string;
+  locale: string;
+  project_id: string;
+  updated_at?: string;
+  updated_by_user_id: null | string;
+  updated_source: 'system' | 'user';
+  value: null | string;
+}

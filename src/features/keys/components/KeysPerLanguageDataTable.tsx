@@ -1,19 +1,18 @@
-import type { KeyDefaultViewResponse } from '@/shared/types';
+import type { KeyPerLanguageViewResponse } from '@/shared/types';
 
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 
-import { KeyTableRow } from './KeyTableRow';
+import { KeyTranslationRow } from './KeyTranslationRow';
 import { TablePagination } from './TablePagination';
 
-interface KeysDataTableProps {
+interface KeysPerLanguageDataTableProps {
   editError?: string;
   editingKeyId: null | string;
   isLoading: boolean;
   isSaving: boolean;
-  keys: KeyDefaultViewResponse[];
-  onDeleteKey: (key: KeyDefaultViewResponse) => void;
+  keys: KeyPerLanguageViewResponse[];
   onEditEnd: () => void;
-  onEditSave: (keyId: string, newValue: string) => void;
+  onEditSave: (keyId: string, value: string) => void;
   onEditStart: (keyId: string) => void;
   onPageChange: (page: number) => void;
   pagination: {
@@ -23,30 +22,30 @@ interface KeysDataTableProps {
 }
 
 /**
- * KeysDataTable - Data table displaying keys with pagination and inline editing
+ * KeysPerLanguageDataTable - Data table for per-language keys view
  *
- * Renders a table with columns for key name, default value, and missing count.
- * Supports inline editing of values, pagination navigation, and key deletion.
+ * Displays keys with their translation values and metadata for the selected language.
+ * Supports pagination and inline editing with autosave. Shows translation provenance
+ * (manual vs machine-translated) and timestamps.
  */
-export function KeysDataTable({
+export function KeysPerLanguageDataTable({
   editError,
   editingKeyId,
   isLoading,
   isSaving,
   keys,
-  onDeleteKey,
   onEditEnd,
   onEditSave,
   onEditStart,
   onPageChange,
   pagination,
-}: KeysDataTableProps) {
+}: KeysPerLanguageDataTableProps) {
   // empty state
   if (!isLoading && keys.length === 0) {
     return (
       <div className="border-border rounded-lg border p-12 text-center">
         <p className="text-muted-foreground text-lg">No translation keys found</p>
-        <p className="text-muted-foreground mt-2 text-sm">Get started by adding your first translation key</p>
+        <p className="text-muted-foreground mt-2 text-sm">Try adjusting your search or filters</p>
       </div>
     );
   }
@@ -57,24 +56,22 @@ export function KeysDataTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[35%]">Key</TableHead>
-              <TableHead className="w-[45%]">Default Value</TableHead>
-              <TableHead className="w-[10%]">Missing</TableHead>
-              <TableHead className="w-[10%] text-right">Actions</TableHead>
+              <TableHead className="w-[30%]">Key</TableHead>
+              <TableHead className="w-[50%]">Translation Value</TableHead>
+              <TableHead className="w-[20%]">Metadata</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {keys.map((key) => (
-              <KeyTableRow
-                editError={editingKeyId === key.id ? editError : undefined}
-                isEditing={editingKeyId === key.id}
-                isSaving={editingKeyId === key.id && isSaving}
-                key={key.id}
+              <KeyTranslationRow
+                editError={editingKeyId === key.key_id ? editError : undefined}
+                isEditing={editingKeyId === key.key_id}
+                isSaving={editingKeyId === key.key_id && isSaving}
+                key={key.key_id ?? undefined}
                 keyData={key}
-                onDelete={() => onDeleteKey(key)}
                 onEditEnd={onEditEnd}
-                onEditStart={() => onEditStart(key.id)}
-                onValueChange={(newValue) => onEditSave(key.id, newValue)}
+                onEditStart={() => onEditStart(key.key_id ?? '')}
+                onValueChange={(value) => onEditSave(key.key_id ?? '', value)}
               />
             ))}
           </TableBody>

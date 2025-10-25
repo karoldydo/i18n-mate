@@ -1,22 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type {
-  ApiErrorResponse,
-  TranslationResponse,
-  UpdateTranslationParams,
-  UpdateTranslationRequest,
-} from '@/shared/types';
+import type { ApiErrorResponse, TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../translations.errors';
 import { TRANSLATIONS_KEYS } from '../translations.key-factory';
-import {
-  TRANSLATION_RESPONSE_SCHEMA,
-  UPDATE_TRANSLATION_QUERY_SCHEMA,
-  UPDATE_TRANSLATION_REQUEST_SCHEMA,
-} from '../translations.schemas';
+import { TRANSLATION_RESPONSE_SCHEMA, UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA } from '../translations.schemas';
 
 /**
  * Context type for mutation callbacks
@@ -26,41 +17,38 @@ interface UpdateTranslationContext {
 }
 
 /**
- * Update a translation value with optimistic locking and optimistic UI updates
+ * Update a translation value with all parameters in payload
  *
- * Updates a single translation record using direct table access with composite
- * primary key matching and optional optimistic locking via updated_at timestamp.
- * Implements optimistic updates for instant UI feedback and proper rollback
- * on error. Validates translation value constraints and prevents empty values
- * for default locale. Triggers cache invalidation for affected views.
+ * Accepts all parameters (projectId, keyId, locale) in the mutation payload
+ * instead of hook initialization. This allows updating different translations
+ * without recreating the hook.
  *
- * @param params - Update parameters and context
- * @param params.projectId - Project UUID for the translation (required)
- * @param params.keyId - Translation key UUID (required)
- * @param params.locale - Target locale code in BCP-47 format (required)
- * @param params.updatedAt - ISO 8601 timestamp for optimistic locking (optional)
- *
- * @throws {ApiErrorResponse} 400 - Validation error (invalid IDs, value constraints, default locale empty)
- * @throws {ApiErrorResponse} 404 - Translation not found
- * @throws {ApiErrorResponse} 409 - Optimistic lock failure (translation modified by another user)
- * @throws {ApiErrorResponse} 500 - Database error during update
- *
- * @returns TanStack Query mutation hook for updating translations with optimistic updates
+ * @returns TanStack Query mutation hook for updating translations
  */
-export function useUpdateTranslation(params: UpdateTranslationParams) {
+export function useUpdateTranslation() {
   const supabase = useSupabase();
   const queryClient = useQueryClient();
 
   return useMutation<TranslationResponse, ApiErrorResponse, UpdateTranslationRequest, UpdateTranslationContext>({
     mutationFn: async (payload) => {
-      const { key_id, locale, project_id, updated_at } = UPDATE_TRANSLATION_QUERY_SCHEMA.parse({
-        key_id: params.keyId,
-        locale: params.locale,
-        project_id: params.projectId,
-        updated_at: params.updatedAt,
-      });
+      const {
+        is_machine_translated,
+        key_id,
+        locale,
+        project_id,
+        updated_at,
+        updated_by_user_id,
+        updated_source,
+        value,
+      } = payload;
 
-      const body = UPDATE_TRANSLATION_REQUEST_SCHEMA.parse(payload);
+      // validate the update request body
+      const body = UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA.parse({
+        is_machine_translated,
+        updated_by_user_id,
+        updated_source,
+        value,
+      });
 
       let query = supabase
         .from('translations')
@@ -91,59 +79,70 @@ export function useUpdateTranslation(params: UpdateTranslationParams) {
 
       return TRANSLATION_RESPONSE_SCHEMA.parse(data);
     },
-    onError: (_err, _newData, context) => {
+    onError: (_err, payload, context) => {
       // rollback on error
       if (context?.previousTranslation !== undefined) {
         queryClient.setQueryData(
-          TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
+          TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale),
           context.previousTranslation
         );
       }
     },
-    onMutate: async (newData) => {
+    onMutate: async (payload) => {
       // cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
+        queryKey: TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale),
       });
 
       // snapshot previous value
       const previousTranslation = queryClient.getQueryData<null | TranslationResponse>(
-        TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale)
+        TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale)
       );
 
       // optimistically update
       queryClient.setQueryData(
-        TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
+        TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale),
         (old: null | TranslationResponse) => {
           // if no previous translation, create new one with optimistic data
           if (!old) {
             return {
-              key_id: params.keyId,
-              locale: params.locale,
-              project_id: params.projectId,
+              is_machine_translated: payload.is_machine_translated,
+              key_id: payload.key_id,
+              locale: payload.locale,
+              project_id: payload.project_id,
               updated_at: new Date().toISOString(),
-              ...newData,
+              updated_by_user_id: payload.updated_by_user_id,
+              updated_source: payload.updated_source,
+              value: payload.value,
             } as TranslationResponse;
           }
 
           return {
             ...old,
-            ...newData,
+            is_machine_translated: payload.is_machine_translated,
             updated_at: new Date().toISOString(),
+            updated_by_user_id: payload.updated_by_user_id,
+            updated_source: payload.updated_source,
+            value: payload.value,
           };
         }
       );
 
       return { previousTranslation };
     },
-    onSettled: () => {
+    onSettled: (_data, _error, payload) => {
       // refetch to ensure consistency
       queryClient.invalidateQueries({
-        queryKey: TRANSLATIONS_KEYS.detail(params.projectId, params.keyId, params.locale),
+        queryKey: TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale),
       });
-      // also invalidate key lists that show this translation
+      // invalidate key lists that show this translation
+      // per-language view
       queryClient.invalidateQueries({
-        queryKey: ['keys', 'per-language', params.projectId, params.locale],
+        queryKey: ['keys', 'per-language', payload.project_id, payload.locale],
+      });
+      // default view (if updating default locale)
+      queryClient.invalidateQueries({
+        queryKey: ['keys', 'default', payload.project_id],
       });
     },
   });
