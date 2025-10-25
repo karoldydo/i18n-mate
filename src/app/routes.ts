@@ -40,6 +40,12 @@ const TranslationJobsPage = lazy(() =>
   }))
 );
 
+const ProjectTelemetryPage = lazy(() =>
+  import('../features/telemetry/routes/ProjectTelemetryPage').then((module) => ({
+    default: module.ProjectTelemetryPage,
+  }))
+);
+
 const router = createBrowserRouter([
   {
     Component: App,
@@ -68,6 +74,10 @@ const router = createBrowserRouter([
   {
     Component: TranslationJobsPage,
     path: '/projects/:id/translation-jobs',
+  },
+  {
+    Component: ProjectTelemetryPage,
+    path: '/projects/:id/telemetry',
   },
 ]);
 
