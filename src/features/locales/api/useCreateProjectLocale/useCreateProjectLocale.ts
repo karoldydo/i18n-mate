@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import type { ApiErrorResponse, CreateProjectLocaleRequest, CreateProjectLocaleResponse } from '@/shared/types';
 
@@ -7,7 +7,6 @@ import { LOCALE_NORMALIZATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createAtomicLocaleErrorResponse } from '../locales.errors';
-import { LOCALES_KEYS } from '../locales.key-factory';
 import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } from '../locales.schemas';
 
 /**
@@ -41,7 +40,6 @@ import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } f
  */
 export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
   return useMutation<CreateProjectLocaleResponse, ApiErrorResponse, Omit<CreateProjectLocaleRequest, 'p_project_id'>>({
     mutationFn: async (payload) => {
@@ -68,10 +66,6 @@ export function useCreateProjectLocale(projectId: string) {
       }
 
       return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
-    },
-    onSuccess: () => {
-      // invalidate project locales list cache
-      queryClient.invalidateQueries({ queryKey: LOCALES_KEYS.list(projectId) });
     },
     // enhanced retry logic for atomic operations
     retry: (failureCount, error) => {

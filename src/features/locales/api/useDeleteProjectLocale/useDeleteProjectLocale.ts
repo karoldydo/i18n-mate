@@ -1,11 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import type { ApiErrorResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../locales.errors';
-import { LOCALES_KEYS } from '../locales.key-factory';
 import { UUID_SCHEMA } from '../locales.schemas';
 
 /**
@@ -20,17 +19,14 @@ import { UUID_SCHEMA } from '../locales.schemas';
  * 2. CASCADE delete all translation records for this locale
  * 3. Remove locale record
  *
- * @param projectId - UUID of the project containing the locale
- *
  * @throws {ApiErrorResponse} 400 - Validation error (attempt to delete default locale)
  * @throws {ApiErrorResponse} 404 - Locale not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during deletion
  *
  * @returns TanStack Query mutation hook for deleting locales with cascade operations
  */
-export function useDeleteProjectLocale(projectId: string) {
+export function useDeleteProjectLocale() {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (uuid) => {
@@ -41,10 +37,6 @@ export function useDeleteProjectLocale(projectId: string) {
       if (error) {
         throw createDatabaseErrorResponse(error, 'useDeleteProjectLocale', 'Failed to delete locale');
       }
-    },
-    onSuccess: () => {
-      // invalidate project locales list cache
-      queryClient.invalidateQueries({ queryKey: LOCALES_KEYS.list(projectId) });
     },
   });
 }

@@ -539,7 +539,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ### Step 1: Create Feature Directory Structure
 
-- Create `src/features/projects/api` to host schemas, hooks, key factory, and error utilities.
+- Create `src/features/projects/api` to host schemas, hooks, and error utilities.
 
 ### Step 2: Create Projects Constants
 
@@ -560,13 +560,7 @@ This module provides centralized error handling utilities used by all TanStack Q
 
 **Note:** The `createApiErrorResponse()` factory function is defined in `src/shared/utils/index.ts` as a shared utility for creating standardized API error responses across the entire application.
 
-### Step 5: Create Query Keys Factory
-
-Create `src/features/projects/api/projects.key-factory.ts`:
-
-- Expose structured keys: `all`, `lists`, `list(params)`, `details`, and `detail(id)` for consistent query identification.
-
-### Step 6: Create TanStack Query Hooks
+### Step 5: Create TanStack Query Hooks
 
 **Implementation Notes:**
 
@@ -581,20 +575,20 @@ Planned hooks summary:
 - useUpdateProject: validate UUID and input, call update, map DB errors, ensure data present, validate response.
 - useDeleteProject: validate UUID, delete by id, map 404 when nothing deleted.
 
-### Step 7: Create API Index File
+### Step 6: Create API Index File
 
 Create `src/features/projects/api/index.ts`:
 
-- Barrel export error utilities, key factory, schemas, and hooks to simplify consumer imports and keep tree‑shaking effective.
+- Barrel export error utilities, schemas, and hooks to simplify consumer imports and keep tree‑shaking effective.
 
 **Organization:**
 
-- Error utilities and key factory are exported explicitly for reuse
+- Error utilities are exported explicitly for reuse
 - Schemas and hooks are re-exported wholesale to simplify imports
 - Hook directories expose `index.ts` files so the API barrel can use `export *` form
 - Flat export list keeps tree-shaking effective while avoiding comment clutter
 
-### Step 7.1: Expose Feature Barrel
+### Step 6.1: Expose Feature Barrel
 
 Create `src/features/projects/index.ts` to provide a single entry point:
 
@@ -602,7 +596,7 @@ Create `src/features/projects/index.ts` to provide a single entry point:
 
 This keeps consumer imports concise (`import { useProjects } from '@/features/projects';`) while delegating module structure to the API index.
 
-### Step 8: Write Unit Tests
+### Step 7: Write Unit Tests
 
 **Testing Strategy:**
 

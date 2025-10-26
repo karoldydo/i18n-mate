@@ -18,8 +18,8 @@ import { useDeleteProjectLocale } from '../api/useDeleteProjectLocale';
 interface DeleteLocaleDialogProps {
   locale: null | ProjectLocaleWithDefault;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
   open: boolean;
-  projectId: string;
 }
 
 /**
@@ -28,8 +28,8 @@ interface DeleteLocaleDialogProps {
  * Displays locale code and warning about cascading deletion of all translations.
  * Default locale cannot be deleted (should be prevented at UI level).
  */
-export function DeleteLocaleDialog({ locale, onOpenChange, open, projectId }: DeleteLocaleDialogProps) {
-  const deleteLocale = useDeleteProjectLocale(projectId);
+export function DeleteLocaleDialog({ locale, onOpenChange, onSuccess, open }: DeleteLocaleDialogProps) {
+  const deleteLocale = useDeleteProjectLocale();
 
   const handleDelete = () => {
     if (!locale) return;
@@ -41,6 +41,7 @@ export function DeleteLocaleDialog({ locale, onOpenChange, open, projectId }: De
       onSuccess: () => {
         toast.success('Language deleted successfully');
         onOpenChange(false);
+        onSuccess?.();
       },
     });
   };

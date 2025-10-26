@@ -343,8 +343,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
     ```
 
 11. On success, new locale data is returned
-12. TanStack Query invalidates project locales cache
-13. Component displays success message and updated locale list
+12. Component displays success message and updated locale list
 
 ### 5.3 Update Locale Label Flow
 
@@ -357,8 +356,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 7. If unauthorized or not found, Supabase returns empty result → hook returns 404
 8. Database trigger `update_project_locales_updated_at` updates `updated_at` timestamp
 9. On success, updated locale data is returned
-10. TanStack Query updates cache and invalidates related queries via `LOCALES_KEYS`
-11. Component displays success message
+10. Component displays success message
 
 ### 5.4 Delete Locale Flow
 
@@ -374,8 +372,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 8. PostgreSQL CASCADE DELETE removes all related data:
    - `translations` rows for this locale
 9. On success, Supabase returns 204 No Content
-10. TanStack Query invalidates project locales cache via `LOCALES_KEYS`
-11. Component displays success message and updated locale list
+10. Component displays success message and updated locale list
 
 ## 6. Security Considerations
 
@@ -544,23 +541,20 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ### 8.2 Caching Strategy
 
-**TanStack Query Configuration:**
+**Simplified Approach:**
 
-- Lists: set `staleTime` ≈ 10 minutes and `gcTime` ≈ 30 minutes for low-churn data.
-- Single-locale: use `staleTime` ≈ 15 minutes; same `gcTime` heuristic as lists.
+The implementation uses a simplified caching strategy without structured query key factories or manual cache invalidation. Each query uses simple, hardcoded query keys that enable automatic cache management by TanStack Query.
 
-**Cache Invalidation:**
+**Query Keys:**
 
-- Add locale → invalidate project locales list cache
-- Update locale → invalidate project locales list cache and single locale cache (if exists)
-- Delete locale → invalidate project locales list cache and remove from query cache
+- Project locales list: `['project-locales', projectId]`
+- Uses default TanStack Query caching behavior with standard staleTime and gcTime values
 
 ### 8.3 Optimistic Updates
 
-**Update Locale Label:**
+**Simplified Approach:**
 
-- Use `onMutate` to snapshot and apply temporary `label` updates, with `onError` rollback and `onSettled` invalidation.
-- Keep logic minimal; always revalidate by invalidating `LOCALES_KEYS.list(projectId)` after settle.
+Optimistic updates have been removed to simplify the implementation. All mutations rely on server confirmation before updating the UI, ensuring data consistency without complex rollback logic.
 
 ### 8.4 Database Performance
 
@@ -607,55 +601,46 @@ Create `src/features/locales/api/locales.errors.ts`:
 - Provide `createDatabaseErrorResponse` to normalize Postgres errors: map `23505` → 409, `23514` → 400, `23503` → 404, triggers → 400.
 - Use `createApiErrorResponse` for generic 500s with safe fallback; accept optional `context` for structured logs.
 
-### Step 5: Create Query Keys Factory
+### Step 5: Simplified Caching Approach
 
-Create `src/features/locales/api/locales.key-factory.ts`:
-
-- Expose `all`, `lists`, `list(projectId)`, `details`, and `detail(id)` to standardize cache keys.
-- Keep key parts stable and ordered for consistent invalidation across hooks.
-
-**Note:** Properties are ordered alphabetically for consistency and easier code navigation.
+The implementation uses simple, hardcoded query keys without a structured key factory. This simplifies the codebase while maintaining effective caching through TanStack Query's default behavior.
 
 ### Step 6: Create TanStack Query Hooks
 
 **Implementation Notes:**
 
 - All hooks follow TanStack Query best practices with proper error handling
-- Use optimistic updates for better UX in mutation hooks
-- Implement cache invalidation with `LOCALES_KEYS` to target list/detail scopes
+- Use simple, hardcoded query keys for caching
 - Include TypeScript generics for type safety and locale normalization
 
 **6.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.ts`:**
 
 - Validate `projectId` with `LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA`, call RPC `list_project_locales_with_default`, parse with `PROJECT_LOCALE_WITH_DEFAULT_SCHEMA`.
-- Configure `queryKey` via `LOCALES_KEYS.list(projectId)` with `staleTime` ≈ 10m and `gcTime` ≈ 30m.
+- Use simple query key `['project-locales', projectId]` with default TanStack Query caching behavior.
 
 **6.2 Create `src/features/locales/api/useCreateProjectLocale/useCreateProjectLocale.ts`:**
 
 - Normalize `p_locale` via `LOCALE_NORMALIZATION.normalize`, validate payload with `CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA`, call RPC, parse with `PROJECT_LOCALE_RESPONSE_SCHEMA`.
-- On success invalidate `LOCALES_KEYS.list(projectId)`; implement exponential backoff retry logic for transient fan-out issues (up to 2 retries for `FANOUT_INCOMPLETE`, 1 retry for `FANOUT_VERIFICATION_FAILED`), skip retries for authentication/authorization/conflict errors (401/403/404/409).
+- Implement exponential backoff retry logic for transient fan-out issues (up to 2 retries for `FANOUT_INCOMPLETE`, 1 retry for `FANOUT_VERIFICATION_FAILED`), skip retries for authentication/authorization/conflict errors (401/403/404/409).
 
 **6.3 Create `src/features/locales/api/useUpdateProjectLocale/useUpdateProjectLocale.ts`:**
 
 - Validate `localeId` with `UUID_SCHEMA` and payload with `UPDATE_PROJECT_LOCALE_SCHEMA`; update by `id` and parse with `PROJECT_LOCALE_RESPONSE_SCHEMA`.
-- Optionally apply optimistic UI for `label` changes with snapshot/rollback; always invalidate `LOCALES_KEYS.list(projectId)` on settle.
 
 **6.4 Create `src/features/locales/api/useDeleteProjectLocale/useDeleteProjectLocale.ts`:**
 
 - Validate `uuid` with `UUID_SCHEMA`, perform delete, and map DB errors with `createDatabaseErrorResponse`.
-- Invalidate `LOCALES_KEYS.list(projectId)` on success to refresh list data.
 
 ### Step 7: Create API Index File
 
 Create `src/features/locales/api/index.ts`:
 
-- Export `createAtomicLocaleErrorResponse`, `createDatabaseErrorResponse`, `LOCALES_KEYS`, all schemas, and hooks.
+- Export `createAtomicLocaleErrorResponse`, `createDatabaseErrorResponse`, all schemas, and hooks.
 - Re-export `LOCALE_NORMALIZATION` from shared constants for consumers needing client-side normalization.
 
 **Organization:**
 
 - Error utilities exported together for reuse
-- Query key factory centralized via `LOCALES_KEYS`
 - Validation schemas barrel-exported for consistent imports
 - Hook folders expose index barrels so top-level exports can use `export *`
 - Locale normalization helper re-exported for API consumers
@@ -713,5 +698,4 @@ Test scenarios:
 - Attempt to delete default locale (400 - trigger prevents)
 - Invalid UUID format
 - Locale not found (404)
-- Verify cache invalidation
 - Verify cascade delete of translations

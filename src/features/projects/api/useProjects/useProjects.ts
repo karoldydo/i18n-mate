@@ -6,7 +6,6 @@ import type { ApiErrorResponse, ListProjectsParams, ProjectListResponse } from '
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
 import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.schemas';
 
 /**
@@ -55,6 +54,6 @@ export function useProjects(params: ListProjectsParams = {}) {
         },
       };
     },
-    queryKey: PROJECTS_KEY_FACTORY.list(params),
+    queryKey: ['projects', 'list', params],
   });
 }

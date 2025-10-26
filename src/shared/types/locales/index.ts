@@ -47,10 +47,5 @@ export type ProjectLocaleWithDefault = ProjectLocaleResponse & {
   is_default: boolean;
 };
 
-// Mutation context for optimistic updates when updating a locale
-export interface UpdateProjectLocaleContext {
-  previousLocales?: ProjectLocaleWithDefault[];
-}
-
 // Only label is mutable
 export type UpdateProjectLocaleRequest = Pick<ProjectLocaleUpdate, 'label'>;

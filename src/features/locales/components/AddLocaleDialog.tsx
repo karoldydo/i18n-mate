@@ -16,6 +16,7 @@ import { useCreateProjectLocale } from '../api/useCreateProjectLocale';
 
 interface AddLocaleDialogProps {
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
   open: boolean;
   projectId: string;
 }
@@ -26,7 +27,7 @@ interface AddLocaleDialogProps {
  * Provides form with BCP-47 validation for locale code and label length validation.
  * Uses LocaleSelector dropdown for common primary language subtags.
  */
-export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDialogProps) {
+export function AddLocaleDialog({ onOpenChange, onSuccess, open, projectId }: AddLocaleDialogProps) {
   const createLocale = useCreateProjectLocale(projectId);
 
   const form = useForm<CreateProjectLocaleRequest>({
@@ -54,6 +55,7 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
         toast.success('Language added successfully');
         form.reset();
         onOpenChange(false);
+        onSuccess?.();
       },
     });
   };

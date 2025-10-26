@@ -7,7 +7,6 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
 import { PROJECT_RESPONSE_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
 
 /**
@@ -48,6 +47,6 @@ export function useProject(projectId: string) {
 
       return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
-    queryKey: PROJECTS_KEY_FACTORY.detail(projectId),
+    queryKey: ['projects', 'detail', projectId],
   });
 }

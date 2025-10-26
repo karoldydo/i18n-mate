@@ -7,7 +7,6 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../locales.errors';
-import { LOCALES_KEYS } from '../locales.key-factory';
 import { LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA, PROJECT_LOCALE_WITH_DEFAULT_SCHEMA } from '../locales.schemas';
 
 /**
@@ -30,7 +29,6 @@ export function useProjectLocales(projectId: string) {
   const supabase = useSupabase();
 
   return useQuery<ProjectLocaleWithDefault[], ApiErrorResponse>({
-    gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
       const { p_project_id } = LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA.parse({ p_project_id: projectId });
 
@@ -47,7 +45,6 @@ export function useProjectLocales(projectId: string) {
       // runtime validation of response data
       return z.array(PROJECT_LOCALE_WITH_DEFAULT_SCHEMA).parse(data);
     },
-    queryKey: LOCALES_KEYS.list(projectId),
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    queryKey: ['project-locales', projectId],
   });
 }

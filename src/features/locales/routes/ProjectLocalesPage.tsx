@@ -56,7 +56,7 @@ export function ProjectLocalesPage() {
     [navigate, validProjectId]
   );
 
-  const { data: locales, error, isError, isLoading } = useProjectLocales(validProjectId);
+  const { data: locales, error, isError, isLoading, refetch } = useProjectLocales(validProjectId);
 
   // invalid project ID
   if (!validation.success) {
@@ -140,18 +140,23 @@ export function ProjectLocalesPage() {
       </div>
 
       {/* Dialogs */}
-      <AddLocaleDialog onOpenChange={setAddDialogOpen} open={addDialogOpen} projectId={validProjectId} />
+      <AddLocaleDialog
+        onOpenChange={setAddDialogOpen}
+        onSuccess={() => refetch()}
+        open={addDialogOpen}
+        projectId={validProjectId}
+      />
       <EditLocaleDialog
         locale={selectedLocale}
         onOpenChange={setEditDialogOpen}
+        onSuccess={() => refetch()}
         open={editDialogOpen}
-        projectId={validProjectId}
       />
       <DeleteLocaleDialog
         locale={selectedLocale}
         onOpenChange={setDeleteDialogOpen}
+        onSuccess={() => refetch()}
         open={deleteDialogOpen}
-        projectId={validProjectId}
       />
     </div>
   );

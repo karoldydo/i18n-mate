@@ -16,8 +16,8 @@ import { useUpdateProjectLocale } from '../api/useUpdateProjectLocale';
 interface EditLocaleDialogProps {
   locale: null | ProjectLocaleWithDefault;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
   open: boolean;
-  projectId: string;
 }
 
 /**
@@ -26,8 +26,8 @@ interface EditLocaleDialogProps {
  * Provides form with validation for updating locale labels only.
  * Locale code is immutable after creation.
  */
-export function EditLocaleDialog({ locale, onOpenChange, open, projectId }: EditLocaleDialogProps) {
-  const updateLocale = useUpdateProjectLocale(projectId, locale?.id ?? '');
+export function EditLocaleDialog({ locale, onOpenChange, onSuccess, open }: EditLocaleDialogProps) {
+  const updateLocale = useUpdateProjectLocale(locale?.id ?? '');
 
   const form = useForm<UpdateProjectLocaleRequest>({
     defaultValues: {
@@ -59,6 +59,7 @@ export function EditLocaleDialog({ locale, onOpenChange, open, projectId }: Edit
       onSuccess: () => {
         toast.success('Language updated successfully');
         onOpenChange(false);
+        onSuccess?.();
       },
     });
   };

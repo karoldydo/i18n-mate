@@ -71,7 +71,6 @@ export type {
   ProjectLocaleResponse,
   ProjectLocaleUpdate,
   ProjectLocaleWithDefault,
-  UpdateProjectLocaleContext,
   UpdateProjectLocaleRequest,
 } from './locales';
 
