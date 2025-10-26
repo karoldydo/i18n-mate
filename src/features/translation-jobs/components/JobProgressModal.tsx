@@ -59,7 +59,7 @@ export function JobProgressModal({ isOpen, job, onCancelJob, onOpenChange }: Job
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
                 <p className="text-muted-foreground text-xs">Total</p>
-                <p className="text-lg font-semibold">{job.total_keys}</p>
+                <p className="text-lg font-semibold">{job.total_keys ?? 0}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-xs">Completed</p>

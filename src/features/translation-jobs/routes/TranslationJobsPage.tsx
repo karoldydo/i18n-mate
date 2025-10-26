@@ -1,5 +1,6 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftIcon, Loader2Icon, PlusIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
@@ -32,11 +33,13 @@ interface RouteParams {
 export function TranslationJobsPage() {
   const { id } = useParams<keyof RouteParams>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [pageSize] = useState(20);
   const [progressModalOpen, setProgressModalOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [createJobDialogOpen, setCreateJobDialogOpen] = useState(false);
+  const [jobTotalHints, setJobTotalHints] = useState<Record<string, null | number>>({});
   const [jobToCancel, setJobToCancel] = useState<null | TranslationJobResponse>(null);
   const [progressJob, setProgressJob] = useState<null | TranslationJobResponse>(null);
   const lastActiveJobIdRef = useRef<null | string>(null);
@@ -68,14 +71,31 @@ export function TranslationJobsPage() {
   // create job mutation
   const createJobMutation = useCreateTranslationJob();
 
+  const applyTotalHint = useCallback(
+    (job: TranslationJobResponse) => {
+      const hint = jobTotalHints[job.id];
+
+      // apply hint if total_keys is null or undefined
+      if (hint != null && job.total_keys == null) {
+        return {
+          ...job,
+          total_keys: hint,
+        };
+      }
+
+      return job;
+    },
+    [jobTotalHints]
+  );
+
   // auto-open and keep progress modal; persist latest job snapshot
   useEffect(() => {
     if (hasActiveJob && activeJob) {
       lastActiveJobIdRef.current = activeJob.id;
-      setProgressJob(activeJob);
+      setProgressJob(applyTotalHint(activeJob));
       setProgressModalOpen(true);
     }
-  }, [hasActiveJob, activeJob]);
+  }, [hasActiveJob, activeJob, applyTotalHint]);
 
   // when an active job disappears (finished/cancelled), refresh job list and load final state
   useEffect(() => {
@@ -89,9 +109,10 @@ export function TranslationJobsPage() {
       (async () => {
         const { data, error } = await supabase.from('translation_jobs').select('*').eq('id', jobId).maybeSingle();
         if (!error && data) {
-          setProgressJob(data as TranslationJobResponse);
-          const completedCount = data.completed_keys ?? 0;
-          const totalCount = data.total_keys ?? 0;
+          const jobWithHint = applyTotalHint(data as TranslationJobResponse);
+          setProgressJob(jobWithHint);
+          const completedCount = jobWithHint.completed_keys ?? 0;
+          const totalCount = jobWithHint.total_keys ?? 0;
           if (data.status === 'completed') {
             toast.success('Translation job completed', {
               description: `Successfully translated ${completedCount} of ${totalCount} keys for ${data.target_locale}.`,
@@ -111,7 +132,7 @@ export function TranslationJobsPage() {
       // clear so we run this only once per finish
       lastActiveJobIdRef.current = null;
     }
-  }, [hasActiveJob, projectId, progressJob?.target_locale, refetch, supabase]);
+  }, [hasActiveJob, projectId, progressJob?.target_locale, refetch, supabase, applyTotalHint]);
 
   // invalid project ID
   if (!validation.success) {
@@ -167,14 +188,38 @@ export function TranslationJobsPage() {
   }
 
   const { data: jobs, metadata } = jobsResponse;
+  const jobsWithHints = jobs.map(applyTotalHint);
+  const activeJobWithHint = activeJob ? applyTotalHint(activeJob) : null;
+  const displayJobs = activeJobWithHint
+    ? jobsWithHints.map((job) => (job.id === activeJobWithHint.id ? activeJobWithHint : job))
+    : jobsWithHints;
   const totalPages = Math.ceil(metadata.total / pageSize);
 
   // handler for opening progress modal for specific job
   const handleJobClick = (job: (typeof jobs)[0]) => {
-    if (isActiveJob(job)) {
-      // persist clicked job so modal has data immediately
-      setProgressJob(job);
-      setProgressModalOpen(true);
+    const jobWithHint = applyTotalHint(job);
+    setProgressJob(jobWithHint);
+    setProgressModalOpen(true);
+
+    if (!isActiveJob(jobWithHint)) {
+      void (async () => {
+        const { data, error } = await supabase
+          .from('translation_jobs')
+          .select('*')
+          .eq('id', jobWithHint.id)
+          .maybeSingle();
+
+        if (error) {
+          toast.error('Failed to load translation job details', {
+            description: error.message || 'Unable to load the latest job state.',
+          });
+          return;
+        }
+
+        if (data) {
+          setProgressJob(applyTotalHint(data as TranslationJobResponse));
+        }
+      })();
     }
   };
 
@@ -211,18 +256,22 @@ export function TranslationJobsPage() {
 
   // handler for creating new translation job
   const handleCreateJob = ({
+    estimatedTotalKeys,
     key_ids,
     mode,
     target_locale,
   }: {
+    estimatedTotalKeys: null | number;
     key_ids: string[];
     mode: string;
     target_locale: string;
   }) => {
+    const translationMode = mode as 'all' | 'selected' | 'single';
+
     createJobMutation.mutate(
       {
         key_ids,
-        mode: mode as 'all' | 'selected' | 'single',
+        mode: translationMode,
         project_id: projectId,
         target_locale,
       },
@@ -232,12 +281,53 @@ export function TranslationJobsPage() {
             description: error.error?.message || 'An unexpected error occurred',
           });
         },
-        onSuccess: () => {
+        onSuccess: (response) => {
           toast.success('Translation job created', {
             description: `Job for ${target_locale} has been created and is now processing.`,
           });
+
+          // close create dialog and open progress modal
           setCreateJobDialogOpen(false);
-          setProgressModalOpen(true); // auto-open progress modal
+
+          if (estimatedTotalKeys !== null) {
+            setJobTotalHints((prev) => ({
+              ...prev,
+              [response.job_id]: estimatedTotalKeys,
+            }));
+          }
+          setProgressJob(null);
+
+          // invalidate active job query to trigger polling
+          void queryClient.invalidateQueries({
+            queryKey: ['translation-jobs', 'active', projectId],
+          });
+
+          void (async () => {
+            const { data, error: fetchError } = await supabase
+              .from('translation_jobs')
+              .select('*')
+              .eq('id', response.job_id)
+              .maybeSingle();
+
+            if (fetchError || !data) {
+              if (fetchError) {
+                toast.error('Failed to load translation job details', {
+                  description: fetchError.message || 'Unable to load the latest job state.',
+                });
+              }
+              setProgressModalOpen(true);
+              return;
+            }
+
+            const latestJob: TranslationJobResponse = {
+              ...(data as TranslationJobResponse),
+              total_keys: (data as TranslationJobResponse).total_keys ?? estimatedTotalKeys ?? null,
+            };
+
+            setProgressJob(applyTotalHint(latestJob));
+            setProgressModalOpen(true);
+          })();
+
           refetch();
         },
       }
@@ -315,7 +405,7 @@ export function TranslationJobsPage() {
             {/* Job List Table */}
             <TranslationJobsTable
               isLoading={isLoading}
-              jobs={jobs}
+              jobs={displayJobs}
               onCancelJob={handleCancelJobClick}
               onJobClick={handleJobClick}
             />

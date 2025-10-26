@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import type { TranslationMode } from '@/shared/types';
 
+import { useDebounce } from '@/shared/hooks';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -32,13 +33,14 @@ interface KeySelectorProps {
  */
 export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds }: KeySelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // fetch keys with search
   const { data: keysData, isLoading } = useKeysDefaultView({
     limit: 100, // fetch more keys for selection
     offset: 0,
     project_id: projectId,
-    search: searchTerm || undefined,
+    search: debouncedSearchTerm || undefined,
   });
 
   const keys = keysData?.data || [];
@@ -56,24 +58,6 @@ export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds
   const handleRadioChange = (keyId: string) => {
     onSelectionChange([keyId]);
   };
-
-  if (isLoading) {
-    return (
-      <div className="border-border rounded-md border p-4">
-        <p className="text-muted-foreground text-sm">Loading keys...</p>
-      </div>
-    );
-  }
-
-  if (keys.length === 0 && !searchTerm) {
-    return (
-      <div className="border-border rounded-md border p-4">
-        <p className="text-muted-foreground text-sm">
-          No keys available. Add translation keys in the Keys section first.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-3">
@@ -111,8 +95,18 @@ export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds
       {/* Keys List */}
       <ScrollArea className="border-border h-[300px] rounded-md border">
         <div className="p-4">
-          {keys.length === 0 ? (
-            <p className="text-muted-foreground text-center text-sm">No keys found matching &quot;{searchTerm}&quot;</p>
+          {isLoading ? (
+            <p className="text-muted-foreground text-center text-sm">Loading keys...</p>
+          ) : keys.length === 0 ? (
+            searchTerm ? (
+              <p className="text-muted-foreground text-center text-sm">
+                No keys found matching &quot;{searchTerm}&quot;
+              </p>
+            ) : (
+              <p className="text-muted-foreground text-center text-sm">
+                No keys available. Add translation keys in the Keys section first.
+              </p>
+            )
           ) : mode === 'selected' ? (
             // Multi-select with checkboxes
             <div className="space-y-3">

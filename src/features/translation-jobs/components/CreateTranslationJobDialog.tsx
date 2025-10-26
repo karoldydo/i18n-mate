@@ -1,5 +1,5 @@
 import { AlertTriangleIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { TranslationMode } from '@/shared/types';
 
@@ -10,14 +10,19 @@ import { Label } from '@/shared/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 
-import { useKeysPerLanguageView } from '../../keys/api';
+import { useKeysPerLanguageView, useProjectKeyCount } from '../../keys/api';
 import { useProjectLocales } from '../../locales/api';
 import { KeySelector } from './KeySelector';
 
 interface CreateTranslationJobDialogProps {
   isLoading: boolean;
   isOpen: boolean;
-  onCreateJob: (params: { key_ids: string[]; mode: TranslationMode; target_locale: string }) => void;
+  onCreateJob: (params: {
+    estimatedTotalKeys: null | number;
+    key_ids: string[];
+    mode: TranslationMode;
+    target_locale: string;
+  }) => void;
   onOpenChange: (open: boolean) => void;
   projectId: string;
 }
@@ -48,6 +53,7 @@ export function CreateTranslationJobDialog({
   // fetch project locales
   const { data: localesData } = useProjectLocales(projectId);
   const locales = localesData || [];
+  const { data: projectKeyCount } = useProjectKeyCount(projectId);
 
   // filter out default locale for target selection
   const targetLocales = locales.filter((locale) => !locale.is_default);
@@ -78,18 +84,29 @@ export function CreateTranslationJobDialog({
     }
   }, [existingTranslationsData, mode, selectedKeyIds]);
 
+  const resetForm = useCallback(() => {
+    setMode('all');
+    setTargetLocale('');
+    setSelectedKeyIds([]);
+    setOverwriteConfirmed(false);
+  }, []);
+
   // reset overwrite confirmation when overwrite count changes
   useEffect(() => {
     setOverwriteConfirmed(false);
   }, [overwriteCount]);
 
+  // reset form when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen, resetForm]);
+
   // reset form when dialog closes
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      setMode('all');
-      setTargetLocale('');
-      setSelectedKeyIds([]);
-      setOverwriteConfirmed(false);
+      resetForm();
     }
     onOpenChange(open);
   };
@@ -99,8 +116,18 @@ export function CreateTranslationJobDialog({
     if (!targetLocale) return;
 
     const key_ids = mode === 'all' ? [] : selectedKeyIds;
+    let estimatedTotalKeys: null | number = null;
+
+    if (mode === 'all') {
+      estimatedTotalKeys = projectKeyCount ?? null;
+    } else if (mode === 'single') {
+      estimatedTotalKeys = 1;
+    } else {
+      estimatedTotalKeys = selectedKeyIds.length;
+    }
 
     onCreateJob({
+      estimatedTotalKeys,
       key_ids,
       mode,
       target_locale: targetLocale,

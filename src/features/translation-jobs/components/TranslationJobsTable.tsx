@@ -61,6 +61,7 @@ export function TranslationJobsTable({ isLoading, jobs, onCancelJob, onJobClick 
         <TableBody>
           {jobs.map((job) => {
             const isActive = job.status === 'pending' || job.status === 'running';
+            const isClickable = Boolean(onJobClick);
             const completedCount = job.completed_keys ?? 0;
             const totalCount = job.total_keys ?? 0;
             const rowAriaLabel = `Translation job for ${job.target_locale}, ${job.status}, ${completedCount} of ${totalCount} keys translated`;
@@ -68,11 +69,11 @@ export function TranslationJobsTable({ isLoading, jobs, onCancelJob, onJobClick 
             return (
               <TableRow
                 aria-label={rowAriaLabel}
-                className={isActive && onJobClick ? 'hover:bg-muted/50 cursor-pointer' : ''}
+                className={isClickable ? 'hover:bg-muted/50 cursor-pointer' : ''}
                 key={job.id}
-                onClick={isActive && onJobClick ? () => onJobClick(job) : undefined}
+                onClick={isClickable && onJobClick ? () => onJobClick(job) : undefined}
                 onKeyDown={
-                  isActive && onJobClick
+                  isClickable && onJobClick
                     ? (e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
@@ -81,8 +82,8 @@ export function TranslationJobsTable({ isLoading, jobs, onCancelJob, onJobClick 
                       }
                     : undefined
                 }
-                role={isActive && onJobClick ? 'button' : undefined}
-                tabIndex={isActive && onJobClick ? 0 : undefined}
+                role={isClickable && onJobClick ? 'button' : undefined}
+                tabIndex={isClickable && onJobClick ? 0 : undefined}
               >
                 <TableCell className="font-medium capitalize">{job.mode}</TableCell>
                 <TableCell>{job.target_locale}</TableCell>
