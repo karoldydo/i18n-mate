@@ -35,6 +35,14 @@ export function TranslationValueCell({
   const [localValue, setLocalValue] = useState(value ?? '');
   const [validationError, setValidationError] = useState<string | undefined>(error);
   const lastSavedValueRef = useRef<null | string>(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // auto-focus input when entering edit mode
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
 
   // sync local value with prop value when not editing
   useEffect(() => {
@@ -111,11 +119,26 @@ export function TranslationValueCell({
   );
 
   const handleBlur = useCallback(() => {
-    // exit edit mode after a short delay to allow autosave to trigger
-    setTimeout(() => {
-      onEditEnd();
-    }, 600); // slightly longer than autosave delay
-  }, [onEditEnd]);
+    const trimmed = localValue.trim();
+
+    // validate before saving
+    let hasError = false;
+    if (trimmed.length > TRANSLATION_VALUE_MAX_LENGTH) {
+      hasError = true;
+    } else if (trimmed.includes('\n')) {
+      hasError = true;
+    }
+
+    // save immediately on blur if there are unsaved changes and no validation errors
+    const normalizedValue = trimmed || null;
+    if (!hasError && normalizedValue !== lastSavedValueRef.current) {
+      lastSavedValueRef.current = normalizedValue;
+      onValueChange(trimmed || '');
+    }
+
+    // exit edit mode immediately
+    onEditEnd();
+  }, [localValue, onValueChange, onEditEnd]);
 
   if (!isEditing) {
     return (
@@ -146,6 +169,7 @@ export function TranslationValueCell({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter translation..."
+          ref={inputRef}
           value={localValue}
         />
         {isSaving && (

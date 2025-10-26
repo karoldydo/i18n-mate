@@ -140,7 +140,11 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
                         // Auto-populate label based on selected locale
                         const localeName = new Intl.DisplayNames(['en'], { type: 'language' }).of(value.split('-')[0]);
                         if (localeName) {
-                          form.setValue('default_locale_label', localeName);
+                          form.setValue('default_locale_label', localeName, {
+                            shouldDirty: true,
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          });
                         }
                       }}
                       value={field.value}

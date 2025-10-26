@@ -131,3 +131,42 @@ export const LOCALE_ERROR_MESSAGES = {
   LABEL_TOO_LONG: `Locale label must be at most ${LOCALE_LABEL_MAX_LENGTH} characters`,
   TOO_LONG: `Locale code must be at most ${LOCALE_CODE_MAX_LENGTH} characters`,
 } as const;
+
+/**
+ * Common primary language subtags (IETF language tags)
+ * Used for default locale selection in project and locale management
+ */
+export const PRIMARY_LOCALES = [
+  { code: 'en', label: 'English' },
+  { code: 'en-US', label: 'English (US)' },
+  { code: 'en-GB', label: 'English (UK)' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'es-ES', label: 'Spanish (Spain)' },
+  { code: 'es-MX', label: 'Spanish (Mexico)' },
+  { code: 'fr', label: 'French' },
+  { code: 'fr-FR', label: 'French (France)' },
+  { code: 'fr-CA', label: 'French (Canada)' },
+  { code: 'de', label: 'German' },
+  { code: 'de-DE', label: 'German (Germany)' },
+  { code: 'de-AT', label: 'German (Austria)' },
+  { code: 'it', label: 'Italian' },
+  { code: 'pt', label: 'Portuguese' },
+  { code: 'pt-BR', label: 'Portuguese (Brazil)' },
+  { code: 'pt-PT', label: 'Portuguese (Portugal)' },
+  { code: 'pl', label: 'Polish' },
+  { code: 'ru', label: 'Russian' },
+  { code: 'ja', label: 'Japanese' },
+  { code: 'ko', label: 'Korean' },
+  { code: 'zh', label: 'Chinese' },
+  { code: 'zh-CN', label: 'Chinese (Simplified)' },
+  { code: 'zh-TW', label: 'Chinese (Traditional)' },
+  { code: 'ar', label: 'Arabic' },
+  { code: 'nl', label: 'Dutch' },
+  { code: 'sv', label: 'Swedish' },
+  { code: 'no', label: 'Norwegian' },
+  { code: 'da', label: 'Danish' },
+  { code: 'fi', label: 'Finnish' },
+  { code: 'cs', label: 'Czech' },
+  { code: 'tr', label: 'Turkish' },
+  { code: 'hi', label: 'Hindi' },
+] as const;

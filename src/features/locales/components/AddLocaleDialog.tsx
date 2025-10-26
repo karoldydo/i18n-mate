@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { CreateProjectLocaleRequest } from '@/shared/types';
 
 import { LocaleSelector } from '@/shared/components/LocaleSelector';
-import { LOCALE_NORMALIZATION } from '@/shared/constants';
+import { LOCALE_NORMALIZATION, PRIMARY_LOCALES } from '@/shared/constants';
 import { Button } from '@/shared/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form';
@@ -41,6 +41,15 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
     mode: 'onChange',
     resolver: zodResolver(CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA),
   });
+
+  const handleLocaleChange = (localeCode: string) => {
+    form.setValue('p_locale', localeCode, { shouldValidate: true });
+
+    const locale = PRIMARY_LOCALES.find((locale) => locale.code === localeCode);
+    if (locale) {
+      form.setValue('p_label', locale.label, { shouldValidate: true });
+    }
+  };
 
   const onSubmit = (data: CreateProjectLocaleRequest) => {
     const payload: CreateProjectLocaleRequest = {
@@ -87,7 +96,7 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
                   <FormControl>
                     <LocaleSelector
                       disabled={createLocale.isPending}
-                      onValueChange={field.onChange}
+                      onValueChange={handleLocaleChange}
                       value={field.value}
                     />
                   </FormControl>
@@ -124,7 +133,7 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
               >
                 Cancel
               </Button>
-              <Button disabled={createLocale.isPending} type="submit">
+              <Button disabled={!form.formState.isValid || createLocale.isPending} type="submit">
                 {createLocale.isPending ? 'Adding...' : 'Add Language'}
               </Button>
             </DialogFooter>

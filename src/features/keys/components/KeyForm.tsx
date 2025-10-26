@@ -10,7 +10,7 @@ import { Textarea } from '@/shared/ui/textarea';
 // Extract the schema for the form (without project_id which will be added later)
 const formSchema = z.object({
   defaultValue: z.string().min(1, 'Default value is required').max(250, 'Value must be at most 250 characters'),
-  fullKey: z.string().min(1, 'Key is required'),
+  keyName: z.string().min(1, 'Key name is required'),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -31,15 +31,16 @@ export function KeyForm({ isSubmitting, onSubmit, projectPrefix }: KeyFormProps)
   const form = useForm<FormData>({
     defaultValues: {
       defaultValue: '',
-      fullKey: `${projectPrefix}.`,
+      keyName: '',
     },
+    mode: 'onChange',
     resolver: zodResolver(formSchema),
   });
 
   const handleSubmit = (data: FormData) => {
     onSubmit({
       defaultValue: data.defaultValue,
-      fullKey: data.fullKey,
+      fullKey: `${projectPrefix}.${data.keyName}`,
     });
   };
 
@@ -48,17 +49,20 @@ export function KeyForm({ isSubmitting, onSubmit, projectPrefix }: KeyFormProps)
       <form className="space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
         <FormField
           control={form.control}
-          name="fullKey"
+          name="keyName"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Key Name</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder={`${projectPrefix}.home.title`} />
-              </FormControl>
-              <FormDescription>
-                Use lowercase letters, numbers, dots, underscores, and hyphens. Must start with &#34;{projectPrefix}
-                &#34;.
-              </FormDescription>
+              <div className="flex items-center gap-2">
+                <div className="w-20">
+                  <Input disabled value={projectPrefix} />
+                </div>
+                <span className="text-muted-foreground">.</span>
+                <FormControl>
+                  <Input {...field} placeholder="home.title" />
+                </FormControl>
+              </div>
+              <FormDescription>Use lowercase letters, numbers, dots, underscores, and hyphens.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -80,7 +84,7 @@ export function KeyForm({ isSubmitting, onSubmit, projectPrefix }: KeyFormProps)
           )}
         />
         <div className="flex justify-end gap-2">
-          <Button disabled={isSubmitting} type="submit">
+          <Button disabled={!form.formState.isValid || isSubmitting} type="submit">
             {isSubmitting ? 'Creating...' : 'Create Key'}
           </Button>
         </div>
