@@ -234,9 +234,8 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 9. If optimistic lock fails (0 rows affected), hook returns 409
 10. If unauthorized or not found, hook returns 404
 11. On success, updated translation data is returned
-12. TanStack Query updates cache with optimistic update
-13. Hook invalidates both per-language view cache (`['keys', 'per-language', projectId, locale]`) and default view cache (`['keys', 'default', projectId]`)
-14. Component displays success feedback
+12. Hook invalidates both per-language view cache (`['keys', 'per-language', projectId, locale]`) and default view cache (`['keys', 'default', projectId]`)
+13. Component displays success feedback
 
 ## 6. Security Considerations
 
@@ -394,26 +393,27 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ### 8.2 Caching Strategy
 
-- Single translation cache: `staleTime` ~5 minutes; `gcTime` ~15 minutes tuned for edit UX and freshness.
-- Bulk operations: no caching; rely on precise invalidation of related queries post-mutation.
+**Simplified Approach:**
+
+The implementation uses inline query keys without structured key factories. This simplifies the codebase while maintaining effective caching through TanStack Query's default behavior.
 
 **Cache Invalidation:**
 
-- Update translation → invalidate single translation cache (`TRANSLATIONS_KEYS.detail`)
+- Update translation → invalidate single translation cache (`['translation', projectId, keyId, locale]`)
 - Update translation → invalidate per-language key view cache for that locale (`['keys', 'per-language', projectId, locale]`)
 - Update translation → invalidate default key view cache (`['keys', 'default', projectId]`)
 - Bulk update → invalidate per-language key view cache for target locale
-- Use specific cache keys for fine-grained invalidation
 
-**Cache Keys:**
+**Query Keys:**
 
-- Single translation: `['translations', projectId, keyId, locale]`
-- Use structured query keys for precise invalidation
+- Single translation: `['translation', projectId, keyId, locale]`
+- Use inline query keys for simplified caching without structured key factories
 
 ### 8.3 Optimistic Updates
 
-- Cancel queries for `TRANSLATIONS_KEYS.detail`, snapshot previous cache, and optimistically set the new value.
-- Roll back on error using the snapshot; on settle, invalidate the detail key and related `['keys','per-language', projectId, locale]` queries.
+**Simplified Approach:**
+
+Optimistic updates have been removed to simplify the implementation. All mutations rely on server confirmation before updating the UI, ensuring data consistency without complex rollback logic.
 
 ### 8.4 Database Performance
 
@@ -443,19 +443,14 @@ Create `src/features/translations/api/translations.schemas.ts` with all validati
 - Add `translations.errors.ts` with `createDatabaseErrorResponse` mapping PG errors to `ApiErrorResponse` using shared constants.
 - Handle trigger violations (default locale), check and foreign key violations, authorization hints, and generic database failures consistently.
 
-### Step 5: Create Query Keys Factory
+### Step 5: Create TanStack Query Hooks
 
-- Add `translations.key-factory.ts` with `TRANSLATIONS_KEYS.all`, `.details()`, and `.detail(projectId, keyId, locale)` for structured caching.
-- Keep keys stable and alphabetized for predictable invalidation and IDE discoverability.
+- `useTranslation(projectId, keyId, locale)` validates inputs (`GET_TRANSLATION_QUERY_SCHEMA`), fetches a single row, returns `null` when absent, and caches under inline query key `['translation', projectId, keyId, locale]`.
+- `useUpdateTranslation()` accepts all parameters in the mutation payload (`project_id`, `key_id`, `locale`, optional `updated_at`, and body fields), validates body using `UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA`, applies optional `updated_at` for optimistic locking, and invalidates detail and related key view caches (both per-language and default views) on settle.
 
-### Step 6: Create TanStack Query Hooks
+### Step 6: Create API Index File
 
-- `useTranslation(projectId, keyId, locale)` validates inputs (`GET_TRANSLATION_QUERY_SCHEMA`), fetches a single row, returns `null` when absent, and caches under `TRANSLATIONS_KEYS.detail`.
-- `useUpdateTranslation()` accepts all parameters in the mutation payload (`project_id`, `key_id`, `locale`, optional `updated_at`, and body fields), validates body using `UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA`, applies optional `updated_at` for optimistic locking, performs optimistic cache update with rollback, and invalidates detail and related key view caches (both per-language and default views) on settle.
-
-### Step 7: Create API Index File
-
-- Export `translations.errors`, `translations.key-factory`, `translations.schemas`, and both hooks from `api/index.ts` for ergonomic imports.
+- Export `translations.errors`, `translations.schemas`, and both hooks from `api/index.ts` for ergonomic imports.
 
 ### Step 8: Write Unit Tests
 
@@ -465,7 +460,7 @@ Create `src/features/translations/api/translations.schemas.ts` with all validati
 - Co-locate tests with source files (`Hook.test.ts` next to `Hook.ts`)
 - Mock Supabase client using test utilities
 - Test both success and error scenarios comprehensively
-- Verify cache behavior and optimistic updates
+- Verify cache behavior
 - Aim for 90% coverage threshold
 
 **8.1 Create `src/features/translations/api/useTranslation/useTranslation.test.ts`:**
@@ -485,14 +480,13 @@ Test scenarios:
 
 Test scenarios:
 
-- Successful translation update with optimistic updates
+- Successful translation update
 - Optimistic locking success (with updated_at)
 - Optimistic locking failure (409 conflict) - **Critical: concurrent edit handling**
 - Validation error (empty value for default locale)
 - Validation error (value too long, contains newlines)
 - Translation not found (404)
 - Authorization error (403)
-- Optimistic update and rollback on error
 - Cache invalidation verification
 - **Edge case: network timeout during update**
 - **Edge case: partial update with mixed validation errors**

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import type { ApiErrorResponse, TranslationResponse, UpdateTranslationRequest } from '@/shared/types';
 
@@ -6,15 +6,7 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../translations.errors';
-import { TRANSLATIONS_KEYS } from '../translations.key-factory';
 import { TRANSLATION_RESPONSE_SCHEMA, UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA } from '../translations.schemas';
-
-/**
- * Context type for mutation callbacks
- */
-interface UpdateTranslationContext {
-  previousTranslation?: null | TranslationResponse;
-}
 
 /**
  * Update a translation value with all parameters in payload
@@ -27,9 +19,8 @@ interface UpdateTranslationContext {
  */
 export function useUpdateTranslation() {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
-  return useMutation<TranslationResponse, ApiErrorResponse, UpdateTranslationRequest, UpdateTranslationContext>({
+  return useMutation<TranslationResponse, ApiErrorResponse, UpdateTranslationRequest>({
     mutationFn: async (payload) => {
       const {
         is_machine_translated,
@@ -78,72 +69,6 @@ export function useUpdateTranslation() {
       }
 
       return TRANSLATION_RESPONSE_SCHEMA.parse(data);
-    },
-    onError: (_err, payload, context) => {
-      // rollback on error
-      if (context?.previousTranslation !== undefined) {
-        queryClient.setQueryData(
-          TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale),
-          context.previousTranslation
-        );
-      }
-    },
-    onMutate: async (payload) => {
-      // cancel outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale),
-      });
-
-      // snapshot previous value
-      const previousTranslation = queryClient.getQueryData<null | TranslationResponse>(
-        TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale)
-      );
-
-      // optimistically update
-      queryClient.setQueryData(
-        TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale),
-        (old: null | TranslationResponse) => {
-          // if no previous translation, create new one with optimistic data
-          if (!old) {
-            return {
-              is_machine_translated: payload.is_machine_translated,
-              key_id: payload.key_id,
-              locale: payload.locale,
-              project_id: payload.project_id,
-              updated_at: new Date().toISOString(),
-              updated_by_user_id: payload.updated_by_user_id,
-              updated_source: payload.updated_source,
-              value: payload.value,
-            } as TranslationResponse;
-          }
-
-          return {
-            ...old,
-            is_machine_translated: payload.is_machine_translated,
-            updated_at: new Date().toISOString(),
-            updated_by_user_id: payload.updated_by_user_id,
-            updated_source: payload.updated_source,
-            value: payload.value,
-          };
-        }
-      );
-
-      return { previousTranslation };
-    },
-    onSettled: (_data, _error, payload) => {
-      // refetch to ensure consistency
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATIONS_KEYS.detail(payload.project_id, payload.key_id, payload.locale),
-      });
-      // invalidate key lists that show this translation
-      // per-language view
-      queryClient.invalidateQueries({
-        queryKey: ['keys', 'per-language', payload.project_id, payload.locale],
-      });
-      // default view (if updating default locale)
-      queryClient.invalidateQueries({
-        queryKey: ['keys', 'default', payload.project_id],
-      });
     },
   });
 }

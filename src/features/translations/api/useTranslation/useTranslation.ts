@@ -5,7 +5,6 @@ import type { ApiErrorResponse, TranslationResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../translations.errors';
-import { TRANSLATIONS_KEYS } from '../translations.key-factory';
 import { GET_TRANSLATION_QUERY_SCHEMA, TRANSLATION_RESPONSE_SCHEMA } from '../translations.schemas';
 
 /**
@@ -30,7 +29,6 @@ export function useTranslation(projectId: string, keyId: string, localeCode: str
   const supabase = useSupabase();
 
   return useQuery<null | TranslationResponse, ApiErrorResponse>({
-    gcTime: 15 * 60 * 1000, // 15 minutes
     queryFn: async () => {
       const { key_id, locale, project_id } = GET_TRANSLATION_QUERY_SCHEMA.parse({
         key_id: keyId,
@@ -57,7 +55,6 @@ export function useTranslation(projectId: string, keyId: string, localeCode: str
 
       return TRANSLATION_RESPONSE_SCHEMA.parse(data);
     },
-    queryKey: TRANSLATIONS_KEYS.detail(projectId, keyId, localeCode),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: ['translation', projectId, keyId, localeCode],
   });
 }
