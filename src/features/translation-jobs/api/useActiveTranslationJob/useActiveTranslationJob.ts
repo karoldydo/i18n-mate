@@ -6,7 +6,6 @@ import type { ApiErrorResponse, TranslationJobResponse } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
 import { CHECK_ACTIVE_JOB_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
@@ -33,7 +32,6 @@ export function useActiveTranslationJob(projectId: string) {
   const supabase = useSupabase();
 
   return useQuery<TranslationJobResponse[], ApiErrorResponse>({
-    gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
       const { project_id } = CHECK_ACTIVE_JOB_SCHEMA.parse({ project_id: projectId });
 
@@ -50,7 +48,6 @@ export function useActiveTranslationJob(projectId: string) {
 
       return z.array(TRANSLATION_JOB_RESPONSE_SCHEMA).parse(data || []);
     },
-    queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),
-    staleTime: 2 * 1000, // 2 seconds for real-time polling
+    queryKey: ['translation-jobs', 'active', projectId],
   });
 }

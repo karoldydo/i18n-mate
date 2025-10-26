@@ -414,8 +414,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 6. PostgreSQL executes query with `ORDER BY created_at DESC` and pagination
 7. Results are returned with `count` from Supabase for pagination metadata
 8. Hook constructs response with data array and pagination metadata
-9. TanStack Query caches results with project-specific key
-10. Component renders job history with pagination controls
+9. Component renders job history with pagination controls
 
 ### 5.3 Create Translation Job Flow
 
@@ -438,8 +437,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
    - Updates `translations` record with translated value
    - Updates `translation_job_items` status and counters
 8. Edge Function returns 202 with job ID immediately (doesn't wait for completion)
-9. TanStack Query invalidates active job cache
-10. Component begins polling active job status using exponential backoff (2s, 2s, 3s, 5s, 5s)
+9. Component begins polling active job status using exponential backoff (2s, 2s, 3s, 5s, 5s)
 
 ### 5.4 Cancel Translation Job Flow
 
@@ -453,8 +451,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 8. If unauthorized or not found, Supabase returns empty result → hook returns 404
 9. On success, job status is updated to 'cancelled' and `finished_at` is set
 10. Edge Function checks cancellation flag between API calls and stops processing
-11. TanStack Query updates cache and invalidates related queries
-12. Component stops polling and shows cancelled status
+11. Component stops polling and shows cancelled status
 
 ### 5.5 Get Job Items Flow
 
@@ -466,8 +463,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 6. PostgreSQL executes query with LEFT JOIN to keys table
 7. Results include item status, error codes/messages, and key full_key for display
 8. Hook constructs response with data array and pagination metadata
-9. TanStack Query caches results with job-specific key
-10. Component renders detailed status with key names and error information
+9. Component renders detailed status with key names and error information
 
 ## 6. Security Considerations
 
@@ -583,7 +579,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 **Frontend Polling Strategy:**
 
 - After a `202` response, poll the active job using exponential backoff (e.g., 2s → 2s → 3s → 5s → 5s) and stop when finished or not present.
-- Invalidate job lists and related caches upon completion or cancellation to refresh UI.
+- Refresh UI upon completion or cancellation.
 - Limit polling attempts to approximately 30 minutes to avoid indefinite background activity.
 
 ## 8. Performance Considerations
@@ -611,15 +607,15 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ### 8.2 Caching Strategy
 
-- Active job: short staleness (~2s) with GC (~5m) to support live updates.
-- Job history: medium staleness (~30s) with GC (~10m) for efficient browsing.
-- Job items: longer staleness (~5m) with GC (~30m) as items stabilize after completion.
+**Simplified Approach:**
 
-**Cache Invalidation:**
+The implementation uses inline query keys without structured key factories. This simplifies the codebase while maintaining effective caching through TanStack Query's default behavior.
 
-- Create job → invalidate active job cache
-- Job status change → invalidate active job and history caches
-- Cancel job → invalidate active job and specific job caches
+**Query Keys:**
+
+- Active job: `['translation-jobs', 'active', projectId]`
+- Job history: `['translation-jobs', 'list', params]`
+- Job items: `['translation-jobs', 'items', jobId, params]`
 
 ### 8.3 Edge Function Performance
 
@@ -661,60 +657,53 @@ Create `src/shared/constants/translation-jobs.constants.ts` with centralized con
 - Add `src/features/translation-jobs/api/translation-jobs.errors.ts` that maps DB/Edge errors to `ApiErrorResponse` with stable messages.
 - Use `TRANSLATION_JOBS_PG_ERROR_CODES`, `TRANSLATION_JOBS_CONSTRAINTS`, and `TRANSLATION_JOBS_ERROR_MESSAGES`; avoid leaking internal details.
 
-### Step 5: Create Query Keys Factory
-
-Create `src/features/translation-jobs/api/translation-jobs.key-factory.ts`:
-
-- Provide structured keys: `all`, `active(projectId)`, `list(params)`, `detail(jobId)`, and `items(jobId, params?)`.
-- Ensure key builders are pure/stable to support targeted invalidation and polling.
-
-### Step 6: Create TanStack Query Hooks
+### Step 5: Create TanStack Query Hooks
 
 **6.1 Active Job Hook** (`useActiveTranslationJob`)
 
-- Validate `project_id` (`CHECK_ACTIVE_JOB_SCHEMA`), query `pending`/`running`, return array; short `staleTime` and project‑scoped key.
+- Validate `project_id` (`CHECK_ACTIVE_JOB_SCHEMA`), query `pending`/`running`, return array; use inline query key `['translation-jobs', 'active', projectId]`.
 
 **6.2 Jobs List Hook** (`useTranslationJobs`)
 
 - Validate with `LIST_TRANSLATION_JOBS_SCHEMA`, select with sorting + pagination, and return data with `PaginationMetadata`.
-- Use `TRANSLATION_JOBS_KEY_FACTORY.list(params)` and medium `staleTime`.
+- Use inline query key `['translation-jobs', 'list', params]`.
 
-**Step 5: Create Job Mutation Hook** (`src/features/translation-jobs/api/useCreateTranslationJob/useCreateTranslationJob.ts`)
+**5.3 Create Job Mutation Hook** (`useCreateTranslationJob`)
 
 - Validate input with `CREATE_TRANSLATION_JOB_SCHEMA` and call `/functions/v1/translate`.
-- Parse `CreateTranslationJobResponse` and refresh caches using `TRANSLATION_JOBS_KEY_FACTORY` after success.
+- Parse `CreateTranslationJobResponse`; no cache invalidation logic.
 
-**Step 6: Create Cancel Mutation Hook** (`src/features/translation-jobs/api/useCancelTranslationJob/useCancelTranslationJob.ts`)
+**5.4 Cancel Mutation Hook** (`useCancelTranslationJob`)
 
 - Validate job ID with `CANCEL_TRANSLATION_JOB_SCHEMA`, enforce cancellable states, and update status to `cancelled`.
-- Refresh related caches via `TRANSLATION_JOBS_KEY_FACTORY` and stop client polling on success.
+- No cache invalidation logic.
 
-**Step 7: Create Query Hooks**
+**5.5 Query Hooks**
 
 - `useActiveTranslationJob`, `useTranslationJobs`, `useTranslationJobItems` perform validated queries, return typed data, and expose pagination metadata where applicable.
 
-- Items hook: validate with `GET_JOB_ITEMS_SCHEMA`, join `keys(full_key)`, optional `status` filter, and return typed data with `PaginationMetadata` using `TRANSLATION_JOBS_KEY_FACTORY.items(jobId, params)` and longer `staleTime`.
+- Items hook: validate with `GET_JOB_ITEMS_SCHEMA`, join `keys(full_key)`, optional `status` filter, and return typed data with `PaginationMetadata`; use inline query key `['translation-jobs', 'items', jobId, params]`.
 
-### Step 7: Create API Index File
+### Step 6: Create API Index File
 
-Create `src/features/translation-jobs/api/index.ts` re‑exporting: error utilities, `TRANSLATION_JOBS_KEY_FACTORY`, validation schemas, mutation hooks, and query hooks for a single import surface.
+Create `src/features/translation-jobs/api/index.ts` re-exporting: error utilities, validation schemas, mutation hooks, and query hooks for a single import surface.
 
-### Step 8: Create Polling Hook
+### Step 7: Create Polling Hook
 
-- Implement `src/features/translation-jobs/hooks/useTranslationJobPolling.ts` to poll active jobs with exponential backoff, auto‑stop on completion, and trigger cache refresh via query keys.
+- Implement `src/features/translation-jobs/hooks/useTranslationJobPolling.ts` to poll active jobs with exponential backoff and auto-stop on completion.
 
-### Step 9: Write Unit Tests
+### Step 8: Write Unit Tests
 
 **Testing Strategy:**
 
 - Use Vitest with Testing Library for comprehensive test coverage
 - Mock Supabase client and Edge Functions using test utilities
 - Test both success and error scenarios with edge cases
-- Verify cache behavior, polling, and job lifecycle management
+- Verify polling and job lifecycle management
 - Test mode-specific validation and business logic rules
 - Aim for 90% coverage threshold as per project requirements
 
-**9.1 Test Active Job Hook:**
+**8.1 Test Active Job Hook:**
 
 Test scenarios:
 
@@ -722,9 +711,8 @@ Test scenarios:
 - No active job (returns empty array)
 - Multiple jobs with different statuses (only pending/running returned)
 - Database error handling
-- Cache invalidation after job creation
 
-**9.2 Test Create Job Hook:**
+**8.2 Test Create Job Hook:**
 
 Test scenarios:
 
@@ -733,18 +721,16 @@ Test scenarios:
 - Target locale validation (exists, not default)
 - Active job conflict (409)
 - Edge Function errors
-- Cache invalidation after success
 
-**9.3 Test Cancel Job Hook:**
+**8.3 Test Cancel Job Hook:**
 
 Test scenarios:
 
 - Successful cancellation
 - Job not found (404)
 - Job not cancellable (completed/failed/cancelled)
-- Optimistic cache updates
 
-**9.4 Test Job Items Hook:**
+**8.4 Test Job Items Hook:**
 
 Test scenarios:
 
@@ -754,14 +740,13 @@ Test scenarios:
 - Job not found via RLS
 - Error code/message display
 
-**9.5 Test Polling Hook:**
+**8.5 Test Polling Hook:**
 
 Test scenarios:
 
 - Automatic start/stop based on job status
 - Exponential backoff intervals
 - Max attempts handling
-- Cache invalidation timing
 - Cleanup on unmount
 
 ## 10. Edge Function Implementation Details

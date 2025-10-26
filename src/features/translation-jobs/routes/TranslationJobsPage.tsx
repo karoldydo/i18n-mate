@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftIcon, Loader2Icon, PlusIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -13,7 +12,6 @@ import { Skeleton } from '@/shared/ui/skeleton';
 
 import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
 import { useCancelTranslationJob, useCreateTranslationJob, useTranslationJobs } from '../api';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../api/translation-jobs.key-factory';
 import { CancelJobDialog } from '../components/CancelJobDialog';
 import { CreateTranslationJobDialog } from '../components/CreateTranslationJobDialog';
 import { JobProgressModal } from '../components/JobProgressModal';
@@ -42,7 +40,6 @@ export function TranslationJobsPage() {
   const [jobToCancel, setJobToCancel] = useState<null | TranslationJobResponse>(null);
   const [progressJob, setProgressJob] = useState<null | TranslationJobResponse>(null);
   const lastActiveJobIdRef = useRef<null | string>(null);
-  const queryClient = useQueryClient();
   const supabase = useSupabase();
 
   // validate UUID format
@@ -80,13 +77,12 @@ export function TranslationJobsPage() {
     }
   }, [hasActiveJob, activeJob]);
 
-  // when an active job disappears (finished/cancelled), refresh job list and keys, and load final state
+  // when an active job disappears (finished/cancelled), refresh job list and load final state
   useEffect(() => {
     if (!hasActiveJob && lastActiveJobIdRef.current) {
       const jobId = lastActiveJobIdRef.current;
 
       // refresh jobs list
-      queryClient.invalidateQueries({ queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists() });
       refetch();
 
       // fetch final job snapshot for modal and toasts
@@ -94,15 +90,6 @@ export function TranslationJobsPage() {
         const { data, error } = await supabase.from('translation_jobs').select('*').eq('id', jobId).maybeSingle();
         if (!error && data) {
           setProgressJob(data as TranslationJobResponse);
-          // Update any cached job lists containing this job so UI reflects final status immediately
-          queryClient.setQueriesData({ queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists() }, (old: unknown) => {
-            const value = old as
-              | undefined
-              | { data: TranslationJobResponse[]; metadata: { end: number; start: number; total: number } };
-            if (!value) return old;
-            const next = value.data.map((j) => (j.id === data.id ? (data as TranslationJobResponse) : j));
-            return { ...value, data: next };
-          });
           const completedCount = data.completed_keys ?? 0;
           const totalCount = data.total_keys ?? 0;
           if (data.status === 'completed') {
@@ -124,7 +111,7 @@ export function TranslationJobsPage() {
       // clear so we run this only once per finish
       lastActiveJobIdRef.current = null;
     }
-  }, [hasActiveJob, projectId, progressJob?.target_locale, queryClient, refetch, supabase]);
+  }, [hasActiveJob, projectId, progressJob?.target_locale, refetch, supabase]);
 
   // invalid project ID
   if (!validation.success) {

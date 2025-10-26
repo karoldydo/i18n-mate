@@ -7,7 +7,6 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { calculatePaginationMetadata } from '@/shared/utils';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
 import { GET_JOB_ITEMS_SCHEMA, TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA } from '../translation-jobs.schemas';
 
 /**
@@ -46,7 +45,6 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
   const supabase = useSupabase();
 
   return useQuery<ListTranslationJobItemsResponse, ApiErrorResponse>({
-    gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
       const { job_id, limit, offset, status } = GET_JOB_ITEMS_SCHEMA.parse({
         job_id: params.job_id,
@@ -83,7 +81,6 @@ export function useTranslationJobItems(params: GetJobItemsParams) {
         metadata: calculatePaginationMetadata(offset, items.length, count || 0),
       };
     },
-    queryKey: TRANSLATION_JOBS_KEY_FACTORY.items(params.job_id, params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: ['translation-jobs', 'items', params.job_id, params],
   });
 }

@@ -1,10 +1,9 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
 
 import { TRANSLATION_JOBS_POLL_INTERVALS, TRANSLATION_JOBS_POLL_MAX_ATTEMPTS } from '@/shared/constants';
 import { isActiveJob, isFinishedJob } from '@/shared/types';
 
-import { TRANSLATION_JOBS_KEY_FACTORY, useActiveTranslationJob } from '../api';
+import { useActiveTranslationJob } from '../api';
 
 /**
  * Custom hook for polling active translation job with exponential backoff
@@ -33,11 +32,9 @@ import { TRANSLATION_JOBS_KEY_FACTORY, useActiveTranslationJob } from '../api';
  * @returns Object with active job data and polling status
  */
 export function useTranslationJobPolling(projectId: string, enabled = true) {
-  const queryClient = useQueryClient();
   const activeJobQuery = useActiveTranslationJob(projectId);
   const pollAttemptRef = useRef(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   const activeJob = activeJobQuery.data?.[0];
   const hasActiveJob = Boolean(activeJob);
@@ -50,10 +47,6 @@ export function useTranslationJobPolling(projectId: string, enabled = true) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
-      }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
       }
       pollAttemptRef.current = 0;
     };
@@ -70,15 +63,8 @@ export function useTranslationJobPolling(projectId: string, enabled = true) {
       const interval = TRANSLATION_JOBS_POLL_INTERVALS[intervalIndex];
 
       timeoutRef.current = setTimeout(() => {
-        // check if polling was aborted
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-
         pollAttemptRef.current++;
-        queryClient.invalidateQueries({
-          queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),
-        });
+        activeJobQuery.refetch();
         scheduleNextPoll();
       }, interval);
     };
@@ -89,24 +75,17 @@ export function useTranslationJobPolling(projectId: string, enabled = true) {
       return;
     }
 
-    // create new abort controller for this polling session
-    abortControllerRef.current = new AbortController();
-
     scheduleNextPoll();
 
     // cleanup function for effect
     return cleanup;
-  }, [projectId, enabled, hasActiveJob, isJobRunning, queryClient]);
+  }, [projectId, enabled, hasActiveJob, isJobRunning, activeJobQuery]);
 
   // manual control functions
   const stopPolling = useCallback(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
-    }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
     }
     pollAttemptRef.current = 0;
   }, []);
@@ -121,19 +100,13 @@ export function useTranslationJobPolling(projectId: string, enabled = true) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
 
     // reset and start fresh
     pollAttemptRef.current = 0;
-    abortControllerRef.current = new AbortController();
 
     // trigger immediate refetch
-    queryClient.invalidateQueries({
-      queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(projectId),
-    });
-  }, [enabled, hasActiveJob, isJobRunning, projectId, queryClient]);
+    activeJobQuery.refetch();
+  }, [enabled, hasActiveJob, isJobRunning, activeJobQuery]);
 
   return {
     activeJob,

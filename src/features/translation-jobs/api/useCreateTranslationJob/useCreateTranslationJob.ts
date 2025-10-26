@@ -1,11 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import type { ApiErrorResponse, CreateTranslationJobRequest, CreateTranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createEdgeFunctionErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
 import { CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA, CREATE_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
 
 /**
@@ -38,7 +37,6 @@ import { CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA, CREATE_TRANSLATION_JOB_SCHEMA }
  */
 export function useCreateTranslationJob() {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
   return useMutation<CreateTranslationJobResponse, ApiErrorResponse, CreateTranslationJobRequest>({
     mutationFn: async (jobData) => {
@@ -55,16 +53,6 @@ export function useCreateTranslationJob() {
       }
 
       return CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA.parse(data);
-    },
-    onSuccess: (_, { project_id }) => {
-      // invalidate active job cache for polling to start
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(project_id),
-      });
-      // invalidate job list cache
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists(),
-      });
     },
   });
 }

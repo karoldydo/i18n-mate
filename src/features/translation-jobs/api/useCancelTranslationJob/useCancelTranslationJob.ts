@@ -1,18 +1,12 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
-import type {
-  ApiErrorResponse,
-  CancelTranslationJobContext,
-  CancelTranslationJobRequest,
-  TranslationJobResponse,
-} from '@/shared/types';
+import type { ApiErrorResponse, CancelTranslationJobRequest, TranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { TRANSLATION_JOBS_ERROR_MESSAGES, TRANSLATION_JOBS_VALIDATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createTranslationJobDatabaseErrorResponse } from '../translation-jobs.errors';
-import { TRANSLATION_JOBS_KEY_FACTORY } from '../translation-jobs.key-factory';
 import { CANCEL_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
 
 /**
@@ -41,14 +35,8 @@ import { CANCEL_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
  */
 export function useCancelTranslationJob() {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
-  return useMutation<
-    TranslationJobResponse,
-    ApiErrorResponse,
-    CancelTranslationJobRequest,
-    CancelTranslationJobContext
-  >({
+  return useMutation<TranslationJobResponse, ApiErrorResponse, CancelTranslationJobRequest>({
     mutationFn: async ({ jobId }) => {
       const { job_id } = CANCEL_TRANSLATION_JOB_SCHEMA.parse({
         job_id: jobId,
@@ -94,54 +82,6 @@ export function useCancelTranslationJob() {
       }
 
       return data;
-    },
-    onError: (_err, { jobId }, context) => {
-      // rollback on error
-      if (context?.previousJob) {
-        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.active(context.previousJob.project_id), [
-          context.previousJob,
-        ]);
-        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId), context.previousJob);
-      }
-    },
-    onMutate: async ({ jobId }) => {
-      // cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: TRANSLATION_JOBS_KEY_FACTORY.all });
-
-      // get the current job from cache (assuming it's already loaded)
-      const currentJobData = queryClient.getQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId)) as
-        | TranslationJobResponse
-        | undefined;
-
-      if (currentJobData) {
-        const updatedJob = {
-          ...currentJobData,
-          finished_at: new Date().toISOString(),
-          status: 'cancelled' as const,
-        };
-
-        // update active job cache (empty array since job is no longer active)
-        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.active(currentJobData.project_id), []);
-
-        // update specific job cache
-        queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(jobId), updatedJob);
-
-        return { previousJob: currentJobData };
-      }
-
-      return {};
-    },
-    onSuccess: (data) => {
-      // update specific job cache
-      queryClient.setQueryData(TRANSLATION_JOBS_KEY_FACTORY.detail(data.id), data);
-      // invalidate active jobs cache (job is no longer active)
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.active(data.project_id),
-      });
-      // invalidate job list cache
-      queryClient.invalidateQueries({
-        queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists(),
-      });
     },
   });
 }
