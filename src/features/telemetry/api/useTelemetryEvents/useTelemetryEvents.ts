@@ -5,7 +5,6 @@ import type { ApiErrorResponse, TelemetryEventResponse, TelemetryEventsParams } 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../telemetry.errors';
-import { TELEMETRY_KEYS } from '../telemetry.key-factory';
 import { LIST_TELEMETRY_EVENTS_SCHEMA, TELEMETRY_EVENT_RESPONSE_SCHEMA } from '../telemetry.schemas';
 
 /**
@@ -28,7 +27,6 @@ export function useTelemetryEvents(projectId: string, params?: TelemetryEventsPa
   const supabase = useSupabase();
 
   return useQuery<TelemetryEventResponse[], ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
       const { limit, offset, order, project_id } = LIST_TELEMETRY_EVENTS_SCHEMA.parse({
         project_id: projectId,
@@ -55,7 +53,6 @@ export function useTelemetryEvents(projectId: string, params?: TelemetryEventsPa
 
       return TELEMETRY_EVENT_RESPONSE_SCHEMA.array().parse(data || []);
     },
-    queryKey: TELEMETRY_KEYS.list(projectId, params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: ['telemetry-events', projectId, params],
   });
 }

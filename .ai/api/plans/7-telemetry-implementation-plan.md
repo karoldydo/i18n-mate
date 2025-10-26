@@ -384,13 +384,13 @@ Treat empty SELECT results as 404 to avoid leaking existence. Use `createDatabas
 
 ### 8.2 Caching Strategy
 
-**TanStack Query Configuration:**
+**Simplified Approach:**
 
-List queries use `staleTime: 5 * 60 * 1000` and `gcTime: 10 * 60 * 1000` for telemetry events. No caching configured for mutations since events are append-only and created automatically.
+The implementation uses inline query keys without structured key factories. This simplifies the codebase while maintaining effective caching through TanStack Query's default behavior.
 
-**Cache Invalidation:**
+**Query Keys:**
 
-Create event optionally invalidates list cache (usually not needed since events are historical). Consider not invalidating cache for background/automated events to reduce refetch load. Only invalidate if user action triggers event creation.
+- Telemetry events list: `['telemetry-events', projectId, params]`
 
 ### 8.3 Partitioning Strategy
 
@@ -442,18 +442,14 @@ Create `src/features/telemetry/api/telemetry.schemas.ts` with all validation sch
 
 Create `src/features/telemetry/api/telemetry.errors.ts` with `createDatabaseErrorResponse` function that maps PostgreSQL errors (check constraint violations, foreign key violations, partition errors) to standardized `ApiErrorResponse` objects with appropriate HTTP status codes and user-friendly messages.
 
-### Step 5: Create Query Keys Factory
+### Step 5: Create TanStack Query Hook
 
-Create `src/features/telemetry/api/telemetry.key-factory.ts` with `TELEMETRY_KEYS` factory providing structured query keys for telemetry events following TanStack Query guidance with top-level `all`, `lists`, and `list` methods.
+Create `useTelemetryEvents` hook for reading telemetry events with validation and error handling. No mutation hook needed since telemetry events are created automatically by database triggers and RPC functions.
 
-### Step 6: Create TanStack Query Hook
+### Step 6: Create API Index File
 
-Create `useTelemetryEvents` hook for reading telemetry events with validation, error handling, and appropriate caching configuration. No mutation hook needed since telemetry events are created automatically by database triggers and RPC functions.
+Create `src/features/telemetry/api/index.ts` as barrel export for telemetry API components including error utilities, validation schemas, and hooks.
 
-### Step 7: Create API Index File
-
-Create `src/features/telemetry/api/index.ts` as barrel export for telemetry API components including error utilities, query key factory, validation schemas, and hooks.
-
-### Step 8: Write Unit Tests
+### Step 7: Write Unit Tests
 
 Write comprehensive unit tests for telemetry API using Vitest and Testing Library. Co-locate tests with source files, mock Supabase client, and test success/error scenarios including validation, pagination, sorting, and RLS access control. No tests needed for event creation since it happens automatically at database level.
