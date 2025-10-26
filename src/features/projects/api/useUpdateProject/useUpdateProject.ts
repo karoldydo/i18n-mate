@@ -1,21 +1,19 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, ProjectResponse, UpdateProjectContext, UpdateProjectRequest } from '@/shared/types';
+import type { ApiErrorResponse, ProjectResponse, UpdateProjectRequest } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
 import { PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
 
 /**
- * Update a project's fields with optimistic UI
+ * Update a project's fields
  *
- * Updates mutable project fields (name, description only). Applies optimistic
- * updates to the project detail cache with automatic rollback on error and
- * revalidation on settle. Immutable fields (prefix, default_locale) are blocked.
+ * Updates mutable project fields (name, description only).
+ * Immutable fields (prefix, default_locale) are blocked.
  *
  * @param projectId - UUID of the project to update
  *
@@ -28,9 +26,8 @@ import { PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA, UUID_SCHEMA } from '../
  */
 export function useUpdateProject(projectId: string) {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
-  return useMutation<ProjectResponse, ApiErrorResponse, UpdateProjectRequest, UpdateProjectContext>({
+  return useMutation<ProjectResponse, ApiErrorResponse, UpdateProjectRequest>({
     mutationFn: async (payload) => {
       const id = UUID_SCHEMA.parse(projectId);
       const body = UPDATE_PROJECT_SCHEMA.parse(payload);
@@ -54,36 +51,6 @@ export function useUpdateProject(projectId: string) {
 
       // runtime validation of response data
       return PROJECT_RESPONSE_SCHEMA.parse(data);
-    },
-    onError: (_err, _newData, context) => {
-      // rollback on error
-      if (context?.previousProject) {
-        queryClient.setQueryData(PROJECTS_KEY_FACTORY.detail(projectId), context.previousProject);
-      }
-    },
-    onMutate: async (newData) => {
-      // cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
-
-      // snapshot previous value
-      const previousProject = queryClient.getQueryData<ProjectResponse>(PROJECTS_KEY_FACTORY.detail(projectId));
-
-      // optimistically update
-      queryClient.setQueryData(PROJECTS_KEY_FACTORY.detail(projectId), (old: ProjectResponse | undefined) => {
-        // guard clause: prevent errors if cache is empty
-        if (!old) return old;
-        return {
-          ...old,
-          ...newData,
-        };
-      });
-
-      return { previousProject };
-    },
-    onSettled: () => {
-      // refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
-      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import type { ApiErrorResponse } from '@/shared/types';
 
@@ -7,7 +7,6 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
 import { UUID_SCHEMA } from '../projects.schemas';
 
 /**
@@ -15,7 +14,6 @@ import { UUID_SCHEMA } from '../projects.schemas';
  *
  * Removes the project record with cascading deletion of related data (locales,
  * keys, translations) handled by database constraints. Operation is irreversible.
- * On success, related caches are cleared and the project list is invalidated.
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
@@ -25,7 +23,6 @@ import { UUID_SCHEMA } from '../projects.schemas';
  */
 export function useDeleteProject() {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
   return useMutation<unknown, ApiErrorResponse, string>({
     mutationFn: async (projectId) => {
@@ -40,12 +37,6 @@ export function useDeleteProject() {
       if (count === 0) {
         throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
-    },
-    onSuccess: (_, projectId) => {
-      // remove from cache
-      queryClient.removeQueries({ queryKey: PROJECTS_KEY_FACTORY.detail(projectId) });
-      // invalidate list
-      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }

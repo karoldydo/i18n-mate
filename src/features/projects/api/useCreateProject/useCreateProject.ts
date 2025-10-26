@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import type { ApiErrorResponse, CreateProjectRequest, ProjectResponse } from '@/shared/types';
 
@@ -7,7 +7,6 @@ import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { PROJECTS_KEY_FACTORY } from '../projects.key-factory';
 import { CREATE_PROJECT_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.schemas';
 
 /**
@@ -26,7 +25,6 @@ import { CREATE_PROJECT_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.sche
  */
 export function useCreateProject() {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
   return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectRequest>({
     mutationFn: async (payload) => {
@@ -43,10 +41,6 @@ export function useCreateProject() {
       }
 
       return PROJECT_RESPONSE_SCHEMA.parse(data);
-    },
-    onSuccess: () => {
-      // invalidate project list cache
-      queryClient.invalidateQueries({ queryKey: PROJECTS_KEY_FACTORY.lists() });
     },
   });
 }

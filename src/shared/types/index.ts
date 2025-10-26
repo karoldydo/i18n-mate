@@ -93,7 +93,6 @@ export type {
   ProjectResponse,
   ProjectUpdate,
   ProjectWithCounts,
-  UpdateProjectContext,
   UpdateProjectRequest,
 } from './projects';
 

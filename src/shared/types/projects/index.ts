@@ -62,10 +62,5 @@ export type ProjectWithCounts = ProjectResponse & {
   locale_count: number;
 };
 
-// Mutation context for optimistic updates when updating a project
-export interface UpdateProjectContext {
-  previousProject?: ProjectResponse;
-}
-
 // Only name and description are mutable
 export type UpdateProjectRequest = Pick<ProjectUpdate, 'description' | 'name'>;

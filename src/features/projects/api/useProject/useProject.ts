@@ -29,7 +29,6 @@ export function useProject(projectId: string) {
   const supabase = useSupabase();
 
   return useQuery<ProjectResponse, ApiErrorResponse>({
-    gcTime: 30 * 60 * 1000, // 30 minutes
     queryFn: async () => {
       const id = UUID_SCHEMA.parse(projectId);
 
@@ -50,6 +49,5 @@ export function useProject(projectId: string) {
       return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
     queryKey: PROJECTS_KEY_FACTORY.detail(projectId),
-    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }

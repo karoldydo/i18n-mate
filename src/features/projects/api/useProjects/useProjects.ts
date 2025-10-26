@@ -30,7 +30,6 @@ export function useProjects(params: ListProjectsParams = {}) {
   const supabase = useSupabase();
 
   return useQuery<ProjectListResponse, ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
       const { limit, offset, order } = LIST_PROJECTS_SCHEMA.parse(params);
 
@@ -57,6 +56,5 @@ export function useProjects(params: ListProjectsParams = {}) {
       };
     },
     queryKey: PROJECTS_KEY_FACTORY.list(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

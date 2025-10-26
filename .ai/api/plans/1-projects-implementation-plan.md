@@ -128,7 +128,6 @@ The Projects API provides full CRUD operations for managing translation projects
 - `CreateProjectRequest`: input for creation with required `default_locale`, `default_locale_label`, `name`, `prefix`; `description` optional/null.
 - `CreateProjectRpcArgs`: mapped RPC parameters for `create_project_with_default_locale`.
 - `UpdateProjectRequest`: only `name` and `description` are mutable; `prefix` and `default_locale` are immutable by design.
-- `UpdateProjectContext`: carries `previousProject` snapshot for optimistic update rollback.
 - `ListProjectsParams`: pagination and sorting (`limit`, `offset`, order by `name`/`created_at` asc|desc).
 - `PaginationMetadata`/`Response`: list response metadata (`start`, `end`, `total`) to power paging UI.
 - `ApiErrorResponse` + specializations: standardized error envelope reused for 400/404/409/500 cases.
@@ -303,8 +302,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 7. PostgreSQL executes aggregated query with LEFT JOINs to count locales and keys
 8. Results are returned with `count` from Supabase
 9. Hook constructs `ProjectListResponse` with data array and pagination metadata
-10. TanStack Query caches results including metadata
-11. Component renders project list with counts and pagination controls
+10. Component renders project list with counts and pagination controls
 
 ### 5.2 Get Project Details Flow
 
@@ -314,8 +312,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 4. Hook calls Supabase client with `.eq('id', projectId).maybeSingle()`
 5. RLS policy validates `owner_user_id = auth.uid()`
 6. If unauthorized or not found, Supabase returns null → hook throws 404 error
-7. If found, project data is cached by TanStack Query
-8. Component renders project details
+7. If found, component renders project details
 
 ### 5.3 Create Project Flow
 
@@ -331,8 +328,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 7. Database enforces unique constraints on (owner_user_id, name) and (owner_user_id, prefix)
 8. On conflict, PostgreSQL returns unique violation error → hook returns 409
 9. On success, RPC returns new project data
-10. TanStack Query invalidates project list cache
-11. Component navigates to new project details page
+10. Component navigates to new project details page
 
 ### 5.4 Update Project Flow
 
@@ -347,8 +343,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 9. If unauthorized or not found, Supabase returns empty result → hook returns 404
 10. Unique constraint on name is checked → potential 409 conflict
 11. On success, updated project data is returned
-12. TanStack Query updates cache and invalidates related queries
-13. Component displays success message
+12. Component displays success message
 
 ### 5.5 Delete Project Flow
 
@@ -366,8 +361,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
    - `translation_job_items` rows
    - `telemetry_events` rows
 8. On success, Supabase returns 204 No Content
-9. TanStack Query invalidates all project-related caches
-10. Component navigates to project list page
+9. Component navigates to project list page
 
 ## 6. Security Considerations
 
@@ -534,25 +528,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - List view excludes `owner_user_id` to reduce payload size
 - Use `list_projects_with_counts` RPC for aggregated data instead of N+1 queries
 
-### 8.2 Caching Strategy
-
-**TanStack Query Configuration:**
-
-- List queries use `staleTime: 5 * 60 * 1000` and `gcTime: 10 * 60 * 1000` to balance freshness and memory.
-- Detail queries use `staleTime: 10 * 60 * 1000` and `gcTime: 30 * 60 * 1000` for longer retention of individual items.
-
-**Cache Invalidation:**
-
-- Create project → invalidate list cache
-- Update project → invalidate list cache and single project cache
-- Delete project → invalidate list cache and remove from query cache
-
-### 8.3 Optimistic Updates
-
-- `useUpdateProject` applies optimistic cache updates for the project detail; on error, it rolls back using a `previousProject` snapshot.
-- After settle, it revalidates both detail and list caches via `PROJECTS_KEY_FACTORY` to ensure server truth.
-
-### 8.4 Database Performance
+### 8.2 Database Performance
 
 **RPC Function Optimization:**
 
@@ -588,24 +564,22 @@ This module provides centralized error handling utilities used by all TanStack Q
 
 Create `src/features/projects/api/projects.key-factory.ts`:
 
-- Expose structured keys: `all`, `lists`, `list(params)`, `details`, and `detail(id)` to standardize cache queries and invalidations.
+- Expose structured keys: `all`, `lists`, `list(params)`, `details`, and `detail(id)` for consistent query identification.
 
 ### Step 6: Create TanStack Query Hooks
 
 **Implementation Notes:**
 
 - All hooks follow TanStack Query best practices with proper error handling and runtime validation.
-- Use optimistic updates for better UX in mutation hooks; rollback on error and revalidate after settle.
-- Implement cache invalidation for lists and detail views via `PROJECTS_KEY_FACTORY`.
 - Include TypeScript generics for type safety and RPC parameter handling.
 
 Planned hooks summary:
 
-- useProjects: validate params, call RPC list with exact count, validate items, return data + pagination metadata; 5m stale/10m gc.
-- useProject: validate UUID, fetch single row, map 404 when missing, validate payload; 10m stale/30m gc.
-- useCreateProject: validate input, call RPC, map DB errors, ensure data present, validate response; invalidate lists on success.
-- useUpdateProject: validate UUID and input, apply optimistic update with rollback; revalidate detail and lists on settle.
-- useDeleteProject: validate UUID, delete by id, map 404 when nothing deleted; remove detail cache and invalidate lists.
+- useProjects: validate params, call RPC list with exact count, validate items, return data + pagination metadata.
+- useProject: validate UUID, fetch single row, map 404 when missing, validate payload.
+- useCreateProject: validate input, call RPC, map DB errors, ensure data present, validate response.
+- useUpdateProject: validate UUID and input, call update, map DB errors, ensure data present, validate response.
+- useDeleteProject: validate UUID, delete by id, map 404 when nothing deleted.
 
 ### Step 7: Create API Index File
 
@@ -636,7 +610,7 @@ This keeps consumer imports concise (`import { useProjects } from '@/features/pr
 - Co-locate tests with source files (`Hook.test.ts` next to `Hook.ts`)
 - Mock Supabase client using test utilities from `src/test/`
 - Test both success and error scenarios with edge cases
-- Verify cache behavior, pagination, and RPC functionality
+- Verify pagination and RPC functionality
 - Aim for 90% coverage threshold as per project requirements
 
 **8.1 Create `src/features/projects/api/useProjects/useProjects.test.ts`:**
@@ -678,7 +652,6 @@ Test scenarios:
 - Successful update (name only)
 - Successful update (description only)
 - Successful update (both fields)
-- Optimistic update and rollback on error
 - Attempt to change prefix (400)
 - Attempt to change default_locale (400)
 - Duplicate name conflict (409)
@@ -691,4 +664,3 @@ Test scenarios:
 - Successful deletion
 - Invalid UUID format
 - Project not found (404)
-- Verify cache invalidation

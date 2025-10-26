@@ -196,40 +196,6 @@ describe('useDeleteProject', () => {
     expect(deleteMock).toHaveBeenCalled();
   });
 
-  it('should invalidate caches on successful deletion', async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: {
-        mutations: { retry: false },
-        queries: { retry: false },
-      },
-    });
-
-    const removeQueriesSpy = vi.spyOn(queryClient, 'removeQueries');
-    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries');
-
-    mockSupabase.from.mockReturnValue({
-      delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({
-          count: 1,
-          error: null,
-        }),
-      }),
-    });
-
-    const wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: queryClient }, children);
-
-    const { result } = renderHook(() => useDeleteProject(), { wrapper });
-
-    result.current.mutate(validProjectId);
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    // verify cache was invalidated
-    expect(removeQueriesSpy).toHaveBeenCalled();
-    expect(invalidateQueriesSpy).toHaveBeenCalled();
-  });
-
   it('should handle multiple delete attempts gracefully', async () => {
     mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
