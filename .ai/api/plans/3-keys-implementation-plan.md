@@ -703,15 +703,21 @@ Create `src/features/keys/api/keys.key-factory.ts`:
 - Create the hook with `projectId` for targeted invalidation; validate id via `UUID_SCHEMA`, delete by id from `keys`, and return `void` when `count > 0`.
 - On success, remove `detail(id)` cache and invalidate `KEYS_KEY_FACTORY.defaultViews(projectId)` and `KEYS_KEY_FACTORY.all`; map DB errors to standardized responses and surface 404 when nothing is deleted.
 
+**6.5 Create `src/features/keys/api/useProjectKeyCount/useProjectKeyCount.ts`:**
+
+- Validate `projectId` via `UUID_SCHEMA`, then call RPC `list_keys_default_view` with minimal params (limit: 1) to get exact count without fetching data.
+- Key via `KEYS_KEY_FACTORY.count(projectId)`; 3m `staleTime`, 10m `gcTime`; return `number` representing total key count for the project.
+- Used by export functionality to display key statistics without loading full key data.
+
 After implementing each hook, add an `index.ts` inside its directory (for example, `useCreateKey/index.ts`) that re-exports the hook with `export * from './useCreateKey';` to support the barrel structure used by the keys API.
 
-### Step 7: Create API Index File
+### Step 8: Create API Index File
 
 Create `src/features/keys/api/index.ts`:
 
 - Barrel‑export `keys.errors`, `keys.key-factory`, `keys.schemas`, and hooks to keep imports concise and tree‑shakable.
 
-### Step 8: Write Unit Tests
+### Step 9: Write Unit Tests
 
 **Testing Strategy:**
 
@@ -722,7 +728,7 @@ Create `src/features/keys/api/index.ts`:
 - Verify cache behavior, pagination, and search functionality
 - Aim for 90% coverage threshold as per project requirements
 
-**8.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.test.ts`:**
+**9.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.test.ts`:**
 
 Test scenarios:
 
@@ -739,7 +745,7 @@ Test scenarios:
 - **Performance test: large dataset (1000+ keys)**
 - **Edge case: special characters in search**
 
-**8.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.test.ts`:**
+**9.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.test.ts`:**
 
 Test scenarios:
 
@@ -757,7 +763,7 @@ Test scenarios:
 - **Empty project with no keys**
 - **Edge case: mixed translated/untranslated keys**
 
-**8.3 Create `src/features/keys/api/useCreateKey/useCreateKey.test.ts`:**
+**9.3 Create `src/features/keys/api/useCreateKey/useCreateKey.test.ts`:**
 
 Test scenarios:
 
@@ -773,7 +779,7 @@ Test scenarios:
 - **Value trimming and normalization**
 - **Edge case: Unicode characters in key names**
 
-**8.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.test.ts`:**
+**9.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.test.ts`:**
 
 Test scenarios:
 
@@ -785,3 +791,16 @@ Test scenarios:
 - **Cache invalidation for multiple views**
 - **Edge case: concurrent deletion attempts**
 - **Authorization edge cases**
+
+**9.5 Create `src/features/keys/api/useProjectKeyCount/useProjectKeyCount.test.ts`:**
+
+Test scenarios:
+
+- Successful count fetch for project with keys
+- Successful count fetch for empty project (count = 0)
+- Validation error for invalid project_id format
+- Authorization error (403) for non-owned project
+- Database error handling
+- **Edge case: very large project (1000+ keys)**
+- **Performance test: count vs full data fetch efficiency**
+- **Edge case: concurrent count requests**

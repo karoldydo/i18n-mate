@@ -88,6 +88,7 @@ export function ProjectDetailsPage() {
       <ProjectDetailsLayout
         onDelete={() => setDeleteDialogOpen(true)}
         onEdit={() => setEditDialogOpen(true)}
+        onExport={() => navigate(`/projects/${projectId}/export`)}
         project={project}
         projectId={projectId}
       />

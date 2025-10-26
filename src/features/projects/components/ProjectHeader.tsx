@@ -5,6 +5,7 @@ import { Button } from '@/shared/ui/button';
 interface ProjectHeaderProps {
   onDelete: () => void;
   onEdit: () => void;
+  onExport: () => void;
   project: ProjectResponse;
   stats?: ProjectStats;
 }
@@ -20,7 +21,7 @@ interface ProjectStats {
  * Displays project name, optional description, action buttons (edit/delete),
  * and project statistics in a clean, organized layout.
  */
-export function ProjectHeader({ onDelete, onEdit, project, stats }: ProjectHeaderProps) {
+export function ProjectHeader({ onDelete, onEdit, onExport, project, stats }: ProjectHeaderProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex-1 space-y-2">
@@ -44,6 +45,9 @@ export function ProjectHeader({ onDelete, onEdit, project, stats }: ProjectHeade
       </div>
 
       <div className="flex gap-2">
+        <Button aria-label="Export project translations" onClick={onExport} variant="default">
+          Export
+        </Button>
         <Button aria-label="Edit project" onClick={onEdit} variant="outline">
           Edit
         </Button>

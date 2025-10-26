@@ -5,3 +5,4 @@ export * from './useCreateKey';
 export * from './useDeleteKey';
 export * from './useKeysDefaultView';
 export * from './useKeysPerLanguageView';
+export * from './useProjectKeyCount';

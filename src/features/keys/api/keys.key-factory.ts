@@ -3,6 +3,7 @@ import type { ListKeysDefaultViewParams, ListKeysPerLanguageParams } from '@/sha
 // query key factory for keys, follows tanstack query best practices for structured query keys
 export const KEYS_KEY_FACTORY = {
   all: ['keys'] as const,
+  count: (projectId: string) => [...KEYS_KEY_FACTORY.all, 'count', projectId] as const,
   defaultView: (projectId: string, params: Omit<ListKeysDefaultViewParams, 'project_id'>) =>
     [...KEYS_KEY_FACTORY.defaultViews(projectId), params] as const,
   defaultViews: (projectId: string) => [...KEYS_KEY_FACTORY.all, 'default', projectId] as const,

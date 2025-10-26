@@ -12,6 +12,7 @@ import { ProjectNavigation } from './ProjectNavigation';
 interface ProjectDetailsLayoutProps {
   onDelete: () => void;
   onEdit: () => void;
+  onExport: () => void;
   project: ProjectResponse;
   projectId: string;
 }
@@ -22,7 +23,7 @@ interface ProjectDetailsLayoutProps {
  * Provides consistent structure with header, navigation tabs, and metadata display.
  * Organizes the view into clear sections with responsive design.
  */
-export function ProjectDetailsLayout({ onDelete, onEdit, project, projectId }: ProjectDetailsLayoutProps) {
+export function ProjectDetailsLayout({ onDelete, onEdit, onExport, project, projectId }: ProjectDetailsLayoutProps) {
   const navigate = useNavigate();
 
   return (
@@ -40,7 +41,7 @@ export function ProjectDetailsLayout({ onDelete, onEdit, project, projectId }: P
             Back to Projects
           </Button>
         </div>
-        <ProjectHeader onDelete={onDelete} onEdit={onEdit} project={project} />
+        <ProjectHeader onDelete={onDelete} onEdit={onEdit} onExport={onExport} project={project} />
         <ProjectNavigation projectId={projectId} />
         <ProjectMetadata project={project} />
       </div>

@@ -46,6 +46,12 @@ const ProjectTelemetryPage = lazy(() =>
   }))
 );
 
+const ExportPage = lazy(() =>
+  import('../features/export/routes').then((module) => ({
+    default: module.ExportPage,
+  }))
+);
+
 const router = createBrowserRouter([
   {
     Component: App,
@@ -78,6 +84,10 @@ const router = createBrowserRouter([
   {
     Component: ProjectTelemetryPage,
     path: '/projects/:id/telemetry',
+  },
+  {
+    Component: ExportPage,
+    path: '/projects/:projectId/export',
   },
 ]);
 
