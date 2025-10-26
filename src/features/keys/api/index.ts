@@ -1,5 +1,4 @@
 export * from './keys.errors';
-export * from './keys.key-factory';
 export * from './keys.schemas';
 export * from './useCreateKey';
 export * from './useDeleteKey';

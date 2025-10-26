@@ -6,7 +6,6 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEYS_KEY_FACTORY } from '../keys.key-factory';
 import { LIST_KEYS_DEFAULT_VIEW_SCHEMA, UUID_SCHEMA } from '../keys.schemas';
 
 /**
@@ -28,7 +27,6 @@ export function useProjectKeyCount(projectId: string) {
   const supabase = useSupabase();
 
   return useQuery<number, ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
       const validatedProjectId = UUID_SCHEMA.parse(projectId);
 
@@ -60,7 +58,6 @@ export function useProjectKeyCount(projectId: string) {
 
       return count;
     },
-    queryKey: KEYS_KEY_FACTORY.count(projectId),
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    queryKey: ['project-key-count', projectId],
   });
 }

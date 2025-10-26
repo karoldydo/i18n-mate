@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import type { ApiErrorResponse, CreateKeyRequest, CreateKeyResponse } from '@/shared/types';
 
@@ -7,7 +7,6 @@ import { KEYS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEYS_KEY_FACTORY } from '../keys.key-factory';
 import { CREATE_KEY_RESPONSE_SCHEMA, CREATE_KEY_SCHEMA } from '../keys.schemas';
 
 /**
@@ -26,7 +25,6 @@ import { CREATE_KEY_RESPONSE_SCHEMA, CREATE_KEY_SCHEMA } from '../keys.schemas';
  */
 export function useCreateKey() {
   const supabase = useSupabase();
-  const queryClient = useQueryClient();
 
   return useMutation<CreateKeyResponse, ApiErrorResponse, CreateKeyRequest>({
     mutationFn: async (payload) => {
@@ -71,11 +69,6 @@ export function useCreateKey() {
       }
 
       return CREATE_KEY_RESPONSE_SCHEMA.parse(data);
-    },
-    onSuccess: (_, payload) => {
-      // invalidate all key list caches for this project (default and all per-language views)
-      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(payload.project_id) });
-      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.all });
     },
   });
 }

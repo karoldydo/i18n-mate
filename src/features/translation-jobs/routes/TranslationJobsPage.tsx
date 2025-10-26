@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import type { TranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { KEYS_KEY_FACTORY } from '@/features/keys/api/keys.key-factory';
 import { isActiveJob } from '@/shared/types';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
@@ -89,14 +88,6 @@ export function TranslationJobsPage() {
       // refresh jobs list
       queryClient.invalidateQueries({ queryKey: TRANSLATION_JOBS_KEY_FACTORY.lists() });
       refetch();
-
-      // refresh keys views (default + per-language if we know target)
-      queryClient.invalidateQueries({ queryKey: KEYS_KEY_FACTORY.defaultViews(projectId) });
-      if (progressJob?.target_locale) {
-        queryClient.invalidateQueries({
-          queryKey: KEYS_KEY_FACTORY.perLanguageViews(projectId, progressJob.target_locale),
-        });
-      }
 
       // fetch final job snapshot for modal and toasts
       (async () => {

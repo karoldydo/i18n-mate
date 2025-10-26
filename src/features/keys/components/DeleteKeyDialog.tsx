@@ -20,7 +20,6 @@ interface DeleteKeyDialogProps {
   onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
-  projectId: string;
 }
 
 /**
@@ -29,8 +28,8 @@ interface DeleteKeyDialogProps {
  * Displays key information and warns about cascade delete behavior.
  * All translations across languages will be permanently removed.
  */
-export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open, projectId }: DeleteKeyDialogProps) {
-  const deleteKeyMutation = useDeleteKey(projectId);
+export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open }: DeleteKeyDialogProps) {
+  const deleteKeyMutation = useDeleteKey();
 
   const handleConfirm = () => {
     if (!keyData) return;

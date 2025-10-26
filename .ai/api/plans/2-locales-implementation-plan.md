@@ -87,6 +87,8 @@ The Project Locales API manages languages assigned to translation projects. It p
 
 ## 3. Used Types
 
+**Note:** All types are organized by feature in separate directories under `src/shared/types/`.
+
 ### 3.1 Existing Types
 
 **Import Path:** `@/shared/types` (central export) or `@/shared/types/locales` (feature-specific)
@@ -95,16 +97,19 @@ The Project Locales API manages languages assigned to translation projects. It p
 
 - `PaginationParams` - Query parameters for pagination
 - `PaginationMetadata` - Response metadata with total count
+- `PaginatedResponse<T>` - Generic paginated response wrapper
 - `ApiErrorResponse` - Generic error response wrapper
 - `ValidationErrorResponse` - 400 validation error response
 - `ConflictErrorResponse` - 409 conflict error response
 
 **Locales Types** (from `src/shared/types/locales/index.ts`):
 
-- `ProjectLocaleResponse` is the canonical locale row; `ProjectLocaleWithDefault` adds `is_default` for list RPCs.
-- `CreateProjectLocaleRequest`/`CreateProjectLocaleResponse` match the `create_project_locale_atomic` RPC contract.
-- `UpdateProjectLocaleRequest` allows `label` only; `UpdateProjectLocaleContext` carries optional `previousLocales` for UI state.
-- `ListProjectLocalesWithDefaultArgs` defines `p_project_id` for the list RPC; error envelopes reuse `ApiErrorResponse` specializations.
+- `ProjectLocaleResponse` - Canonical locale row with core fields
+- `ProjectLocaleWithDefault` - `ProjectLocaleResponse` plus `is_default` flag
+- `CreateProjectLocaleRequest` - Input for atomic locale creation
+- `CreateProjectLocaleResponse` - Result of locale creation
+- `UpdateProjectLocaleRequest` - Input for locale label updates
+- `ListProjectLocalesWithDefaultArgs` - Parameters for locale listing RPC
 
 ### 3.2 New Zod Validation Schemas
 
@@ -543,12 +548,11 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 **Simplified Approach:**
 
-The implementation uses a simplified caching strategy without structured query key factories or manual cache invalidation. Each query uses simple, hardcoded query keys that enable automatic cache management by TanStack Query.
+The implementation uses inline query keys without structured key factories. This simplifies the codebase while maintaining effective caching through TanStack Query's default behavior.
 
 **Query Keys:**
 
 - Project locales list: `['project-locales', projectId]`
-- Uses default TanStack Query caching behavior with standard staleTime and gcTime values
 
 ### 8.3 Optimistic Updates
 
@@ -556,7 +560,7 @@ The implementation uses a simplified caching strategy without structured query k
 
 Optimistic updates have been removed to simplify the implementation. All mutations rely on server confirmation before updating the UI, ensuring data consistency without complex rollback logic.
 
-### 8.4 Database Performance
+### 8.5 Database Performance
 
 **Fan-Out Trigger Optimization:**
 
@@ -601,16 +605,12 @@ Create `src/features/locales/api/locales.errors.ts`:
 - Provide `createDatabaseErrorResponse` to normalize Postgres errors: map `23505` → 409, `23514` → 400, `23503` → 404, triggers → 400.
 - Use `createApiErrorResponse` for generic 500s with safe fallback; accept optional `context` for structured logs.
 
-### Step 5: Simplified Caching Approach
-
-The implementation uses simple, hardcoded query keys without a structured key factory. This simplifies the codebase while maintaining effective caching through TanStack Query's default behavior.
-
-### Step 6: Create TanStack Query Hooks
+### Step 5: Create TanStack Query Hooks
 
 **Implementation Notes:**
 
-- All hooks follow TanStack Query best practices with proper error handling
-- Use simple, hardcoded query keys for caching
+- Hooks follow TanStack Query best practices with proper error handling and runtime validation.
+- Use inline query keys for simplified caching without structured key factories.
 - Include TypeScript generics for type safety and locale normalization
 
 **6.1 Create `src/features/locales/api/useProjectLocales/useProjectLocales.ts`:**
@@ -631,7 +631,7 @@ The implementation uses simple, hardcoded query keys without a structured key fa
 
 - Validate `uuid` with `UUID_SCHEMA`, perform delete, and map DB errors with `createDatabaseErrorResponse`.
 
-### Step 7: Create API Index File
+### Step 6: Create API Index File
 
 Create `src/features/locales/api/index.ts`:
 
@@ -645,7 +645,7 @@ Create `src/features/locales/api/index.ts`:
 - Hook folders expose index barrels so top-level exports can use `export *`
 - Locale normalization helper re-exported for API consumers
 
-### Step 8: Write Unit Tests
+### Step 7: Write Unit Tests
 
 **Testing Strategy:**
 

@@ -226,7 +226,6 @@ export function KeysListPage() {
         onConfirm={handleDeleteConfirm}
         onOpenChange={setDeleteKeyDialogOpen}
         open={deleteKeyDialogOpen}
-        projectId={validProjectId}
       />
     </>
   );

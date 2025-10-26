@@ -109,6 +109,8 @@ The Projects API provides full CRUD operations for managing translation projects
 
 ## 3. Used Types
 
+**Note:** All types are organized by feature in separate directories under `src/shared/types/`.
+
 ### 3.1 Existing Types
 
 **Import Path:** `@/shared/types` (central export) or `@/shared/types/projects` (feature-specific)
@@ -117,6 +119,7 @@ The Projects API provides full CRUD operations for managing translation projects
 
 - `PaginationParams` - Query parameters for pagination
 - `PaginationMetadata` - Response metadata with total count
+- `PaginatedResponse<T>` - Generic paginated response wrapper
 - `ApiErrorResponse` - Generic error response wrapper
 - `ValidationErrorResponse` - 400 validation error response
 - `ConflictErrorResponse` - 409 conflict error response
@@ -528,7 +531,24 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - List view excludes `owner_user_id` to reduce payload size
 - Use `list_projects_with_counts` RPC for aggregated data instead of N+1 queries
 
-### 8.2 Database Performance
+### 8.2 Caching Strategy
+
+**Simplified Approach:**
+
+The implementation uses inline query keys without structured key factories. This simplifies the codebase while maintaining effective caching through TanStack Query's default behavior.
+
+**Query Keys:**
+
+- Projects list: `['projects', 'list', params]`
+- Single project: `['projects', 'detail', projectId]`
+
+### 8.3 Optimistic Updates
+
+**Simplified Approach:**
+
+Optimistic updates have been removed to simplify the implementation. All mutations rely on server confirmation before updating the UI, ensuring data consistency without complex rollback logic.
+
+### 8.4 Database Performance
 
 **RPC Function Optimization:**
 
@@ -564,8 +584,8 @@ This module provides centralized error handling utilities used by all TanStack Q
 
 **Implementation Notes:**
 
-- All hooks follow TanStack Query best practices with proper error handling and runtime validation.
-- Include TypeScript generics for type safety and RPC parameter handling.
+- Hooks follow TanStack Query best practices with proper error handling and runtime validation.
+- Use inline query keys for simplified caching without structured key factories.
 
 Planned hooks summary:
 

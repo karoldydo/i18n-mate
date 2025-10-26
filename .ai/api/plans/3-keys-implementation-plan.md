@@ -100,7 +100,7 @@ The mutation returns `void` (no content). The underlying Supabase API returns `{
 
 ## 3. Used Types
 
-**Note:** As of the latest refactoring, all types are organized by feature in separate directories under `src/shared/types/`.
+**Note:** All types are organized by feature in separate directories under `src/shared/types/`.
 
 ### 3.1 Existing Types
 
@@ -602,10 +602,9 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ### 8.2 Caching Strategy
 
-**TanStack Query Configuration:**
+**Simplified Approach:**
 
-- Default and per-language lists use `staleTime: 3m` and `gcTime: 10m` for freshness vs. memory.
-- Mutations invalidate list caches to keep both views consistent.
+The implementation uses inline query keys without structured key factories. This simplifies the codebase while maintaining effective caching through TanStack Query's default behavior.
 
 **Cache Invalidation:**
 
@@ -613,13 +612,18 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - Delete key → invalidate all key list caches
 - Update translation (future endpoint) → invalidate per-language view cache for that locale
 
-**Cache Keys:**
+**Query Keys:**
 
-- Default view: `['keys', 'default', projectId, params]`
-- Per-language view: `['keys', 'per-language', projectId, locale, params]`
-- Use structured query keys for fine-grained invalidation
+- Default view: `['keys-default-view', projectId, limit, missingOnly, offset, search]`
+- Per-language view: `['keys-per-language-view', projectId, locale, limit, missingOnly, offset, search]`
 
-### 8.3 Fan-Out Performance
+### 8.3 Optimistic Updates
+
+**Simplified Approach:**
+
+Optimistic updates have been removed to simplify the implementation. All mutations rely on server confirmation before updating the UI, ensuring data consistency without complex rollback logic.
+
+### 8.4 Fan-Out Performance
 
 **Key Creation:**
 
@@ -634,7 +638,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 - Monitor RPC execution time in production
 - Consider batch insert optimization if needed
 
-### 8.4 Database Performance
+### 8.5 Database Performance
 
 **RPC Function Optimization:**
 
@@ -669,55 +673,48 @@ Create `src/features/keys/api/keys.errors.ts`:
 - Map trigger messages to 400: prefix mismatch (`KEY_INVALID_PREFIX`), empty default value (`DEFAULT_VALUE_EMPTY`).
 - Return 403 for ownership/visibility issues; fall back to 500 `DATABASE_ERROR` with safe details.
 
-### Step 5: Create Query Keys Factory
-
-Create `src/features/keys/api/keys.key-factory.ts`:
-
-- Provide structured keys: `all`, `defaultViews(projectId)`, `defaultView(projectId, params)`, `perLanguageViews(projectId, locale)`, `perLanguageView(projectId, locale, params)`, `details()`, `detail(id)`.
-- Use nested array keys to enable granular cache invalidation across default and per-language views.
-
-### Step 6: Create TanStack Query Hooks
+### Step 5: Create TanStack Query Hooks
 
 **Implementation Notes:**
 
 - Hooks follow TanStack Query best practices with centralized error mapping and runtime validation.
-- No optimistic updates; rely on structured cache keys and targeted invalidation for consistency.
+- Use inline query keys for simplified caching without structured key factories.
 
 **6.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.ts`:**
 
 - Validate `ListKeysDefaultViewParams`, call RPC `list_keys_default_view`, and return `{ data, metadata }` with exact `count`.
-- Validate items via `KEY_DEFAULT_VIEW_RESPONSE_SCHEMA`; key with `KEYS_KEY_FACTORY.defaultView(...)`; 3m `staleTime`, 10m `gcTime`.
+- Validate items via `KEY_DEFAULT_VIEW_RESPONSE_SCHEMA`; use inline query key `['keys-default-view', projectId, limit, missingOnly, offset, search]`.
 
 **6.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.ts`:**
 
 - Validate `ListKeysPerLanguageParams` (incl. `locale`), call `list_keys_per_language_view`, and return `{ data, metadata }`.
-- Validate items with `KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA`; key via `KEYS_KEY_FACTORY.perLanguageView(...)` (3m/10m); map errors centrally.
+- Validate items with `KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA`; use inline query key `['keys-per-language-view', projectId, locale, limit, missingOnly, offset, search]`.
 
 **6.3 Create `src/features/keys/api/useCreateKey/useCreateKey.ts`:**
 
 - Parse `CreateKeyRequest` with `CREATE_KEY_SCHEMA`, perform a client-side prefix check against project `prefix`, then call `create_key_with_value`; validate via `CREATE_KEY_RESPONSE_SCHEMA`.
-- On success, invalidate `KEYS_KEY_FACTORY.defaultViews(projectId)` and `KEYS_KEY_FACTORY.all`; map errors with `createDatabaseErrorResponse`.
+- On success, invalidate all key-related query caches; map errors with `createDatabaseErrorResponse`.
 
 **6.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.ts`:**
 
 - Create the hook with `projectId` for targeted invalidation; validate id via `UUID_SCHEMA`, delete by id from `keys`, and return `void` when `count > 0`.
-- On success, remove `detail(id)` cache and invalidate `KEYS_KEY_FACTORY.defaultViews(projectId)` and `KEYS_KEY_FACTORY.all`; map DB errors to standardized responses and surface 404 when nothing is deleted.
+- On success, invalidate all key-related query caches; map DB errors to standardized responses and surface 404 when nothing is deleted.
 
 **6.5 Create `src/features/keys/api/useProjectKeyCount/useProjectKeyCount.ts`:**
 
 - Validate `projectId` via `UUID_SCHEMA`, then call RPC `list_keys_default_view` with minimal params (limit: 1) to get exact count without fetching data.
-- Key via `KEYS_KEY_FACTORY.count(projectId)`; 3m `staleTime`, 10m `gcTime`; return `number` representing total key count for the project.
+- Use inline query key `['keys-project-count', projectId]`; return `number` representing total key count for the project.
 - Used by export functionality to display key statistics without loading full key data.
 
 After implementing each hook, add an `index.ts` inside its directory (for example, `useCreateKey/index.ts`) that re-exports the hook with `export * from './useCreateKey';` to support the barrel structure used by the keys API.
 
-### Step 8: Create API Index File
+### Step 6: Create API Index File
 
 Create `src/features/keys/api/index.ts`:
 
-- Barrel‑export `keys.errors`, `keys.key-factory`, `keys.schemas`, and hooks to keep imports concise and tree‑shakable.
+- Barrel‑export `keys.errors`, `keys.schemas`, and hooks to keep imports concise and tree‑shakable.
 
-### Step 9: Write Unit Tests
+### Step 7: Write Unit Tests
 
 **Testing Strategy:**
 
@@ -728,7 +725,7 @@ Create `src/features/keys/api/index.ts`:
 - Verify cache behavior, pagination, and search functionality
 - Aim for 90% coverage threshold as per project requirements
 
-**9.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.test.ts`:**
+**7.1 Create `src/features/keys/api/useKeysDefaultView/useKeysDefaultView.test.ts`:**
 
 Test scenarios:
 
@@ -745,7 +742,7 @@ Test scenarios:
 - **Performance test: large dataset (1000+ keys)**
 - **Edge case: special characters in search**
 
-**9.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.test.ts`:**
+**7.2 Create `src/features/keys/api/useKeysPerLanguageView/useKeysPerLanguageView.test.ts`:**
 
 Test scenarios:
 
@@ -763,7 +760,7 @@ Test scenarios:
 - **Empty project with no keys**
 - **Edge case: mixed translated/untranslated keys**
 
-**9.3 Create `src/features/keys/api/useCreateKey/useCreateKey.test.ts`:**
+**7.3 Create `src/features/keys/api/useCreateKey/useCreateKey.test.ts`:**
 
 Test scenarios:
 
@@ -779,7 +776,7 @@ Test scenarios:
 - **Value trimming and normalization**
 - **Edge case: Unicode characters in key names**
 
-**9.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.test.ts`:**
+**7.4 Create `src/features/keys/api/useDeleteKey/useDeleteKey.test.ts`:**
 
 Test scenarios:
 
@@ -792,7 +789,7 @@ Test scenarios:
 - **Edge case: concurrent deletion attempts**
 - **Authorization edge cases**
 
-**9.5 Create `src/features/keys/api/useProjectKeyCount/useProjectKeyCount.test.ts`:**
+**7.5 Create `src/features/keys/api/useProjectKeyCount/useProjectKeyCount.test.ts`:**
 
 Test scenarios:
 

@@ -6,7 +6,6 @@ import type { ApiErrorResponse, KeyDefaultViewListResponse, ListKeysDefaultViewP
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEYS_KEY_FACTORY } from '../keys.key-factory';
 import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from '../keys.schemas';
 
 /**
@@ -34,7 +33,6 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
   const supabase = useSupabase();
 
   return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
       const { limit, missing_only, offset, project_id, search } = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
 
@@ -66,12 +64,6 @@ export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
         },
       };
     },
-    queryKey: KEYS_KEY_FACTORY.defaultView(params.project_id, {
-      limit: params.limit,
-      missing_only: params.missing_only,
-      offset: params.offset,
-      search: params.search,
-    }),
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    queryKey: ['keys-default-view', params.project_id, params.limit, params.missing_only, params.offset, params.search],
   });
 }

@@ -6,7 +6,6 @@ import type { ApiErrorResponse, KeyPerLanguageViewListResponse, ListKeysPerLangu
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEYS_KEY_FACTORY } from '../keys.key-factory';
 import { KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA, LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA } from '../keys.schemas';
 
 /**
@@ -35,7 +34,6 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   const supabase = useSupabase();
 
   return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
-    gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
       const { limit, locale, missing_only, offset, project_id, search } =
         LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
@@ -69,12 +67,14 @@ export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
         },
       };
     },
-    queryKey: KEYS_KEY_FACTORY.perLanguageView(params.project_id, params.locale, {
-      limit: params.limit,
-      missing_only: params.missing_only,
-      offset: params.offset,
-      search: params.search,
-    }),
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    queryKey: [
+      'keys-per-language-view',
+      params.project_id,
+      params.locale,
+      params.limit,
+      params.missing_only,
+      params.offset,
+      params.search,
+    ],
   });
 }
