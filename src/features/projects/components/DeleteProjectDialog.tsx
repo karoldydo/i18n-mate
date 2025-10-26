@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
@@ -29,6 +30,7 @@ interface DeleteProjectDialogProps {
  * Requires explicit confirmation before executing the delete operation.
  */
 export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProjectDialogProps) {
+  const queryClient = useQueryClient();
   const deleteProject = useDeleteProject();
   const navigate = useNavigate();
 
@@ -38,6 +40,7 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
         toast.error(error.message);
       },
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
         toast.success('Project deleted successfully');
         onOpenChange(false);
         navigate('/projects');

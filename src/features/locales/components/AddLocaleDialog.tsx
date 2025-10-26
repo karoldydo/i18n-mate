@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -16,7 +17,7 @@ import { useCreateProjectLocale } from '../api/useCreateProjectLocale';
 
 interface AddLocaleDialogProps {
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+
   open: boolean;
   projectId: string;
 }
@@ -27,7 +28,8 @@ interface AddLocaleDialogProps {
  * Provides form with BCP-47 validation for locale code and label length validation.
  * Uses LocaleSelector dropdown for common primary language subtags.
  */
-export function AddLocaleDialog({ onOpenChange, onSuccess, open, projectId }: AddLocaleDialogProps) {
+export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDialogProps) {
+  const queryClient = useQueryClient();
   const createLocale = useCreateProjectLocale(projectId);
 
   const form = useForm<CreateProjectLocaleRequest>({
@@ -52,10 +54,10 @@ export function AddLocaleDialog({ onOpenChange, onSuccess, open, projectId }: Ad
         toast.error(error.message);
       },
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['project-locales'] });
         toast.success('Language added successfully');
         form.reset();
         onOpenChange(false);
-        onSuccess?.();
       },
     });
   };

@@ -542,20 +542,27 @@ The implementation uses inline query keys without structured key factories. This
 - Projects list: `['projects', 'list', params]`
 - Single project: `['projects', 'detail', projectId]`
 
-### 8.3 Optimistic Updates
+### 8.3 Cache Invalidation
+
+**Cache Invalidation:**
+
+- Update project → invalidate `['projects']` cache
+- Delete project → invalidate `['projects']` cache
+
+### 8.4 Optimistic Updates
 
 **Simplified Approach:**
 
 Optimistic updates have been removed to simplify the implementation. All mutations rely on server confirmation before updating the UI, ensuring data consistency without complex rollback logic.
 
-### 8.4 Database Performance
+### 8.5 Database Performance
 
 **RPC Function Optimization:**
 
 - `list_projects_with_counts` uses efficient LEFT JOINs with COUNT
 - Indexes on foreign keys ensure fast joins
 
-## 9. Implementation Steps
+## 10. Implementation Steps
 
 ### Step 1: Create Feature Directory Structure
 

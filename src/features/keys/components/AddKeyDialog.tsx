@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ interface AddKeyDialogProps {
  * Pre-fills the key prefix based on project configuration.
  */
 export function AddKeyDialog({ onOpenChange, open, projectId, projectPrefix }: AddKeyDialogProps) {
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createKeyMutation = useCreateKey();
 
@@ -45,6 +47,7 @@ export function AddKeyDialog({ onOpenChange, open, projectId, projectPrefix }: A
           setIsSubmitting(false);
         },
         onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['keys-default-view'] });
           toast.success('Translation key created successfully');
           onOpenChange(false);
           setIsSubmitting(false);

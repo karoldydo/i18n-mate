@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -16,7 +17,6 @@ import { useUpdateProjectLocale } from '../api/useUpdateProjectLocale';
 interface EditLocaleDialogProps {
   locale: null | ProjectLocaleWithDefault;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
   open: boolean;
 }
 
@@ -26,7 +26,8 @@ interface EditLocaleDialogProps {
  * Provides form with validation for updating locale labels only.
  * Locale code is immutable after creation.
  */
-export function EditLocaleDialog({ locale, onOpenChange, onSuccess, open }: EditLocaleDialogProps) {
+export function EditLocaleDialog({ locale, onOpenChange, open }: EditLocaleDialogProps) {
+  const queryClient = useQueryClient();
   const updateLocale = useUpdateProjectLocale(locale?.id ?? '');
 
   const form = useForm<UpdateProjectLocaleRequest>({
@@ -57,9 +58,9 @@ export function EditLocaleDialog({ locale, onOpenChange, onSuccess, open }: Edit
         toast.error(error.message);
       },
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['project-locales'] });
         toast.success('Language updated successfully');
         onOpenChange(false);
-        onSuccess?.();
       },
     });
   };

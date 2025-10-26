@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import type { KeyDefaultViewResponse } from '@/shared/types';
@@ -29,6 +30,7 @@ interface DeleteKeyDialogProps {
  * All translations across languages will be permanently removed.
  */
 export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open }: DeleteKeyDialogProps) {
+  const queryClient = useQueryClient();
   const deleteKeyMutation = useDeleteKey();
 
   const handleConfirm = () => {
@@ -39,6 +41,7 @@ export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open }: Dele
         toast.error(error.message);
       },
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['keys-default-view'] });
         toast.success('Translation key deleted successfully');
         onConfirm();
         onOpenChange(false);

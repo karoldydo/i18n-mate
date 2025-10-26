@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ interface RouteParams {
  * and timestamps.
  */
 export function KeysPerLanguagePage() {
+  const queryClient = useQueryClient();
   const { locale, projectId } = useParams<keyof RouteParams>();
   const navigate = useNavigate();
 
@@ -170,6 +172,7 @@ export function KeysPerLanguagePage() {
           toast.error(apiError.message);
         },
         onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['keys-per-language-view'] });
           setSavingState(false);
           setError(null);
           toast.success('Translation updated successfully');

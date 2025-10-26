@@ -554,13 +554,21 @@ The implementation uses inline query keys without structured key factories. This
 
 - Project locales list: `['project-locales', projectId]`
 
-### 8.3 Optimistic Updates
+### 8.3 Cache Invalidation
+
+**Cache Invalidation:**
+
+- Add locale → invalidate `['project-locales']` cache
+- Update locale → invalidate `['project-locales']` cache
+- Delete locale → invalidate `['project-locales']` cache
+
+### 8.4 Optimistic Updates
 
 **Simplified Approach:**
 
 Optimistic updates have been removed to simplify the implementation. All mutations rely on server confirmation before updating the UI, ensuring data consistency without complex rollback logic.
 
-### 8.5 Database Performance
+### 8.6 Database Performance
 
 **Fan-Out Trigger Optimization:**
 
@@ -573,7 +581,7 @@ Optimistic updates have been removed to simplify the implementation. All mutatio
 - CASCADE DELETE on translations is efficient due to composite primary key index
 - Index on `(project_id, key_id, locale)` ensures fast deletion
 
-## 9. Implementation Steps
+## 10. Implementation Steps
 
 ### Step 1: Create Feature Directory Structure
 

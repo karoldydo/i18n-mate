@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ interface EditProjectDialogProps {
  * Prefix and default locale are immutable after project creation.
  */
 export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDialogProps) {
+  const queryClient = useQueryClient();
   const updateProject = useUpdateProject(project.id);
 
   const form = useForm<UpdateProjectRequest>({
@@ -58,6 +60,7 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
         toast.error(error.message);
       },
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
         toast.success('Project updated successfully');
         onOpenChange(false);
       },

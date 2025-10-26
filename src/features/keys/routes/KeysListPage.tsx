@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -31,6 +32,7 @@ interface RouteParams {
  * filtering, pagination, inline editing, and key management operations.
  */
 export function KeysListPage() {
+  const queryClient = useQueryClient();
   const { projectId } = useParams<keyof RouteParams>();
   const navigate = useNavigate();
   const [editingKeyId, setEditingKeyId] = useState<null | string>(null);
@@ -149,6 +151,7 @@ export function KeysListPage() {
           toast.error(apiError.message);
         },
         onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['keys-default-view'] });
           setIsSaving(false);
           setEditError(null);
           toast.success('Translation updated successfully');

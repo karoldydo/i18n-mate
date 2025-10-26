@@ -608,9 +608,9 @@ The implementation uses inline query keys without structured key factories. This
 
 **Cache Invalidation:**
 
-- Create key → invalidate all key list caches (default and all per-language views)
-- Delete key → invalidate all key list caches
-- Update translation (future endpoint) → invalidate per-language view cache for that locale
+- Create key → invalidate `['keys-default-view']` cache
+- Delete key → invalidate `['keys-default-view']` cache
+- Update translation → invalidate `['keys-default-view']` and `['keys-per-language-view']` caches
 
 **Query Keys:**
 

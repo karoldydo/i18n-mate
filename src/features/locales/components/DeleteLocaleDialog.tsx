@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import type { ProjectLocaleWithDefault } from '@/shared/types';
@@ -18,7 +19,6 @@ import { useDeleteProjectLocale } from '../api/useDeleteProjectLocale';
 interface DeleteLocaleDialogProps {
   locale: null | ProjectLocaleWithDefault;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
   open: boolean;
 }
 
@@ -28,7 +28,8 @@ interface DeleteLocaleDialogProps {
  * Displays locale code and warning about cascading deletion of all translations.
  * Default locale cannot be deleted (should be prevented at UI level).
  */
-export function DeleteLocaleDialog({ locale, onOpenChange, onSuccess, open }: DeleteLocaleDialogProps) {
+export function DeleteLocaleDialog({ locale, onOpenChange, open }: DeleteLocaleDialogProps) {
+  const queryClient = useQueryClient();
   const deleteLocale = useDeleteProjectLocale();
 
   const handleDelete = () => {
@@ -39,9 +40,9 @@ export function DeleteLocaleDialog({ locale, onOpenChange, onSuccess, open }: De
         toast.error(error.message);
       },
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['project-locales'] });
         toast.success('Language deleted successfully');
         onOpenChange(false);
-        onSuccess?.();
       },
     });
   };
