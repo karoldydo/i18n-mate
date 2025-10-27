@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
@@ -34,7 +35,7 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
   const deleteProject = useDeleteProject();
   const navigate = useNavigate();
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     deleteProject.mutate(project.id, {
       onError: ({ error }) => {
         toast.error(error.message);
@@ -46,7 +47,15 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
         navigate('/projects');
       },
     });
-  };
+  }, [deleteProject, navigate, onOpenChange, project.id, queryClient]);
+
+  const handleDeleteClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      handleDelete();
+    },
+    [handleDelete]
+  );
 
   return (
     <AlertDialog onOpenChange={onOpenChange} open={open}>
@@ -75,10 +84,7 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={deleteProject.isPending}
-            onClick={(e) => {
-              e.preventDefault();
-              handleDelete();
-            }}
+            onClick={handleDeleteClick}
           >
             {deleteProject.isPending ? 'Deleting...' : 'Delete Project'}
           </AlertDialogAction>

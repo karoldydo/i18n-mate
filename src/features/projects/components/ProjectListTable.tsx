@@ -1,5 +1,5 @@
 import { AlertCircle, MoreHorizontal, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import type { ProjectWithCounts } from '@/shared/types';
@@ -40,13 +40,61 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
     order: 'name.asc',
   });
 
-  const handleRowClick = (projectId: string) => {
-    navigate(`/projects/${projectId}`);
-  };
+  const handleRowClick = useCallback(
+    (projectId: string) => {
+      navigate(`/projects/${projectId}`);
+    },
+    [navigate]
+  );
 
-  const projects = data?.data || [];
-  const total = data?.metadata.total || 0;
-  const totalPages = Math.ceil(total / pageSize);
+  const handleStopPropagation = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+  }, []);
+
+  const handlePreviousPage = useCallback(() => {
+    setPage((previousPage) => previousPage - 1);
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setPage((previousPage) => previousPage + 1);
+  }, []);
+
+  const handleEditClick = useCallback(
+    (project: ProjectWithCounts) => {
+      onEditClick(project);
+    },
+    [onEditClick]
+  );
+
+  const handleDeleteClick = useCallback(
+    (project: ProjectWithCounts) => {
+      onDeleteClick(project);
+    },
+    [onDeleteClick]
+  );
+
+  const projects = useMemo(() => data?.data || [], [data?.data]);
+  const total = useMemo(() => data?.metadata.total || 0, [data?.metadata.total]);
+  const totalPages = useMemo(() => Math.ceil(total / pageSize), [total, pageSize]);
+
+  const { isFirstPage, isLastPage } = useMemo(
+    () => ({
+      isFirstPage: page === 0,
+      isLastPage: page >= totalPages - 1,
+    }),
+    [page, totalPages]
+  );
+
+  const paginationRange = useMemo(
+    () => ({
+      from: page * pageSize + 1,
+      to: Math.min((page + 1) * pageSize, total),
+    }),
+    [page, pageSize, total]
+  );
+
+  const hasProjects = useMemo(() => projects.length > 0, [projects.length]);
+  const hasMultiplePages = useMemo(() => totalPages > 1, [totalPages]);
 
   if (isLoading) {
     return <ProjectListTableSkeleton />;
@@ -65,7 +113,7 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
     );
   }
 
-  if (projects.length === 0) {
+  if (!hasProjects) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
         <p className="text-muted-foreground mb-4">No projects found. Create your first project to get started.</p>
@@ -114,7 +162,7 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
                 <TableCell>{project.default_locale}</TableCell>
                 <TableCell className="text-right">{project.locale_count}</TableCell>
                 <TableCell className="text-right">{project.key_count}</TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
+                <TableCell onClick={handleStopPropagation}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button aria-label={`Actions for ${project.name}`} size="icon" variant="ghost">
@@ -123,8 +171,8 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => onEditClick(project)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => onDeleteClick(project)}>
+                      <DropdownMenuItem onClick={() => handleEditClick(project)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(project)}>
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -136,16 +184,16 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
         </Table>
       </div>
 
-      {totalPages > 1 && (
+      {hasMultiplePages && (
         <div className="flex items-center justify-between">
           <p className="text-muted-foreground text-sm">
-            Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, total)} of {total} projects
+            Showing {paginationRange.from} to {paginationRange.to} of {total} projects
           </p>
           <div className="flex gap-2">
-            <Button disabled={page === 0} onClick={() => setPage((p) => p - 1)} size="sm" variant="outline">
+            <Button disabled={isFirstPage} onClick={handlePreviousPage} size="sm" variant="outline">
               Previous
             </Button>
-            <Button disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} size="sm" variant="outline">
+            <Button disabled={isLastPage} onClick={handleNextPage} size="sm" variant="outline">
               Next
             </Button>
           </div>

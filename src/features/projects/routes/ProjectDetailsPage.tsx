@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import { Button } from '@/shared/ui/button';
@@ -26,11 +26,28 @@ export function ProjectDetailsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // validate UUID format
-  const validation = UUID_SCHEMA.safeParse(id);
-  const projectId = validation.data ?? '';
+  const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
+  const projectId = useMemo(() => validation.data ?? '', [validation.data]);
 
   const { data: project, error, isError, isLoading } = useProject(projectId);
+
+  const handleBackToProjects = useCallback(() => {
+    navigate('/projects');
+  }, [navigate]);
+
+  const handleEdit = useCallback(() => {
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleExport = useCallback(() => {
+    navigate(`/projects/${projectId}/export`);
+  }, [navigate, projectId]);
+
+  const projectWithCounts = useMemo(() => (project ? { ...project, key_count: 0, locale_count: 0 } : null), [project]);
 
   if (!validation.success) {
     return (
@@ -38,7 +55,7 @@ export function ProjectDetailsPage() {
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={() => navigate('/projects')} variant="outline">
+          <Button className="mt-4" onClick={handleBackToProjects} variant="outline">
             Back to Projects
           </Button>
         </div>
@@ -46,7 +63,6 @@ export function ProjectDetailsPage() {
     );
   }
 
-  // loading state
   if (isLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -68,14 +84,13 @@ export function ProjectDetailsPage() {
     );
   }
 
-  // error state
   if (isError || !project) {
     return (
       <div className="container mx-auto py-8">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Error Loading Project</h2>
           <p className="text-muted-foreground text-sm">{error?.error?.message || 'Failed to load project details.'}</p>
-          <Button className="mt-4" onClick={() => navigate('/projects')} variant="outline">
+          <Button className="mt-4" onClick={handleBackToProjects} variant="outline">
             Back to Projects
           </Button>
         </div>
@@ -86,22 +101,18 @@ export function ProjectDetailsPage() {
   return (
     <>
       <ProjectDetailsLayout
-        onDelete={() => setDeleteDialogOpen(true)}
-        onEdit={() => setEditDialogOpen(true)}
-        onExport={() => navigate(`/projects/${projectId}/export`)}
+        onDelete={handleDelete}
+        onEdit={handleEdit}
+        onExport={handleExport}
         project={project}
         projectId={projectId}
       />
-      <EditProjectDialog
-        onOpenChange={setEditDialogOpen}
-        open={editDialogOpen}
-        project={{ ...project, key_count: 0, locale_count: 0 }}
-      />
-      <DeleteProjectDialog
-        onOpenChange={setDeleteDialogOpen}
-        open={deleteDialogOpen}
-        project={{ ...project, key_count: 0, locale_count: 0 }}
-      />
+      {projectWithCounts && (
+        <>
+          <EditProjectDialog onOpenChange={setEditDialogOpen} open={editDialogOpen} project={projectWithCounts} />
+          <DeleteProjectDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen} project={projectWithCounts} />
+        </>
+      )}
     </>
   );
 }

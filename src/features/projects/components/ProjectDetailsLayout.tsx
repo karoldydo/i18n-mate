@@ -1,4 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 
 import type { ProjectResponse } from '@/shared/types';
@@ -26,6 +27,10 @@ interface ProjectDetailsLayoutProps {
 export function ProjectDetailsLayout({ onDelete, onEdit, onExport, project, projectId }: ProjectDetailsLayoutProps) {
   const navigate = useNavigate();
 
+  const handleBackToProjects = useCallback(() => {
+    navigate('/projects');
+  }, [navigate]);
+
   return (
     <div className="container mx-auto py-8">
       <div className="space-y-6">
@@ -33,7 +38,7 @@ export function ProjectDetailsLayout({ onDelete, onEdit, onExport, project, proj
           <Button
             aria-label="Back to projects list"
             className="mb-4"
-            onClick={() => navigate('/projects')}
+            onClick={handleBackToProjects}
             size="sm"
             variant="ghost"
           >

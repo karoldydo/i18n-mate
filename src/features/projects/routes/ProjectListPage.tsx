@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { ProjectWithCounts } from '@/shared/types';
 
@@ -19,15 +19,19 @@ export function ProjectListPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<null | ProjectWithCounts>(null);
 
-  const handleEditClick = (project: ProjectWithCounts) => {
+  const handleCreateClick = useCallback(() => {
+    setIsCreateDialogOpen(true);
+  }, []);
+
+  const handleEditClick = useCallback((project: ProjectWithCounts) => {
     setSelectedProject(project);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteClick = (project: ProjectWithCounts) => {
+  const handleDeleteClick = useCallback((project: ProjectWithCounts) => {
     setSelectedProject(project);
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
@@ -41,7 +45,7 @@ export function ProjectListPage() {
       </div>
 
       <ProjectListTable
-        onCreateClick={() => setIsCreateDialogOpen(true)}
+        onCreateClick={handleCreateClick}
         onDeleteClick={handleDeleteClick}
         onEditClick={handleEditClick}
       />

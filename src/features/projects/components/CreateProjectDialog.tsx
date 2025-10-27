@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -43,34 +44,62 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
     resolver: zodResolver(CREATE_PROJECT_REQUEST_SCHEMA),
   });
 
-  const onSubmit = (data: CreateProjectRequest) => {
-    const payload: CreateProjectRequest = {
-      default_locale: LOCALE_NORMALIZATION.normalize(data.default_locale),
-      default_locale_label: data.default_locale_label,
-      description: data.description || null,
-      name: data.name,
-      prefix: data.prefix,
-    };
+  const { formState, handleSubmit, reset, setValue } = form;
 
-    createProject.mutate(payload, {
-      onError: ({ error }) => {
-        toast.error(error.message);
-      },
-      onSuccess: (project) => {
-        toast.success('Project created successfully');
-        form.reset();
-        onOpenChange(false);
-        navigate(`/projects/${project.id}`);
-      },
-    });
-  };
+  const isSubmitDisabled = useMemo(
+    () => createProject.isPending || !formState.isValid,
+    [createProject.isPending, formState.isValid]
+  );
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      form.reset();
-    }
-    onOpenChange(newOpen);
-  };
+  const onSubmit = useCallback(
+    (data: CreateProjectRequest) => {
+      const payload: CreateProjectRequest = {
+        default_locale: LOCALE_NORMALIZATION.normalize(data.default_locale),
+        default_locale_label: data.default_locale_label,
+        description: data.description || null,
+        name: data.name,
+        prefix: data.prefix,
+      };
+
+      createProject.mutate(payload, {
+        onError: ({ error }) => {
+          toast.error(error.message);
+        },
+        onSuccess: (project) => {
+          toast.success('Project created successfully');
+          reset();
+          onOpenChange(false);
+          navigate(`/projects/${project.id}`);
+        },
+      });
+    },
+    [createProject, navigate, onOpenChange, reset]
+  );
+
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen) {
+        reset();
+      }
+      onOpenChange(newOpen);
+    },
+    [onOpenChange, reset]
+  );
+
+  const handleLocaleValueChange = useCallback(
+    (value: string, fieldOnChange: (value: string) => void) => {
+      fieldOnChange(value);
+      const localeName = new Intl.DisplayNames(['en'], { type: 'language' }).of(value.split('-')[0]);
+      if (localeName) {
+        setValue('default_locale_label', localeName, {
+          shouldDirty: true,
+          shouldTouch: true,
+          shouldValidate: true,
+        });
+      }
+    },
+    [setValue]
+  );
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -81,7 +110,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
         </DialogHeader>
 
         <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="name"
@@ -135,18 +164,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
                   <FormLabel>Default Locale</FormLabel>
                   <FormControl>
                     <LocaleSelector
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Auto-populate label based on selected locale
-                        const localeName = new Intl.DisplayNames(['en'], { type: 'language' }).of(value.split('-')[0]);
-                        if (localeName) {
-                          form.setValue('default_locale_label', localeName, {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                            shouldValidate: true,
-                          });
-                        }
-                      }}
+                      onValueChange={(value) => handleLocaleValueChange(value, field.onChange)}
                       value={field.value}
                     />
                   </FormControl>
@@ -172,7 +190,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
             />
 
             <DialogFooter>
-              <Button disabled={createProject.isPending || !form.formState.isValid} type="submit">
+              <Button disabled={isSubmitDisabled} type="submit">
                 {createProject.isPending ? 'Creating...' : 'Create Project'}
               </Button>
             </DialogFooter>

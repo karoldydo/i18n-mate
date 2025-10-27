@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -39,40 +39,51 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
     resolver: zodResolver(UPDATE_PROJECT_SCHEMA),
   });
 
-  // Reset form when project changes or dialog opens
+  const { handleSubmit, reset } = form;
+
   useEffect(() => {
     if (open) {
-      form.reset({
+      reset({
         description: project.description,
         name: project.name,
       });
     }
-  }, [open, project, form]);
+  }, [open, project, reset]);
 
-  const onSubmit = (data: UpdateProjectRequest) => {
-    const payload: UpdateProjectRequest = {
-      description: data.description || null,
-      name: data.name,
-    };
+  const onSubmit = useCallback(
+    (data: UpdateProjectRequest) => {
+      const payload: UpdateProjectRequest = {
+        description: data.description || null,
+        name: data.name,
+      };
 
-    updateProject.mutate(payload, {
-      onError: ({ error }) => {
-        toast.error(error.message);
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['projects'] });
-        toast.success('Project updated successfully');
-        onOpenChange(false);
-      },
-    });
-  };
+      updateProject.mutate(payload, {
+        onError: ({ error }) => {
+          toast.error(error.message);
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          toast.success('Project updated successfully');
+          onOpenChange(false);
+        },
+      });
+    },
+    [onOpenChange, queryClient, updateProject]
+  );
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && !updateProject.isPending) {
-      form.reset();
-    }
-    onOpenChange(newOpen);
-  };
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen && !updateProject.isPending) {
+        reset();
+      }
+      onOpenChange(newOpen);
+    },
+    [onOpenChange, reset, updateProject.isPending]
+  );
+
+  const handleCancel = useCallback(() => {
+    handleOpenChange(false);
+  }, [handleOpenChange]);
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -85,7 +96,7 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
         </DialogHeader>
 
         <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="name"
@@ -128,12 +139,7 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
             </div>
 
             <DialogFooter>
-              <Button
-                disabled={updateProject.isPending}
-                onClick={() => handleOpenChange(false)}
-                type="button"
-                variant="outline"
-              >
+              <Button disabled={updateProject.isPending} onClick={handleCancel} type="button" variant="outline">
                 Cancel
               </Button>
               <Button disabled={updateProject.isPending} type="submit">
