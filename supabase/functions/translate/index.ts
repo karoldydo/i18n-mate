@@ -313,7 +313,31 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
     // Job Initialization
     // ==========================================================================
 
-    // 6. Create translation_jobs record
+    // 6. Get keys to translate based on mode (before creating job)
+    let keyIds: string[] = [];
+
+    if (validatedData.mode === 'all') {
+      const { data: allKeys, error: keysError } = await supabase
+        .from('keys')
+        .select('id')
+        .eq('project_id', validatedData.project_id);
+
+      if (keysError) {
+        console.error('[translate] Keys fetch error:', keysError);
+        return createResponse(500, errorResponse(500, 'Failed to fetch keys'));
+      }
+
+      keyIds = (allKeys || []).map((k) => k.id);
+    } else {
+      keyIds = validatedData.key_ids;
+    }
+
+    if (keyIds.length === 0) {
+      // No keys to translate - return error
+      return createResponse(400, errorResponse(400, 'No keys available for translation'));
+    }
+
+    // 7. Create translation_jobs record with total_keys set
     const { data: jobData, error: jobCreateError } = await supabase
       .from('translation_jobs')
       .insert({
@@ -330,6 +354,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
         source_locale: project.default_locale,
         status: 'pending',
         target_locale: validatedData.target_locale,
+        total_keys: keyIds.length,
       })
       .select('id')
       .single();
@@ -345,49 +370,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
 
     const jobId = jobData.id;
 
-    // 7. Get keys to translate based on mode
-    let keyIds: string[] = [];
-
-    if (validatedData.mode === 'all') {
-      const { data: allKeys, error: keysError } = await supabase
-        .from('keys')
-        .select('id')
-        .eq('project_id', validatedData.project_id);
-
-      if (keysError) {
-        console.error('[translate] Keys fetch error:', keysError);
-        // Rollback job creation
-        await supabase.from('translation_jobs').delete().eq('id', jobId);
-        return createResponse(500, errorResponse(500, 'Failed to fetch keys'));
-      }
-
-      keyIds = (allKeys || []).map((k) => k.id);
-    } else {
-      keyIds = validatedData.key_ids;
-    }
-
-    if (keyIds.length === 0) {
-      // No keys to translate - mark job as completed immediately
-      await supabase
-        .from('translation_jobs')
-        .update({
-          completed_keys: 0,
-          failed_keys: 0,
-          finished_at: new Date().toISOString(),
-          started_at: new Date().toISOString(),
-          status: 'completed',
-          total_keys: 0,
-        })
-        .eq('id', jobId);
-
-      return createResponse(202, {
-        job_id: jobId,
-        message: 'Translation job created',
-        status: 'pending',
-      } as CreateTranslationJobResponse);
-    }
-
-    // 6. Create translation_job_items records
+    // 8. Create translation_job_items records
     const jobItems = keyIds.map((keyId) => ({
       job_id: jobId,
       key_id: keyId,
@@ -407,7 +390,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
     // Background Processing (Non-blocking)
     // ==========================================================================
 
-    // 8. Start background job processing without waiting
+    // 9. Start background job processing without waiting
     processTranslationJobInBackground(
       jobId,
       validatedData.project_id,
@@ -421,7 +404,7 @@ async function handleTranslateRequest(req: Request): Promise<Response> {
       console.error('[translate] Background processing error:', error);
     });
 
-    // 9. Return 202 Accepted immediately
+    // 10. Return 202 Accepted immediately
     return createResponse(202, {
       job_id: jobId,
       message: 'Translation job created',
@@ -587,7 +570,6 @@ async function processTranslationJobInBackground(
         failed_keys: failedCount,
         finished_at: new Date().toISOString(),
         status: finalStatus,
-        total_keys: keyIds.length,
       })
       .eq('id', jobId);
 
