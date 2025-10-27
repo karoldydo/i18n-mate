@@ -160,7 +160,6 @@ export type {
   TranslationResponse,
   TranslationUpdate,
   UpdateSourceType,
-  UpdateTranslationParams,
   UpdateTranslationRequest,
 } from './translations';
 

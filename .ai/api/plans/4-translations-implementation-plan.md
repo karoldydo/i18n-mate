@@ -16,26 +16,13 @@ The Translations API provides operations for managing translation values for spe
 
 ### Endpoints Summary
 
-1. **Get Translation** - `GET /rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale=eq.{locale}`
-2. **Update Translation (Inline Edit)** - `PATCH /rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale=eq.{locale}[&updated_at=eq.{timestamp}]`
+1. **Update Translation (Inline Edit)** - `PATCH /rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale=eq.{locale}[&updated_at=eq.{timestamp}]`
 
-**Note:** Bulk update operations are handled internally by translation jobs and are not exposed as a client-facing API hook.
+**Note:** Single translation retrieval is handled directly by the UI components without a dedicated hook. Bulk update operations are handled internally by translation jobs and are not exposed as a client-facing API hook.
 
 ## 2. Request Details
 
-### 2.1 Get Translation
-
-- **HTTP Method:** GET
-- **URL Structure:** `/rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale=eq.{locale}`
-- **Authentication:** Required (JWT via Authorization header)
-- **Parameters:**
-  - Required (via query filters):
-    - `project_id` (UUID) - Project ID
-    - `key_id` (UUID) - Key ID
-    - `locale` (string) - BCP-47 locale code
-- **Request Body:** None
-
-### 2.2 Update Translation (Inline Edit)
+### 2.1 Update Translation (Inline Edit)
 
 - **HTTP Method:** PATCH
 - **URL Structure:** `/rest/v1/translations?project_id=eq.{project_id}&key_id=eq.{key_id}&locale=eq.{locale}[&updated_at=eq.{timestamp}]`
@@ -84,33 +71,13 @@ The Translations API provides operations for managing translation values for spe
 - `TRANSLATION_VALUE_SCHEMA` enforces trimming, max length, and no-newline rules consistent with DB triggers.
 - `LOCALE_CODE_SCHEMA` validates BCP-47; `PROJECT_ID_SCHEMA`, `KEY_ID_SCHEMA`, `USER_ID_SCHEMA` validate UUIDs.
 - `UPDATE_SOURCE_SCHEMA` restricts values to `user` or `system` via `TRANSLATIONS_UPDATE_SOURCE_VALUES`.
-- `GET_TRANSLATION_QUERY_SCHEMA` guards `project_id`, `key_id`, `locale`.
 - `UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA` validates only the PATCH body fields (editable fields without URL params).
 - `UPDATE_TRANSLATION_REQUEST_SCHEMA` validates the full update request including all parameters (`project_id`, `key_id`, `locale`, optional `updated_at`) and body fields.
-- `UPDATE_TRANSLATION_QUERY_SCHEMA` adds optional `updated_at`; `TRANSLATION_RESPONSE_SCHEMA` runtime-validates response payloads.
+- `TRANSLATION_RESPONSE_SCHEMA` runtime-validates response payloads.
 
 ## 4. Response Details
 
-### 4.1 Get Translation
-
-**Success Response (200 OK):**
-
-```json
-[
-  {
-    "is_machine_translated": true,
-    "key_id": "uuid",
-    "locale": "pl",
-    "project_id": "uuid",
-    "updated_at": "2025-01-15T10:20:00Z",
-    "updated_by_user_id": null,
-    "updated_source": "system",
-    "value": "Witaj w domu"
-  }
-]
-```
-
-### 4.2 Update Translation (Inline Edit)
+### 4.1 Update Translation (Inline Edit)
 
 **Success Response (200 OK):**
 
@@ -209,19 +176,7 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ## 5. Data Flow
 
-### 5.1 Get Translation Flow
-
-1. User requests translation via React component (e.g., for editing)
-2. TanStack Query hook (`useTranslation`) is invoked with project_id, key_id, and locale
-3. Hook validates params using `GET_TRANSLATION_QUERY_SCHEMA`
-4. Hook retrieves Supabase client from `useSupabase()` context
-5. Client calls `.from('translations').select('*').eq('project_id', projectId).eq('key_id', keyId).eq('locale', locale).maybeSingle()`
-6. RLS policy filters results by project ownership via foreign key to projects table
-7. If unauthorized, Supabase returns null → hook throws 404 error
-8. If found, translation data is cached by TanStack Query
-9. Component renders translation editor with current value and metadata
-
-### 5.2 Update Translation (Inline Edit) Flow
+### 5.1 Update Translation (Inline Edit) Flow
 
 1. User edits translation value in inline editor with autosave (500ms debounce)
 2. `useUpdateTranslation` mutation hook receives all parameters (`project_id`, `key_id`, `locale`) and new value with metadata in the payload
@@ -399,14 +354,12 @@ The implementation uses inline query keys without structured key factories. This
 
 **Cache Invalidation:**
 
-- Update translation → invalidate single translation cache (`['translation', projectId, keyId, locale]`)
 - Update translation → invalidate per-language key view cache for that locale (`['keys', 'per-language', projectId, locale]`)
 - Update translation → invalidate default key view cache (`['keys', 'default', projectId]`)
 - Bulk update → invalidate per-language key view cache for target locale
 
 **Query Keys:**
 
-- Single translation: `['translation', projectId, keyId, locale]`
 - Use inline query keys for simplified caching without structured key factories
 
 ### 8.3 Optimistic Updates
@@ -445,12 +398,11 @@ Create `src/features/translations/api/translations.schemas.ts` with all validati
 
 ### Step 5: Create TanStack Query Hooks
 
-- `useTranslation(projectId, keyId, locale)` validates inputs (`GET_TRANSLATION_QUERY_SCHEMA`), fetches a single row, returns `null` when absent, and caches under inline query key `['translation', projectId, keyId, locale]`.
 - `useUpdateTranslation()` accepts all parameters in the mutation payload (`project_id`, `key_id`, `locale`, optional `updated_at`, and body fields), validates body using `UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA`, applies optional `updated_at` for optimistic locking, and invalidates detail and related key view caches (both per-language and default views) on settle.
 
 ### Step 6: Create API Index File
 
-- Export `translations.errors`, `translations.schemas`, and both hooks from `api/index.ts` for ergonomic imports.
+- Export `translations.errors`, `translations.schemas`, and hook from `api/index.ts` for ergonomic imports.
 
 ### Step 8: Write Unit Tests
 
@@ -463,20 +415,7 @@ Create `src/features/translations/api/translations.schemas.ts` with all validati
 - Verify cache behavior
 - Aim for 90% coverage threshold
 
-**8.1 Create `src/features/translations/api/useTranslation/useTranslation.test.ts`:**
-
-Test scenarios:
-
-- Successful translation fetch with full metadata
-- Translation not found (returns null, not error) - **Edge case: null handling**
-- Validation error for invalid project/key/locale ID
-- Authorization error (403)
-- Database error handling
-- Cache behavior verification
-- **Performance test: multiple concurrent fetches**
-- **Edge case: malformed UUID parameters**
-
-**8.2 Create `src/features/translations/api/useUpdateTranslation/useUpdateTranslation.test.ts`:**
+**8.1 Create `src/features/translations/api/useUpdateTranslation/useUpdateTranslation.test.ts`:**
 
 Test scenarios:
 

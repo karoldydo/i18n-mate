@@ -32,13 +32,6 @@ const UPDATE_SOURCE_SCHEMA = z.enum(TRANSLATIONS_UPDATE_SOURCE_VALUES, {
   errorMap: () => ({ message: 'Update source must be "user" or "system"' }),
 });
 
-// get translation query schema
-export const GET_TRANSLATION_QUERY_SCHEMA = z.object({
-  key_id: KEY_ID_SCHEMA,
-  locale: LOCALE_CODE_SCHEMA,
-  project_id: PROJECT_ID_SCHEMA,
-}) satisfies z.ZodType<Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>>;
-
 // update translation request body schema (only the body fields, not URL params)
 export const UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA = z.object({
   is_machine_translated: z.boolean(),
@@ -58,13 +51,6 @@ export const UPDATE_TRANSLATION_REQUEST_SCHEMA = z.object({
   updated_source: UPDATE_SOURCE_SCHEMA,
   value: TRANSLATION_VALUE_SCHEMA.nullable(),
 }) satisfies z.ZodType<UpdateTranslationRequest>;
-
-// update translation query schema (with optimistic locking)
-export const UPDATE_TRANSLATION_QUERY_SCHEMA = GET_TRANSLATION_QUERY_SCHEMA.extend({
-  updated_at: z.string().datetime(), // iso 8601 timestamp for optimistic locking
-}) satisfies z.ZodType<
-  Partial<Pick<TranslationResponse, 'updated_at'>> & Pick<TranslationResponse, 'key_id' | 'locale' | 'project_id'>
->;
 
 // response schemas for runtime validation
 export const TRANSLATION_RESPONSE_SCHEMA = z.object({

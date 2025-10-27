@@ -168,21 +168,15 @@ Delete key and all translations (cascading). Irreversible.
 
 ## 6. Translations Endpoints
 
-### 6.1 Get Translation
+### 6.1 Update Translation (Inline Edit)
 
-[See details →](./specifications/translations/6.1-translations-get.md)
-
-Get single translation record.
-
-### 6.2 Update Translation (Inline Edit)
-
-[See details →](./specifications/translations/6.2-translations-update.md)
+[See details →](./specifications/translations/6.1-translations-update.md)
 
 Update translation value (autosave). Updates metadata.
 
-### 6.3 Bulk Update Translations
+### 6.2 Bulk Update Translations
 
-[See details →](./specifications/translations/6.3-translations-bulk-update.md)
+[See details →](./specifications/translations/6.2-translations-bulk-update.md)
 
 Update multiple translations at once (batch operation). Used internally by translation jobs.
 
