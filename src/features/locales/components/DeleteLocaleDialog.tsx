@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 
 import type { ProjectLocaleWithDefault } from '@/shared/types';
@@ -32,7 +33,7 @@ export function DeleteLocaleDialog({ locale, onOpenChange, open }: DeleteLocaleD
   const queryClient = useQueryClient();
   const deleteLocale = useDeleteProjectLocale();
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (!locale) return;
 
     deleteLocale.mutate(locale.id, {
@@ -45,7 +46,15 @@ export function DeleteLocaleDialog({ locale, onOpenChange, open }: DeleteLocaleD
         onOpenChange(false);
       },
     });
-  };
+  }, [locale, deleteLocale, queryClient, onOpenChange]);
+
+  const handleConfirmClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      handleDelete();
+    },
+    [handleDelete]
+  );
 
   if (!locale) return null;
 
@@ -75,10 +84,7 @@ export function DeleteLocaleDialog({ locale, onOpenChange, open }: DeleteLocaleD
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={deleteLocale.isPending}
-            onClick={(e) => {
-              e.preventDefault();
-              handleDelete();
-            }}
+            onClick={handleConfirmClick}
           >
             {deleteLocale.isPending ? 'Deleting...' : 'Delete Language'}
           </AlertDialogAction>

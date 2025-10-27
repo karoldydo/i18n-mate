@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import type { ProjectLocaleWithDefault } from '@/shared/types';
@@ -35,9 +35,8 @@ export function ProjectLocalesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedLocale, setSelectedLocale] = useState<null | ProjectLocaleWithDefault>(null);
 
-  // validate UUID format
-  const validation = UUID_SCHEMA.safeParse(projectId);
-  const validProjectId = validation.data ?? '';
+  const validation = useMemo(() => UUID_SCHEMA.safeParse(projectId), [projectId]);
+  const validProjectId = useMemo(() => validation.data ?? '', [validation.data]);
 
   const handleEdit = useCallback((locale: ProjectLocaleWithDefault) => {
     setSelectedLocale(locale);
@@ -56,16 +55,27 @@ export function ProjectLocalesPage() {
     [navigate, validProjectId]
   );
 
+  const handleBackClick = useCallback(() => {
+    navigate(`/projects/${validProjectId}`);
+  }, [navigate, validProjectId]);
+
+  const handleAddDialogOpen = useCallback(() => {
+    setAddDialogOpen(true);
+  }, []);
+
+  const handleBackToProjects = useCallback(() => {
+    navigate('/projects');
+  }, [navigate]);
+
   const { data: locales, error, isError, isLoading } = useProjectLocales(validProjectId);
 
-  // invalid project ID
   if (!validation.success) {
     return (
       <div className="container mx-auto py-8">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={() => navigate('/projects')} variant="outline">
+          <Button className="mt-4" onClick={handleBackToProjects} variant="outline">
             Back to Projects
           </Button>
         </div>
@@ -73,7 +83,6 @@ export function ProjectLocalesPage() {
     );
   }
 
-  // loading state
   if (isLoading) {
     return (
       <div aria-busy="true" aria-live="polite" className="container mx-auto py-8">
@@ -89,7 +98,6 @@ export function ProjectLocalesPage() {
     );
   }
 
-  // error state
   if (isError || !locales) {
     return (
       <div aria-live="assertive" className="container mx-auto py-8" role="alert">
@@ -98,7 +106,7 @@ export function ProjectLocalesPage() {
           <p className="text-muted-foreground text-sm">
             {error?.error?.message || 'Failed to load project languages.'}
           </p>
-          <Button className="mt-4" onClick={() => navigate(`/projects/${validProjectId}`)} variant="outline">
+          <Button className="mt-4" onClick={handleBackClick} variant="outline">
             Back to Project
           </Button>
         </div>
@@ -109,18 +117,11 @@ export function ProjectLocalesPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="space-y-6">
-        {/* Back Navigation */}
-        <Button
-          aria-label="Back to project details"
-          onClick={() => navigate(`/projects/${validProjectId}`)}
-          size="sm"
-          variant="ghost"
-        >
+        <Button aria-label="Back to project details" onClick={handleBackClick} size="sm" variant="ghost">
           <ArrowLeft aria-hidden="true" className="mr-2 h-4 w-4" />
           Back to Project
         </Button>
 
-        {/* Page Header */}
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Languages</h1>
@@ -128,18 +129,16 @@ export function ProjectLocalesPage() {
               Manage languages for this project
             </p>
           </div>
-          <Button aria-label="Add new language" onClick={() => setAddDialogOpen(true)}>
+          <Button aria-label="Add new language" onClick={handleAddDialogOpen}>
             Add Language
           </Button>
         </header>
 
-        {/* Locales Table */}
         <main aria-describedby="page-description" role="main">
           <LocalesDataTable locales={locales} onDelete={handleDelete} onEdit={handleEdit} onRowClick={handleRowClick} />
         </main>
       </div>
 
-      {/* Dialogs */}
       <AddLocaleDialog onOpenChange={setAddDialogOpen} open={addDialogOpen} projectId={validProjectId} />
       <EditLocaleDialog locale={selectedLocale} onOpenChange={setEditDialogOpen} open={editDialogOpen} />
       <DeleteLocaleDialog locale={selectedLocale} onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen} />

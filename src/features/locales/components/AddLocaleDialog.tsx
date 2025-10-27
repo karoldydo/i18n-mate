@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -41,42 +42,52 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
     mode: 'onChange',
     resolver: zodResolver(CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA),
   });
+  const { control, formState, handleSubmit, reset, setValue } = form;
 
-  const handleLocaleChange = (localeCode: string) => {
-    form.setValue('p_locale', localeCode, { shouldValidate: true });
+  const handleLocaleChange = useCallback(
+    (localeCode: string) => {
+      setValue('p_locale', localeCode, { shouldValidate: true });
 
-    const locale = PRIMARY_LOCALES.find((locale) => locale.code === localeCode);
-    if (locale) {
-      form.setValue('p_label', locale.label, { shouldValidate: true });
-    }
-  };
+      const locale = PRIMARY_LOCALES.find((locale) => locale.code === localeCode);
+      if (locale) {
+        setValue('p_label', locale.label, { shouldValidate: true });
+      }
+    },
+    [setValue]
+  );
 
-  const onSubmit = (data: CreateProjectLocaleRequest) => {
-    const payload: CreateProjectLocaleRequest = {
-      p_label: data.p_label.trim(),
-      p_locale: LOCALE_NORMALIZATION.normalize(data.p_locale),
-      p_project_id: projectId,
-    };
+  const onSubmit = useCallback(
+    (data: CreateProjectLocaleRequest) => {
+      const payload: CreateProjectLocaleRequest = {
+        p_label: data.p_label.trim(),
+        p_locale: LOCALE_NORMALIZATION.normalize(data.p_locale),
+        p_project_id: projectId,
+      };
 
-    createLocale.mutate(payload, {
-      onError: ({ error }) => {
-        toast.error(error.message);
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['project-locales'] });
-        toast.success('Language added successfully');
-        form.reset();
-        onOpenChange(false);
-      },
-    });
-  };
+      createLocale.mutate(payload, {
+        onError: ({ error }) => {
+          toast.error(error.message);
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['project-locales'] });
+          toast.success('Language added successfully');
+          reset();
+          onOpenChange(false);
+        },
+      });
+    },
+    [projectId, createLocale, queryClient, reset, onOpenChange]
+  );
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      form.reset();
-    }
-    onOpenChange(newOpen);
-  };
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen) {
+        reset();
+      }
+      onOpenChange(newOpen);
+    },
+    [reset, onOpenChange]
+  );
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
@@ -86,9 +97,9 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
           <DialogDescription>Add a new language to this project with BCP-47 locale code.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <FormField
-              control={form.control}
+              control={control}
               name="p_locale"
               render={({ field }) => (
                 <FormItem>
@@ -106,7 +117,7 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
               )}
             />
             <FormField
-              control={form.control}
+              control={control}
               name="p_label"
               render={({ field }) => (
                 <FormItem>
@@ -133,7 +144,7 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
               >
                 Cancel
               </Button>
-              <Button disabled={!form.formState.isValid || createLocale.isPending} type="submit">
+              <Button disabled={!formState.isValid || createLocale.isPending} type="submit">
                 {createLocale.isPending ? 'Adding...' : 'Add Language'}
               </Button>
             </DialogFooter>

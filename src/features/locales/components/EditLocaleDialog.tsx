@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -36,41 +36,47 @@ export function EditLocaleDialog({ locale, onOpenChange, open }: EditLocaleDialo
     },
     resolver: zodResolver(UPDATE_PROJECT_LOCALE_SCHEMA),
   });
+  const { control, handleSubmit, reset } = form;
 
-  // Reset form when locale changes or dialog opens
   useEffect(() => {
     if (open && locale) {
-      form.reset({
+      reset({
         label: locale.label,
       });
     }
-  }, [open, locale, form]);
+  }, [open, locale, reset]);
 
-  const onSubmit = (data: UpdateProjectLocaleRequest) => {
-    if (!locale) return;
+  const onSubmit = useCallback(
+    (data: UpdateProjectLocaleRequest) => {
+      if (!locale) return;
 
-    const payload: UpdateProjectLocaleRequest = {
-      label: data.label?.trim(),
-    };
+      const payload: UpdateProjectLocaleRequest = {
+        label: data.label?.trim(),
+      };
 
-    updateLocale.mutate(payload, {
-      onError: ({ error }) => {
-        toast.error(error.message);
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['project-locales'] });
-        toast.success('Language updated successfully');
-        onOpenChange(false);
-      },
-    });
-  };
+      updateLocale.mutate(payload, {
+        onError: ({ error }) => {
+          toast.error(error.message);
+        },
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['project-locales'] });
+          toast.success('Language updated successfully');
+          onOpenChange(false);
+        },
+      });
+    },
+    [locale, updateLocale, queryClient, onOpenChange]
+  );
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && !updateLocale.isPending) {
-      form.reset();
-    }
-    onOpenChange(newOpen);
-  };
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen && !updateLocale.isPending) {
+        reset();
+      }
+      onOpenChange(newOpen);
+    },
+    [updateLocale.isPending, reset, onOpenChange]
+  );
 
   if (!locale) return null;
 
@@ -84,9 +90,9 @@ export function EditLocaleDialog({ locale, onOpenChange, open }: EditLocaleDialo
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <FormField
-              control={form.control}
+              control={control}
               name="label"
               render={({ field }) => (
                 <FormItem>
