@@ -629,7 +629,6 @@ Create `src/features/locales/api/locales.errors.ts`:
 **6.2 Create `src/features/locales/api/useCreateProjectLocale/useCreateProjectLocale.ts`:**
 
 - Normalize `p_locale` via `LOCALE_NORMALIZATION.normalize`, validate payload with `CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA`, call RPC, parse with `PROJECT_LOCALE_RESPONSE_SCHEMA`.
-- Implement exponential backoff retry logic for transient fan-out issues (up to 2 retries for `FANOUT_INCOMPLETE`, 1 retry for `FANOUT_VERIFICATION_FAILED`), skip retries for authentication/authorization/conflict errors (401/403/404/409).
 
 **6.3 Create `src/features/locales/api/useUpdateProjectLocale/useUpdateProjectLocale.ts`:**
 

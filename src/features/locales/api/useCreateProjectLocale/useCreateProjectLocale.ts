@@ -26,7 +26,6 @@ import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } f
  * - Better error reporting with specific error codes
  * - Atomic operation (all-or-nothing)
  * - Automatic telemetry event emission
- * - Enhanced retry logic for transient failures
  *
  * @param projectId - UUID of the project to add locale to
  *
@@ -36,7 +35,7 @@ import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } f
  * @throws {ApiErrorResponse} 409 - Conflict error (locale already exists for project)
  * @throws {ApiErrorResponse} 500 - Database error, fan-out verification failed, or incomplete fan-out
  *
- * @returns TanStack Query mutation hook for adding locales with enhanced retry logic
+ * @returns TanStack Query mutation hook for adding locales
  */
 export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();
@@ -66,39 +65,6 @@ export function useCreateProjectLocale(projectId: string) {
       }
 
       return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
-    },
-    // enhanced retry logic for atomic operations
-    retry: (failureCount, error) => {
-      // don't retry authentication/authorization errors
-      if (error?.error?.code === 401 || error?.error?.code === 403 || error?.error?.code === 404) {
-        return false;
-      }
-
-      // retry fan-out failures up to 2 times (transient issues)
-      if (error?.error?.details?.code === 'FANOUT_INCOMPLETE' && failureCount < 2) {
-        return true;
-      }
-
-      // retry verification failures once
-      if (error?.error?.details?.code === 'FANOUT_VERIFICATION_FAILED' && failureCount < 1) {
-        return true;
-      }
-
-      // don't retry conflict errors (locale already exists)
-      if (error?.error?.code === 409) {
-        return false;
-      }
-
-      // default retry once for other errors
-      return failureCount < 1;
-    },
-    retryDelay: (attemptIndex) => {
-      // exponential backoff with jitter, max 5 seconds
-      const BASE_DELAY = 1000;
-      const MAX_DELAY = 5000;
-      const EXPONENTIAL_DELAY = BASE_DELAY * Math.pow(2, attemptIndex);
-      const JITTER = Math.random() * 500; // add 0-500ms jitter
-      return Math.min(EXPONENTIAL_DELAY + JITTER, MAX_DELAY);
     },
   });
 }

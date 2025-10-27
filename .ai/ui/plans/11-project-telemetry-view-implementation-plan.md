@@ -34,12 +34,12 @@ ProjectTelemetryPage (main page component)
 
 ### TelemetryKPIs
 
-- **Component description**: Displays key performance indicators calculated from telemetry events
+- **Component description**: Displays key performance indicators calculated from telemetry events within a cohort window
 - **Main elements**: Three KPI cards showing percentage metrics and averages, with icons and trend indicators
 - **Handled interactions**: KPI calculations on data load, responsive card layout
 - **Handled validation**: Validates KPI calculation inputs, handles edge cases (no events, division by zero)
 - **Types**: TelemetryKPIsViewModel { multiLanguageProjectsPercentage: number, averageKeysPerLanguage: number, llmTranslationsPercentage: number }
-- **Props**: Accepts telemetryEvents array and project creation date
+- **Props**: Accepts telemetryEvents array, project creation date, and optional cohortDays (default: 7)
 
 ### TelemetryDataTable
 
@@ -83,7 +83,7 @@ ProjectTelemetryPage (main page component)
 
 ## 6. State Management
 
-State management will use a combination of React hooks and TanStack Query. A custom `useTelemetryPageState` hook will manage local UI state for pagination and sorting, while `useTelemetryEvents` handles server state for the events data. KPI calculations will be performed client-side using a `useTelemetryKPIs` hook that processes the events data and memoizes results to avoid recalculation on every render.
+State management will use a combination of React hooks and TanStack Query. A custom `useTelemetryPageState` hook will manage local UI state for pagination and sorting, while `useTelemetryEvents` handles server state for the events data. KPI calculations will be performed client-side using a `useTelemetryKPIs` hook that processes events within a cohort window (default: 7 days after project creation) and memoizes results to avoid recalculation on every render.
 
 ## 7. API Integration
 
@@ -117,7 +117,7 @@ const {
 - **Project ownership**: Only project owners can access the view (enforced by RLS policy)
 - **Project ID validation**: UUID format validation for URL parameter
 - **Event data validation**: Zod schema validation for telemetry events response
-- **KPI calculation conditions**: Requires at least 7 days of project history for meaningful metrics
+- **KPI calculation conditions**: Filters events to cohort window (default: 7 days after project creation) for meaningful metrics
 - **Empty state handling**: Display appropriate messages when no events exist
 - **Pagination bounds**: Prevent invalid page numbers and ensure offset doesn't exceed total events
 
@@ -143,7 +143,7 @@ const {
    - **VERIFY**: Use existing `TelemetryEventResponse` type (DO NOT create aliases)
 2. Implement `useTelemetryPageState` hook for local UI state management
 3. Create `TelemetryKPIs` component with KPI calculation logic
-4. Implement `useTelemetryKPIs` hook for client-side metric calculations
+4. Implement `useTelemetryKPIs` hook for client-side metric calculations with cohort window filtering
 5. Build `TelemetryDataTable` component using Shadcn/ui DataTable
    - **VERIFY**: Use existing event types directly
 6. Create `TelemetryEventRow` component for individual event display

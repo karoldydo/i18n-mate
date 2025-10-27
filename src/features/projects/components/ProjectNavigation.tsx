@@ -8,7 +8,7 @@ interface ProjectNavigationProps {
 }
 
 /**
- * ProjectNavigation - Tab-based navigation to project subviews
+ * ProjectNavigation - Tab-based navigation to project sub-views
  *
  * Provides navigation tabs for Keys, Locales, Translation Jobs, and Telemetry views.
  * Manages active state and handles navigation to respective routes.

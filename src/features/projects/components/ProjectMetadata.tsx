@@ -1,6 +1,7 @@
 import type { ProjectResponse } from '@/shared/types';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui/tooltip';
+import { formatDate, formatDateTime } from '@/shared/utils';
 
 interface ProjectMetadataProps {
   project: ProjectResponse;
@@ -13,26 +14,6 @@ interface ProjectMetadataProps {
  * Includes informational tooltips for immutable fields.
  */
 export function ProjectMetadata({ project }: ProjectMetadataProps) {
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  const formatDateTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString(undefined, {
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
   return (
     <div className="bg-card rounded-lg border p-6">
       <h2 className="mb-4 text-lg font-semibold">Project Details</h2>

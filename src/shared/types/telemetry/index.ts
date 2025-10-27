@@ -30,6 +30,7 @@ export interface LanguageAddedEvent {
 }
 
 export interface LanguageAddedProperties {
+  is_default?: boolean;
   locale: string;
   locale_count: number;
 }

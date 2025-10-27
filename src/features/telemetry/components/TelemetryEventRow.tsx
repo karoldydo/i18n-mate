@@ -2,6 +2,7 @@ import type { Json, TelemetryEventResponse } from '@/shared/types';
 
 import { Badge } from '@/shared/ui/badge';
 import { TableCell, TableRow } from '@/shared/ui/table';
+import { formatRelativeTimestamp } from '@/shared/utils';
 
 /**
  * TelemetryEventRow - Individual table row component for displaying formatted telemetry events
@@ -9,13 +10,13 @@ import { TableCell, TableRow } from '@/shared/ui/table';
  * Displays a single telemetry event with timestamp, event type badge, and human-readable properties.
  */
 export function TelemetryEventRow({ event }: { event: TelemetryEventResponse }) {
-  const formattedTimestamp = formatTimestamp(event.created_at);
+  const formattedRelativeTimestamp = formatRelativeTimestamp(event.created_at);
   const eventTypeLabel = getEventTypeLabel(event.event_name);
   const formattedProperties = formatEventProperties(event.properties);
 
   return (
     <TableRow>
-      <TableCell className="text-muted-foreground text-sm">{formattedTimestamp}</TableCell>
+      <TableCell className="text-muted-foreground text-sm">{formattedRelativeTimestamp}</TableCell>
       <TableCell>
         <Badge variant={getEventTypeVariant(event.event_name)}>{eventTypeLabel}</Badge>
       </TableCell>
@@ -72,33 +73,6 @@ function formatPropertyValue(key: string, value: Json | null): string {
     default:
       return String(value);
   }
-}
-
-/**
- * Format timestamp to a human-readable format
- */
-function formatTimestamp(timestamp: string): string {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-  if (diffInHours < 24) {
-    // Show relative time for recent events
-    const diffInMinutes = Math.floor(diffInHours * 60);
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    }
-    return `${Math.floor(diffInHours)}h ago`;
-  }
-
-  // Show date for older events
-  return date.toLocaleDateString('en-US', {
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
 }
 
 /**
