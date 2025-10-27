@@ -74,9 +74,16 @@ alwaysApply: false
 ## Key Principles
 
 - Use functional, declarative programming. Avoid classes.
-- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError). Avoid short variable names (e.g., use event instead of e).
 - Favor named exports for components.
 - Use TypeScript for all code. Prefer interfaces over types.
 - File structure: imports, types, main component, sub-components, helpers, static content.
 - Use Zod for form validation.
 - Use Shadcn UI, Radix, and Tailwind CSS for components and styling.
+- For form hooks (e.g., "const form = useForm..."), create destructuring below: "const { control, reset } = form" and use destructured values wherever possible for cleaner code. Keep original reference if naming conflicts occur.
+- Every function defined in a component should be wrapped in useCallback. Fill dependency arrays "[]" with necessary values for proper useCallback operation. Use // eslint-disable ... if ESLint errors occur.
+- If JSX contains components implementing functions like "onValueChange", "onClick", etc., extract these implementations to component-level functions wrapped in useCallback. Avoid inline implementations in JSX.
+- All inline comments "//" should be written in lowercase.
+- Limit comments - only where critical/necessary/edge cases/complex useMemo logic. Do not comment obvious code.
+- Wrap logical comparisons that are used multiple times or contain complex logic in useMemo() to avoid scattered operations in component functions.
+- Do not use emojis in code - use shadcn icons instead.
