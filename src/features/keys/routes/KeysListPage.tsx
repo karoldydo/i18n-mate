@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
@@ -69,6 +69,75 @@ export function KeysListPage() {
   // mutation for updating translation values
   const updateTranslationMutation = useUpdateTranslation();
 
+  const handleBackToProjects = useCallback(() => {
+    navigate('/projects');
+  }, [navigate]);
+
+  const handleBackToProject = useCallback(() => {
+    navigate(`/projects/${validProjectId}`);
+  }, [navigate, validProjectId]);
+
+  const totalPages = useMemo(() => {
+    if (!keysData) return 1;
+    return Math.ceil(keysData.metadata.total / pageSize);
+  }, [keysData, pageSize]);
+
+  const handleSaveEdit = useCallback(
+    (keyId: string, newValue: string) => {
+      if (!project?.default_locale) {
+        toast.error('Failed to update translation: project default locale not found');
+        return;
+      }
+
+      setIsSaving(true);
+
+      updateTranslationMutation.mutate(
+        {
+          is_machine_translated: false,
+          key_id: keyId,
+          locale: project.default_locale,
+          project_id: validProjectId,
+          updated_by_user_id: null,
+          updated_source: 'user',
+          value: newValue || null,
+        },
+        {
+          onError: ({ error: apiError }) => {
+            setIsSaving(false);
+            setEditError(apiError.message);
+            toast.error(apiError.message);
+          },
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['keys-default-view'] });
+            setIsSaving(false);
+            setEditError(null);
+            toast.success('Translation updated successfully');
+          },
+        }
+      );
+    },
+    [project?.default_locale, queryClient, updateTranslationMutation, validProjectId]
+  );
+
+  const handleEditEnd = useCallback(() => {
+    setEditingKeyId(null);
+    setEditError(null);
+    setIsSaving(false);
+  }, []);
+
+  const handleDeleteKey = useCallback((key: KeyDefaultViewResponse) => {
+    setKeyToDelete(key);
+    setDeleteKeyDialogOpen(true);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(() => {
+    setKeyToDelete(null);
+  }, []);
+
+  const handleAddKeyClick = useCallback(() => {
+    setAddKeyDialogOpen(true);
+  }, []);
+
   // invalid project ID
   if (!validation.success) {
     return (
@@ -76,7 +145,7 @@ export function KeysListPage() {
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={() => navigate('/projects')} variant="outline">
+          <Button className="mt-4" onClick={handleBackToProjects} variant="outline">
             Back to Projects
           </Button>
         </div>
@@ -115,67 +184,13 @@ export function KeysListPage() {
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Error Loading Keys</h2>
           <p className="text-muted-foreground text-sm">{error?.error?.message || 'Failed to load translation keys.'}</p>
-          <Button className="mt-4" onClick={() => navigate(`/projects/${validProjectId}`)} variant="outline">
+          <Button className="mt-4" onClick={handleBackToProject} variant="outline">
             Back to Project
           </Button>
         </div>
       </div>
     );
   }
-
-  const totalPages = Math.ceil(keysData.metadata.total / pageSize);
-
-  // handle save edit with autosave
-  const handleSaveEdit = (keyId: string, newValue: string) => {
-    if (!project?.default_locale) {
-      toast.error('Failed to update translation: project default locale not found');
-      return;
-    }
-
-    setIsSaving(true);
-
-    updateTranslationMutation.mutate(
-      {
-        is_machine_translated: false,
-        key_id: keyId,
-        locale: project.default_locale,
-        project_id: validProjectId,
-        updated_by_user_id: null, // will be set by the backend
-        updated_source: 'user',
-        value: newValue || null, // empty string becomes NULL
-      },
-      {
-        onError: ({ error: apiError }) => {
-          setIsSaving(false);
-          setEditError(apiError.message);
-          toast.error(apiError.message);
-        },
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['keys-default-view'] });
-          setIsSaving(false);
-          setEditError(null);
-          toast.success('Translation updated successfully');
-        },
-      }
-    );
-  };
-
-  // handle edit end (exit edit mode)
-  const handleEditEnd = () => {
-    setEditingKeyId(null);
-    setEditError(null);
-    setIsSaving(false);
-  };
-
-  // handle delete key
-  const handleDeleteKey = (key: KeyDefaultViewResponse) => {
-    setKeyToDelete(key);
-    setDeleteKeyDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = () => {
-    setKeyToDelete(null);
-  };
 
   return (
     <>
@@ -185,7 +200,7 @@ export function KeysListPage() {
             <Button
               aria-label="Back to project details"
               className="mb-4"
-              onClick={() => navigate(`/projects/${validProjectId}`)}
+              onClick={handleBackToProject}
               size="sm"
               variant="ghost"
             >
@@ -193,7 +208,7 @@ export function KeysListPage() {
               Back to Project
             </Button>
           </div>
-          <PageHeader onAddKey={() => setAddKeyDialogOpen(true)} projectName={project?.name} />
+          <PageHeader onAddKey={handleAddKeyClick} projectName={project?.name} />
           <SearchAndFilterBar
             missingOnly={missingOnly}
             onMissingToggle={setMissingOnly}

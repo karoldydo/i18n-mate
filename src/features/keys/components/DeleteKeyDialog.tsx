@@ -1,4 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle } from 'lucide-react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 
 import type { KeyDefaultViewResponse } from '@/shared/types';
@@ -33,7 +35,7 @@ export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open }: Dele
   const queryClient = useQueryClient();
   const deleteKeyMutation = useDeleteKey();
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     if (!keyData) return;
 
     deleteKeyMutation.mutate(keyData.id, {
@@ -47,7 +49,15 @@ export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open }: Dele
         onOpenChange(false);
       },
     });
-  };
+  }, [deleteKeyMutation, keyData, onConfirm, onOpenChange, queryClient]);
+
+  const handleActionClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      handleConfirm();
+    },
+    [handleConfirm]
+  );
 
   if (!keyData) return null;
 
@@ -61,7 +71,10 @@ export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open }: Dele
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="bg-destructive/10 border-destructive my-4 rounded-lg border p-4">
-          <p className="text-destructive text-sm font-medium">⚠️ Warning: This action cannot be undone</p>
+          <p className="text-destructive flex items-center gap-2 text-sm font-medium">
+            <AlertTriangle className="h-4 w-4" />
+            Warning: This action cannot be undone
+          </p>
           <p className="text-muted-foreground mt-2 text-sm">
             Deleting this key will permanently remove all translations across all languages for this project.
           </p>
@@ -71,10 +84,7 @@ export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open }: Dele
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={deleteKeyMutation.isPending}
-            onClick={(e) => {
-              e.preventDefault();
-              handleConfirm();
-            }}
+            onClick={handleActionClick}
           >
             {deleteKeyMutation.isPending ? 'Deleting...' : 'Delete Key'}
           </AlertDialogAction>

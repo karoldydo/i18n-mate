@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
@@ -77,8 +78,54 @@ export function KeysPerLanguagePage() {
   // mutation for updating translation values (dynamic - accepts all params in payload)
   const updateTranslationMutation = useUpdateTranslation();
 
-  // TODO: Validate locale format (BCP-47)
-  // TODO: Ensure locale exists in project and is not default language
+  const handleBackToProjects = useCallback(() => {
+    navigate('/projects');
+  }, [navigate]);
+
+  const handleBackToKeys = useCallback(() => {
+    navigate(`/projects/${validProjectId}/keys`);
+  }, [navigate, validProjectId]);
+
+  const handleBackToLocales = useCallback(() => {
+    navigate(`/projects/${validProjectId}/locales`);
+  }, [navigate, validProjectId]);
+
+  const totalPages = useMemo(() => {
+    if (!keysData) return 1;
+    return Math.ceil(keysData.metadata.total / pageSize);
+  }, [keysData, pageSize]);
+
+  const handleSaveEdit = useCallback(
+    (keyId: string, newValue: string) => {
+      setSavingState(true);
+
+      updateTranslationMutation.mutate(
+        {
+          is_machine_translated: false,
+          key_id: keyId,
+          locale: validLocale,
+          project_id: validProjectId,
+          updated_by_user_id: null,
+          updated_source: 'user',
+          value: newValue || null,
+        },
+        {
+          onError: ({ error: apiError }) => {
+            setSavingState(false);
+            setError(apiError.message);
+            toast.error(apiError.message);
+          },
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['keys-per-language-view'] });
+            setSavingState(false);
+            setError(null);
+            toast.success('Translation updated successfully');
+          },
+        }
+      );
+    },
+    [queryClient, setError, setSavingState, updateTranslationMutation, validLocale, validProjectId]
+  );
 
   // invalid project ID
   if (!validation.success) {
@@ -87,7 +134,7 @@ export function KeysPerLanguagePage() {
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={() => navigate('/projects')} variant="outline">
+          <Button className="mt-4" onClick={handleBackToProjects} variant="outline">
             Back to Projects
           </Button>
         </div>
@@ -126,7 +173,7 @@ export function KeysPerLanguagePage() {
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Error Loading Keys</h2>
           <p className="text-muted-foreground text-sm">{error?.error?.message || 'Failed to load translation keys.'}</p>
-          <Button className="mt-4" onClick={() => navigate(`/projects/${validProjectId}/keys`)} variant="outline">
+          <Button className="mt-4" onClick={handleBackToKeys} variant="outline">
             Back to Keys
           </Button>
         </div>
@@ -134,52 +181,19 @@ export function KeysPerLanguagePage() {
     );
   }
 
-  // TODO: Validate locale is in project and is not default
   if (!locale || !project) {
     return (
       <div className="container mx-auto py-8">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Locale</h2>
           <p className="text-muted-foreground text-sm">The locale specified is not valid for this project.</p>
-          <Button className="mt-4" onClick={() => navigate(`/projects/${validProjectId}/keys`)} variant="outline">
+          <Button className="mt-4" onClick={handleBackToKeys} variant="outline">
             Back to Keys
           </Button>
         </div>
       </div>
     );
   }
-
-  const totalPages = Math.ceil(keysData.metadata.total / pageSize);
-
-  // handle save edit with autosave
-  const handleSaveEdit = (keyId: string, newValue: string) => {
-    setSavingState(true);
-
-    updateTranslationMutation.mutate(
-      {
-        is_machine_translated: false,
-        key_id: keyId,
-        locale: validLocale,
-        project_id: validProjectId,
-        updated_by_user_id: null, // will be set by the backend
-        updated_source: 'user',
-        value: newValue || null, // empty string becomes NULL
-      },
-      {
-        onError: ({ error: apiError }) => {
-          setSavingState(false);
-          setError(apiError.message);
-          toast.error(apiError.message);
-        },
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['keys-per-language-view'] });
-          setSavingState(false);
-          setError(null);
-          toast.success('Translation updated successfully');
-        },
-      }
-    );
-  };
 
   return (
     <div className="container mx-auto py-8">
@@ -188,7 +202,7 @@ export function KeysPerLanguagePage() {
           <Button
             aria-label="Back to keys list"
             className="mb-4"
-            onClick={() => navigate(`/projects/${validProjectId}/locales`)}
+            onClick={handleBackToLocales}
             size="sm"
             variant="ghost"
           >
@@ -196,8 +210,6 @@ export function KeysPerLanguagePage() {
             Back to locales
           </Button>
         </div>
-
-        {/* Page Header */}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Translation Keys - {locale}</h1>

@@ -36,8 +36,8 @@ export function SearchInput({ onChange, placeholder = 'Search...', value }: Sear
     return () => clearTimeout(timer);
   }, [localValue, value, onChange]);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(e.target.value);
+  const handleChange = useCallback((changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalValue(changeEvent.target.value);
   }, []);
 
   return (

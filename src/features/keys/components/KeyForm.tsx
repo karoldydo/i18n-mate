@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -7,7 +8,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 
-// Extract the schema for the form (without project_id which will be added later)
 const formSchema = z.object({
   defaultValue: z.string().min(1, 'Default value is required').max(250, 'Value must be at most 250 characters'),
   keyName: z.string().min(1, 'Key name is required'),
@@ -36,19 +36,23 @@ export function KeyForm({ isSubmitting, onSubmit, projectPrefix }: KeyFormProps)
     mode: 'onChange',
     resolver: zodResolver(formSchema),
   });
+  const { control, formState, handleSubmit: formHandleSubmit } = form;
 
-  const handleSubmit = (data: FormData) => {
-    onSubmit({
-      defaultValue: data.defaultValue,
-      fullKey: `${projectPrefix}.${data.keyName}`,
-    });
-  };
+  const handleSubmit = useCallback(
+    (data: FormData) => {
+      onSubmit({
+        defaultValue: data.defaultValue,
+        fullKey: `${projectPrefix}.${data.keyName}`,
+      });
+    },
+    [onSubmit, projectPrefix]
+  );
 
   return (
     <Form {...form}>
-      <form className="space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
+      <form className="space-y-4" onSubmit={formHandleSubmit(handleSubmit)}>
         <FormField
-          control={form.control}
+          control={control}
           name="keyName"
           render={({ field }) => (
             <FormItem>
@@ -68,7 +72,7 @@ export function KeyForm({ isSubmitting, onSubmit, projectPrefix }: KeyFormProps)
           )}
         />
         <FormField
-          control={form.control}
+          control={control}
           name="defaultValue"
           render={({ field }) => (
             <FormItem>
@@ -84,7 +88,7 @@ export function KeyForm({ isSubmitting, onSubmit, projectPrefix }: KeyFormProps)
           )}
         />
         <div className="flex justify-end gap-2">
-          <Button disabled={!form.formState.isValid || isSubmitting} type="submit">
+          <Button disabled={!formState.isValid || isSubmitting} type="submit">
             {isSubmitting ? 'Creating...' : 'Create Key'}
           </Button>
         </div>

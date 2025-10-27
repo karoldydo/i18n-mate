@@ -91,8 +91,8 @@ export function TranslationValueCell({
     }
   }, [localValue, isEditing, isSaving, onValueChange]);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(e.target.value);
+  const handleChange = useCallback((changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalValue(changeEvent.target.value);
   }, []);
 
   const handleClick = useCallback(() => {
@@ -102,14 +102,12 @@ export function TranslationValueCell({
   }, [isEditing, onEditStart]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        // blur to trigger save immediately
-        e.currentTarget.blur();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        // cancel editing and revert to original value
+    (keyboardEvent: React.KeyboardEvent<HTMLInputElement>) => {
+      if (keyboardEvent.key === 'Enter') {
+        keyboardEvent.preventDefault();
+        keyboardEvent.currentTarget.blur();
+      } else if (keyboardEvent.key === 'Escape') {
+        keyboardEvent.preventDefault();
         setLocalValue(value ?? '');
         setValidationError(undefined);
         onEditEnd();
@@ -121,7 +119,6 @@ export function TranslationValueCell({
   const handleBlur = useCallback(() => {
     const trimmed = localValue.trim();
 
-    // validate before saving
     let hasError = false;
     if (trimmed.length > TRANSLATION_VALUE_MAX_LENGTH) {
       hasError = true;
@@ -129,28 +126,31 @@ export function TranslationValueCell({
       hasError = true;
     }
 
-    // save immediately on blur if there are unsaved changes and no validation errors
     const normalizedValue = trimmed || null;
     if (!hasError && normalizedValue !== lastSavedValueRef.current) {
       lastSavedValueRef.current = normalizedValue;
       onValueChange(trimmed || '');
     }
 
-    // exit edit mode immediately
     onEditEnd();
   }, [localValue, onValueChange, onEditEnd]);
+
+  const handleViewKeyDown = useCallback(
+    (keyboardEvent: React.KeyboardEvent<HTMLDivElement>) => {
+      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+        keyboardEvent.preventDefault();
+        handleClick();
+      }
+    },
+    [handleClick]
+  );
 
   if (!isEditing) {
     return (
       <div
         className="hover:bg-muted cursor-pointer rounded px-2 py-1 transition-colors"
         onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleClick();
-          }
-        }}
+        onKeyDown={handleViewKeyDown}
         role="button"
         tabIndex={0}
       >

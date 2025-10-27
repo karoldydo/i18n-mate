@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
@@ -32,29 +32,32 @@ export function AddKeyDialog({ onOpenChange, open, projectId, projectPrefix }: A
     }
   }, [open]);
 
-  const handleSubmit = (data: { defaultValue: string; fullKey: string }) => {
-    setIsSubmitting(true);
+  const handleSubmit = useCallback(
+    (data: { defaultValue: string; fullKey: string }) => {
+      setIsSubmitting(true);
 
-    createKeyMutation.mutate(
-      {
-        default_value: data.defaultValue,
-        full_key: data.fullKey,
-        project_id: projectId,
-      },
-      {
-        onError: ({ error }) => {
-          toast.error(error.message);
-          setIsSubmitting(false);
+      createKeyMutation.mutate(
+        {
+          default_value: data.defaultValue,
+          full_key: data.fullKey,
+          project_id: projectId,
         },
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['keys-default-view'] });
-          toast.success('Translation key created successfully');
-          onOpenChange(false);
-          setIsSubmitting(false);
-        },
-      }
-    );
-  };
+        {
+          onError: ({ error }) => {
+            toast.error(error.message);
+            setIsSubmitting(false);
+          },
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['keys-default-view'] });
+            toast.success('Translation key created successfully');
+            onOpenChange(false);
+            setIsSubmitting(false);
+          },
+        }
+      );
+    },
+    [createKeyMutation, onOpenChange, projectId, queryClient]
+  );
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
