@@ -27,6 +27,7 @@
     "ms-vscode.live-server",
     "anthropic.claude-code",
     "denoland.vscode-deno",
-    "yzhang.markdown-all-in-one"
+    "yzhang.markdown-all-in-one",
+    "vscode-icons-team.vscode-icons"
   ]
 }
