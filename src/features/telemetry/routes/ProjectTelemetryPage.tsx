@@ -1,4 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { z } from 'zod';
 
@@ -23,11 +24,9 @@ export function ProjectTelemetryPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // validate UUID format
-  const validation = UUID_SCHEMA.safeParse(id);
-  const projectId = validation.data ?? '';
+  const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
+  const projectId = useMemo(() => validation.data ?? '', [validation.data]);
 
-  // Fetch project details
   const {
     data: project,
     error: projectError,
@@ -35,29 +34,70 @@ export function ProjectTelemetryPage() {
     isLoading: isProjectLoading,
   } = useProject(projectId);
 
-  // Local UI state for pagination and sorting
   const pageState = useTelemetryPageState();
 
-  // Fetch telemetry events with pagination and sorting
+  const telemetryEventsParams = useMemo(
+    () => ({
+      limit: pageState.limit,
+      offset: pageState.page * pageState.limit,
+      order: `${pageState.sortBy}.${pageState.sortOrder}` as 'created_at.asc' | 'created_at.desc',
+    }),
+    [pageState.limit, pageState.page, pageState.sortBy, pageState.sortOrder]
+  );
+
   const {
     data: eventsData,
     error: eventsError,
     isError: isEventsError,
     isLoading: isEventsLoading,
-  } = useTelemetryEvents(projectId, {
-    limit: pageState.limit,
-    offset: pageState.page * pageState.limit,
-    order: `${pageState.sortBy}.${pageState.sortOrder}` as 'created_at.asc' | 'created_at.desc',
-  });
+  } = useTelemetryEvents(projectId, telemetryEventsParams);
 
-  // Handle invalid project ID
+  const totalPages = useMemo(
+    () => Math.ceil((eventsData?.length || 0) / pageState.limit) || 1,
+    [eventsData?.length, pageState.limit]
+  );
+
+  const events = useMemo(() => eventsData || [], [eventsData]);
+
+  const handleGoBack = useCallback(() => {
+    window.history.back();
+  }, []);
+
+  const handleBackToProject = useCallback(() => {
+    navigate(`/projects/${projectId}`);
+  }, [navigate, projectId]);
+
+  const handleSortChange = useCallback(
+    (sortBy: 'created_at') => {
+      pageState.setSortBy(sortBy);
+      pageState.resetPagination();
+    },
+    [pageState]
+  );
+
+  const pagination = useMemo(
+    () => ({
+      currentPage: pageState.page + 1,
+      totalPages,
+    }),
+    [pageState.page, totalPages]
+  );
+
+  const sort = useMemo(
+    () => ({
+      sortBy: pageState.sortBy,
+      sortOrder: pageState.sortOrder,
+    }),
+    [pageState.sortBy, pageState.sortOrder]
+  );
+
   if (!validation.success) {
     return (
       <div className="container mx-auto py-8">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={() => window.history.back()} variant="outline">
+          <Button className="mt-4" onClick={handleGoBack} variant="outline">
             Go Back
           </Button>
         </div>
@@ -65,7 +105,6 @@ export function ProjectTelemetryPage() {
     );
   }
 
-  // Loading state for project
   if (isProjectLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -87,7 +126,6 @@ export function ProjectTelemetryPage() {
     );
   }
 
-  // Error state for project
   if (isProjectError || !project) {
     return (
       <div className="container mx-auto py-8">
@@ -96,17 +134,13 @@ export function ProjectTelemetryPage() {
           <p className="text-muted-foreground text-sm">
             {projectError?.error?.message || 'Failed to load project details.'}
           </p>
-          <Button className="mt-4" onClick={() => window.history.back()} variant="outline">
+          <Button className="mt-4" onClick={handleGoBack} variant="outline">
             Go Back
           </Button>
         </div>
       </div>
     );
   }
-
-  // Calculate total pages (assuming we need to estimate since the API doesn't return total count)
-  // In a real implementation, the API would return total count
-  const totalPages = Math.ceil((eventsData?.length || 0) / pageState.limit) || 1;
 
   return (
     <div className="container mx-auto py-8">
@@ -115,7 +149,7 @@ export function ProjectTelemetryPage() {
           <Button
             aria-label="Back to project details"
             className="mb-4"
-            onClick={() => navigate(`/projects/${projectId}`)}
+            onClick={handleBackToProject}
             size="sm"
             variant="ghost"
           >
@@ -130,33 +164,20 @@ export function ProjectTelemetryPage() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <TelemetryKPIs projectCreatedAt={project.created_at} telemetryEvents={eventsData || []} />
+        <TelemetryKPIs projectCreatedAt={project.created_at} telemetryEvents={events} />
 
-        {/* Events Table */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Telemetry Events</h3>
           <TelemetryDataTable
-            events={eventsData || []}
+            events={events}
             isLoading={isEventsLoading}
             onPageChange={pageState.setPage}
-            onSortChange={(sortBy) => {
-              pageState.setSortBy(sortBy);
-              // Reset to first page when sorting changes
-              pageState.resetPagination();
-            }}
-            pagination={{
-              currentPage: pageState.page + 1, // Convert 0-based to 1-based
-              totalPages,
-            }}
-            sort={{
-              sortBy: pageState.sortBy,
-              sortOrder: pageState.sortOrder,
-            }}
+            onSortChange={handleSortChange}
+            pagination={pagination}
+            sort={sort}
           />
         </div>
 
-        {/* Error state for events */}
         {isEventsError && (
           <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
             <h2 className="text-destructive text-lg font-semibold">Error Loading Events</h2>

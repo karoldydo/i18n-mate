@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import type { Json, TelemetryEventResponse } from '@/shared/types';
 
 import { Badge } from '@/shared/ui/badge';
@@ -10,15 +12,16 @@ import { formatRelativeTimestamp } from '@/shared/utils';
  * Displays a single telemetry event with timestamp, event type badge, and human-readable properties.
  */
 export function TelemetryEventRow({ event }: { event: TelemetryEventResponse }) {
-  const formattedRelativeTimestamp = formatRelativeTimestamp(event.created_at);
-  const eventTypeLabel = getEventTypeLabel(event.event_name);
-  const formattedProperties = formatEventProperties(event.properties);
+  const formattedRelativeTimestamp = useMemo(() => formatRelativeTimestamp(event.created_at), [event.created_at]);
+  const eventTypeLabel = useMemo(() => getEventTypeLabel(event.event_name), [event.event_name]);
+  const eventTypeVariant = useMemo(() => getEventTypeVariant(event.event_name), [event.event_name]);
+  const formattedProperties = useMemo(() => formatEventProperties(event.properties), [event.properties]);
 
   return (
     <TableRow>
       <TableCell className="text-muted-foreground text-sm">{formattedRelativeTimestamp}</TableCell>
       <TableCell>
-        <Badge variant={getEventTypeVariant(event.event_name)}>{eventTypeLabel}</Badge>
+        <Badge variant={eventTypeVariant}>{eventTypeLabel}</Badge>
       </TableCell>
       <TableCell className="text-sm">{formattedProperties}</TableCell>
     </TableRow>

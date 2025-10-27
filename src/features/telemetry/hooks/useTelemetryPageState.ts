@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { TELEMETRY_DEFAULT_LIMIT } from '@/shared/constants';
 
@@ -35,29 +35,29 @@ const INITIAL_STATE: TelemetryPageState = {
 export function useTelemetryPageState(): TelemetryPageActions & TelemetryPageState {
   const [state, setState] = useState<TelemetryPageState>(INITIAL_STATE);
 
-  const setPage = (page: number) => {
+  const setPage = useCallback((page: number) => {
     setState((prev) => ({ ...prev, page: Math.max(0, page) }));
-  };
+  }, []);
 
-  const setLimit = (limit: number) => {
-    setState((prev) => ({ ...prev, limit, page: 0 })); // Reset to first page when limit changes
-  };
+  const setLimit = useCallback((limit: number) => {
+    setState((prev) => ({ ...prev, limit, page: 0 }));
+  }, []);
 
-  const setSortBy = (sortBy: 'created_at') => {
-    setState((prev) => ({ ...prev, page: 0, sortBy })); // Reset to first page when sorting changes
-  };
+  const setSortBy = useCallback((sortBy: 'created_at') => {
+    setState((prev) => ({ ...prev, page: 0, sortBy }));
+  }, []);
 
-  const toggleSortOrder = () => {
+  const toggleSortOrder = useCallback(() => {
     setState((prev) => ({
       ...prev,
-      page: 0, // Reset to first page when sort order changes
+      page: 0,
       sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc',
     }));
-  };
+  }, []);
 
-  const resetPagination = () => {
+  const resetPagination = useCallback(() => {
     setState((prev) => ({ ...prev, page: 0 }));
-  };
+  }, []);
 
   return {
     ...state,

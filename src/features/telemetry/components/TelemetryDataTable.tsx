@@ -1,3 +1,6 @@
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+
 import type { TelemetryEventResponse } from '@/shared/types';
 
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
@@ -45,8 +48,14 @@ export function TelemetryDataTable({
   pagination,
   sort,
 }: TelemetryDataTableProps) {
-  // Empty state
-  if (!isLoading && events.length === 0) {
+  const hasEvents = useMemo(() => !isLoading && events.length === 0, [isLoading, events.length]);
+  const showPagination = useMemo(() => pagination.totalPages > 1, [pagination.totalPages]);
+
+  const handleSortClick = useCallback(() => {
+    onSortChange('created_at');
+  }, [onSortChange]);
+
+  if (hasEvents) {
     return (
       <div className="border-border rounded-lg border p-12 text-center">
         <p className="text-muted-foreground text-lg">No telemetry events found</p>
@@ -56,10 +65,6 @@ export function TelemetryDataTable({
       </div>
     );
   }
-
-  const handleSortClick = () => {
-    onSortChange('created_at');
-  };
 
   return (
     <div className="space-y-4">
@@ -84,7 +89,7 @@ export function TelemetryDataTable({
           </TableBody>
         </Table>
       </div>
-      {pagination.totalPages > 1 && (
+      {showPagination && (
         <TelemetryTablePagination
           currentPage={pagination.currentPage}
           onPageChange={onPageChange}
@@ -96,5 +101,6 @@ export function TelemetryDataTable({
 }
 
 function SortIcon({ sortOrder }: SortIconProps) {
-  return <span className="text-muted-foreground">{sortOrder === 'asc' ? '↑' : '↓'}</span>;
+  const IconComponent = sortOrder === 'asc' ? ArrowUp : ArrowDown;
+  return <IconComponent className="text-muted-foreground h-4 w-4" />;
 }
