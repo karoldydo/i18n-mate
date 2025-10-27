@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { ApiErrorResponse } from '@/shared/types';
 
@@ -24,8 +24,10 @@ export function ExportActions({ isDisabled, projectId }: ExportActionsProps) {
 
   const exportTranslations = useExportTranslations(projectId);
 
-  const handleExport = async () => {
-    if (isDisabled || exportStatus === 'exporting') {
+  const isExporting = useMemo(() => exportStatus === 'exporting', [exportStatus]);
+
+  const handleExport = useCallback(async () => {
+    if (isDisabled || isExporting) {
       return;
     }
 
@@ -35,23 +37,21 @@ export function ExportActions({ isDisabled, projectId }: ExportActionsProps) {
     try {
       await exportTranslations.mutateAsync();
       setExportStatus('success');
-    } catch (error) {
-      setError(error as ApiErrorResponse);
+    } catch (catchError) {
+      setError(catchError as ApiErrorResponse);
       setExportStatus('error');
     }
-  };
+  }, [isDisabled, isExporting, exportTranslations]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     handleExport();
-  };
+  }, [handleExport]);
+
+  const isButtonDisabled = useMemo(() => isDisabled || isExporting, [isDisabled, isExporting]);
 
   return (
     <div className="space-y-4">
-      <ExportButton
-        disabled={isDisabled || exportStatus === 'exporting'}
-        isLoading={exportStatus === 'exporting'}
-        onClick={handleExport}
-      />
+      <ExportButton disabled={isButtonDisabled} isLoading={isExporting} onClick={handleExport} />
       <ExportStatus error={error} onRetry={handleRetry} status={exportStatus} />
     </div>
   );

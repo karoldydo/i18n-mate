@@ -30,7 +30,6 @@ export function useExportTranslations(projectId: string) {
     mutationFn: async () => {
       const { project_id } = EXPORT_TRANSLATIONS_SCHEMA.parse({ project_id: projectId });
 
-      // get current session for authentication
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -38,7 +37,6 @@ export function useExportTranslations(projectId: string) {
         throw createApiErrorResponse(401, 'Authentication required');
       }
 
-      // get supabase configuration from environment
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -46,7 +44,6 @@ export function useExportTranslations(projectId: string) {
         throw createApiErrorResponse(500, 'Supabase configuration missing');
       }
 
-      // call edge function with authenticated fetch
       const functionUrl = `${supabaseUrl}/functions/v1/export-translations?project_id=${project_id}`;
 
       const response = await fetch(functionUrl, {
@@ -69,10 +66,8 @@ export function useExportTranslations(projectId: string) {
         throw createEdgeFunctionErrorResponse('Export generation failed', response.status, 'useExportTranslations');
       }
 
-      // handle successful zip response
       const blob = await response.blob();
 
-      // extract filename from content-disposition header or generate fallback
       let filename = `export-${projectId}-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.zip`;
       const contentDisposition = response.headers.get('Content-Disposition');
       if (contentDisposition) {
@@ -82,16 +77,15 @@ export function useExportTranslations(projectId: string) {
         }
       }
 
-      // trigger browser download
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const anchorElement = document.createElement('a');
+      anchorElement.style.display = 'none';
+      anchorElement.href = downloadUrl;
+      anchorElement.download = filename;
+      document.body.appendChild(anchorElement);
+      anchorElement.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(anchorElement);
     },
   });
 }

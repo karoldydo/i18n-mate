@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import { Button } from '@/shared/ui/button';
@@ -23,9 +24,8 @@ export function ExportPage() {
   const { projectId } = useParams<keyof RouteParams>();
   const navigate = useNavigate();
 
-  // validate UUID format
-  const validation = UUID_SCHEMA.safeParse(projectId);
-  const validatedProjectId = validation.data ?? '';
+  const validation = useMemo(() => UUID_SCHEMA.safeParse(projectId), [projectId]);
+  const validatedProjectId = useMemo(() => validation.data ?? '', [validation.data]);
 
   const {
     data: project,
@@ -46,13 +46,45 @@ export function ExportPage() {
     isLoading: isKeyCountLoading,
   } = useProjectKeyCount(validatedProjectId);
 
+  const handleNavigateToProjects = useCallback(() => {
+    navigate('/projects');
+  }, [navigate]);
+
+  const handleNavigateToProjectDetails = useCallback(() => {
+    navigate(`/projects/${validatedProjectId}`);
+  }, [navigate, validatedProjectId]);
+
+  const isLoading = useMemo(
+    () => isProjectLoading || isLocalesLoading || isKeyCountLoading,
+    [isProjectLoading, isLocalesLoading, isKeyCountLoading]
+  );
+
+  const error = useMemo(
+    () => projectError || localesError || keyCountError,
+    [projectError, localesError, keyCountError]
+  );
+  const hasError = useMemo(
+    () => isProjectError || isLocalesError || isKeyCountError,
+    [isProjectError, isLocalesError, isKeyCountError]
+  );
+
+  const stats = useMemo(
+    () => ({
+      keyCount: keyCount ?? 0,
+      localeCount: locales?.length ?? 0,
+    }),
+    [keyCount, locales]
+  );
+
+  const isExportDisabled = useMemo(() => (locales?.length ?? 0) === 0, [locales]);
+
   if (!validation.success) {
     return (
       <div className="container mx-auto py-8">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={() => navigate('/projects')} variant="outline">
+          <Button className="mt-4" onClick={handleNavigateToProjects} variant="outline">
             Back to Projects
           </Button>
         </div>
@@ -60,8 +92,7 @@ export function ExportPage() {
     );
   }
 
-  // loading state
-  if (isProjectLoading || isLocalesLoading || isKeyCountLoading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto py-8">
         <div className="space-y-6">
@@ -81,10 +112,6 @@ export function ExportPage() {
     );
   }
 
-  // error state
-  const error = projectError || localesError || keyCountError;
-  const hasError = isProjectError || isLocalesError || isKeyCountError;
-
   if (hasError || !project || !locales) {
     return (
       <div className="container mx-auto py-8">
@@ -93,20 +120,13 @@ export function ExportPage() {
           <p className="text-muted-foreground text-sm">
             {error?.error?.message || 'Failed to load project or locale data.'}
           </p>
-          <Button className="mt-4" onClick={() => navigate(`/projects/${validatedProjectId}`)} variant="outline">
+          <Button className="mt-4" onClick={handleNavigateToProjectDetails} variant="outline">
             Back to Project Details
           </Button>
         </div>
       </div>
     );
   }
-
-  const stats = {
-    keyCount: keyCount ?? 0,
-    localeCount: locales.length,
-  };
-
-  const isExportDisabled = locales.length === 0;
 
   return (
     <ExportLayout project={project} stats={stats}>
