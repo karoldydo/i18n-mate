@@ -1,3 +1,6 @@
+import { AlertTriangleIcon } from 'lucide-react';
+import { useCallback } from 'react';
+
 import type { TranslationJobResponse } from '@/shared/types';
 
 import {
@@ -27,6 +30,14 @@ interface CancelJobDialogProps {
  * Completed translations are preserved after cancellation.
  */
 export function CancelJobDialog({ isLoading, isOpen, job, onConfirmCancel, onOpenChange }: CancelJobDialogProps) {
+  const handleConfirm = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      onConfirmCancel();
+    },
+    [onConfirmCancel]
+  );
+
   if (!job) {
     return null;
   }
@@ -56,10 +67,13 @@ export function CancelJobDialog({ isLoading, isOpen, job, onConfirmCancel, onOpe
                 </div>
               </dl>
             </div>
-            <p className="text-destructive mt-3 text-sm font-medium">
-              ⚠️ This action cannot be undone. Completed translations will be preserved, but remaining keys will not be
-              translated.
-            </p>
+            <div className="mt-3 flex items-start gap-2">
+              <AlertTriangleIcon className="text-destructive mt-0.5 h-4 w-4 shrink-0" />
+              <p className="text-destructive text-sm font-medium">
+                This action cannot be undone. Completed translations will be preserved, but remaining keys will not be
+                translated.
+              </p>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -67,10 +81,7 @@ export function CancelJobDialog({ isLoading, isOpen, job, onConfirmCancel, onOpe
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             disabled={isLoading}
-            onClick={(e) => {
-              e.preventDefault();
-              onConfirmCancel();
-            }}
+            onClick={handleConfirm}
           >
             {isLoading ? 'Cancelling...' : 'Confirm Cancel'}
           </AlertDialogAction>

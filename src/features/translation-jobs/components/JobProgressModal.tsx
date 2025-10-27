@@ -1,3 +1,5 @@
+import { useCallback, useMemo } from 'react';
+
 import type { TranslationJobResponse } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
@@ -21,11 +23,21 @@ interface JobProgressModalProps {
  * Supports cancelling jobs mid-process.
  */
 export function JobProgressModal({ isOpen, job, onCancelJob, onOpenChange }: JobProgressModalProps) {
+  const canCancel = useMemo(() => job?.status === 'pending' || job?.status === 'running', [job?.status]);
+
+  const handleCancelClick = useCallback(() => {
+    if (job && onCancelJob) {
+      onCancelJob(job);
+    }
+  }, [job, onCancelJob]);
+
+  const handleCloseClick = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
+
   if (!job) {
     return null;
   }
-
-  const canCancel = job.status === 'pending' || job.status === 'running';
 
   return (
     <Dialog onOpenChange={onOpenChange} open={isOpen}>
@@ -83,11 +95,11 @@ export function JobProgressModal({ isOpen, job, onCancelJob, onOpenChange }: Job
 
         <DialogFooter>
           {canCancel && onCancelJob && (
-            <Button onClick={() => onCancelJob(job)} variant="destructive">
+            <Button onClick={handleCancelClick} variant="destructive">
               Cancel Job
             </Button>
           )}
-          <Button onClick={() => onOpenChange(false)} variant="outline">
+          <Button onClick={handleCloseClick} variant="outline">
             Close
           </Button>
         </DialogFooter>

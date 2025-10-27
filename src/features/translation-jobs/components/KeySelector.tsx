@@ -1,5 +1,5 @@
 import { SearchIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { TranslationMode } from '@/shared/types';
 
@@ -35,29 +35,51 @@ export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // fetch keys with search
   const { data: keysData, isLoading } = useKeysDefaultView({
-    limit: 100, // fetch more keys for selection
+    limit: 100,
     offset: 0,
     project_id: projectId,
     search: debouncedSearchTerm || undefined,
   });
 
-  const keys = keysData?.data || [];
+  const keys = useMemo(() => keysData?.data || [], [keysData?.data]);
 
-  // handle checkbox toggle (multi-select)
-  const handleCheckboxChange = (keyId: string, checked: boolean) => {
-    if (checked) {
-      onSelectionChange([...selectedKeyIds, keyId]);
-    } else {
-      onSelectionChange(selectedKeyIds.filter((id) => id !== keyId));
+  const handleCheckboxChange = useCallback(
+    (keyId: string, checked: boolean) => {
+      if (checked) {
+        onSelectionChange([...selectedKeyIds, keyId]);
+      } else {
+        onSelectionChange(selectedKeyIds.filter((id) => id !== keyId));
+      }
+    },
+    [selectedKeyIds, onSelectionChange]
+  );
+
+  const handleRadioChange = useCallback(
+    (keyId: string) => {
+      onSelectionChange([keyId]);
+    },
+    [onSelectionChange]
+  );
+
+  const handleSearchChange = useCallback((changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(changeEvent.target.value);
+  }, []);
+
+  const handleSearchKeyDown = useCallback((keyboardEvent: React.KeyboardEvent<HTMLInputElement>) => {
+    keyboardEvent.stopPropagation();
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    onSelectionChange([]);
+  }, [onSelectionChange]);
+
+  const selectionStatusText = useMemo(() => {
+    if (mode === 'selected') {
+      return `${selectedKeyIds.length} key(s) selected`;
     }
-  };
-
-  // handle radio select (single-select)
-  const handleRadioChange = (keyId: string) => {
-    onSelectionChange([keyId]);
-  };
+    return selectedKeyIds.length === 1 ? '1 key selected' : 'No key selected';
+  }, [mode, selectedKeyIds.length]);
 
   return (
     <div className="space-y-3">
@@ -66,11 +88,8 @@ export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds
         <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <Input
           className="pl-9"
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => {
-            // prevent dialog-level typeahead or shortcuts from stealing focus while typing
-            e.stopPropagation();
-          }}
+          onChange={handleSearchChange}
+          onKeyDown={handleSearchKeyDown}
           placeholder="Search keys..."
           value={searchTerm}
         />
@@ -78,15 +97,9 @@ export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds
 
       {/* Selection Status */}
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-xs">
-          {mode === 'selected'
-            ? `${selectedKeyIds.length} key(s) selected`
-            : selectedKeyIds.length === 1
-              ? '1 key selected'
-              : 'No key selected'}
-        </p>
+        <p className="text-muted-foreground text-xs">{selectionStatusText}</p>
         {mode === 'selected' && selectedKeyIds.length > 0 && (
-          <button className="text-primary text-xs underline" onClick={() => onSelectionChange([])} type="button">
+          <button className="text-primary text-xs underline" onClick={handleClearSelection} type="button">
             Clear selection
           </button>
         )}

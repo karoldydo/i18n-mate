@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import type { TranslationJobResponse } from '@/shared/types';
 
 import { Progress } from '@/shared/ui/progress';
@@ -17,28 +19,32 @@ interface JobProgressIndicatorProps {
 export function JobProgressIndicator({ job, showDetails = true }: JobProgressIndicatorProps) {
   const { completed_keys, failed_keys, status, total_keys } = job;
 
-  // calculate progress percentage (0-100)
-  const completedCount = completed_keys ?? 0;
-  const failedCount = failed_keys ?? 0;
-  const totalCount = total_keys ?? 0;
-  const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const { completedCount, failedCount, totalCount } = useMemo(
+    () => ({
+      completedCount: completed_keys ?? 0,
+      failedCount: failed_keys ?? 0,
+      totalCount: total_keys ?? 0,
+    }),
+    [completed_keys, failed_keys, total_keys]
+  );
 
-  // clamp to 0-100 range for safety
-  const safeProgress = Math.max(0, Math.min(100, progressPercentage));
+  const safeProgress = useMemo(() => {
+    const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    return Math.max(0, Math.min(100, progressPercentage));
+  }, [completedCount, totalCount]);
 
-  // determine progress bar color based on status
-  const getProgressColor = () => {
+  const progressColor = useMemo(() => {
     if (status === 'completed') return 'bg-green-500';
     if (status === 'failed') return 'bg-destructive';
     if (status === 'cancelled') return 'bg-muted';
-    return undefined; // default color
-  };
+    return undefined;
+  }, [status]);
 
   return (
     <div className="space-y-2">
       <Progress
         aria-label={`Translation progress: ${safeProgress}%`}
-        className={`h-2 ${getProgressColor()}`}
+        className={`h-2 ${progressColor}`}
         value={safeProgress}
       />
       {showDetails && (

@@ -50,27 +50,25 @@ export function CreateTranslationJobDialog({
   const [selectedKeyIds, setSelectedKeyIds] = useState<string[]>([]);
   const [overwriteConfirmed, setOverwriteConfirmed] = useState(false);
 
-  // fetch project locales
   const { data: localesData } = useProjectLocales(projectId);
-  const locales = localesData || [];
   const { data: projectKeyCount } = useProjectKeyCount(projectId);
 
-  // filter out default locale for target selection
-  const targetLocales = locales.filter((locale) => !locale.is_default);
-  const defaultLocale = locales.find((locale) => locale.is_default);
+  const { defaultLocale, targetLocales } = useMemo(
+    () => ({
+      defaultLocale: (localesData || []).find((locale) => locale.is_default),
+      targetLocales: (localesData || []).filter((locale) => !locale.is_default),
+    }),
+    [localesData]
+  );
 
-  // fetch existing translations for selected locale to check for overwrites
-  // only fetch when we have a target locale selected
-  // Note: Hook will handle empty locale gracefully through validation
   const { data: existingTranslationsData } = useKeysPerLanguageView({
-    limit: 1000, // fetch all keys to check overwrites
-    locale: targetLocale || 'en', // provide fallback to avoid validation errors
+    limit: 1000,
+    locale: targetLocale || 'en',
     missing_only: false,
     offset: 0,
     project_id: projectId,
   });
 
-  // calculate overwrite count
   const overwriteCount = useMemo(() => {
     if (!existingTranslationsData?.data) return 0;
 
@@ -79,7 +77,6 @@ export function CreateTranslationJobDialog({
     if (mode === 'all') {
       return existingKeys.length;
     } else {
-      // for selected/single modes, count only selected keys that have translations
       return existingKeys.filter((key) => key.key_id && selectedKeyIds.includes(key.key_id)).length;
     }
   }, [existingTranslationsData, mode, selectedKeyIds]);
@@ -91,28 +88,27 @@ export function CreateTranslationJobDialog({
     setOverwriteConfirmed(false);
   }, []);
 
-  // reset overwrite confirmation when overwrite count changes
   useEffect(() => {
     setOverwriteConfirmed(false);
   }, [overwriteCount]);
 
-  // reset form when dialog opens
   useEffect(() => {
     if (isOpen) {
       resetForm();
     }
   }, [isOpen, resetForm]);
 
-  // reset form when dialog closes
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      resetForm();
-    }
-    onOpenChange(open);
-  };
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        resetForm();
+      }
+      onOpenChange(open);
+    },
+    [resetForm, onOpenChange]
+  );
 
-  // handle job creation
-  const handleCreate = () => {
+  const handleCreate = useCallback(() => {
     if (!targetLocale) return;
 
     const key_ids = mode === 'all' ? [] : selectedKeyIds;
@@ -132,16 +128,23 @@ export function CreateTranslationJobDialog({
       mode,
       target_locale: targetLocale,
     });
-  };
+  }, [targetLocale, mode, selectedKeyIds, projectKeyCount, onCreateJob]);
 
-  // check if form is valid
-  const isFormValid = () => {
+  const isFormValid = useMemo(() => {
     if (!targetLocale) return false;
     if (mode === 'selected' && selectedKeyIds.length === 0) return false;
     if (mode === 'single' && selectedKeyIds.length !== 1) return false;
     if (overwriteCount > 0 && !overwriteConfirmed) return false;
     return true;
-  };
+  }, [targetLocale, mode, selectedKeyIds, overwriteCount, overwriteConfirmed]);
+
+  const handleModeChange = useCallback((value: string) => {
+    setMode(value as TranslationMode);
+  }, []);
+
+  const handleOverwriteConfirmChange = useCallback((checked: 'indeterminate' | boolean) => {
+    setOverwriteConfirmed(checked as boolean);
+  }, []);
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={isOpen}>
@@ -157,7 +160,7 @@ export function CreateTranslationJobDialog({
           {/* Translation Mode Selection */}
           <div className="space-y-3">
             <Label>Translation Mode</Label>
-            <RadioGroup onValueChange={(value) => setMode(value as TranslationMode)} value={mode}>
+            <RadioGroup onValueChange={handleModeChange} value={mode}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem id="mode-all" value="all" />
                 <Label className="font-normal" htmlFor="mode-all">
@@ -237,7 +240,7 @@ export function CreateTranslationJobDialog({
                 <Checkbox
                   checked={overwriteConfirmed}
                   id="overwrite-confirm"
-                  onCheckedChange={(checked) => setOverwriteConfirmed(checked as boolean)}
+                  onCheckedChange={handleOverwriteConfirmChange}
                 />
                 <Label
                   className="text-sm leading-none font-normal peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -262,7 +265,7 @@ export function CreateTranslationJobDialog({
           <Button disabled={isLoading} onClick={() => handleOpenChange(false)} variant="outline">
             Cancel
           </Button>
-          <Button disabled={!isFormValid() || isLoading} onClick={handleCreate}>
+          <Button disabled={!isFormValid || isLoading} onClick={handleCreate}>
             {isLoading ? 'Creating...' : 'Create Job'}
           </Button>
         </DialogFooter>

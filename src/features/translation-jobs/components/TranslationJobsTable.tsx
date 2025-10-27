@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+
 import type { TranslationJobResponse } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
@@ -21,7 +23,37 @@ interface TranslationJobsTableProps {
  * Rows are clickable for active jobs to open progress modal.
  */
 export function TranslationJobsTable({ isLoading, jobs, onCancelJob, onJobClick }: TranslationJobsTableProps) {
-  // empty state
+  const handleRowClick = useCallback(
+    (job: TranslationJobResponse) => {
+      if (onJobClick) {
+        onJobClick(job);
+      }
+    },
+    [onJobClick]
+  );
+
+  const handleRowKeyDown = useCallback(
+    (keyboardEvent: React.KeyboardEvent<HTMLTableRowElement>, job: TranslationJobResponse) => {
+      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+        keyboardEvent.preventDefault();
+        if (onJobClick) {
+          onJobClick(job);
+        }
+      }
+    },
+    [onJobClick]
+  );
+
+  const handleCancelClick = useCallback(
+    (mouseEvent: React.MouseEvent<HTMLButtonElement>, job: TranslationJobResponse) => {
+      mouseEvent.stopPropagation();
+      if (onCancelJob) {
+        onCancelJob(job);
+      }
+    },
+    [onCancelJob]
+  );
+
   if (!isLoading && jobs.length === 0) {
     return (
       <div className="border-border rounded-lg border p-12 text-center">
@@ -71,19 +103,10 @@ export function TranslationJobsTable({ isLoading, jobs, onCancelJob, onJobClick 
                 aria-label={rowAriaLabel}
                 className={isClickable ? 'hover:bg-muted/50 cursor-pointer' : ''}
                 key={job.id}
-                onClick={isClickable && onJobClick ? () => onJobClick(job) : undefined}
-                onKeyDown={
-                  isClickable && onJobClick
-                    ? (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          onJobClick(job);
-                        }
-                      }
-                    : undefined
-                }
-                role={isClickable && onJobClick ? 'button' : undefined}
-                tabIndex={isClickable && onJobClick ? 0 : undefined}
+                onClick={isClickable ? () => handleRowClick(job) : undefined}
+                onKeyDown={isClickable ? (keyboardEvent) => handleRowKeyDown(keyboardEvent, job) : undefined}
+                role={isClickable ? 'button' : undefined}
+                tabIndex={isClickable ? 0 : undefined}
               >
                 <TableCell className="font-medium capitalize">{job.mode}</TableCell>
                 <TableCell>{job.target_locale}</TableCell>
@@ -102,10 +125,7 @@ export function TranslationJobsTable({ isLoading, jobs, onCancelJob, onJobClick 
                   {isActive && onCancelJob && (
                     <Button
                       aria-label={`Cancel translation job for ${job.target_locale}`}
-                      onClick={(e) => {
-                        e.stopPropagation(); // prevent row click
-                        onCancelJob(job);
-                      }}
+                      onClick={(mouseEvent) => handleCancelClick(mouseEvent, job)}
                       size="sm"
                       variant="ghost"
                     >

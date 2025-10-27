@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import type { JobStatus } from '@/shared/types';
 
 import { Badge } from '@/shared/ui/badge';
@@ -19,7 +21,7 @@ interface JobStatusBadgeProps {
  * - cancelled: outline (muted)
  */
 export function JobStatusBadge({ size = 'md', status }: JobStatusBadgeProps) {
-  const getVariant = () => {
+  const variant = useMemo(() => {
     switch (status) {
       case 'cancelled':
         return 'outline';
@@ -34,17 +36,17 @@ export function JobStatusBadge({ size = 'md', status }: JobStatusBadgeProps) {
       default:
         return 'outline';
     }
-  };
+  }, [status]);
 
-  const getClassName = () => {
+  const className = useMemo(() => {
     const baseClass = size === 'sm' ? 'text-xs' : 'text-sm';
     const statusClass =
       status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : '';
     return `${baseClass} ${statusClass}`.trim();
-  };
+  }, [size, status]);
 
   return (
-    <Badge aria-label={`Status: ${status}`} className={getClassName()} variant={getVariant()}>
+    <Badge aria-label={`Status: ${status}`} className={className} variant={variant}>
       {status}
     </Badge>
   );

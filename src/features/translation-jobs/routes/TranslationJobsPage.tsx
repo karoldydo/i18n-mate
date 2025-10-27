@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftIcon, Loader2Icon, PlusIcon } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
@@ -65,17 +65,13 @@ export function TranslationJobsPage() {
   // poll for active job and manage progress modal
   const { activeJob, hasActiveJob, isJobRunning } = useTranslationJobPolling(projectId, validation.success);
 
-  // cancel job mutation
   const cancelJobMutation = useCancelTranslationJob();
-
-  // create job mutation
   const createJobMutation = useCreateTranslationJob();
 
   const applyTotalHint = useCallback(
     (job: TranslationJobResponse) => {
       const hint = jobTotalHints[job.id];
 
-      // apply hint if total_keys is null or undefined
       if (hint != null && job.total_keys == null) {
         return {
           ...job,
@@ -88,7 +84,6 @@ export function TranslationJobsPage() {
     [jobTotalHints]
   );
 
-  // auto-open and keep progress modal; persist latest job snapshot
   useEffect(() => {
     if (hasActiveJob && activeJob) {
       lastActiveJobIdRef.current = activeJob.id;
@@ -96,16 +91,12 @@ export function TranslationJobsPage() {
       setProgressModalOpen(true);
     }
   }, [hasActiveJob, activeJob, applyTotalHint]);
-
-  // when an active job disappears (finished/cancelled), refresh job list and load final state
   useEffect(() => {
     if (!hasActiveJob && lastActiveJobIdRef.current) {
       const jobId = lastActiveJobIdRef.current;
 
-      // refresh jobs list
       refetch();
 
-      // fetch final job snapshot for modal and toasts
       (async () => {
         const { data, error } = await supabase.from('translation_jobs').select('*').eq('id', jobId).maybeSingle();
         if (!error && data) {
@@ -129,108 +120,73 @@ export function TranslationJobsPage() {
         }
       })();
 
-      // clear so we run this only once per finish
       lastActiveJobIdRef.current = null;
     }
   }, [hasActiveJob, projectId, progressJob?.target_locale, refetch, supabase, applyTotalHint]);
 
-  // invalid project ID
-  if (!validation.success) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
-          <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={() => navigate('/projects')} variant="outline">
-            Back to Projects
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const handleBackToProject = useCallback(() => {
+    navigate(`/projects/${projectId}`);
+  }, [navigate, projectId]);
 
-  // loading state
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="space-y-6">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
-            </div>
-            <Skeleton className="h-10 w-24" />
-          </div>
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </div>
-    );
-  }
+  const handleBackToProjects = useCallback(() => {
+    navigate('/projects');
+  }, [navigate]);
 
-  // error state
-  if (isError || !jobsResponse) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Error Loading Translation Jobs</h2>
-          <p className="text-muted-foreground text-sm">{error?.error?.message || 'Failed to load translation jobs.'}</p>
-          <div className="mt-4 flex gap-2">
-            <Button onClick={() => refetch()} variant="outline">
-              Retry
-            </Button>
-            <Button onClick={() => navigate(`/projects/${projectId}`)} variant="outline">
-              Back to Project
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleOpenCreateDialog = useCallback(() => {
+    setCreateJobDialogOpen(true);
+  }, []);
 
-  const { data: jobs, metadata } = jobsResponse;
-  const jobsWithHints = jobs.map(applyTotalHint);
-  const activeJobWithHint = activeJob ? applyTotalHint(activeJob) : null;
-  const displayJobs = activeJobWithHint
-    ? jobsWithHints.map((job) => (job.id === activeJobWithHint.id ? activeJobWithHint : job))
-    : jobsWithHints;
-  const totalPages = Math.ceil(metadata.total / pageSize);
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+  const { displayJobs, totalPages } = useMemo(() => {
+    const { data: jobs = [], metadata = { end: 0, start: 0, total: 0 } } = jobsResponse || {};
+    const jobsWithHints = jobs.map(applyTotalHint);
+    const activeJobWithHint = activeJob ? applyTotalHint(activeJob) : null;
+    const displayJobs = activeJobWithHint
+      ? jobsWithHints.map((job) => (job.id === activeJobWithHint.id ? activeJobWithHint : job))
+      : jobsWithHints;
+    const totalPages = Math.ceil(metadata.total / pageSize);
 
-  // handler for opening progress modal for specific job
-  const handleJobClick = (job: (typeof jobs)[0]) => {
-    const jobWithHint = applyTotalHint(job);
-    setProgressJob(jobWithHint);
-    setProgressModalOpen(true);
+    return { displayJobs, totalPages };
+  }, [jobsResponse, activeJob, applyTotalHint, pageSize]);
 
-    if (!isActiveJob(jobWithHint)) {
-      void (async () => {
-        const { data, error } = await supabase
-          .from('translation_jobs')
-          .select('*')
-          .eq('id', jobWithHint.id)
-          .maybeSingle();
+  const handleJobClick = useCallback(
+    (job: TranslationJobResponse) => {
+      const jobWithHint = applyTotalHint(job);
+      setProgressJob(jobWithHint);
+      setProgressModalOpen(true);
 
-        if (error) {
-          toast.error('Failed to load translation job details', {
-            description: error.message || 'Unable to load the latest job state.',
-          });
-          return;
-        }
+      if (!isActiveJob(jobWithHint)) {
+        void (async () => {
+          const { data, error } = await supabase
+            .from('translation_jobs')
+            .select('*')
+            .eq('id', jobWithHint.id)
+            .maybeSingle();
 
-        if (data) {
-          setProgressJob(applyTotalHint(data as TranslationJobResponse));
-        }
-      })();
-    }
-  };
+          if (error) {
+            toast.error('Failed to load translation job details', {
+              description: error.message || 'Unable to load the latest job state.',
+            });
+            return;
+          }
 
-  // handler for initiating job cancellation
-  const handleCancelJobClick = (job: TranslationJobResponse) => {
+          if (data) {
+            setProgressJob(applyTotalHint(data as TranslationJobResponse));
+          }
+        })();
+      }
+    },
+    [applyTotalHint, supabase]
+  );
+
+  const handleCancelJobClick = useCallback((job: TranslationJobResponse) => {
     setJobToCancel(job);
     setCancelDialogOpen(true);
-  };
+  }, []);
 
-  // handler for confirming job cancellation
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = useCallback(() => {
     if (!jobToCancel) return;
 
     cancelJobMutation.mutate(
@@ -252,98 +208,151 @@ export function TranslationJobsPage() {
         },
       }
     );
-  };
+  }, [jobToCancel, cancelJobMutation, refetch]);
 
-  // handler for creating new translation job
-  const handleCreateJob = ({
-    estimatedTotalKeys,
-    key_ids,
-    mode,
-    target_locale,
-  }: {
-    estimatedTotalKeys: null | number;
-    key_ids: string[];
-    mode: string;
-    target_locale: string;
-  }) => {
-    const translationMode = mode as 'all' | 'selected' | 'single';
+  const handleCreateJob = useCallback(
+    ({
+      estimatedTotalKeys,
+      key_ids,
+      mode,
+      target_locale,
+    }: {
+      estimatedTotalKeys: null | number;
+      key_ids: string[];
+      mode: string;
+      target_locale: string;
+    }) => {
+      const translationMode = mode as 'all' | 'selected' | 'single';
 
-    createJobMutation.mutate(
-      {
-        key_ids,
-        mode: translationMode,
-        project_id: projectId,
-        target_locale,
-      },
-      {
-        onError: (error) => {
-          toast.error('Failed to create translation job', {
-            description: error.error?.message || 'An unexpected error occurred',
-          });
+      createJobMutation.mutate(
+        {
+          key_ids,
+          mode: translationMode,
+          project_id: projectId,
+          target_locale,
         },
-        onSuccess: (response) => {
-          toast.success('Translation job created', {
-            description: `Job for ${target_locale} has been created and is now processing.`,
-          });
+        {
+          onError: (error) => {
+            toast.error('Failed to create translation job', {
+              description: error.error?.message || 'An unexpected error occurred',
+            });
+          },
+          onSuccess: (response) => {
+            toast.success('Translation job created', {
+              description: `Job for ${target_locale} has been created and is now processing.`,
+            });
 
-          // close create dialog and open progress modal
-          setCreateJobDialogOpen(false);
+            setCreateJobDialogOpen(false);
 
-          if (estimatedTotalKeys !== null) {
-            setJobTotalHints((prev) => ({
-              ...prev,
-              [response.job_id]: estimatedTotalKeys,
-            }));
-          }
-          setProgressJob(null);
-
-          // invalidate active job query to trigger polling
-          void queryClient.invalidateQueries({
-            queryKey: ['translation-jobs', 'active', projectId],
-          });
-
-          void (async () => {
-            const { data, error: fetchError } = await supabase
-              .from('translation_jobs')
-              .select('*')
-              .eq('id', response.job_id)
-              .maybeSingle();
-
-            if (fetchError || !data) {
-              if (fetchError) {
-                toast.error('Failed to load translation job details', {
-                  description: fetchError.message || 'Unable to load the latest job state.',
-                });
-              }
-              setProgressModalOpen(true);
-              return;
+            if (estimatedTotalKeys !== null) {
+              setJobTotalHints((prev) => ({
+                ...prev,
+                [response.job_id]: estimatedTotalKeys,
+              }));
             }
+            setProgressJob(null);
 
-            const latestJob: TranslationJobResponse = {
-              ...(data as TranslationJobResponse),
-              total_keys: (data as TranslationJobResponse).total_keys ?? estimatedTotalKeys ?? null,
-            };
+            void queryClient.invalidateQueries({
+              queryKey: ['translation-jobs', 'active', projectId],
+            });
 
-            setProgressJob(applyTotalHint(latestJob));
-            setProgressModalOpen(true);
-          })();
+            void (async () => {
+              const { data, error: fetchError } = await supabase
+                .from('translation_jobs')
+                .select('*')
+                .eq('id', response.job_id)
+                .maybeSingle();
 
-          refetch();
-        },
-      }
+              if (fetchError || !data) {
+                if (fetchError) {
+                  toast.error('Failed to load translation job details', {
+                    description: fetchError.message || 'Unable to load the latest job state.',
+                  });
+                }
+                setProgressModalOpen(true);
+                return;
+              }
+
+              const latestJob: TranslationJobResponse = {
+                ...(data as TranslationJobResponse),
+                total_keys: (data as TranslationJobResponse).total_keys ?? estimatedTotalKeys ?? null,
+              };
+
+              setProgressJob(applyTotalHint(latestJob));
+              setProgressModalOpen(true);
+            })();
+
+            refetch();
+          },
+        }
+      );
+    },
+    [createJobMutation, projectId, queryClient, supabase, applyTotalHint, refetch]
+  );
+
+  const handleProgressModalOpenChange = useCallback((open: boolean) => {
+    setProgressModalOpen(open);
+    if (!open) {
+      setProgressJob(null);
+    }
+  }, []);
+
+  if (!validation.success) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
+          <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
+          <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
+          <Button className="mt-4" onClick={handleBackToProjects} variant="outline">
+            Back to Projects
+          </Button>
+        </div>
+      </div>
     );
-  };
+  }
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="space-y-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-64" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <Skeleton className="h-10 w-24" />
+          </div>
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !jobsResponse) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
+          <h2 className="text-destructive text-lg font-semibold">Error Loading Translation Jobs</h2>
+          <p className="text-muted-foreground text-sm">{error?.error?.message || 'Failed to load translation jobs.'}</p>
+          <div className="mt-4 flex gap-2">
+            <Button onClick={handleRefresh} variant="outline">
+              Retry
+            </Button>
+            <Button onClick={handleBackToProject} variant="outline">
+              Back to Project
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { data: jobs, metadata } = jobsResponse;
 
   return (
     <div className="container mx-auto py-8">
       <div className="space-y-6">
         {/* Back Button */}
-        <Button
-          aria-label="Back to project"
-          className="gap-2"
-          onClick={() => navigate(`/projects/${projectId}`)}
-          variant="ghost"
-        >
+        <Button aria-label="Back to project" className="gap-2" onClick={handleBackToProject} variant="ghost">
           <ArrowLeftIcon className="h-4 w-4" />
           Back to Project
         </Button>
@@ -366,12 +375,12 @@ export function TranslationJobsPage() {
             <Button
               aria-label="Create new translation job"
               disabled={hasActiveJob && isJobRunning}
-              onClick={() => setCreateJobDialogOpen(true)}
+              onClick={handleOpenCreateDialog}
             >
               <PlusIcon className="mr-2 h-4 w-4" />
               Create Job
             </Button>
-            <Button aria-label="Refresh job list" disabled={isFetching} onClick={() => refetch()} variant="outline">
+            <Button aria-label="Refresh job list" disabled={isFetching} onClick={handleRefresh} variant="outline">
               {isFetching ? (
                 <>
                   <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
@@ -384,7 +393,6 @@ export function TranslationJobsPage() {
           </div>
         </div>
 
-        {/* Live region for screen readers */}
         {hasActiveJob && activeJob && (
           <div aria-atomic="true" aria-live="polite" className="sr-only">
             Translation job in progress: {activeJob.completed_keys ?? 0} of {activeJob.total_keys ?? 0} keys translated
@@ -392,7 +400,6 @@ export function TranslationJobsPage() {
           </div>
         )}
 
-        {/* Job List Table */}
         {jobs.length === 0 ? (
           <div className="border-border rounded-lg border p-8 text-center">
             <h3 className="text-lg font-semibold">No translation jobs found</h3>
@@ -402,7 +409,6 @@ export function TranslationJobsPage() {
           </div>
         ) : (
           <>
-            {/* Job List Table */}
             <TranslationJobsTable
               isLoading={isLoading}
               jobs={displayJobs}
@@ -410,7 +416,6 @@ export function TranslationJobsPage() {
               onJobClick={handleJobClick}
             />
 
-            {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-center text-sm sm:text-left">
@@ -440,22 +445,12 @@ export function TranslationJobsPage() {
             )}
           </>
         )}
-
-        {/* Job Progress Modal */}
         <JobProgressModal
           isOpen={progressModalOpen}
           job={progressJob}
           onCancelJob={handleCancelJobClick}
-          onOpenChange={(open) => {
-            setProgressModalOpen(open);
-            if (!open) {
-              // keep lastActiveJobIdRef to detect completion even if user closes modal
-              setProgressJob(null);
-            }
-          }}
+          onOpenChange={handleProgressModalOpenChange}
         />
-
-        {/* Cancel Job Dialog */}
         <CancelJobDialog
           isLoading={cancelJobMutation.isPending}
           isOpen={cancelDialogOpen}
@@ -463,8 +458,6 @@ export function TranslationJobsPage() {
           onConfirmCancel={handleConfirmCancel}
           onOpenChange={setCancelDialogOpen}
         />
-
-        {/* Create Translation Job Dialog */}
         <CreateTranslationJobDialog
           isLoading={createJobMutation.isPending}
           isOpen={createJobDialogOpen}
