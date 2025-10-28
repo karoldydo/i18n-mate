@@ -95,3 +95,24 @@ export function formatRelativeTimestamp(timestamp: string): string {
   // show date for older events
   return format(date, 'MMM d, yyyy, HH:mm');
 }
+
+/**
+ * Parse structured error details from database
+ *
+ * Parses the comma-separated "key:value" format from PostgreSQL error DETAIL field:
+ * "error_code:DUPLICATE_LOCALE,field:locale,value:en-US"
+ *
+ * @param detail - The detail string from PostgreSQL error
+ * @returns Record with parsed key-value pairs
+ */
+export function parseErrorDetail(detail: string): Record<string, string> {
+  if (!detail) return {};
+
+  const pairs = detail.split(',');
+  return Object.fromEntries(
+    pairs.map((pair) => {
+      const [key, ...values] = pair.split(':');
+      return [key.trim(), values.join(':').trim()]; // Handle values with colons
+    })
+  );
+}
