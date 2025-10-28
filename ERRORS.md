@@ -58,16 +58,15 @@ USING ERRCODE = '23505',
 
 ### Project Errors
 
-| Error Code                   | PG Code | Source                             | Frontend Constant              | Description                             |
-| ---------------------------- | ------- | ---------------------------------- | ------------------------------ | --------------------------------------- |
-| PROJECT_NOT_FOUND            | N/A     | RPC functions                      | `PROJECT_NOT_FOUND`            | Project does not exist or access denied |
-| PROJECT_CREATION_FAILED      | 50000   | create_project_with_default_locale | `PROJECT_CREATION_FAILED`      | Failed to create project                |
-| DUPLICATE_PROJECT_NAME       | 23505   | UNIQUE constraint                  | `PROJECT_NAME_EXISTS`          | Project name already exists for user    |
-| DUPLICATE_PROJECT_PREFIX     | 23505   | UNIQUE constraint                  | `PREFIX_ALREADY_IN_USE`        | Prefix already in use by user           |
-| DUPLICATE_CONSTRAINT         | 23505   | create_project_with_default_locale | `DUPLICATE_CONSTRAINT`         | Generic duplicate violation             |
-| DEFAULT_LOCALE_IMMUTABLE     | 23514   | prevent_default_locale_change()    | `DEFAULT_LOCALE_IMMUTABLE`     | Cannot change default locale            |
-| PREFIX_IMMUTABLE             | 23514   | prevent_prefix_change()            | `PREFIX_IMMUTABLE`             | Cannot change prefix after creation     |
-| DEFAULT_LOCALE_CANNOT_DELETE | 23514   | prevent_default_locale_delete()    | `DEFAULT_LOCALE_CANNOT_DELETE` | Cannot delete default locale            |
+| Error Code                   | PG Code | Source                             | Frontend Constant              | Description                          |
+| ---------------------------- | ------- | ---------------------------------- | ------------------------------ | ------------------------------------ |
+| PROJECT_CREATION_FAILED      | 50000   | create_project_with_default_locale | `PROJECT_CREATION_FAILED`      | Failed to create project             |
+| DUPLICATE_PROJECT_NAME       | 23505   | UNIQUE constraint                  | `PROJECT_NAME_EXISTS`          | Project name already exists for user |
+| DUPLICATE_PROJECT_PREFIX     | 23505   | UNIQUE constraint                  | `PREFIX_ALREADY_IN_USE`        | Prefix already in use by user        |
+| DUPLICATE_CONSTRAINT         | 23505   | create_project_with_default_locale | `DUPLICATE_CONSTRAINT`         | Generic duplicate violation          |
+| DEFAULT_LOCALE_IMMUTABLE     | 23514   | prevent_default_locale_change()    | `DEFAULT_LOCALE_IMMUTABLE`     | Cannot change default locale         |
+| PREFIX_IMMUTABLE             | 23514   | prevent_prefix_change()            | `PREFIX_IMMUTABLE`             | Cannot change prefix after creation  |
+| DEFAULT_LOCALE_CANNOT_DELETE | 23514   | prevent_default_locale_delete()    | `DEFAULT_LOCALE_CANNOT_DELETE` | Cannot delete default locale         |
 
 ### Locale Errors
 
@@ -81,30 +80,23 @@ USING ERRCODE = '23505',
 | LOCALE_IS_LANGUAGE_NAME  | 23514   | validate_locale_format_strict()           | `LOCALE_IS_LANGUAGE_NAME`  | Used language name instead of code  |
 | FIELD_REQUIRED           | 23514   | create_project_locale_atomic              | `FIELD_REQUIRED`           | Required field is missing           |
 | MAX_LENGTH_EXCEEDED      | 23514   | create_project_locale_atomic              | `MAX_LENGTH_EXCEEDED`      | Field exceeds maximum length        |
-| LOCALE_CREATION_FAILED   | 50000   | create_project_locale_atomic              | `LOCALE_CREATION_FAILED`   | Failed to create locale             |
 | LOCALE_NOT_FOUND         | 23514   | ensure_default_locale_exists()            | `LOCALE_NOT_FOUND`         | Locale does not exist in project    |
 | DEFAULT_LOCALE_DUPLICATE | 23505   | prevent_default_locale_duplicate_insert() | `DEFAULT_LOCALE_DUPLICATE` | Attempted to re-add default locale  |
 
 ### Key Errors
 
-| Error Code           | PG Code | Source                | Frontend Constant      | Description                           |
-| -------------------- | ------- | --------------------- | ---------------------- | ------------------------------------- |
-| KEY_ALREADY_EXISTS   | 23505   | UNIQUE constraint     | `KEY_ALREADY_EXISTS`   | Key already exists in project         |
-| KEY_INVALID_PREFIX   | 23514   | validate_key_prefix() | `KEY_INVALID_PREFIX`   | Key doesn't start with project prefix |
-| KEY_CONSECUTIVE_DOTS | 23514   | CHECK constraint      | `KEY_CONSECUTIVE_DOTS` | Key contains consecutive dots         |
-| KEY_TRAILING_DOT     | 23514   | CHECK constraint      | `KEY_TRAILING_DOT`     | Key ends with a dot                   |
-| KEY_INVALID_FORMAT   | 23514   | CHECK constraint      | `KEY_INVALID_FORMAT`   | Key contains invalid characters       |
-| KEY_NOT_FOUND        | N/A     | RPC functions         | `KEY_NOT_FOUND`        | Key does not exist or access denied   |
+| Error Code         | PG Code | Source                | Frontend Constant    | Description                           |
+| ------------------ | ------- | --------------------- | -------------------- | ------------------------------------- |
+| KEY_INVALID_PREFIX | 23514   | validate_key_prefix() | `KEY_INVALID_PREFIX` | Key doesn't start with project prefix |
 
 ### Translation Errors
 
-| Error Code                 | PG Code | Source                                  | Frontend Constant            | Description                             |
-| -------------------------- | ------- | --------------------------------------- | ---------------------------- | --------------------------------------- |
-| DEFAULT_VALUE_EMPTY        | 23514   | validate_default_locale_value()         | `DEFAULT_VALUE_EMPTY`        | Default locale value cannot be empty    |
-| VALUE_NO_NEWLINES          | 23514   | CHECK constraint                        | `VALUE_NO_NEWLINES`          | Translation contains newline characters |
-| FANOUT_FAILED              | 50000   | fan_out_translations_on_key_insert()    | `FANOUT_FAILED`              | Failed to create translations for key   |
-| FANOUT_INCOMPLETE          | 50000   | fan_out_translations_on_locale_insert() | `FANOUT_INCOMPLETE`          | Translation initialization incomplete   |
-| FANOUT_VERIFICATION_FAILED | 50000   | create_project_locale_atomic            | `FANOUT_VERIFICATION_FAILED` | Fan-out verification failed             |
+| Error Code                 | PG Code | Source                                  | Frontend Constant            | Description                           |
+| -------------------------- | ------- | --------------------------------------- | ---------------------------- | ------------------------------------- |
+| DEFAULT_VALUE_EMPTY        | 23514   | validate_default_locale_value()         | `DEFAULT_VALUE_EMPTY`        | Default locale value cannot be empty  |
+| FANOUT_FAILED              | 50000   | fan_out_translations_on_key_insert()    | `FANOUT_FAILED`              | Failed to create translations for key |
+| FANOUT_INCOMPLETE          | 50000   | fan_out_translations_on_locale_insert() | `FANOUT_INCOMPLETE`          | Translation initialization incomplete |
+| FANOUT_VERIFICATION_FAILED | 50000   | create_project_locale_atomic            | `FANOUT_VERIFICATION_FAILED` | Fan-out verification failed           |
 
 ### Translation Job Errors
 
@@ -112,7 +104,6 @@ USING ERRCODE = '23505',
 | ------------------------ | ------- | ----------------------------------- | -------------------------- | ---------------------------------- |
 | ACTIVE_JOB_EXISTS        | 23505   | prevent_multiple_active_jobs()      | `ACTIVE_JOB_EXISTS`        | Another job is already active      |
 | TARGET_LOCALE_IS_DEFAULT | 23514   | validate_source_locale_is_default() | `TARGET_LOCALE_IS_DEFAULT` | Cannot translate to default locale |
-| TARGET_LOCALE_NOT_FOUND  | 23503   | FOREIGN KEY constraint              | `TARGET_LOCALE_NOT_FOUND`  | Target locale doesn't exist        |
 
 ### Generic Errors
 
@@ -142,11 +133,8 @@ Frontend constants are categorized into two types:
 
 ```typescript
 export const PROJECTS_ERROR_MESSAGES = {
-  // Database-raised errors (from migrations)
   AUTHENTICATION_REQUIRED: 'Authentication required',
   PREFIX_IMMUTABLE: 'Cannot modify prefix after creation',
-
-  // API-layer validation errors (client-side only)
   INVALID_PROJECT_ID: 'Invalid project ID format', // API-layer
   PREFIX_REQUIRED: 'Project prefix is required',
 } as const;
@@ -158,7 +146,7 @@ export const PROJECTS_ERROR_MESSAGES = {
 
 The DETAIL field uses a comma-separated `key:value` format:
 
-```
+```markdown
 error_code:DUPLICATE_LOCALE,field:locale,value:en-US
 ```
 
@@ -178,28 +166,6 @@ function parseErrorDetail(detail: string): Record<string, string> {
 // Usage
 const parsed = parseErrorDetail('error_code:DUPLICATE_LOCALE,field:locale,value:en-US');
 // { error_code: 'DUPLICATE_LOCALE', field: 'locale', value: 'en-US' }
-```
-
-### Example Error Handler
-
-```typescript
-import { PostgrestError } from '@supabase/supabase-js';
-import { LOCALE_ERROR_MESSAGES } from '@/shared/constants/locales.constants';
-
-function handleDatabaseError(error: PostgrestError): string {
-  // Parse structured DETAIL field
-  const detail = error.details || '';
-  const parsed = parseErrorDetail(detail);
-  const errorCode = parsed.error_code;
-
-  // Map to user-friendly message
-  if (errorCode && errorCode in LOCALE_ERROR_MESSAGES) {
-    return LOCALE_ERROR_MESSAGES[errorCode as keyof typeof LOCALE_ERROR_MESSAGES];
-  }
-
-  // Fallback to generic message
-  return LOCALE_ERROR_MESSAGES.DATABASE_ERROR;
-}
 ```
 
 ## Migration Template
@@ -269,48 +235,6 @@ Database constraints follow consistent naming patterns:
 - **INDEX**: `idx_[table]_[columns]_[type]`
   - Example: `idx_projects_owner_name_unique`
 
-## Testing Error Handling
-
-### Manual Testing
-
-Use these SQL snippets to test error conditions:
-
-```sql
--- Test DUPLICATE_LOCALE
-INSERT INTO project_locales (project_id, locale, label)
-VALUES ('uuid', 'en', 'English'); -- repeat to trigger error
-
--- Test KEY_INVALID_PREFIX
-INSERT INTO keys (project_id, full_key, value)
-VALUES ('uuid', 'wrong.prefix.key', 'value'); -- prefix must match project
-
--- Test DEFAULT_LOCALE_IMMUTABLE
-UPDATE projects SET default_locale = 'fr' WHERE id = 'uuid'; -- should fail
-
--- Test ACTIVE_JOB_EXISTS
-INSERT INTO translation_jobs (project_id, status, ...)
-VALUES ('uuid', 'running', ...); -- repeat while one is active
-```
-
-### Automated Testing
-
-Create test cases for each error code:
-
-```typescript
-describe('Locale creation errors', () => {
-  it('should return DUPLICATE_LOCALE when locale already exists', async () => {
-    // Create locale
-    await createLocale(projectId, 'en', 'English');
-
-    // Attempt duplicate
-    const result = await createLocale(projectId, 'en', 'English');
-
-    expect(result.error).toBeDefined();
-    expect(parseErrorDetail(result.error.details).error_code).toBe('DUPLICATE_LOCALE');
-  });
-});
-```
-
 ## Best Practices
 
 1. **Always use structured DETAIL format** for database errors
@@ -321,23 +245,3 @@ describe('Locale creation errors', () => {
 6. **Test error conditions** in both database and frontend
 7. **Update this documentation** when adding new error codes
 8. **Use consistent error code naming** (SCREAMING_SNAKE_CASE)
-
-## Migration History
-
-| Migration                                               | Date       | Description                                      |
-| ------------------------------------------------------- | ---------- | ------------------------------------------------ |
-| 20251028000000_standardize_error_handling.sql           | 2025-10-28 | Standardized all errors to structured format     |
-| 20251018001100_enhanced_atomic_function_error_codes.sql | 2025-10-18 | Introduced structured errors in atomic functions |
-| 20251013143300_create_triggers_and_functions.sql        | 2025-10-13 | Original triggers with unstructured errors       |
-
-## Related Documentation
-
-- [CLAUDE.md](./CLAUDE.md) - Project guidelines and architecture
-- [Supabase Migrations](./supabase/migrations/) - Database migration files
-- [Frontend Constants](./src/shared/constants/) - Error message constants
-
----
-
-**Last Updated**: 2025-10-28
-**Maintained By**: Development Team
-**Version**: 1.0.0

@@ -25,6 +25,25 @@ Vitest with Testing Library drives unit and interaction tests. Co-locate tests w
 
 Follow the Conventional Commits style already in history (`feat:`, `docs:`, `fix:`, etc.), keeping subjects imperative and under 72 characters. Group related changes per commit and update documentation or configuration in the same change set when relevant. Pull requests must include a concise summary, screenshots or GIFs for UI changes, linked issues or task references, and a checklist confirming `npm run lint` and `npm run test` pass locally. Flag environment or schema changes prominently and provide migration steps when necessary.
 
+## Error Handling Architecture
+
+The project uses a comprehensive error handling system documented in `ERRORS.md`. This document describes the structured error format used for database-raised errors, enabling reliable parsing and user-friendly error messages in the frontend. Key aspects include:
+
+- **Structured Error Format**: All database errors follow a consistent pattern with exception message, PostgreSQL error code, structured DETAIL field, and helpful HINT
+- **Error Code Catalog**: Comprehensive list of error codes organized by domain (authentication, project, locale, key, translation, job errors)
+- **Frontend Integration**: Mapping between database error codes and frontend constants for consistent UX
+- **Error Parsing**: Algorithm for parsing structured error details in the frontend
+- **Migration Template**: Standard template for implementing new errors in database migrations
+
+All database errors follow the format:
+
+```sql
+RAISE EXCEPTION 'Human-readable message'
+USING ERRCODE = 'PostgreSQL_error_code',
+      DETAIL = 'error_code:ERROR_NAME,field:field_name,additional:metadata',
+      HINT = 'Helpful suggestion for the user';
+```
+
 ## Environment & Tooling Tips
 
 Use the Node version defined in `.nvmrc` (`nvm use`) to align with CI. Environment variables belong in `.env` (see `README.md` for the template); never commit secrets. When integrating new dependencies, update the relevant config (Vite, ESLint, Vitest) and note any follow-up actions for other contributors.

@@ -146,8 +146,10 @@ begin
 
   -- validate locale format
   if not is_valid_locale_format(p_locale) then
-    raise exception 'Invalid locale format. Use BCP-47 format (e.g., "en", "en-US")'
-      using errcode = '22023';
+    raise exception 'Invalid locale format'
+    using errcode = '23514',
+          detail = 'error_code:INVALID_FORMAT,field:p_locale,value:' || coalesce(p_locale, 'NULL'),
+          hint = 'Use BCP-47 format (e.g., "en", "en-US")';
   end if;
 
   -- check project ownership and locale existence
