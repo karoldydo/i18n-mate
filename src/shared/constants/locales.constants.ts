@@ -70,6 +70,14 @@ const normalizeLocale = (locale: string): string => {
 
 export const LOCALE_NORMALIZATION = {
   /**
+   * Check if a string looks like a language name rather than code
+   */
+  isLanguageName: (value: string): boolean => {
+    const languageNames = ['english', 'polish', 'spanish', 'french', 'german', 'italian'];
+    return languageNames.includes(value.toLowerCase());
+  },
+
+  /**
    * Client-side locale validation (matches database rules)
    * Use for immediate feedback, but always verify server-side for critical operations
    *
@@ -106,11 +114,9 @@ export const LOCALE_NORMALIZATION = {
  * PostgreSQL error codes relevant to locale operations
  */
 export const LOCALE_PG_ERROR_CODES = {
-  /** Check constraint violation */
   CHECK_VIOLATION: '23514',
-  /** Foreign key violation */
   FOREIGN_KEY_VIOLATION: '23503',
-  /** Unique constraint violation */
+  INSUFFICIENT_PRIVILEGE: '42501',
   UNIQUE_VIOLATION: '23505',
 } as const;
 
@@ -122,18 +128,41 @@ export const LOCALE_CONSTRAINTS = {
 } as const;
 
 /**
- * Error messages for locale validation
+ * Error messages for locale operations
+ *
+ * Note: Some error messages are API-layer only (client-side validation),
+ * while others map directly to database error codes from migrations.
  */
 export const LOCALE_ERROR_MESSAGES = {
-  ALREADY_EXISTS: 'Locale already exists for this project',
+  ALREADY_EXISTS: 'Locale already exists for this project', // DUPLICATE_LOCALE
+  AUTHENTICATION_REQUIRED: 'Authentication required',
+  DATABASE_ERROR: 'Database operation failed',
+  DEFAULT_LOCALE_DUPLICATE: 'Cannot add default locale - it already exists',
+  FANOUT_INCOMPLETE: 'Translation initialization incomplete',
+  FANOUT_VERIFICATION_FAILED: 'Failed to initialize translations for new locale',
+  FIELD_REQUIRED: 'Field is required',
+  INVALID_CHARACTERS: 'Invalid characters in locale code',
+  INVALID_FIELD_VALUE: 'Invalid field value', // API-layer
   INVALID_FORMAT: 'Locale must be in BCP-47 format (e.g., "en" or "en-US")',
-  LABEL_REQUIRED: 'Locale label is required',
-  LABEL_TOO_LONG: `Locale label must be at most ${LOCALE_LABEL_MAX_LENGTH} characters`,
+  INVALID_PROJECT_ID: 'Invalid project ID format', // API-layer
+  LABEL_REQUIRED: 'Locale label is required', // API-layer
+  LABEL_TOO_LONG: `Locale label must be at most ${LOCALE_LABEL_MAX_LENGTH} characters`, // API-layer
+  LOCALE_CREATION_FAILED: 'Failed to create locale',
+  LOCALE_IS_LANGUAGE_NAME: 'Use locale code, not language name (e.g., "en" not "English")',
+  LOCALE_NOT_FOUND: 'Locale not found or access denied',
+  LOCALE_REQUIRED: 'Locale code is required', // API-layer
+  MAX_LENGTH_EXCEEDED: 'Field exceeds maximum length',
+  NO_DATA_RETURNED: 'No data returned from server', // API-layer
+  PROJECT_ACCESS_DENIED: 'Access to project denied',
+  PROJECT_NOT_FOUND: 'Project not found or access denied',
+  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found', // API-layer
   TOO_LONG: `Locale code must be at most ${LOCALE_CODE_MAX_LENGTH} characters`,
+  TOO_MANY_DASHES: 'Locale code has too many dashes',
+  UNEXPECTED_ERROR: 'An unexpected error occurred',
 } as const;
 
 /**
- * Common primary language subtags (IETF language tags)
+ * Common primary language sub-tags (IETF language tags)
  * Used for default locale selection in project and locale management
  */
 export const PRIMARY_LOCALES = [

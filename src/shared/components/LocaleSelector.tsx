@@ -1,4 +1,4 @@
-import { PRIMARY_LOCALES } from '@/shared/constants/locale.constants';
+import { PRIMARY_LOCALES } from '@/shared/constants/locales.constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 
 interface LocaleSelectorProps {

@@ -79,11 +79,8 @@ export const PROJECTS_MIN_OFFSET = 0;
  * PostgreSQL error codes relevant to projects operations
  */
 export const PROJECTS_PG_ERROR_CODES = {
-  /** Check constraint violation */
   CHECK_VIOLATION: '23514',
-  /** Foreign key violation */
   FOREIGN_KEY_VIOLATION: '23503',
-  /** Unique constraint violation */
   UNIQUE_VIOLATION: '23505',
 } as const;
 
@@ -107,26 +104,34 @@ export const PROJECT_SORT_OPTIONS = {
 
 /**
  * Error messages for project operations
+ *
+ * Note: Some error messages are API-layer only (client-side validation),
+ * while others map directly to database error codes from migrations.
  */
 export const PROJECTS_ERROR_MESSAGES = {
+  AUTHENTICATION_REQUIRED: 'Authentication required',
   DATABASE_ERROR: 'Database operation failed',
+  DEFAULT_LOCALE_CANNOT_DELETE: 'Cannot delete default locale',
   DEFAULT_LOCALE_IMMUTABLE: 'Cannot modify default locale after creation',
-  DESCRIPTION_TOO_LONG: `Project description must be at most ${PROJECT_DESCRIPTION_MAX_LENGTH} characters`,
-  INVALID_FIELD_VALUE: 'Invalid field value',
-  INVALID_PROJECT_ID: 'Invalid project ID format',
-  LOCALE_LABEL_REQUIRED: 'Default locale label is required',
-  LOCALE_LABEL_TOO_LONG: `Default locale label must be at most ${PROJECT_LOCALE_LABEL_MAX_LENGTH} characters`,
-  NAME_REQUIRED: 'Project name is required',
-  NAME_TOO_LONG: `Project name must be at most ${PROJECT_NAME_MAX_LENGTH} characters`,
-  NO_DATA_RETURNED: 'No data returned from server',
-  PREFIX_ALREADY_IN_USE: 'Prefix is already in use',
+  DESCRIPTION_TOO_LONG: `Project description must be at most ${PROJECT_DESCRIPTION_MAX_LENGTH} characters`, // API-layer
+  DUPLICATE_CONSTRAINT: 'Duplicate constraint violation',
+  INVALID_FIELD_VALUE: 'Invalid field value', // API-layer
+  INVALID_PROJECT_ID: 'Invalid project ID format', // API-layer
+  LOCALE_LABEL_REQUIRED: 'Default locale label is required', // API-layer
+  LOCALE_LABEL_TOO_LONG: `Default locale label must be at most ${PROJECT_LOCALE_LABEL_MAX_LENGTH} characters`, // API-layer
+  NAME_REQUIRED: 'Project name is required', // API-layer
+  NAME_TOO_LONG: `Project name must be at most ${PROJECT_NAME_MAX_LENGTH} characters`, // API-layer
+  NO_DATA_RETURNED: 'No data returned from server', // API-layer
+  PREFIX_ALREADY_IN_USE: 'Prefix is already in use', // DUPLICATE_PROJECT_PREFIX
   PREFIX_IMMUTABLE: 'Cannot modify prefix after creation',
-  PREFIX_INVALID_FORMAT: 'Prefix can only contain lowercase letters, numbers, dots, underscores, and hyphens',
-  PREFIX_REQUIRED: 'Project prefix is required',
-  PREFIX_TOO_LONG: `Prefix must be at most ${PROJECT_PREFIX_MAX_LENGTH} characters`,
-  PREFIX_TOO_SHORT: `Prefix must be at least ${PROJECT_PREFIX_MIN_LENGTH} characters`,
-  PREFIX_TRAILING_DOT: 'Prefix cannot end with a dot',
-  PROJECT_NAME_EXISTS: 'Project with this name already exists',
+  PREFIX_INVALID_FORMAT: 'Prefix can only contain lowercase letters, numbers, dots, underscores, and hyphens', // API-layer
+  PREFIX_REQUIRED: 'Project prefix is required', // API-layer
+  PREFIX_TOO_LONG: `Prefix must be at most ${PROJECT_PREFIX_MAX_LENGTH} characters`, // API-layer
+  PREFIX_TOO_SHORT: `Prefix must be at least ${PROJECT_PREFIX_MIN_LENGTH} characters`, // API-layer
+  PREFIX_TRAILING_DOT: 'Prefix cannot end with a dot', // API-layer
+  PROJECT_ACCESS_DENIED: 'Access to project denied',
+  PROJECT_CREATION_FAILED: 'Failed to create project',
+  PROJECT_NAME_EXISTS: 'Project with this name already exists', // DUPLICATE_PROJECT_NAME
   PROJECT_NOT_FOUND: 'Project not found or access denied',
-  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
+  REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found', // API-layer
 } as const;

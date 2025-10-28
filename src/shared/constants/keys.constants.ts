@@ -70,11 +70,8 @@ export const KEYS_MIN_OFFSET = 0;
  * PostgreSQL error codes relevant to keys operations
  */
 export const KEYS_PG_ERROR_CODES = {
-  /** Check constraint violation */
   CHECK_VIOLATION: '23514',
-  /** Foreign key violation */
   FOREIGN_KEY_VIOLATION: '23503',
-  /** Unique constraint violation */
   UNIQUE_VIOLATION: '23505',
 } as const;
 
@@ -124,26 +121,31 @@ export const KEY_VALIDATION = {
 
 /**
  * Error messages for key operations
+ *
+ * Note: Some error messages are API-layer only (client-side validation),
+ * while others map directly to database error codes from migrations.
  */
 export const KEYS_ERROR_MESSAGES = {
   DATABASE_ERROR: 'Database operation failed',
   DEFAULT_VALUE_EMPTY: 'Default locale value cannot be empty',
-  INVALID_FIELD_VALUE: 'Invalid field value',
-  INVALID_PROJECT_ID: 'Invalid project_id',
+  FANOUT_FAILED: 'Failed to create translations for new key',
+  FANOUT_INCOMPLETE: 'Translation initialization incomplete',
+  INVALID_FIELD_VALUE: 'Invalid field value', // API-layer
+  INVALID_PROJECT_ID: 'Invalid project_id', // API-layer
   KEY_ALREADY_EXISTS: 'Key already exists in project',
   KEY_CONSECUTIVE_DOTS: 'Key cannot contain consecutive dots',
   KEY_INVALID_FORMAT: 'Key can only contain lowercase letters, numbers, dots, underscores, and hyphens',
   KEY_INVALID_PREFIX: 'Key must start with project prefix',
   KEY_NOT_FOUND: 'Key not found or access denied',
-  KEY_REQUIRED: 'Key name is required',
-  KEY_TOO_LONG: `Key name must be at most ${KEY_NAME_MAX_LENGTH} characters`,
+  KEY_REQUIRED: 'Key name is required', // API-layer
+  KEY_TOO_LONG: `Key name must be at most ${KEY_NAME_MAX_LENGTH} characters`, // API-layer
   KEY_TRAILING_DOT: 'Key cannot end with a dot',
-  NO_DATA_RETURNED: 'No data returned from server',
+  NO_DATA_RETURNED: 'No data returned from server', // API-layer
   PROJECT_NOT_OWNED: 'Project not owned by user',
   REFERENCED_RESOURCE_NOT_FOUND: 'Referenced resource not found',
   VALUE_NO_NEWLINES: 'Value cannot contain newlines',
-  VALUE_REQUIRED: 'Value cannot be empty',
-  VALUE_TOO_LONG: `Value must be at most ${TRANSLATION_VALUE_MAX_LENGTH} characters`,
+  VALUE_REQUIRED: 'Value cannot be empty', // API-layer
+  VALUE_TOO_LONG: `Value must be at most ${TRANSLATION_VALUE_MAX_LENGTH} characters`, // API-layer
 } as const;
 
 /**

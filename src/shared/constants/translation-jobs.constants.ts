@@ -35,31 +35,36 @@ export const TRANSLATION_JOBS_CONSTRAINTS = {
   SOURCE_LOCALE_DEFAULT: 'validate_source_locale_is_default_trigger',
 } as const;
 
-// Centralized error messages
+/**
+ * Centralized error messages for translation jobs
+ *
+ * Note: Some error messages are API-layer only (client-side validation),
+ * while others map directly to database error codes from migrations.
+ */
 export const TRANSLATION_JOBS_ERROR_MESSAGES = {
   ACTIVE_JOB_EXISTS: 'Another translation job is already active for this project',
-  ALL_MODE_NO_KEYS: 'All mode should not include specific key IDs',
+  ALL_MODE_NO_KEYS: 'All mode should not include specific key IDs', // API-layer
   CHECK_VIOLATION: 'Data validation failed',
   DATABASE_ERROR: 'Database operation failed',
   DATABASE_SCHEMA_ERROR: 'Database schema error',
-  EDGE_FUNCTION_ERROR: 'Translation service temporarily unavailable',
+  EDGE_FUNCTION_ERROR: 'Translation service temporarily unavailable', // API-layer
   FOREIGN_KEY_VIOLATION: 'Referenced resource not found or access denied',
   INSUFFICIENT_PRIVILEGE: 'Permission denied',
-  INVALID_JOB_ID: 'Invalid job ID format',
-  INVALID_KEY_ID: 'Invalid key ID format',
-  INVALID_MAX_TOKENS: `Max tokens must be between ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN} and ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX}`,
-  INVALID_MODE: 'Mode must be one of: all, selected, single',
-  INVALID_PROJECT_ID: 'Invalid project ID format',
-  INVALID_TARGET_LOCALE: 'Target locale must be in BCP-47 format (e.g., "en" or "en-US")',
-  INVALID_TEMPERATURE: `Temperature must be between ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN} and ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX}`,
-  JOB_NOT_CANCELLABLE: 'Job is not in a cancellable state',
+  INVALID_JOB_ID: 'Invalid job ID format', // API-layer
+  INVALID_KEY_ID: 'Invalid key ID format', // API-layer
+  INVALID_MAX_TOKENS: `Max tokens must be between ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MIN} and ${TRANSLATION_JOBS_PARAMS_MAX_TOKENS_MAX}`, // API-layer
+  INVALID_MODE: 'Mode must be one of: all, selected, single', // API-layer
+  INVALID_PROJECT_ID: 'Invalid project ID format', // API-layer
+  INVALID_TARGET_LOCALE: 'Target locale must be in BCP-47 format (e.g., "en" or "en-US")', // API-layer
+  INVALID_TEMPERATURE: `Temperature must be between ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN} and ${TRANSLATION_JOBS_PARAMS_TEMPERATURE_MAX}`, // API-layer
+  JOB_NOT_CANCELLABLE: 'Job is not in a cancellable state', // API-layer
   JOB_NOT_FOUND: 'Translation job not found or access denied',
-  NO_DATA_RETURNED: 'No data returned from server',
-  OPENROUTER_ERROR: 'Translation provider error',
-  RATE_LIMIT_EXCEEDED: 'Rate limit exceeded, please try again later',
+  NO_DATA_RETURNED: 'No data returned from server', // API-layer
+  OPENROUTER_ERROR: 'Translation provider error', // API-layer
+  RATE_LIMIT_EXCEEDED: 'Rate limit exceeded, please try again later', // API-layer
   RESOURCE_ALREADY_EXISTS: 'Resource already exists',
-  SELECTED_MODE_REQUIRES_KEYS: 'Selected mode requires at least one key ID',
-  SINGLE_MODE_ONE_KEY: 'Single mode requires exactly one key ID',
+  SELECTED_MODE_REQUIRES_KEYS: 'Selected mode requires at least one key ID', // API-layer
+  SINGLE_MODE_ONE_KEY: 'Single mode requires exactly one key ID', // API-layer
   TARGET_LOCALE_IS_DEFAULT: 'Target locale cannot be the default locale',
   TARGET_LOCALE_NOT_FOUND: 'Target locale does not exist in project',
 } as const;

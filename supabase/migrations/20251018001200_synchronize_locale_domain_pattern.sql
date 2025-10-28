@@ -10,7 +10,7 @@
 
 -- The current domain constraint should match exactly with
 -- LOCALE_CODE_DOMAIN_PATTERN = '^[a-z]{2}(-[A-Z]{2})?$'
--- from src/shared/constants/locale.constants.ts
+-- from src/shared/constants/locales.constants.ts
 
 -- Verify current domain constraint (for reference)
 -- Current: CHECK (VALUE ~ '^[a-z]{2}(-[A-Z]{2})?$')

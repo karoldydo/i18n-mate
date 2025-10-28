@@ -1,6 +1,6 @@
 export * from './export.constants';
 export * from './keys.constants';
-export * from './locale.constants';
+export * from './locales.constants';
 export * from './projects.constants';
 export * from './telemetry.constants';
 export * from './translation-jobs.constants';

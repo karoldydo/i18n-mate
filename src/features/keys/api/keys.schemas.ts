@@ -12,7 +12,7 @@ import {
   TRANSLATION_VALUE_MAX_LENGTH,
   TRANSLATION_VALUE_MIN_LENGTH,
 } from '@/shared/constants';
-import { LOCALE_CODE_PATTERN } from '@/shared/constants/locale.constants';
+import { LOCALE_CODE_PATTERN } from '@/shared/constants/locales.constants';
 
 // full key validation
 const FULL_KEY_SCHEMA = z
