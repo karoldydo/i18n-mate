@@ -1,6 +1,6 @@
 -- =====================================================================
--- migration: create extensions, domains, and enums
--- description: foundational database types for i18n-mate schema
+-- migration: 01_foundation
+-- description: foundational database setup - extensions, domains, enums
 -- tables affected: none (prerequisite for all tables)
 -- notes: must run before any table creation
 -- =====================================================================
@@ -17,6 +17,12 @@ create extension if not exists "pg_trgm";
 
 -- case-insensitive text for project names
 create extension if not exists "citext";
+
+-- scheduled job execution for partition automation
+create extension if not exists "pg_cron";
+
+-- grant necessary permissions for cron job execution
+grant usage on schema cron to postgres;
 
 -- ---------------------------------------------------------------------
 -- database configuration
@@ -35,7 +41,12 @@ alter database postgres set timezone to 'UTC';
 create domain locale_code as varchar(8)
   check (value ~ '^[a-z]{2}(-[A-Z]{2})?$');
 
-comment on domain locale_code is 'BCP-47 locale: ll or ll-CC format, normalized via trigger';
+comment on domain locale_code is
+  'BCP-47 locale code: ll or ll-CC format only. '
+  'Pattern: ^[a-z]{2}(-[A-Z]{2})?$ '
+  'Synchronized with LOCALE_CODE_DOMAIN_PATTERN in TypeScript constants. '
+  'Examples: en, en-US, pl, pl-PL. '
+  'Normalization handled by normalize_locale_trigger.';
 
 -- ---------------------------------------------------------------------
 -- enums
@@ -61,3 +72,20 @@ create type event_type as enum (
   'translation_completed'
 );
 
+-- ---------------------------------------------------------------------
+-- composite types
+-- ---------------------------------------------------------------------
+
+-- composite type for list_keys_per_language_view function
+create type key_per_language_view_type as (
+  key_id uuid,
+  full_key varchar(256),
+  value varchar(250),
+  is_machine_translated boolean,
+  updated_at timestamptz,
+  updated_source update_source_type,
+  updated_by_user_id uuid
+);
+
+comment on type key_per_language_view_type is
+  'Composite type for list_keys_per_language_view function return values with proper nullable handling.';
