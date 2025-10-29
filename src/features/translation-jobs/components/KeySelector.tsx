@@ -35,12 +35,15 @@ export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: keysData, isLoading } = useKeysDefaultView({
-    limit: 100,
-    offset: 0,
-    project_id: projectId,
-    search: debouncedSearchTerm || undefined,
-  });
+  const { data: keysData, isFetching: isKeysLoading } = useKeysDefaultView(
+    {
+      limit: 100,
+      offset: 0,
+      project_id: projectId,
+      search: debouncedSearchTerm || undefined,
+    },
+    { suspense: false }
+  );
 
   const keys = useMemo(() => keysData?.data || [], [keysData?.data]);
 
@@ -108,7 +111,7 @@ export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds
       {/* Keys List */}
       <ScrollArea className="border-border h-[300px] rounded-md border">
         <div className="p-4">
-          {isLoading ? (
+          {isKeysLoading ? (
             <p className="text-muted-foreground text-center text-sm">Loading keys...</p>
           ) : keys.length === 0 ? (
             searchTerm ? (

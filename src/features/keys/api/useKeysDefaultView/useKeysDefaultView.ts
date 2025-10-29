@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import type { ApiErrorResponse, KeyDefaultViewListResponse, ListKeysDefaultViewParams } from '@/shared/types';
@@ -7,6 +7,15 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
 import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from '../keys.schemas';
+
+type KeysDefaultViewQueryKey = [
+  'keys-default-view',
+  string,
+  number | undefined,
+  boolean | undefined,
+  number | undefined,
+  string | undefined,
+];
 
 /**
  * Fetch a paginated list of keys in default language view with missing counts
@@ -27,43 +36,72 @@ import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from 
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
+ * @param options - Additional query options
+ * @param options.enabled - Whether automatic fetching should be enabled (default: true)
+ * @param options.suspense - Set to false to disable Suspense mode for this query (default: true)
+ *
  * @returns TanStack Query result with keys data and pagination metadata
  */
-export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
+export function useKeysDefaultView(
+  params: ListKeysDefaultViewParams,
+  options?: {
+    enabled?: boolean;
+    suspense?: boolean;
+  }
+) {
   const supabase = useSupabase();
 
+  const queryFn = async () => {
+    const { limit, missing_only, offset, project_id, search } = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
+
+    const { count, data, error } = await supabase.rpc(
+      'list_keys_default_view',
+      {
+        p_limit: limit,
+        p_missing_only: missing_only,
+        p_offset: offset,
+        p_project_id: project_id,
+        p_search: search,
+      },
+      { count: 'exact' }
+    );
+
+    if (error) {
+      throw createDatabaseErrorResponse(error, 'useKeysDefaultView', 'Failed to fetch keys');
+    }
+
+    // runtime validation of response data
+    const keys = z.array(KEY_DEFAULT_VIEW_RESPONSE_SCHEMA).parse(data || []);
+
+    return {
+      data: keys,
+      metadata: {
+        end: (offset || 0) + keys.length - 1,
+        start: offset || 0,
+        total: count || 0,
+      },
+    };
+  };
+
+  const queryKey: KeysDefaultViewQueryKey = [
+    'keys-default-view',
+    params.project_id,
+    params.limit,
+    params.missing_only,
+    params.offset,
+    params.search,
+  ];
+
+  if (options?.suspense === false) {
+    return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
+      enabled: options.enabled ?? true,
+      queryFn,
+      queryKey,
+    });
+  }
+
   return useSuspenseQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
-    queryFn: async () => {
-      const { limit, missing_only, offset, project_id, search } = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
-
-      const { count, data, error } = await supabase.rpc(
-        'list_keys_default_view',
-        {
-          p_limit: limit,
-          p_missing_only: missing_only,
-          p_offset: offset,
-          p_project_id: project_id,
-          p_search: search,
-        },
-        { count: 'exact' }
-      );
-
-      if (error) {
-        throw createDatabaseErrorResponse(error, 'useKeysDefaultView', 'Failed to fetch keys');
-      }
-
-      // runtime validation of response data
-      const keys = z.array(KEY_DEFAULT_VIEW_RESPONSE_SCHEMA).parse(data || []);
-
-      return {
-        data: keys,
-        metadata: {
-          end: (offset || 0) + keys.length - 1,
-          start: offset || 0,
-          total: count || 0,
-        },
-      };
-    },
-    queryKey: ['keys-default-view', params.project_id, params.limit, params.missing_only, params.offset, params.search],
+    queryFn,
+    queryKey,
   });
 }

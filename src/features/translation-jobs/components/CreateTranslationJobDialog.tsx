@@ -61,16 +61,22 @@ export function CreateTranslationJobDialog({
     [localesData]
   );
 
-  const { data: existingTranslationsData } = useKeysPerLanguageView({
-    limit: 100,
-    locale: targetLocale || 'en',
-    missing_only: false,
-    offset: 0,
-    project_id: projectId,
-  });
+  const { data: existingTranslationsData, isFetching: isExistingTranslationsLoading } = useKeysPerLanguageView(
+    {
+      limit: 100,
+      locale: targetLocale || 'en',
+      missing_only: false,
+      offset: 0,
+      project_id: projectId,
+    },
+    {
+      enabled: Boolean(targetLocale),
+      suspense: false,
+    }
+  );
 
   const overwriteCount = useMemo(() => {
-    if (!existingTranslationsData?.data) return 0;
+    if (isExistingTranslationsLoading || !existingTranslationsData?.data) return 0;
 
     const existingKeys = existingTranslationsData.data.filter((key) => key.value !== null && key.value !== '');
 
@@ -79,7 +85,7 @@ export function CreateTranslationJobDialog({
     } else {
       return existingKeys.filter((key) => key.key_id && selectedKeyIds.includes(key.key_id)).length;
     }
-  }, [existingTranslationsData, mode, selectedKeyIds]);
+  }, [existingTranslationsData, isExistingTranslationsLoading, mode, selectedKeyIds]);
 
   const resetForm = useCallback(() => {
     setMode('all');
