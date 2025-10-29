@@ -3,116 +3,181 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import type { ApiErrorResponse } from '@/shared/types';
 
 import { LOCALE_CONSTRAINTS, LOCALE_ERROR_MESSAGES, LOCALE_PG_ERROR_CODES } from '@/shared/constants';
-import { createApiErrorResponse } from '@/shared/utils';
+import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
 
 /**
- * Handle atomic locale creation errors with specialized error mapping
+ * Handle database errors and convert them to API errors
  *
- * Provides enhanced error handling for the atomic locale creation process including:
- * - Fan-out verification failures
+ * Provides consistent error handling for PostgreSQL errors using structured error details
+ * that follow the format: error_code:ERROR_NAME,field:field_name,additional:metadata
+ *
+ * Handles all locale-related errors including:
+ * - Atomic locale creation errors (fan-out failures, verification issues)
+ * - Standard database errors (unique violations, check violations, etc.)
  * - Authentication and authorization errors
- * - Partial fan-out completion issues
- * - All standard database errors from createDatabaseErrorResponse
  *
- * @param error - PostgrestError from Supabase RPC call
+ * @param postgrestError - PostgrestError from Supabase
  * @param context - Optional context string for logging (e.g., hook name)
  * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object with atomic-specific error codes
+ * @returns Standardized ApiErrorResponse object
  */
-export function createAtomicLocaleErrorResponse(
-  error: PostgrestError,
+export function createDatabaseErrorResponse(
+  postgrestError: PostgrestError,
   context?: string,
   fallbackMessage?: string
 ): ApiErrorResponse {
-  const LOG_PREFIX = context ? `[${context}]` : '[createAtomicLocaleErrorResponse]';
-  console.error(`${LOG_PREFIX} Atomic locale error:`, error);
+  const LOG_PREFIX = context ? `[${context}]` : '[handleDatabaseError]';
+  console.error(`${LOG_PREFIX} Database error:`, postgrestError);
 
-  // fan-out verification failures
-  if (error.message.includes('Fan-out verification failed')) {
-    return createApiErrorResponse(500, 'Failed to initialize translations for new locale', {
+  // parse structured error details if available
+  let error: Record<string, string> = {};
+  if (postgrestError.details) {
+    error = parseErrorDetail(postgrestError.details);
+  }
+
+  // handle errors based on structured error code from DETAIL field first
+  if (error.error_code) {
+    switch (error.error_code) {
+      case 'AUTHENTICATION_REQUIRED':
+        return createApiErrorResponse(401, LOCALE_ERROR_MESSAGES.AUTHENTICATION_REQUIRED);
+      case 'DEFAULT_LOCALE_CANNOT_DELETE':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.DEFAULT_LOCALE_CANNOT_DELETE);
+      case 'DEFAULT_LOCALE_DUPLICATE':
+        return createApiErrorResponse(409, LOCALE_ERROR_MESSAGES.DEFAULT_LOCALE_DUPLICATE);
+      case 'DUPLICATE_LOCALE':
+        return createApiErrorResponse(409, LOCALE_ERROR_MESSAGES.ALREADY_EXISTS);
+      case 'FANOUT_INCOMPLETE':
+        return createApiErrorResponse(500, LOCALE_ERROR_MESSAGES.FANOUT_INCOMPLETE, {
+          code: 'FANOUT_INCOMPLETE',
+          parsedDetails: error,
+        });
+      case 'FANOUT_VERIFICATION_FAILED':
+        return createApiErrorResponse(500, LOCALE_ERROR_MESSAGES.FANOUT_VERIFICATION_FAILED, {
+          code: 'FANOUT_VERIFICATION_FAILED',
+          details: postgrestError.details,
+          parsedDetails: error,
+        });
+      case 'FIELD_REQUIRED':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.FIELD_REQUIRED, {
+          field: error.field,
+          parsedDetails: error,
+        });
+      case 'INVALID_CHARACTERS':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.INVALID_CHARACTERS, {
+          field: error.field,
+          parsedDetails: error,
+        });
+      case 'INVALID_FORMAT':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.INVALID_FORMAT, {
+          constraint: postgrestError.details,
+          field: error.field,
+          parsedDetails: error,
+        });
+      case 'INVALID_LOCALE_FORMAT':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.INVALID_FORMAT, {
+          constraint: postgrestError.details,
+          field: error.field,
+          parsedDetails: error,
+        });
+      case 'LOCALE_IS_LANGUAGE_NAME':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.LOCALE_IS_LANGUAGE_NAME, {
+          field: error.field,
+          parsedDetails: error,
+        });
+      case 'LOCALE_NOT_FOUND':
+        return createApiErrorResponse(404, LOCALE_ERROR_MESSAGES.LOCALE_NOT_FOUND);
+      case 'MAX_LENGTH_EXCEEDED':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.MAX_LENGTH_EXCEEDED, {
+          field: error.field,
+          maxLength: error.max_length,
+          parsedDetails: error,
+        });
+      case 'TOO_LONG':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.TOO_LONG, {
+          field: error.field,
+          parsedDetails: error,
+        });
+      case 'TOO_MANY_DASHES':
+        return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.TOO_MANY_DASHES, {
+          field: error.field,
+          parsedDetails: error,
+        });
+      default:
+        // If error code is not recognized, fall through to other handlers
+        break;
+    }
+  }
+
+  // handle atomic-specific error cases that might not have structured error codes
+  // fan-out verification failures (fallback for non-structured errors)
+  if (postgrestError.message.includes(LOCALE_ERROR_MESSAGES.FANOUT_VERIFICATION_FAILED_MESSAGE)) {
+    return createApiErrorResponse(500, LOCALE_ERROR_MESSAGES.FANOUT_VERIFICATION_FAILED, {
       code: 'FANOUT_VERIFICATION_FAILED',
-      details: error.details,
+      details: postgrestError.details,
     });
   }
 
-  // fan-out incomplete errors
-  if (error.message.includes('Fan-out incomplete')) {
-    const EXPECTED_MATCH = error.message.match(/expected (\d+)/);
-    const INSERTED_MATCH = error.message.match(/inserted (\d+)/);
+  // fan-out incomplete errors (fallback for non-structured errors)
+  if (postgrestError.message.includes(LOCALE_ERROR_MESSAGES.FANOUT_INCOMPLETE_MESSAGE)) {
+    const EXPECTED_MATCH = postgrestError.message.match(/expected (\d+)/);
+    const INSERTED_MATCH = postgrestError.message.match(/inserted (\d+)/);
 
-    return createApiErrorResponse(500, 'Incomplete translation initialization', {
+    return createApiErrorResponse(500, LOCALE_ERROR_MESSAGES.FANOUT_INCOMPLETE, {
       actual: INSERTED_MATCH?.[1] ? parseInt(INSERTED_MATCH[1], 10) : undefined,
       code: 'FANOUT_INCOMPLETE',
       expected: EXPECTED_MATCH?.[1] ? parseInt(EXPECTED_MATCH[1], 10) : undefined,
     });
   }
 
-  // authentication failures
-  if (error.message.includes('Authentication required')) {
-    return createApiErrorResponse(401, 'Authentication required for locale creation');
+  // authentication failures (fallback for non-structured errors)
+  if (postgrestError.message.includes(LOCALE_ERROR_MESSAGES.AUTHENTICATION_REQUIRED)) {
+    return createApiErrorResponse(401, LOCALE_ERROR_MESSAGES.AUTHENTICATION_REQUIRED);
   }
 
-  // project access failures
-  if (error.message.includes('Project not found or access denied')) {
-    return createApiErrorResponse(404, 'Project not found or access denied');
+  // project access failures (fallback for non-structured errors)
+  if (postgrestError.message.includes(LOCALE_ERROR_MESSAGES.PROJECT_NOT_FOUND)) {
+    return createApiErrorResponse(404, LOCALE_ERROR_MESSAGES.PROJECT_ACCESS_DENIED);
   }
 
-  // fan-out trigger general failures
-  if (error.message.includes('Failed to create translations for new locale')) {
-    return createApiErrorResponse(500, 'Failed to initialize locale translations', {
+  // fan-out trigger general failures (fallback for non-structured errors)
+  if (postgrestError.message.includes(LOCALE_ERROR_MESSAGES.FAILED_TO_CREATE_TRANSLATIONS_MESSAGE)) {
+    return createApiErrorResponse(500, LOCALE_ERROR_MESSAGES.LOCALE_CREATION_FAILED, {
       code: 'FANOUT_TRIGGER_FAILED',
-      hint: error.hint || 'Locale insertion failed due to translation fan-out error',
+      hint: postgrestError.hint || 'Locale insertion failed due to translation fan-out error',
     });
   }
 
-  // fall back to generic database error handling
-  return createDatabaseErrorResponse(error, context, fallbackMessage);
-}
-
-/**
- * Handle database errors and convert them to API errors
- *
- * Provides consistent error handling for PostgreSQL errors including:
- * - Unique constraint violations (23505)
- * - Check constraint violations (23514)
- * - Foreign key violations (23503)
- * - Trigger violations (default locale deletion)
- *
- * @param error - PostgrestError from Supabase
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object
- */
-export function createDatabaseErrorResponse(
-  error: PostgrestError,
-  context?: string,
-  fallbackMessage?: string
-): ApiErrorResponse {
-  const LOG_PREFIX = context ? `[${context}]` : '[handleDatabaseError]';
-  console.error(`${LOG_PREFIX} Database error:`, error);
-
-  // handle unique constraint violations
-  if (error.code === LOCALE_PG_ERROR_CODES.UNIQUE_VIOLATION) {
-    if (error.message.includes(LOCALE_CONSTRAINTS.UNIQUE_PER_PROJECT)) {
+  // handle errors based on PostgreSQL error code
+  if (postgrestError.code === LOCALE_PG_ERROR_CODES.UNIQUE_VIOLATION) {
+    if (postgrestError.message.includes(LOCALE_CONSTRAINTS.UNIQUE_PER_PROJECT)) {
       return createApiErrorResponse(409, LOCALE_ERROR_MESSAGES.ALREADY_EXISTS);
     }
   }
 
   // handle trigger violations (default locale deletion)
-  if (error.message.includes('Cannot delete default_locale')) {
-    return createApiErrorResponse(400, 'Cannot delete default locale');
+  if (postgrestError.message.includes(LOCALE_ERROR_MESSAGES.LOCALE_CANNOT_DELETE_MESSAGE)) {
+    return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.DEFAULT_LOCALE_CANNOT_DELETE);
   }
 
   // handle check constraint violations
-  if (error.code === LOCALE_PG_ERROR_CODES.CHECK_VIOLATION) {
-    return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.INVALID_FORMAT, { constraint: error.details });
+  if (postgrestError.code === LOCALE_PG_ERROR_CODES.CHECK_VIOLATION) {
+    return createApiErrorResponse(400, LOCALE_ERROR_MESSAGES.INVALID_FORMAT, {
+      constraint: postgrestError.details,
+      field: error.field,
+    });
   }
 
   // handle foreign key violations
-  if (error.code === LOCALE_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
-    return createApiErrorResponse(404, 'Project not found');
+  if (postgrestError.code === LOCALE_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+    return createApiErrorResponse(404, LOCALE_ERROR_MESSAGES.PROJECT_NOT_FOUND);
+  }
+
+  // build the details object conditionally
+  const detailsObject: Record<string, unknown> = { original: postgrestError };
+  if (Object.keys(error).length > 0) {
+    detailsObject.parsedDetails = error;
   }
 
   // generic database error
-  return createApiErrorResponse(500, fallbackMessage || 'Database operation failed', { original: error });
+  return createApiErrorResponse(500, fallbackMessage || LOCALE_ERROR_MESSAGES.DATABASE_ERROR, detailsObject);
 }

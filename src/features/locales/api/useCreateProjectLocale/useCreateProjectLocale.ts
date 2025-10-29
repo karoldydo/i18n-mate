@@ -6,7 +6,7 @@ import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { LOCALE_NORMALIZATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
-import { createAtomicLocaleErrorResponse } from '../locales.errors';
+import { createDatabaseErrorResponse } from '../locales.errors';
 import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } from '../locales.schemas';
 
 /**
@@ -57,7 +57,7 @@ export function useCreateProjectLocale(projectId: string) {
         .single();
 
       if (error) {
-        throw createAtomicLocaleErrorResponse(error, 'useCreateProjectLocale', 'Failed to add locale');
+        throw createDatabaseErrorResponse(error, 'useCreateProjectLocale', 'Failed to add locale');
       }
 
       if (!data) {

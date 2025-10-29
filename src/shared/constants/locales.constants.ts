@@ -137,9 +137,13 @@ export const LOCALE_ERROR_MESSAGES = {
   ALREADY_EXISTS: 'Locale already exists for this project', // DUPLICATE_LOCALE
   AUTHENTICATION_REQUIRED: 'Authentication required',
   DATABASE_ERROR: 'Database operation failed',
+  DEFAULT_LOCALE_CANNOT_DELETE: 'Cannot delete default locale',
   DEFAULT_LOCALE_DUPLICATE: 'Cannot add default locale - it already exists',
+  FAILED_TO_CREATE_TRANSLATIONS_MESSAGE: 'Failed to create translations for new locale',
   FANOUT_INCOMPLETE: 'Translation initialization incomplete',
+  FANOUT_INCOMPLETE_MESSAGE: 'Fan-out incomplete',
   FANOUT_VERIFICATION_FAILED: 'Failed to initialize translations for new locale',
+  FANOUT_VERIFICATION_FAILED_MESSAGE: 'Fan-out verification failed',
   FIELD_REQUIRED: 'Field is required',
   INVALID_CHARACTERS: 'Invalid characters in locale code',
   INVALID_FIELD_VALUE: 'Invalid field value', // API-layer
@@ -147,6 +151,7 @@ export const LOCALE_ERROR_MESSAGES = {
   INVALID_PROJECT_ID: 'Invalid project ID format', // API-layer
   LABEL_REQUIRED: 'Locale label is required', // API-layer
   LABEL_TOO_LONG: `Locale label must be at most ${LOCALE_LABEL_MAX_LENGTH} characters`, // API-layer
+  LOCALE_CANNOT_DELETE_MESSAGE: 'Cannot delete default_locale',
   LOCALE_CREATION_FAILED: 'Failed to create locale',
   LOCALE_IS_LANGUAGE_NAME: 'Use locale code, not language name (e.g., "en" not "English")',
   LOCALE_NOT_FOUND: 'Locale not found or access denied',

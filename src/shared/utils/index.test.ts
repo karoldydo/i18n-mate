@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cn } from './index';
+import { cn, parseErrorDetail } from './index';
 
 describe('cn', () => {
   it('merges multiple class names into a single string', () => {
@@ -111,5 +111,50 @@ describe('cn', () => {
     const result = cn('  class-1  ', 'class-2');
 
     expect(result).toBe('class-1 class-2');
+  });
+});
+
+describe('parseErrorDetail', () => {
+  it('should parse structured error details correctly', () => {
+    const detail = 'error_code:DUPLICATE_LOCALE,field:locale,value:en-US';
+    const result = parseErrorDetail(detail);
+
+    expect(result).toEqual({
+      error_code: 'DUPLICATE_LOCALE',
+      field: 'locale',
+      value: 'en-US',
+    });
+  });
+
+  it('should handle details with colons in values', () => {
+    const detail = 'error_code:UNEXPECTED_ERROR,original_error:Some error: with colon';
+    const result = parseErrorDetail(detail);
+
+    expect(result).toEqual({
+      error_code: 'UNEXPECTED_ERROR',
+      original_error: 'Some error: with colon',
+    });
+  });
+
+  it('should handle empty detail string', () => {
+    const result = parseErrorDetail('');
+
+    expect(result).toEqual({});
+  });
+
+  it('should handle undefined detail', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = parseErrorDetail(undefined as any);
+
+    expect(result).toEqual({});
+  });
+
+  it('should handle single key-value pair', () => {
+    const detail = 'error_code:SIMPLE_ERROR';
+    const result = parseErrorDetail(detail);
+
+    expect(result).toEqual({
+      error_code: 'SIMPLE_ERROR',
+    });
   });
 });

@@ -74,6 +74,7 @@ USING ERRCODE = '23505',
 | ------------------------ | ------- | ----------------------------------------- | -------------------------- | ----------------------------------- |
 | DUPLICATE_LOCALE         | 23505   | UNIQUE constraint                         | `DUPLICATE_LOCALE`         | Locale already exists in project    |
 | INVALID_FORMAT           | 23514   | validate_locale_format_strict()           | `INVALID_FORMAT`           | Locale not in BCP-47 format         |
+| INVALID_LOCALE_FORMAT    | 23514   | create_project_locale_atomic()            | `INVALID_FORMAT`           | Locale not in BCP-47 format         |
 | TOO_LONG                 | 23514   | validate_locale_format_strict()           | `TOO_LONG`                 | Locale code exceeds 8 characters    |
 | INVALID_CHARACTERS       | 23514   | validate_locale_format_strict()           | `INVALID_CHARACTERS`       | Non-alphabetic characters in locale |
 | TOO_MANY_DASHES          | 23514   | validate_locale_format_strict()           | `TOO_MANY_DASHES`          | More than one dash in locale code   |
