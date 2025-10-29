@@ -3,7 +3,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import type { ApiErrorResponse } from '@/shared/types';
 
 import { TRANSLATION_JOBS_CONSTRAINTS, TRANSLATION_JOBS_ERROR_MESSAGES } from '@/shared/constants';
-import { createApiErrorResponse } from '@/shared/utils';
+import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
 
 /**
  * Handle Edge Function errors
@@ -41,11 +41,15 @@ export function createEdgeFunctionErrorResponse(
 /**
  * Handle database errors and convert them to API errors for translation jobs
  *
- * Provides consistent error handling for PostgreSQL errors including:
+ * Provides consistent error handling for PostgreSQL errors using structured error details
+ * that follow the format: error_code:ERROR_NAME,field:field_name,additional:metadata
+ *
+ * Handles all translation job-related errors including:
  * - Trigger violations (active job prevention, source locale validation)
  * - Check constraint violations (status transitions, field validation)
  * - Foreign key violations (project ownership, key existence)
  * - Unique constraint violations (job uniqueness)
+ * - Authentication and authorization errors
  *
  * @param error - PostgrestError from Supabase
  * @param context - Optional context string for logging (e.g., hook name)
@@ -60,7 +64,34 @@ export function createTranslationJobDatabaseErrorResponse(
   const LOG_PREFIX = context ? `[${context}]` : '[handleTranslationJobDatabaseError]';
   console.error(`${LOG_PREFIX} Database error:`, error);
 
-  // handle trigger violations (business logic) - check for specific constraint names
+  // parse structured error details if available
+  let parsedError: Record<string, string> = {};
+  if (error.details) {
+    parsedError = parseErrorDetail(error.details);
+  }
+
+  // handle errors based on structured error code from DETAIL field first
+  if (parsedError.error_code) {
+    switch (parsedError.error_code) {
+      case 'ACTIVE_JOB_EXISTS':
+        return createApiErrorResponse(409, TRANSLATION_JOBS_ERROR_MESSAGES.ACTIVE_JOB_EXISTS, {
+          parsedDetails: parsedError,
+          projectId: parsedError.project_id,
+        });
+      case 'TARGET_LOCALE_IS_DEFAULT':
+        return createApiErrorResponse(400, TRANSLATION_JOBS_ERROR_MESSAGES.TARGET_LOCALE_IS_DEFAULT, {
+          actual: parsedError.actual,
+          expected: parsedError.expected,
+          field: parsedError.field,
+          parsedDetails: parsedError,
+        });
+      default:
+        // if error code is not recognized, fall through to other handlers
+        break;
+    }
+  }
+
+  // handle trigger violations (business logic) - fallback for non-structured errors
   if (
     error.message?.includes(TRANSLATION_JOBS_CONSTRAINTS.ACTIVE_JOB_UNIQUE) ||
     error.message?.includes('Only one active translation job allowed per project')
@@ -92,8 +123,12 @@ export function createTranslationJobDatabaseErrorResponse(
       break;
   }
 
+  // build the details object conditionally
+  const detailsObject: Record<string, unknown> = { original: error };
+  if (Object.keys(parsedError).length > 0) {
+    detailsObject.parsedDetails = parsedError;
+  }
+
   // generic database error
-  return createApiErrorResponse(500, fallbackMessage || TRANSLATION_JOBS_ERROR_MESSAGES.DATABASE_ERROR, {
-    original: error,
-  });
+  return createApiErrorResponse(500, fallbackMessage || TRANSLATION_JOBS_ERROR_MESSAGES.DATABASE_ERROR, detailsObject);
 }

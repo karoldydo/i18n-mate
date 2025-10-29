@@ -88,8 +88,8 @@ export const PROJECTS_PG_ERROR_CODES = {
  * Database constraint names for projects
  */
 export const PROJECTS_CONSTRAINTS = {
-  NAME_UNIQUE_PER_OWNER: 'idx_projects_owner_name_unique',
-  PREFIX_UNIQUE_PER_OWNER: 'idx_projects_owner_prefix_unique',
+  NAME_UNIQUE_PER_OWNER: 'projects_name_unique_per_owner',
+  PREFIX_UNIQUE_PER_OWNER: 'projects_prefix_unique_per_owner',
 } as const;
 
 /**

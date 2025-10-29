@@ -131,6 +131,7 @@ export const KEYS_ERROR_MESSAGES = {
   FANOUT_FAILED: 'Failed to create translations for new key',
   FANOUT_INCOMPLETE: 'Translation initialization incomplete',
   INVALID_FIELD_VALUE: 'Invalid field value', // API-layer
+  INVALID_FORMAT: 'Invalid locale format - use BCP-47 format (e.g., "en" or "en-US")',
   INVALID_PROJECT_ID: 'Invalid project_id', // API-layer
   KEY_ALREADY_EXISTS: 'Key already exists in project',
   KEY_CONSECUTIVE_DOTS: 'Key cannot contain consecutive dots',

@@ -101,17 +101,21 @@ USING ERRCODE = '23505',
 
 ### Translation Job Errors
 
-| Error Code               | PG Code | Source                              | Frontend Constant          | Description                        |
-| ------------------------ | ------- | ----------------------------------- | -------------------------- | ---------------------------------- |
-| ACTIVE_JOB_EXISTS        | 23505   | prevent_multiple_active_jobs()      | `ACTIVE_JOB_EXISTS`        | Another job is already active      |
-| TARGET_LOCALE_IS_DEFAULT | 23514   | validate_source_locale_is_default() | `TARGET_LOCALE_IS_DEFAULT` | Cannot translate to default locale |
+| Error Code               | PG Code | Source                              | Frontend Constant          | Description                                                      |
+| ------------------------ | ------- | ----------------------------------- | -------------------------- | ---------------------------------------------------------------- |
+| ACTIVE_JOB_EXISTS        | 23505   | prevent_multiple_active_jobs()      | `ACTIVE_JOB_EXISTS`        | Another job is already active                                    |
+| TARGET_LOCALE_IS_DEFAULT | 23514   | validate_source_locale_is_default() | `TARGET_LOCALE_IS_DEFAULT` | Cannot translate to default locale (source must be default only) |
+
+**Note:** The error code name `TARGET_LOCALE_IS_DEFAULT` refers to validation that ensures the target locale is NOT the default locale. The function `validate_source_locale_is_default()` validates that the source IS the default locale.
 
 ### Generic Errors
 
-| Error Code       | PG Code | Source             | Frontend Constant  | Description                         |
-| ---------------- | ------- | ------------------ | ------------------ | ----------------------------------- |
-| DATABASE_ERROR   | N/A     | Generic catch-all  | `DATABASE_ERROR`   | Unhandled database error            |
-| UNEXPECTED_ERROR | 50000   | Exception handlers | `UNEXPECTED_ERROR` | Unexpected error in atomic function |
+| Error Code       | PG Code | Source                       | Frontend Constant  | Description                         |
+| ---------------- | ------- | ---------------------------- | ------------------ | ----------------------------------- |
+| DATABASE_ERROR   | N/A     | Generic catch-all            | `DATABASE_ERROR`   | Unhandled database error            |
+| UNEXPECTED_ERROR | 50000   | create_project_locale_atomic | `UNEXPECTED_ERROR` | Unexpected error in atomic function |
+
+**Note on RLS Policy Errors:** RLS policies return PostgreSQL error code 42501 (INSUFFICIENT_PRIVILEGE) without structured DETAIL fields. Frontend error handlers infer specific errors like `PROJECT_ACCESS_DENIED` from the error code combined with context (which table/operation failed).
 
 ## Frontend Error Constants
 
@@ -238,11 +242,50 @@ Database constraints follow consistent naming patterns:
 
 ## Best Practices
 
+### Database Error Implementation
+
 1. **Always use structured DETAIL format** for database errors
 2. **Include HINT text** for user-facing validation errors
 3. **Use appropriate PostgreSQL error codes** (23505, 23514, etc.)
-4. **Map database errors to frontend constants** for consistent UX
-5. **Mark API-layer constants** with `// API-layer` comment
-6. **Test error conditions** in both database and frontend
-7. **Update this documentation** when adding new error codes
-8. **Use consistent error code naming** (SCREAMING_SNAKE_CASE)
+4. **Use consistent error code naming** (SCREAMING_SNAKE_CASE)
+
+### Frontend Error Handler Implementation
+
+1. **Always parse structured error details first** using `parseErrorDetail()`
+2. **Handle `error.error_code` in switch statement** before fallback handlers
+3. **Preserve parsedDetails in error response** for debugging
+4. **Keep fallback handlers** for backward compatibility
+5. **Follow the pattern from `locales.errors.ts`** (reference implementation)
+
+Example structure:
+
+```typescript
+export function createDatabaseErrorResponse(error: PostgrestError, ...): ApiErrorResponse {
+  // 1. Parse structured details
+  let parsedError: Record<string, string> = {};
+  if (error.details) {
+    parsedError = parseErrorDetail(error.details);
+  }
+
+  // 2. Handle structured error codes FIRST
+  if (parsedError.error_code) {
+    switch (parsedError.error_code) {
+      case 'ERROR_NAME':
+        return createApiErrorResponse(statusCode, MESSAGE, {
+          field: parsedError.field,
+          parsedDetails: parsedError,
+        });
+    }
+  }
+
+  // 3. Fallback handlers (PostgreSQL codes, string matching)
+  // 4. Generic error with parsedDetails
+}
+```
+
+### Documentation and Testing
+
+1. **Map database errors to frontend constants** for consistent UX
+2. **Mark API-layer constants** with `// API-layer` comment
+3. **Test error conditions** in both database and frontend
+4. **Update this documentation** when adding new error codes

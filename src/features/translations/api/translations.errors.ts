@@ -3,53 +3,86 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import type { ApiErrorResponse } from '@/shared/types';
 
 import { TRANSLATIONS_ERROR_MESSAGES, TRANSLATIONS_PG_ERROR_CODES } from '@/shared/constants';
-import { createApiErrorResponse } from '@/shared/utils';
+import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
 
 /**
  * Handle database errors and convert them to API errors
  *
- * Provides consistent error handling for PostgreSQL errors including:
+ * Provides consistent error handling for PostgreSQL errors using structured error details
+ * that follow the format: error_code:ERROR_NAME,field:field_name,additional:metadata
+ *
+ * Handles all translation-related errors including:
  * - Foreign key violations (23503)
  * - Check constraint violations (23514)
  * - Trigger violations (default locale validation)
+ * - Authentication and authorization errors
  *
- * @param error - PostgrestError from Supabase
+ * @param postgrestError - PostgrestError from Supabase
  * @param context - Optional context string for logging (e.g., hook name)
  * @param fallbackMessage - Optional custom fallback message for generic errors
  * @returns Standardized ApiErrorResponse object
  */
 export function createDatabaseErrorResponse(
-  error: PostgrestError,
+  postgrestError: PostgrestError,
   context?: string,
   fallbackMessage?: string
 ): ApiErrorResponse {
   const logPrefix = context ? `[${context}]` : '[handleDatabaseError]';
-  console.error(`${logPrefix} Database error:`, error);
+  console.error(`${logPrefix} Database error:`, postgrestError);
 
-  // handle trigger violations (default locale validation)
-  if (error.message.includes('cannot be NULL or empty') || error.message.toLowerCase().includes('default_locale')) {
+  // parse structured error details if available
+  let error: Record<string, string> = {};
+  if (postgrestError.details) {
+    error = parseErrorDetail(postgrestError.details);
+  }
+
+  // handle errors based on structured error code from DETAIL field first
+  if (error.error_code) {
+    switch (error.error_code) {
+      case 'DEFAULT_VALUE_EMPTY':
+        return createApiErrorResponse(400, TRANSLATIONS_ERROR_MESSAGES.DEFAULT_LOCALE_EMPTY, {
+          field: error.field,
+          locale: error.locale,
+          parsedDetails: error,
+        });
+      default:
+        // if error code is not recognized, fall through to other handlers
+        break;
+    }
+  }
+
+  // handle trigger violations (fallback for non-structured errors)
+  if (
+    postgrestError.message.includes('cannot be NULL or empty') ||
+    postgrestError.message.toLowerCase().includes('default_locale')
+  ) {
     return createApiErrorResponse(400, TRANSLATIONS_ERROR_MESSAGES.DEFAULT_LOCALE_EMPTY);
   }
 
   // handle check constraint violations
-  if (error.code === TRANSLATIONS_PG_ERROR_CODES.CHECK_VIOLATION) {
+  if (postgrestError.code === TRANSLATIONS_PG_ERROR_CODES.CHECK_VIOLATION) {
     return createApiErrorResponse(400, TRANSLATIONS_ERROR_MESSAGES.INVALID_FIELD_VALUE, {
-      constraint: error.details,
+      constraint: postgrestError.details,
+      field: error.field,
     });
   }
 
   // handle foreign key violations
-  if (error.code === TRANSLATIONS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+  if (postgrestError.code === TRANSLATIONS_PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
     return createApiErrorResponse(404, TRANSLATIONS_ERROR_MESSAGES.REFERENCED_RESOURCE_NOT_FOUND);
   }
 
   // handle authorization errors (project not found or not owned)
-  if (error.message.includes('not found') || error.message.includes('access denied')) {
+  if (postgrestError.message.includes('not found') || postgrestError.message.includes('access denied')) {
     return createApiErrorResponse(403, TRANSLATIONS_ERROR_MESSAGES.PROJECT_NOT_OWNED);
   }
 
+  // build the details object conditionally
+  const detailsObject: Record<string, unknown> = { original: postgrestError };
+  if (Object.keys(error).length > 0) {
+    detailsObject.parsedDetails = error;
+  }
+
   // generic database error
-  return createApiErrorResponse(500, fallbackMessage || TRANSLATIONS_ERROR_MESSAGES.DATABASE_ERROR, {
-    original: error,
-  });
+  return createApiErrorResponse(500, fallbackMessage || TRANSLATIONS_ERROR_MESSAGES.DATABASE_ERROR, detailsObject);
 }
