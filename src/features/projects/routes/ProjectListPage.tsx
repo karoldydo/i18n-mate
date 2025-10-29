@@ -1,6 +1,8 @@
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 
 import type { ProjectWithCounts } from '@/shared/types';
+
+import { Loading } from '@/shared/components';
 
 import { CreateProjectDialog } from '../components/CreateProjectDialog';
 import { DeleteProjectDialog } from '../components/DeleteProjectDialog';
@@ -17,24 +19,24 @@ export function ProjectListPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<null | ProjectWithCounts>(null);
+  const [project, setProject] = useState<null | ProjectWithCounts>(null);
 
   const handleCreateClick = useCallback(() => {
     setIsCreateDialogOpen(true);
   }, []);
 
   const handleEditClick = useCallback((project: ProjectWithCounts) => {
-    setSelectedProject(project);
+    setProject(project);
     setIsEditDialogOpen(true);
   }, []);
 
   const handleDeleteClick = useCallback((project: ProjectWithCounts) => {
-    setSelectedProject(project);
+    setProject(project);
     setIsDeleteDialogOpen(true);
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
+    <div className="animate-in fade-in container mx-auto h-full px-4 py-6 duration-500 sm:px-6 sm:py-10">
       <div className="mb-6 flex items-center justify-between sm:mb-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Projects</h1>
@@ -44,20 +46,20 @@ export function ProjectListPage() {
         </div>
       </div>
 
-      <ProjectListTable
-        onCreateClick={handleCreateClick}
-        onDeleteClick={handleDeleteClick}
-        onEditClick={handleEditClick}
-      />
+      <Suspense fallback={<Loading />}>
+        <ProjectListTable
+          onCreateClick={handleCreateClick}
+          onDeleteClick={handleDeleteClick}
+          onEditClick={handleEditClick}
+        />
+      </Suspense>
 
       <CreateProjectDialog onOpenChange={setIsCreateDialogOpen} open={isCreateDialogOpen} />
 
-      {selectedProject && (
-        <EditProjectDialog onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen} project={selectedProject} />
-      )}
+      {project && <EditProjectDialog onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen} project={project} />}
 
-      {selectedProject && (
-        <DeleteProjectDialog onOpenChange={setIsDeleteDialogOpen} open={isDeleteDialogOpen} project={selectedProject} />
+      {project && (
+        <DeleteProjectDialog onOpenChange={setIsDeleteDialogOpen} open={isDeleteDialogOpen} project={project} />
       )}
     </div>
   );

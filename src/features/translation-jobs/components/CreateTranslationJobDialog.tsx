@@ -62,7 +62,7 @@ export function CreateTranslationJobDialog({
   );
 
   const { data: existingTranslationsData } = useKeysPerLanguageView({
-    limit: 1000,
+    limit: 100,
     locale: targetLocale || 'en',
     missing_only: false,
     offset: 0,

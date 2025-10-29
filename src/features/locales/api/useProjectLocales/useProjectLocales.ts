@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import type { ApiErrorResponse, ProjectLocaleWithDefault } from '@/shared/types';
@@ -17,6 +17,8 @@ import { LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA, PROJECT_LOCALE_WITH_DEFAULT_S
  * locale is the project's default language. Results are ordered with
  * the default locale first.
  *
+ * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
+ *
  * @param projectId - UUID of the project to fetch locales for
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
@@ -28,7 +30,7 @@ import { LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA, PROJECT_LOCALE_WITH_DEFAULT_S
 export function useProjectLocales(projectId: string) {
   const supabase = useSupabase();
 
-  return useQuery<ProjectLocaleWithDefault[], ApiErrorResponse>({
+  return useSuspenseQuery<ProjectLocaleWithDefault[], ApiErrorResponse>({
     queryFn: async () => {
       const { p_project_id } = LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA.parse({ p_project_id: projectId });
 

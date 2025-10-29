@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import type { ApiErrorResponse, ListProjectsParams, ProjectListResponse } from '@/shared/types';
@@ -28,7 +28,7 @@ import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.sc
 export function useProjects(params: ListProjectsParams = {}) {
   const supabase = useSupabase();
 
-  return useQuery<ProjectListResponse, ApiErrorResponse>({
+  return useSuspenseQuery<ProjectListResponse, ApiErrorResponse>({
     queryFn: async () => {
       const { limit, offset, order } = LIST_PROJECTS_SCHEMA.parse(params);
 

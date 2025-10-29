@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import type { ApiErrorResponse, ProjectResponse } from '@/shared/types';
 
@@ -27,7 +27,7 @@ import { PROJECT_RESPONSE_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
 export function useProject(projectId: string) {
   const supabase = useSupabase();
 
-  return useQuery<ProjectResponse, ApiErrorResponse>({
+  return useSuspenseQuery<ProjectResponse, ApiErrorResponse>({
     queryFn: async () => {
       const id = UUID_SCHEMA.parse(projectId);
 

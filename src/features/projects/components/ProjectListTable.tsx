@@ -15,7 +15,6 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 
 import { useProjects } from '../api/useProjects';
-import { ProjectListTableSkeleton } from './ProjectListTableSkeleton';
 
 interface ProjectListTableProps {
   onCreateClick: () => void;
@@ -34,7 +33,7 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
   const [page, setPage] = useState(0);
   const pageSize = 50;
 
-  const { data, error, isError, isLoading, refetch } = useProjects({
+  const { data, error, isError, refetch } = useProjects({
     limit: pageSize,
     offset: page * pageSize,
     order: 'name.asc',
@@ -95,10 +94,6 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
 
   const hasProjects = useMemo(() => projects.length > 0, [projects.length]);
   const hasMultiplePages = useMemo(() => totalPages > 1, [totalPages]);
-
-  if (isLoading) {
-    return <ProjectListTableSkeleton />;
-  }
 
   if (isError) {
     return (

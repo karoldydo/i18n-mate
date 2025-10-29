@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import type { ApiErrorResponse, ListTranslationJobsParams, ListTranslationJobsResponse } from '@/shared/types';
@@ -15,6 +15,8 @@ import { LIST_TRANSLATION_JOBS_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '.
  * Provides comprehensive job history with filtering and sorting capabilities.
  * Supports pagination with total count for UI pagination controls.
  * Jobs are sorted by creation date (newest first) by default.
+ *
+ * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
  *
  * Features:
  * - Pagination with limit/offset
@@ -39,7 +41,7 @@ import { LIST_TRANSLATION_JOBS_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '.
 export function useTranslationJobs(params: ListTranslationJobsParams) {
   const supabase = useSupabase();
 
-  return useQuery<ListTranslationJobsResponse, ApiErrorResponse>({
+  return useSuspenseQuery<ListTranslationJobsResponse, ApiErrorResponse>({
     queryFn: async () => {
       const { limit, offset, order, project_id, status } = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
 

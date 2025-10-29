@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import type { ApiErrorResponse } from '@/shared/types';
 
@@ -21,12 +21,14 @@ import { LIST_KEYS_DEFAULT_VIEW_SCHEMA, UUID_SCHEMA } from '../keys.schemas';
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during count
  *
+ * Uses useSuspenseQuery so loading states are handled by the nearest Suspense boundary.
+ *
  * @returns TanStack Query result with key count
  */
 export function useProjectKeyCount(projectId: string) {
   const supabase = useSupabase();
 
-  return useQuery<number, ApiErrorResponse>({
+  return useSuspenseQuery<number, ApiErrorResponse>({
     queryFn: async () => {
       const validatedProjectId = UUID_SCHEMA.parse(projectId);
 

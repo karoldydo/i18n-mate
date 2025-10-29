@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import type { ApiErrorResponse, KeyDefaultViewListResponse, ListKeysDefaultViewParams } from '@/shared/types';
@@ -32,7 +32,7 @@ import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from 
 export function useKeysDefaultView(params: ListKeysDefaultViewParams) {
   const supabase = useSupabase();
 
-  return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
+  return useSuspenseQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
     queryFn: async () => {
       const { limit, missing_only, offset, project_id, search } = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
 

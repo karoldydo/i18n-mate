@@ -21,7 +21,6 @@ interface SortIconProps {
 
 interface TelemetryDataTableProps {
   events: TelemetryEventResponse[];
-  isLoading: boolean;
   onPageChange: (page: number) => void;
   onSortChange: (sortBy: 'created_at') => void;
   pagination: {
@@ -38,17 +37,10 @@ interface TelemetryDataTableProps {
  * TelemetryDataTable - Data table displaying telemetry events with pagination and sorting
  *
  * Renders a table with columns for timestamp, event type, and formatted properties.
- * Supports sorting by timestamp and pagination navigation.
+ * Designed to be wrapped in Suspense, so data is already loaded when rendered.
  */
-export function TelemetryDataTable({
-  events,
-  isLoading,
-  onPageChange,
-  onSortChange,
-  pagination,
-  sort,
-}: TelemetryDataTableProps) {
-  const hasEvents = useMemo(() => !isLoading && events.length === 0, [isLoading, events.length]);
+export function TelemetryDataTable({ events, onPageChange, onSortChange, pagination, sort }: TelemetryDataTableProps) {
+  const hasEvents = useMemo(() => events.length === 0, [events.length]);
   const showPagination = useMemo(() => pagination.totalPages > 1, [pagination.totalPages]);
 
   const handleSortClick = useCallback(() => {

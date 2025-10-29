@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 import type { ApiErrorResponse, TelemetryEventResponse, TelemetryEventsParams } from '@/shared/types';
 
@@ -26,7 +26,7 @@ import { LIST_TELEMETRY_EVENTS_SCHEMA, TELEMETRY_EVENT_RESPONSE_SCHEMA } from '.
 export function useTelemetryEvents(projectId: string, params?: TelemetryEventsParams) {
   const supabase = useSupabase();
 
-  return useQuery<TelemetryEventResponse[], ApiErrorResponse>({
+  return useSuspenseQuery<TelemetryEventResponse[], ApiErrorResponse>({
     queryFn: async () => {
       const { limit, offset, order, project_id } = LIST_TELEMETRY_EVENTS_SCHEMA.parse({
         project_id: projectId,

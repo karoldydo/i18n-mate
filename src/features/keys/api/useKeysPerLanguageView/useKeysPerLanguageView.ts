@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import type { ApiErrorResponse, KeyPerLanguageViewListResponse, ListKeysPerLanguageParams } from '@/shared/types';
@@ -33,7 +33,7 @@ import { KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA, LIST_KEYS_PER_LANGUAGE_VIEW_SCHE
 export function useKeysPerLanguageView(params: ListKeysPerLanguageParams) {
   const supabase = useSupabase();
 
-  return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
+  return useSuspenseQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
     queryFn: async () => {
       const { limit, locale, missing_only, offset, project_id, search } =
         LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);

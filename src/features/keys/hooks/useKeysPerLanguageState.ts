@@ -102,16 +102,13 @@ export function useKeysPerLanguageState() {
 
   return useMemo(
     () => ({
-      // editing state
       cancelEditing,
       editError,
       editingKeyId,
       isSaving,
-      // filter state
       missingOnly,
       page,
       pageSize,
-
       searchValue,
       setError,
       setMissingOnly,
