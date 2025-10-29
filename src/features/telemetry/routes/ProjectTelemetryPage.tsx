@@ -2,7 +2,7 @@ import { Suspense, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { z } from 'zod';
 
-import { Loading } from '@/shared/components';
+import { ErrorBoundary, Loading } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { ProjectTelemetryContent } from '../components/ProjectTelemetryContent';
@@ -41,8 +41,10 @@ export function ProjectTelemetryPage() {
   }
 
   return (
-    <Suspense fallback={<Loading />}>
-      <ProjectTelemetryContent projectId={projectId} />
-    </Suspense>
+    <ErrorBoundary resetKeys={[projectId]}>
+      <Suspense fallback={<Loading />}>
+        <ProjectTelemetryContent projectId={projectId} />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

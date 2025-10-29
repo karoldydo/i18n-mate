@@ -29,7 +29,7 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedLocale, setSelectedLocale] = useState<null | ProjectLocaleWithDefault>(null);
 
-  const { data: locales, error, isError } = useProjectLocales(projectId);
+  const { data: locales } = useProjectLocales(projectId);
 
   const handleEdit = useCallback((locale: ProjectLocaleWithDefault) => {
     setSelectedLocale(locale);
@@ -56,21 +56,8 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
     setAddDialogOpen(true);
   }, []);
 
-  // error state
-  if (isError || !locales) {
-    return (
-      <div aria-live="assertive" className="container mx-auto py-8" role="alert">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Error Loading Languages</h2>
-          <p className="text-muted-foreground text-sm">
-            {error?.error?.message || 'Failed to load project languages.'}
-          </p>
-          <Button className="mt-4" onClick={handleBackClick} variant="outline">
-            Back to Project
-          </Button>
-        </div>
-      </div>
-    );
+  if (!locales) {
+    return null;
   }
 
   return (

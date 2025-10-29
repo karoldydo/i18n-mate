@@ -107,6 +107,7 @@ Key design principles include responsiveness (Tailwind CSS breakpoints), WCAG 2.
 - **AuthGuard**: Wrapper HOC with loading spinner for protected routes
 - **AppLayout**: Main layout with navigation
 - **ProjectLayout**: Project-specific layout with tabs
+- **ErrorBoundary**: Global error wrapper placed around Suspense-enabled views; renders full-screen fallback with retry/reload actions and ties into TanStack Query reset behaviour.
 
 ### 5.2 Form Components
 
@@ -119,6 +120,7 @@ Key design principles include responsiveness (Tailwind CSS breakpoints), WCAG 2.
 - **ToastProvider**: Global toast notifications for success/error feedback
 - **ProgressModal**: Modal with progress bar for long-running operations (translations)
 - **InlineEditor**: Component for inline editing with debounced autosave
+- **Loading**: Full-screen overlay with blurred backdrop used as the shared Suspense fallback for route-level loaders.
 
 ### 5.4 Business-Specific Components
 

@@ -2,7 +2,7 @@ import { Suspense, useCallback, useState } from 'react';
 
 import type { ProjectWithCounts } from '@/shared/types';
 
-import { Loading } from '@/shared/components';
+import { ErrorBoundary, Loading } from '@/shared/components';
 
 import { CreateProjectDialog } from '../components/CreateProjectDialog';
 import { DeleteProjectDialog } from '../components/DeleteProjectDialog';
@@ -46,13 +46,15 @@ export function ProjectListPage() {
         </div>
       </div>
 
-      <Suspense fallback={<Loading />}>
-        <ProjectListTable
-          onCreateClick={handleCreateClick}
-          onDeleteClick={handleDeleteClick}
-          onEditClick={handleEditClick}
-        />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<Loading />}>
+          <ProjectListTable
+            onCreateClick={handleCreateClick}
+            onDeleteClick={handleDeleteClick}
+            onEditClick={handleEditClick}
+          />
+        </Suspense>
+      </ErrorBoundary>
 
       <CreateProjectDialog onOpenChange={setIsCreateDialogOpen} open={isCreateDialogOpen} />
 

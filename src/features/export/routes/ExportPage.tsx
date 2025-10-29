@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { Loading } from '@/shared/components';
+import { ErrorBoundary, Loading } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
@@ -43,8 +43,10 @@ export function ExportPage() {
   }
 
   return (
-    <Suspense fallback={<Loading />}>
-      <ProjectExportContent projectId={validatedProjectId} />
-    </Suspense>
+    <ErrorBoundary resetKeys={[validatedProjectId]}>
+      <Suspense fallback={<Loading />}>
+        <ProjectExportContent projectId={validatedProjectId} />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

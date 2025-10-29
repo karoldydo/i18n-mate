@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
@@ -42,14 +42,10 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
   const { missingOnly, page, pageSize, searchValue, setMissingOnly, setPage, setSearchValue } = useKeysListFilters();
 
   // fetch project to get default locale
-  const { data: project, error: projectError, isError: isProjectError } = useProject(projectId);
+  const { data: project } = useProject(projectId);
 
   // fetch keys data
-  const {
-    data: keysData,
-    error,
-    isError,
-  } = useKeysDefaultView({
+  const { data: keysData } = useKeysDefaultView({
     limit: pageSize,
     missing_only: missingOnly,
     offset: (page - 1) * pageSize,
@@ -63,11 +59,6 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
   const handleBackToProject = useCallback(() => {
     navigate(`/projects/${projectId}`);
   }, [navigate, projectId]);
-
-  const totalPages = useMemo(() => {
-    if (!keysData) return 1;
-    return Math.ceil(keysData.metadata.total / pageSize);
-  }, [keysData, pageSize]);
 
   const handleSaveEdit = useCallback(
     (keyId: string, newValue: string) => {
@@ -125,22 +116,11 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
     setAddKeyDialogOpen(true);
   }, []);
 
-  // error state
-  if (isProjectError || isError || !keysData || !project) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Error Loading Keys</h2>
-          <p className="text-muted-foreground text-sm">
-            {projectError?.error?.message || error?.error?.message || 'Failed to load translation keys.'}
-          </p>
-          <Button className="mt-4" onClick={handleBackToProject} variant="outline">
-            Back to Project
-          </Button>
-        </div>
-      </div>
-    );
+  if (!project || !keysData) {
+    return null;
   }
+
+  const totalPages = Math.max(1, Math.ceil(keysData.metadata.total / pageSize));
 
   return (
     <>

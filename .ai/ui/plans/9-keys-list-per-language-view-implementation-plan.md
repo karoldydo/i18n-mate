@@ -35,9 +35,8 @@ KeysPerLanguagePage (main page component)
 │ │ ├── TranslationValueCell (editable)
 │ │ └── MetadataCell
 │ └── TablePagination
-└── LoadingStates
-├── TableSkeleton
-└── EmptyState
+├── EmptyState
+└── SuspenseFallback (shared Loading overlay)
 ```
 
 ## 4. Component Details
@@ -150,14 +149,14 @@ KeysPerLanguagePage (main page component)
 - **Types**: Pagination metadata (start, end, total)
 - **Props**: currentPage: number, totalItems: number, pageSize: number, onPageChange: (page: number) => void
 
-### TableSkeleton
+### SuspenseFallback
 
-- **Component description**: Loading skeleton for the data table during initial load or refetch
-- **Main elements**: Shadcn Skeleton components arranged in table layout
-- **Handled interactions**: None
+- **Component description**: Route-level Suspense fallback that shows the shared full-screen `Loading` overlay while queries resolve.
+- **Main elements**: Loading spinner with blurred backdrop (shared component)
+- **Handled interactions**: Retry button provided by ErrorBoundary when an error occurs
 - **Handled validation**: None
 - **Types**: None
-- **Props**: rowCount?: number
+- **Props**: Inherited from shared `Loading` component
 
 ### EmptyState
 
@@ -301,6 +300,7 @@ Integration with `useKeysPerLanguageView` hook:
 - Query failures display error toast with retry option
 - Automatic retry for transient failures (3 attempts)
 - Fallback to cached data when available
+- ErrorBoundary wrapping the view surfaces unhandled query errors with retry and reload actions.
 
 ### Validation Errors
 

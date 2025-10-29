@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { Loading } from '@/shared/components';
+import { ErrorBoundary, Loading } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
@@ -48,8 +48,10 @@ export function ProjectLocalesPage() {
   }
 
   return (
-    <Suspense fallback={<Loading />}>
-      <ProjectLocalesContent projectId={validProjectId} />
-    </Suspense>
+    <ErrorBoundary resetKeys={[validProjectId]}>
+      <Suspense fallback={<Loading />}>
+        <ProjectLocalesContent projectId={validProjectId} />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

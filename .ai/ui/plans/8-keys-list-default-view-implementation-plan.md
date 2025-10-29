@@ -323,9 +323,9 @@ No additional custom hooks required beyond existing API hooks and basic state ma
 
 ### UI Error States
 
-- **Loading States**: Skeleton table rows during initial load and pagination
+- **Loading States**: Suspense fallback renders the shared full-screen `Loading` overlay during data fetch; pagination updates keep optimistic state.
 - **Empty States**: "No keys found" message with prominent add key button
-- **Error States**: Error boundaries with retry options for failed operations
+- **Error States**: Shared ErrorBoundary surfaces query failures with retry and reload actions.
 - **Partial Failures**: Handle individual operation failures without breaking entire interface
 
 ## 11. Implementation Steps

@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
@@ -47,14 +47,10 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
   } = useKeysPerLanguageState();
 
   // fetch project to validate locale
-  const { data: project, error: projectError, isError: isProjectError } = useProject(projectId);
+  const { data: project } = useProject(projectId);
 
   // fetch keys data for the selected language
-  const {
-    data: keysData,
-    error,
-    isError,
-  } = useKeysPerLanguageView({
+  const { data: keysData } = useKeysPerLanguageView({
     limit: pageSize,
     locale: locale,
     missing_only: missingOnly,
@@ -66,18 +62,9 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
   // mutation for updating translation values (dynamic - accepts all params in payload)
   const updateTranslationMutation = useUpdateTranslation();
 
-  const handleBackToKeys = useCallback(() => {
-    navigate(`/projects/${projectId}/keys`);
-  }, [navigate, projectId]);
-
   const handleBackToLocales = useCallback(() => {
     navigate(`/projects/${projectId}/locales`);
   }, [navigate, projectId]);
-
-  const totalPages = useMemo(() => {
-    if (!keysData) return 1;
-    return Math.ceil(keysData.metadata.total / pageSize);
-  }, [keysData, pageSize]);
 
   const handleSaveEdit = useCallback(
     (keyId: string, newValue: string) => {
@@ -111,22 +98,11 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
     [queryClient, setError, setSavingState, updateTranslationMutation, locale, projectId]
   );
 
-  // error state
-  if (isProjectError || isError || !keysData || !project) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Error Loading Keys</h2>
-          <p className="text-muted-foreground text-sm">
-            {projectError?.error?.message || error?.error?.message || 'Failed to load translation keys.'}
-          </p>
-          <Button className="mt-4" onClick={handleBackToKeys} variant="outline">
-            Back to Keys
-          </Button>
-        </div>
-      </div>
-    );
+  if (!project || !keysData) {
+    return null;
   }
+
+  const totalPages = Math.max(1, Math.ceil(keysData.metadata.total / pageSize));
 
   return (
     <div className="animate-in fade-in container mx-auto py-8 duration-500">

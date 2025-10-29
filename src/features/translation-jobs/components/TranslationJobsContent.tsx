@@ -43,8 +43,6 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
 
   const {
     data: jobsResponse,
-    error,
-    isError,
     isFetching,
     refetch,
   } = useTranslationJobs({
@@ -128,8 +126,9 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
     refetch();
   }, [refetch]);
 
+  const { data: jobs, metadata } = jobsResponse;
+
   const { displayJobs, totalPages } = useMemo(() => {
-    const { data: jobs = [], metadata = { end: 0, start: 0, total: 0 } } = jobsResponse || {};
     const jobsWithHints = jobs.map(applyTotalHint);
     const activeJobWithHint = activeJob ? applyTotalHint(activeJob) : null;
     const displayJobs = activeJobWithHint
@@ -138,7 +137,7 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
     const totalPages = Math.ceil(metadata.total / pageSize);
 
     return { displayJobs, totalPages };
-  }, [jobsResponse, activeJob, applyTotalHint, pageSize]);
+  }, [jobs, metadata, activeJob, applyTotalHint, pageSize]);
 
   const handleJobClick = useCallback(
     (job: TranslationJobResponse) => {
@@ -285,28 +284,6 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
       setProgressJob(null);
     }
   }, []);
-
-  // error state
-  if (isError || !jobsResponse) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Error Loading Translation Jobs</h2>
-          <p className="text-muted-foreground text-sm">{error?.error?.message || 'Failed to load translation jobs.'}</p>
-          <div className="mt-4 flex gap-2">
-            <Button onClick={handleRefresh} variant="outline">
-              Retry
-            </Button>
-            <Button onClick={handleBackToProject} variant="outline">
-              Back to Project
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const { data: jobs, metadata } = jobsResponse;
 
   return (
     <div className="animate-in fade-in container mx-auto py-8 duration-500">

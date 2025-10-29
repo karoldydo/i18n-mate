@@ -1,17 +1,11 @@
-import { AlertCircle, MoreHorizontal, Plus } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { MoreVertical, Plus } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import type { ProjectWithCounts } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/shared/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 
 import { useProjects } from '../api/useProjects';
@@ -33,7 +27,7 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
   const [page, setPage] = useState(0);
   const pageSize = 50;
 
-  const { data, error, isError, refetch } = useProjects({
+  const { data } = useProjects({
     limit: pageSize,
     offset: page * pageSize,
     order: 'name.asc',
@@ -72,40 +66,24 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
     [onDeleteClick]
   );
 
-  const projects = useMemo(() => data?.data || [], [data?.data]);
-  const total = useMemo(() => data?.metadata.total || 0, [data?.metadata.total]);
-  const totalPages = useMemo(() => Math.ceil(total / pageSize), [total, pageSize]);
+  const projects = data?.data ?? [];
+  const total = data?.metadata.total ?? 0;
+  const totalPages = Math.max(0, Math.ceil(total / pageSize));
+  const lastPageIndex = Math.max(totalPages - 1, 0);
 
-  const { isFirstPage, isLastPage } = useMemo(
-    () => ({
-      isFirstPage: page === 0,
-      isLastPage: page >= totalPages - 1,
-    }),
-    [page, totalPages]
-  );
+  const isFirstPage = page === 0;
+  const isLastPage = page >= lastPageIndex;
 
-  const paginationRange = useMemo(
-    () => ({
-      from: page * pageSize + 1,
-      to: Math.min((page + 1) * pageSize, total),
-    }),
-    [page, pageSize, total]
-  );
+  const paginationRange = {
+    from: page * pageSize + 1,
+    to: Math.min((page + 1) * pageSize, total),
+  };
 
-  const hasProjects = useMemo(() => projects.length > 0, [projects.length]);
-  const hasMultiplePages = useMemo(() => totalPages > 1, [totalPages]);
+  const hasProjects = projects.length > 0;
+  const hasMultiplePages = totalPages > 1;
 
-  if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
-        <AlertCircle className="text-muted-foreground mb-4 h-12 w-12" />
-        <p className="mb-2 text-lg font-medium">Failed to load projects</p>
-        <p className="text-muted-foreground mb-4 text-sm">{error.error.message || 'An unexpected error occurred'}</p>
-        <Button onClick={() => refetch()} variant="outline">
-          Try Again
-        </Button>
-      </div>
-    );
+  if (!data) {
+    return null;
   }
 
   if (!hasProjects) {
@@ -161,11 +139,10 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button aria-label={`Actions for ${project.name}`} size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem onClick={() => handleEditClick(project)}>Edit</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(project)}>
                         Delete

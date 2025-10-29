@@ -235,9 +235,9 @@ No custom hooks required beyond the existing API hooks.
 
 ### UI Error States
 
-- **Loading States**: Skeleton loaders for table and dialogs
+- **Loading States**: Route-level Suspense boundary with the shared `Loading` overlay; dialogs keep their local button spinners.
 - **Empty States**: "No projects found" message with create prompt
-- **Error Boundaries**: Graceful degradation for unexpected errors
+- **Error Boundaries**: Dedicated wrapper surfaces TanStack Query errors with retry/reload actions.
 
 ## 11. Implementation Steps
 

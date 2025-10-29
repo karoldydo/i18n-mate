@@ -281,9 +281,9 @@ Custom hooks required:
 
 ### UI Error States
 
-- **Loading States**: Skeleton loaders for table rows and progress indicators
+- **Loading States**: Route-level Suspense fallback shows the shared full-screen `Loading` overlay; table rows update once data resolves, dialogs keep local spinners.
 - **Empty States**: "No translation jobs found" message with helpful guidance
-- **Error Boundaries**: Component-level error boundaries prevent full page crashes
+- **Error Boundaries**: Shared ErrorBoundary around the route surfaces query failures with retry/reload actions.
 - **Toast Notifications**: Success/error feedback for all user actions
 
 ## 11. Implementation Steps

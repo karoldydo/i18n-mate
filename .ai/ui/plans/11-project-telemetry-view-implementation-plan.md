@@ -26,7 +26,7 @@ ProjectTelemetryPage (main page component)
 ### ProjectTelemetryPage
 
 - **Component description**: Main page component that orchestrates the telemetry view, handles routing, and manages the overall layout
-- **Main elements**: Page header with breadcrumbs, KPI cards section, events table section, loading states, error boundaries
+- **Main elements**: Page header with breadcrumbs, KPI cards section, events table section, shared ErrorBoundary + Suspense wrapper with `Loading` overlay
 - **Handled interactions**: Page load, navigation, error handling, responsive layout adjustments
 - **Handled validation**: Project ID validation from URL parameters, user permissions check
 - **Types**: ProjectTelemetryPageProps { projectId: string }
@@ -90,11 +90,7 @@ State management will use a combination of React hooks and TanStack Query. A cus
 The view integrates with the telemetry API through the existing `useTelemetryEvents` hook:
 
 ```typescript
-const {
-  data: events,
-  isLoading,
-  error,
-} = useTelemetryEvents(projectId, {
+const { data: events } = useTelemetryEvents(projectId, {
   limit: state.limit,
   offset: state.page * state.limit,
   order: `${state.sortBy}.${state.sortOrder}` as 'created_at.asc' | 'created_at.desc',
@@ -103,6 +99,8 @@ const {
 
 **Request**: GET /rest/v1/telemetry_events with query parameters
 **Response**: TelemetryEventResponse[] array of telemetry events
+
+Loading behaviour relies on a Suspense boundary that renders the shared `Loading` overlay, while the surrounding ErrorBoundary supplies retry and reload actions when a query fails.
 
 ## 8. User Interactions
 
@@ -148,7 +146,7 @@ const {
    - **VERIFY**: Use existing event types directly
 6. Create `TelemetryEventRow` component for individual event display
 7. Add responsive design and accessibility features
-8. Implement error boundaries and loading states
+8. Wrap the route in the shared ErrorBoundary and Suspense with the `Loading` overlay
 9. Add comprehensive error handling for all API failure scenarios
 10. Write unit tests for components and hooks
 11. Add integration tests for the complete telemetry view

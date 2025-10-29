@@ -25,7 +25,7 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
   const navigate = useNavigate();
   const pageState = useTelemetryPageState();
 
-  const { data: project, error: projectError, isError: isProjectError } = useProject(projectId);
+  const { data: project } = useProject(projectId);
 
   const telemetryEventsParams = useMemo(
     () => ({
@@ -36,16 +36,10 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
     [pageState.limit, pageState.page, pageState.sortBy, pageState.sortOrder]
   );
 
-  const {
-    data: eventsData,
-    error: eventsError,
-    isError: isEventsError,
-  } = useTelemetryEvents(projectId, telemetryEventsParams);
-
-  const events = useMemo(() => eventsData || [], [eventsData]);
+  const { data: events } = useTelemetryEvents(projectId, telemetryEventsParams);
 
   const totalPages = useMemo(
-    () => Math.ceil((events.length || 0) / pageState.limit) || 1,
+    () => Math.max(1, Math.ceil(events.length / pageState.limit)),
     [events.length, pageState.limit]
   );
 
@@ -77,20 +71,8 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
     [pageState]
   );
 
-  if (isProjectError || !project) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Error Loading Project</h2>
-          <p className="text-muted-foreground text-sm">
-            {projectError?.error?.message || 'Failed to load project details.'}
-          </p>
-          <Button className="mt-4" onClick={handleBackToProject} variant="outline">
-            Back to Project
-          </Button>
-        </div>
-      </div>
-    );
+  if (!project) {
+    return null;
   }
 
   return (
@@ -128,15 +110,6 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
             sort={sort}
           />
         </div>
-
-        {isEventsError && (
-          <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-            <h2 className="text-destructive text-lg font-semibold">Error Loading Events</h2>
-            <p className="text-muted-foreground text-sm">
-              {eventsError?.error?.message || 'Failed to load telemetry events.'}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

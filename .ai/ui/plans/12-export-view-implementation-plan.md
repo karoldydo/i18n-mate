@@ -24,7 +24,7 @@ ExportPage (main route component)
 ### ExportPage
 
 - Component description: Main page component that orchestrates the export view, handling route parameters, data fetching, and state management for the export functionality.
-- Main elements: ExportLayout wrapper with conditional rendering for loading/error states
+- Main elements: ErrorBoundary + Suspense with the shared `Loading` overlay, followed by the ExportLayout wrapper
 - Handled interactions: Route parameter validation, navigation on errors
 - Handled validation: UUID validation for projectId parameter
 - Types: ExportViewModel (internal), ApiErrorResponse, ProjectResponse

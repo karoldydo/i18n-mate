@@ -280,9 +280,13 @@ The view uses TanStack Query for server state management and local React state f
 - Verification failures: Single retry then error display
 - Clear error messages for operational issues
 
+**Fatal Errors**:
+
+- ErrorBoundary around the locales route surfaces query failures with retry and reload options.
+
 **Loading States**:
 
-- Skeleton loading for initial data fetch
+- Route-level Suspense boundary renders the shared `Loading` overlay during data fetch
 - Spinner buttons during form submissions
 - Disabled states during async operations
 

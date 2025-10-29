@@ -1,8 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Button } from '@/shared/ui/button';
-
 import { useProject } from '../api/useProject';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
 import { EditProjectDialog } from './EditProjectDialog';
@@ -23,11 +21,7 @@ export function ProjectDetailsContent({ projectId }: ProjectDetailsContentProps)
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const { data: project, error, isError } = useProject(projectId);
-
-  const handleBackToProjects = useCallback(() => {
-    navigate('/projects');
-  }, [navigate]);
+  const { data: project } = useProject(projectId);
 
   const handleEdit = useCallback(() => {
     setEditDialogOpen(true);
@@ -43,18 +37,8 @@ export function ProjectDetailsContent({ projectId }: ProjectDetailsContentProps)
 
   const projectWithCounts = useMemo(() => (project ? { ...project, key_count: 0, locale_count: 0 } : null), [project]);
 
-  if (isError || !project) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Error Loading Project</h2>
-          <p className="text-muted-foreground text-sm">{error?.error?.message || 'Failed to load project details.'}</p>
-          <Button className="mt-4" onClick={handleBackToProjects} variant="outline">
-            Back to Projects
-          </Button>
-        </div>
-      </div>
-    );
+  if (!project) {
+    return null;
   }
 
   return (
