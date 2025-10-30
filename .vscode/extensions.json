@@ -28,6 +28,7 @@
     "anthropic.claude-code",
     "denoland.vscode-deno",
     "yzhang.markdown-all-in-one",
-    "vscode-icons-team.vscode-icons"
+    "vscode-icons-team.vscode-icons",
+    "bierner.markdown-mermaid"
   ]
 }
