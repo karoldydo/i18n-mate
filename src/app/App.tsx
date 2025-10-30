@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router';
 
+import { ProtectedLayout } from '@/features/auth/components/layouts/ProtectedLayout';
 import { ErrorBoundary, Loading } from '@/shared/components';
 
 import './App.css';
@@ -8,9 +9,11 @@ import './App.css';
 function App() {
   return (
     <ErrorBoundary>
-      <Suspense fallback={<Loading />}>
-        <Outlet />
-      </Suspense>
+      <ProtectedLayout>
+        <Suspense fallback={<Loading />}>
+          <Outlet />
+        </Suspense>
+      </ProtectedLayout>
     </ErrorBoundary>
   );
 }

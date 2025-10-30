@@ -15,4 +15,10 @@ if (!supabaseAnonKey) {
 
 export type SupabaseClient = RawSupabaseClient<Database>;
 
-export const supabaseClient: SupabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabaseClient: SupabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    persistSession: true,
+  },
+});

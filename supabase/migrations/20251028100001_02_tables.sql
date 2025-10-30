@@ -1,10 +1,48 @@
 -- =====================================================================
 -- migration: 02_tables
 -- description: core database tables with constraints and comments
--- tables created: projects, project_locales, keys, translations,
+-- tables created: app_config, projects, project_locales, keys, translations,
 --                 translation_jobs, translation_job_items, telemetry_events
 -- notes: tables created in dependency order; rls enabled
 -- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- app_config table
+-- ---------------------------------------------------------------------
+
+create table app_config (
+  key text primary key,
+  value text not null,
+  description text,
+  updated_at timestamptz not null default now()
+);
+
+comment on table app_config is
+  'Application-wide configuration settings. Used by Edge Functions and database triggers for feature flags and runtime configuration.';
+
+comment on column app_config.key is
+  'Unique configuration key identifier. Examples: "registration_enabled", "max_projects_per_user".';
+
+comment on column app_config.value is
+  'Configuration value as text. Boolean values should be "true" or "false" strings.';
+
+comment on column app_config.description is
+  'Optional human-readable description of the configuration setting and its purpose.';
+
+-- insert default configuration values
+insert into app_config (key, value, description) values
+  ('registration_enabled', 'true', 'Controls whether new user registration is allowed. Set to "false" to disable signups.'),
+  ('email_verification_required', 'true', 'Controls whether email verification is required before granting session access.');
+
+alter table app_config enable row level security;
+
+-- rls policy: only service_role can read/modify app_config
+create policy "Service role can manage app_config"
+  on app_config
+  for all
+  to service_role
+  using (true)
+  with check (true);
 
 -- ---------------------------------------------------------------------
 -- projects table

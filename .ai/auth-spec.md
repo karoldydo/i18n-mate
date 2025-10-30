@@ -134,14 +134,32 @@
 
 ### 2.1 API Endpoints
 
-#### Authentication Endpoints (Supabase Auth + TanStack Query)
+#### Authentication Endpoints
 
-- `POST /auth/signup` - user registration (conditionally available based on `VITE_REGISTRATION_ENABLED`)
-- `POST /auth/signin` - user login
-- `POST /auth/signout` - user logout
-- `POST /auth/resend-verification` - resend verification
-- `POST /auth/reset-password` - password reset
-- `POST /auth/verify-email` - email verification (link handling)
+**Implementation:** TanStack Query mutation hooks wrapping `AuthProvider` methods:
+
+- **`useSignUp`** - Registration with automatic signOut (enforces email verification)
+  - Calls Edge Function `/functions/v1/signup` (validates `app_config.registration_enabled`)
+  - Returns 403 if registration disabled
+  - Creates user via `supabase.auth.admin.createUser()` with `email_confirm: false`
+
+- **`useSignIn`** - Login
+  - Calls `supabase.auth.signInWithPassword()`
+  - AuthGuard validates `email_confirmed_at` after successful login
+
+- **`useSignOut`** - Logout
+  - Calls `supabase.auth.signOut()`
+  - Clears session and redirects to `/login`
+
+- **`useResetPassword`** - Request password reset email
+  - Calls `supabase.auth.resetPasswordForEmail()` with redirect URL
+
+- **`useUpdatePassword`** - Update password (after clicking reset link)
+  - Calls `supabase.auth.updateUser({ password: newPassword })`
+  - Token validation handled by Supabase
+
+- **`useResendVerification`** - Resend verification email
+  - Calls `supabase.auth.resend({ type: 'signup', email })`
 
 ### 2.2 Data Models
 
@@ -183,7 +201,33 @@ interface ApiErrorResponse {
 }
 ```
 
-During implementation, authentication-specific types will be added in `src/shared/types/auth/` according to the application pattern.
+#### App Config Model (Database)
+
+Configuration table for runtime feature flags (added in migration `02_tables.sql`):
+
+```sql
+CREATE TABLE app_config (
+  key text PRIMARY KEY,
+  value text NOT NULL,
+  description text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Default configuration
+INSERT INTO app_config (key, value, description) VALUES
+  ('registration_enabled', 'true', 'Controls whether new user registration is allowed'),
+  ('email_verification_required', 'true', 'Controls whether email verification is required before granting session access');
+
+-- RLS policy: only service_role can read/modify
+CREATE POLICY "Service role can manage app_config"
+  ON app_config FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+```
+
+Configuration keys:
+
+- `registration_enabled`: `'true'` | `'false'` - checked by Edge Function before user creation
+- `email_verification_required`: `'true'` | `'false'` - enforced by AuthGuard on frontend
 
 ### 2.3 Input Data Validation
 
@@ -236,57 +280,91 @@ According to application pattern:
 
 #### Supabase Client Configuration
 
-- URL and anon key from environment variables
-- Registration control: `VITE_REGISTRATION_ENABLED` environment variable controls access to registration functionality
-- Session persistence: localStorage
-- Auto-refresh tokens
-- Event listeners for session changes
+- URL and anon key from environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
+- Registration control:
+  - **Backend:** `app_config.registration_enabled` database setting (default: `'true'`) validated by Edge Function (`supabase/functions/signup`)
+  - **Frontend:** `VITE_REGISTRATION_ENABLED` environment variable controls UI visibility (default: `'true'`)
+- Email verification control: `app_config.email_verification_required` database setting (default: `'true'`)
+- Session persistence: localStorage via Supabase client
+- Auto-refresh tokens: enabled via client configuration
+- Event listeners for session changes: `supabase.auth.onAuthStateChange()`
 
 #### Auth State Management
 
-- React Context for global authentication state
-- TanStack Query for user data caching
-- Optimistic updates for authentication actions
+- React Context (`AuthProvider`) for global authentication state
+- User state synchronized with `supabase.auth.onAuthStateChange()`
+- TanStack Query mutations for authentication actions (no Query cache for user state)
+- Auth methods: `signUp`, `signIn`, `signOut`, `resetPassword`, `updatePassword`, `resendVerification`
 
 ### 3.2 Authentication Flows
 
 #### Registration Flow
 
 1. User fills RegisterForm
-2. Client-side validation
-3. Call `supabase.auth.signUp()`
-4. Send verification email
-5. Redirect to EmailVerificationScreen
-6. User clicks email link
-7. Token verification by Supabase
-8. Redirect to login with success message
+2. Client-side validation (Zod schema)
+3. Call `useSignUp` mutation → `AuthProvider.signUp()`
+4. Edge Function (`/signup`) checks `app_config.registration_enabled`
+5. If enabled: create user via `supabase.auth.admin.createUser()` with `email_confirm: false`
+6. Send verification email (handled by Supabase)
+7. Auto-signOut after registration (enforce "no session before verification")
+8. Redirect to `/verify-email` with email in state
+9. User clicks verification link in email
+10. Token verification by Supabase → `email_confirmed_at` set
+11. User redirected to login page (must login again after verification)
 
 #### Login Flow
 
 1. User fills LoginForm
-2. Client-side validation
-3. Call `supabase.auth.signInWithPassword()`
-4. Check if email is verified
-5. Create session and redirect to application
-6. Or redirect to verification if email unverified
+2. Client-side validation (Zod schema)
+3. Call `useSignIn` mutation → `AuthProvider.signIn()`
+4. Call `supabase.auth.signInWithPassword()`
+5. Supabase creates session (if credentials valid)
+6. `onAuthStateChange` updates `AuthProvider` user state
+7. AuthGuard checks `user.email_confirmed_at`:
+   - If null: redirect to `/verify-email`
+   - If set: allow access to protected routes
+8. Successful login: redirect to intended page or `/projects`
 
 #### Password Reset Flow
 
 1. User fills ForgotPasswordForm
-2. Send email with reset link
-3. User clicks link and gets redirected to ResetPasswordForm
-4. User sets new password
-5. Token verification and password update
-6. Redirect to login with success message
+2. Call `useResetPassword` mutation → `AuthProvider.resetPassword()`
+3. Call `supabase.auth.resetPasswordForEmail()` with redirect URL
+4. Supabase sends email with reset link
+5. User clicks link → redirected to `/reset-password` with token in URL
+6. User fills ResetPasswordForm with new password
+7. Call `useUpdatePassword` mutation → `AuthProvider.updatePassword()`
+8. Call `supabase.auth.updateUser({ password: newPassword })`
+9. Token verification and password update by Supabase
+10. Success: redirect to `/login` with success toast
 
 ### 3.3 Security Measures
 
 #### Session Security
 
-- HTTP-only cookies for sensitive data
-- Token rotation on each request
-- Automatic logout on session expiration
-- CSRF protection
+- Session tokens managed by Supabase Auth (stored in localStorage)
+- Auto-refresh tokens enabled via client configuration
+- Automatic logout on session expiration via `onAuthStateChange`
+- No session created until email verification (enforced by auto-signOut in `AuthProvider.signUp()`)
+- AuthGuard validates `email_confirmed_at` before allowing access
+
+#### Registration Control
+
+- **Database-level:** `app_config` table stores `registration_enabled` setting
+  - Default value: `'true'`
+  - Editable only by `service_role` (via RLS policy)
+- **Edge Function:** `supabase/functions/signup/index.ts` validates setting before user creation
+  - Returns 403 if registration disabled
+  - Uses `supabase.auth.admin.createUser()` for server-side user creation
+- **Frontend-level:** `VITE_REGISTRATION_ENABLED` controls UI visibility
+  - Hides registration links and routes when `'false'`
+  - Independent from backend setting (UI optimization only)
+
+#### Email Verification Control
+
+- **Database-level:** `app_config.email_verification_required` setting (default: `'true'`)
+- **Enforcement:** AuthGuard checks `user.email_confirmed_at` before granting access
+- Auto-signOut after registration ensures no session exists until verification
 
 ### 3.4 Email Templates
 
@@ -310,13 +388,27 @@ According to application pattern:
 ```markdown
 src/features/auth/
 ├── api/
-│ ├── auth.errors.ts
-│ ├── auth.schemas.ts
-│ ├── useLogin/
-│ ├── useRegister/
-│ ├── useLogout/
+│ ├── auth.errors.ts # Error mapping: AuthError → ApiErrorResponse
+│ ├── auth.schemas.ts # Zod validation schemas
+│ ├── index.ts # Barrel exports
+│ ├── useSignUp/
+│ │ ├── useSignUp.ts # Registration mutation
+│ │ └── index.ts
+│ ├── useSignIn/
+│ │ ├── useSignIn.ts # Login mutation
+│ │ └── index.ts
+│ ├── useSignOut/
+│ │ ├── useSignOut.ts # Logout mutation
+│ │ └── index.ts
 │ ├── useResetPassword/
-│ └── useVerifyEmail/
+│ │ ├── useResetPassword.ts # Request reset email mutation
+│ │ └── index.ts
+│ ├── useUpdatePassword/
+│ │ ├── useUpdatePassword.ts # Update password mutation (after reset link)
+│ │ └── index.ts
+│ └── useResendVerification/
+│ ├── useResendVerification.ts # Resend verification email mutation
+│ └── index.ts
 ├── components/
 │ ├── forms/
 │ │ ├── LoginForm.tsx
@@ -324,37 +416,74 @@ src/features/auth/
 │ │ ├── ForgotPasswordForm.tsx
 │ │ └── ResetPasswordForm.tsx
 │ ├── layouts/
-│ │ ├── AuthLayout.tsx
-│ │ └── ProtectedLayout.tsx
+│ │ └── AuthLayout.tsx # Public auth pages layout
 │ ├── guards/
-│ │ └── AuthGuard.tsx
+│ │ └── AuthGuard.tsx # Route protection with email verification check
 │ └── common/
-│ ├── UserMenu.tsx
-│ └── AuthErrorBoundary.tsx
-├── hooks/
-│ ├── useAuth.ts
-│ └── useAuthState.ts
+│ └── EmailVerificationScreen.tsx
 ├── routes/
 │ ├── LoginPage.tsx
 │ ├── RegisterPage.tsx
 │ ├── VerifyEmailPage.tsx
 │ ├── ForgotPasswordPage.tsx
 │ └── ResetPasswordPage.tsx
+└── index.ts # Public exports
+
+src/app/providers/
+└── AuthProvider.tsx # Global auth state via React Context
+
+src/app/components/
+└── ProtectedRoute.tsx # Wrapper combining AuthGuard + Suspense
+
+supabase/functions/signup/
+└── index.ts # Edge Function for registration control
+
+supabase/migrations/
+└── 20251028100001_02_tables.sql # app_config table for feature flags
 ```
 
-Authentication constants will be added to `src/shared/constants/auth.constants.ts` according to application pattern (see `src/shared/constants/index.ts`).
+Authentication constants stored in `src/shared/constants/auth.constants.ts`:
+
+- `AUTH_PASSWORD_MIN_LENGTH`, `AUTH_PASSWORD_MAX_LENGTH`, `AUTH_EMAIL_MAX_LENGTH`
+- `AUTH_PASSWORD_PATTERN` (at least one letter and one digit)
+- `AUTH_ERROR_MESSAGES` (17 error messages for auth flows)
+- `AUTH_SUCCESS_MESSAGES` (4 success messages)
 
 ### 4.2 Routing Integration
 
-- Update `src/app/routes.ts` with new authentication routes
-- Add AuthGuard to existing protected routes
-- Lazy loading for all authentication pages
+**Implemented in `src/app/routes.tsx`:**
+
+- Public auth routes (lazy-loaded):
+  - `/login` → `LoginPage`
+  - `/register` → `RegisterPage`
+  - `/verify-email` → `VerifyEmailPage`
+  - `/forgot-password` → `ForgotPasswordPage`
+  - `/reset-password` → `ResetPasswordPage`
+
+- Protected routes wrapped with `ProtectedRoute` component:
+  - All existing routes (`/projects/*`, etc.)
+  - `ProtectedRoute` combines `AuthGuard` + `Suspense`
 
 ### 4.3 State Management Integration
 
-- Add AuthProvider to App.tsx
-- Integration with existing QueryClient
-- Make auth context available to all components
+**Provider hierarchy in `src/app/main.tsx`:**
+
+```tsx
+<SupabaseProvider>
+  <AuthProvider>
+    {' '}
+    {/* Global auth state */}
+    <QueryClientProvider>
+      <RouterProvider />
+    </QueryClientProvider>
+  </AuthProvider>
+</SupabaseProvider>
+```
+
+- `AuthProvider` wraps entire app (below `SupabaseProvider`)
+- `useAuth()` hook available in all components
+- TanStack Query mutations for auth actions
+- No Query cache for user state (managed via Context + `onAuthStateChange`)
 
 ### 4.4 UI/UX Consistency
 
@@ -368,10 +497,16 @@ Authentication constants will be added to `src/shared/constants/auth.constants.t
 
 - React 19 with hooks and concurrent features
 - TypeScript 5 with strict mode
-- Supabase Auth v2
-- TanStack Query v5
-- Zod for validation
-- Environment variable: `VITE_REGISTRATION_ENABLED` (boolean, default: true) to control registration access
+- Supabase Auth v2 with Edge Functions (Deno runtime)
+- TanStack Query v5 (mutations for auth actions)
+- Zod for validation (both frontend and Edge Function)
+- Environment variables:
+  - `VITE_SUPABASE_URL` - Supabase project URL
+  - `VITE_SUPABASE_ANON_KEY` - Supabase anon key
+  - `VITE_REGISTRATION_ENABLED` (optional, default: `'true'`) - frontend UI visibility only
+- Database configuration:
+  - `app_config.registration_enabled` - backend validation (Edge Function)
+  - `app_config.email_verification_required` - frontend enforcement (AuthGuard)
 
 ### 5.2 Performance Considerations
 
