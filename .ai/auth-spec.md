@@ -7,7 +7,7 @@
 #### Unauthenticated Mode (Public Routes)
 
 - `/login` - login page
-- `/register` - registration page
+- `/register` - registration page (conditionally available based on `VITE_REGISTRATION_ENABLED` environment variable)
 - `/verify-email` - email verification page with confirmation link
 - `/resend-verification` - resend verification page
 - `/forgot-password` - password reset page
@@ -41,7 +41,7 @@
 - Fields: email, password
 - Button: "Log in"
 - Link: "Forgot password?"
-- Link: "Don't have an account? Sign up"
+- Link: "Don't have an account? Sign up" (conditionally displayed based on `VITE_REGISTRATION_ENABLED`)
 - Validation: email format, password required
 - Error handling: invalid credentials, unverified email
 
@@ -136,7 +136,7 @@
 
 #### Authentication Endpoints (Supabase Auth + TanStack Query)
 
-- `POST /auth/signup` - user registration
+- `POST /auth/signup` - user registration (conditionally available based on `VITE_REGISTRATION_ENABLED`)
 - `POST /auth/signin` - user login
 - `POST /auth/signout` - user logout
 - `POST /auth/resend-verification` - resend verification
@@ -237,6 +237,7 @@ According to application pattern:
 #### Supabase Client Configuration
 
 - URL and anon key from environment variables
+- Registration control: `VITE_REGISTRATION_ENABLED` environment variable controls access to registration functionality
 - Session persistence: localStorage
 - Auto-refresh tokens
 - Event listeners for session changes
@@ -370,6 +371,7 @@ Authentication constants will be added to `src/shared/constants/auth.constants.t
 - Supabase Auth v2
 - TanStack Query v5
 - Zod for validation
+- Environment variable: `VITE_REGISTRATION_ENABLED` (boolean, default: true) to control registration access
 
 ### 5.2 Performance Considerations
 
