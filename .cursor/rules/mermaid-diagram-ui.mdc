@@ -6,25 +6,27 @@ alwaysApply: false
 
 # Mermaid Diagram - UI Components
 
-You are an experienced software architect whose task is to create a Mermaid diagram to visualize the architecture of Astro pages and React components for the login and registration module. The diagram should be created in the following file: DESTINATION
+You are an experienced software architect whose task is to create a Mermaid diagram to visualize the architecture of React components for the i18n-mate authentication module. The diagram should be created in the following file: DESTINATION
 
 You will need to refer to the following files to understand existing components:
 
 <file_references>
-[project-prd.md](mdc:.ai/project-prd.md)
+[prd.md](mdc:.ai/prd.md)
+[auth-spec.md](mdc:.ai/auth-spec.md)
+[tech-stack.md](mdc:.ai/tech-stack.md)
 </file_references>
 
 <destination>
 .ai/diagrams/ui.md
 </destination>
 
-Your task is to analyze the login and registration module specifications and create a comprehensive Mermaid diagram that accurately represents the system architecture. The diagram should be in English.
+Your task is to analyze the authentication module specifications and create a comprehensive Mermaid diagram that accurately represents the React component architecture for i18n-mate. The diagram should be in English.
 
 Before creating the diagram, analyze the requirements and plan your approach. Place your analysis within <architecture_analysis> tags. In this analysis:
 
-1. List all components mentioned in the reference files.
-2. Identify main pages and their corresponding components.
-3. Determine data flow between components.
+1. List all React components mentioned in the reference files.
+2. Identify main pages and their corresponding component hierarchies.
+3. Determine data flow between components in the React 19 + Supabase architecture.
 4. Provide a brief description of each component's functionality.
 
 When you are ready to create the diagram, follow these guidelines:
@@ -36,21 +38,23 @@ When you are ready to create the diagram, follow these guidelines:
    ```
 
 2. Include the following elements in your diagram:
-   - Updated UI structure after implementing new requirements
-   - Layouts, server pages and updates to existing components
-   - Grouping elements by functionality
-   - Direction of data flow between components
-   - Modules responsible for application state
-   - Division into shared components and page-specific components
-   - Dependencies between authentication-related components and the rest of the application
-   - Highlight components that required updates due to new requirements
+   - React component hierarchy for authentication flows
+   - Layout components (AuthLayout, ProtectedLayout) and their relationships
+   - Form components (LoginForm, RegisterForm, etc.) and validation
+   - State management integration with React Context and TanStack Query
+   - Shared components vs page-specific authentication components
+   - Data flow between authentication components and Supabase Auth
+   - Error handling components and user feedback mechanisms
+   - Navigation guards and route protection components
 
 3. Follow these Mermaid syntax rules:
    - Use consistent node ID formatting:
+
+     ```mermaid
+     A["AuthLayout"] --> B["LoginForm"]
+     B --> C["Supabase Auth"]
      ```
-     A[Main Panel] --> B[Login Form]
-     B --> C[Data Validation]
-     ```
+
    - Remember that node IDs are case-sensitive and must be unique
    - Use correct node shapes:
      - `[Text]` for rectangles
@@ -60,13 +64,20 @@ When you are ready to create the diagram, follow these guidelines:
      - `>Text]` for flags
      - `[[Text]]` for subroutines
    - Group related elements using subgraphs:
-     ```
-     subgraph "Authentication Module"
-       A[Login Form]
-       B[Data Validation]
-       C[Session Management]
+
+     ```mermaid
+     subgraph "Authentication Components"
+       A["LoginForm"]
+       B["RegisterForm"]
+       C["AuthGuard"]
+     end
+
+     subgraph "Layout Components"
+       D["AuthLayout"]
+       E["ProtectedLayout"]
      end
      ```
+
    - Use intermediate nodes for complex relationships instead of complicated connections
    - Prefer vertical layout for hierarchies and horizontal for process flow
    - Use correct connection types:
@@ -79,19 +90,33 @@ When you are ready to create the diagram, follow these guidelines:
    - Use consistent naming throughout the document
    - Avoid long labels that may cause rendering problems
    - Use quotes for text containing spaces:
-     ```
-     A["Authentication Component"] --> B["State Management"]
-     ```
-   - For node styling, use correct syntax:
-     ```
-     A:::styleClass --> B
-     ```
-     with class definition:
-     ```
-     classDef styleClass fill:#f96,stroke:#333,stroke-width:2px;
+
+     ```mermaid
+     A["Auth Error Boundary"] --> B["TanStack Query"]
      ```
 
-4. Avoid these common errors:
+   - For node styling, use correct syntax:
+
+     ```mermaid
+     A:::authClass --> B
+     ```
+
+     with class definition:
+
+     ```mermaid
+     classDef authClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+     ```
+
+4. Authentication-specific guidelines:
+   - Include all React components from the auth-spec component hierarchy
+   - Show relationships between layouts (AuthLayout, ProtectedLayout) and forms
+   - Include state management integration (AuthContext, TanStack Query)
+   - Show data flow from form components to Supabase Auth
+   - Include error handling and navigation guard components
+   - Group components by functionality (forms, layouts, guards, etc.)
+   - Highlight authentication-specific shared components
+
+5. Avoid these common errors:
    - Missing Mermaid section and diagram type declaration at the beginning
    - Invalid node IDs (containing disallowed characters)
    - Unclosed subgraphs (missing "end" for started "subgraph")
@@ -99,7 +124,16 @@ When you are ready to create the diagram, follow these guidelines:
    - Inconsistent flow directions (mixing TD and LR without justification)
    - Too complex diagrams without proper grouping
    - Overlapping labels and connections
+   - Missing authentication components from auth-spec
+   - Incorrect component names (use: AuthLayout, LoginForm, AuthGuard, etc.)
+   - Missing Supabase Auth integration in component relationships
 
-After creating the diagram, review it carefully to ensure there are no syntax errors or rendering issues. Make necessary corrections to improve clarity and accuracy.
+After creating the diagram, review it carefully to ensure:
+
+- All authentication components from auth-spec section 4.1 are represented
+- Component relationships follow the React 19 architecture
+- State management integration is properly shown
+- Layout and routing components are correctly positioned
+- No syntax errors or rendering issues exist
 
 When you are ready to present the final diagram, use <mermaid_diagram> tags to enclose it.

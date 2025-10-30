@@ -6,26 +6,28 @@ alwaysApply: false
 
 # Mermaid Diagram - User Journey
 
-You are a UX specialist whose task is to create a Mermaid diagram to visualize the user journey for the login and registration module. The diagram should be created in the following file: DESTINATION
+You are a UX specialist whose task is to create a Mermaid diagram to visualize the user journey for the i18n-mate application. The diagram should be created in the following file: DESTINATION
 
 You will need to refer to the following files to understand existing requirements:
 
 <file_references>
-[project-prd.md](mdc:.ai/project-prd.md)
+[prd.md](mdc:.ai/prd.md)
+[auth-spec.md](mdc:.ai/auth-spec.md)
+[tech-stack.md](mdc:.ai/tech-stack.md)
 </file_references>
 
 <destination>
 .ai/diagrams/journey.md
 </destination>
 
-Your task is to analyze the login and registration module specifications and create a comprehensive Mermaid diagram that accurately represents the user journey. The diagram should be in English.
+Your task is to analyze the authentication module specifications and create a comprehensive Mermaid diagram that accurately represents the user journey described in the i18n-mate PRD and technical specifications. The diagram should be in English.
 
 Before creating the diagram, analyze the requirements and plan your approach. Place your analysis within <user_journey_analysis> tags. In this analysis:
 
-1. List all user paths mentioned in the reference files.
-2. Identify main journeys and their corresponding states.
-3. Determine decision points and alternative paths.
-4. Provide a brief description of each state's purpose.
+1. List all user paths mentioned in the reference files (registration, login, password reset).
+2. Identify main journeys and their corresponding states based on the React 19 + Supabase architecture.
+3. Determine decision points and alternative paths for authenticated vs unauthenticated flows.
+4. Provide a brief description of each state's purpose from the technical specification.
 
 When you are ready to create the diagram, follow these guidelines:
 
@@ -36,89 +38,112 @@ When you are ready to create the diagram, follow these guidelines:
    ```
 
 2. Include the following elements in your diagram:
-   - User paths based on existing requirements
-   - Using the application as an unauthenticated user
-   - Accessing main application functionality
-   - Logging in
-   - Creating an account
-   - Password recovery
-   - High-level user journey compliant with project requirements and USER STORIES
-   - Decision points and alternative paths
-   - Flow after email verification
-   - Focus on business paths, not technical aspects
+   - User paths for authentication flows: registration, login, and password reset
+   - Unauthenticated user experience with access restrictions
+   - Authenticated user access to i18n-mate features (projects, translations, export)
+   - Email verification requirement before full access
+   - Decision points for verified vs unverified email states
+   - Password recovery flow with email-based reset
+   - User journey compliant with i18n-mate PRD requirements
+   - Alternative paths for different authentication outcomes
+   - Focus on business/user experience paths, not technical implementation
 
 3. Follow these Mermaid syntax rules:
    - Initial and final states must be correctly defined:
+
+     ```mermaid
+     [*] --> LandingPage
+     LandingPage --> [*]
      ```
-     [*] --> HomePage
-     HomePage --> [*]
-     ```
+
    - Use composite states to group related states:
-     ```
+
+     ```mermaid
      state "Registration Process" as Registration {
-       [*] --> RegistrationForm
-       RegistrationForm --> DataValidation
-       DataValidation --> SendEmail
+       [*] --> RegisterForm
+       RegisterForm --> EmailVerification
+       EmailVerification --> Dashboard
      }
      ```
+
    - For decision branches, use correct syntax:
+
+     ```mermaid
+     state email_check <<choice>>
+     LoginAttempt --> email_check
+     email_check --> Dashboard: Email verified
+     email_check --> VerificationPage: Email unverified
      ```
-     state if_verification <<choice>>
-     TokenVerification --> if_verification
-     if_verification --> TokenValid: Token OK
-     if_verification --> TokenInvalid: Token invalid
-     ```
+
    - Use notes for additional information:
-     ```
-     LoginForm: User can log in
+
+     ```mermaid
+     LoginForm: User authentication
      note right of LoginForm
-       Form contains email and password fields
-       and password recovery link
+       User enters email and password
+       Link to password recovery available
      end note
      ```
+
    - For parallel states, use correct syntax:
 
-     ```
-     state fork_state <<fork>>
-     state join_state <<join>>
+     ```mermaid
+     state fork_auth <<fork>>
+     state join_auth <<join>>
 
-     Registration --> fork_state
-     fork_state --> SendEmail
-     fork_state --> UpdateDatabase
-     SendEmail --> join_state
-     UpdateDatabase --> join_state
-     join_state --> FinalState
+     Registration --> fork_auth
+     fork_auth --> SendVerificationEmail
+     fork_auth --> CreateUserAccount
+     SendVerificationEmail --> join_auth
+     CreateUserAccount --> join_auth
+     join_auth --> VerificationPending
      ```
 
    - Use namespaces to organize complex diagrams:
-     ```
-     state "Authentication" as Authentication {
-       state "Login" as Login {
-         // states for login process
+
+     ```mermaid
+     state "Authentication" as Auth {
+       state "Login Flow" as Login {
+         [*] --> LoginForm
+         LoginForm --> Dashboard
        }
-       state "Registration" as Registration {
-         // states for registration process
+       state "Registration Flow" as Registration {
+         [*] --> RegisterForm
+         RegisterForm --> VerificationPending
        }
      }
      ```
+
    - For state history, use correct syntax:
-     ```
-     state "User Panel" as Panel {
+
+     ```mermaid
+     state "Dashboard" as Dashboard {
        [*] --> history
        state history <<history>>
      }
      ```
+
    - For transitions with events and conditions, use correct syntax:
+
+     ```mermaid
+     RegisterForm --> EmailVerification: Submit form [valid data]
      ```
-     StateA --> StateB: Next Button [data valid]
-     ```
+
    - Avoid using URLs, endpoint addresses, parentheses, long function names or complex expressions in state names:
-     BAD: [Main Page<br/>(Rule Creator)]
-     GOOD: [Rule Creator]
+     BAD: [Main Page (Rule Creator)]
+     GOOD: [Main Page]
    - Use consistent naming throughout the document
    - Avoid long labels that may cause rendering problems
 
-4. Avoid these common errors:
+4. Authentication-specific guidelines:
+   - Include all three main user journeys: registration, login, and password reset
+   - Show email verification as a required step before accessing application features
+   - Include decision points for verified vs unverified email states
+   - Show authenticated access to i18n-mate features (projects, translations, export)
+   - Include alternative paths for different authentication outcomes
+   - Focus on user experience rather than technical implementation details
+
+5. Avoid these common errors:
    - Missing Mermaid section and diagram type declaration at the beginning
    - Incorrect decision states (missing choice, fork, join)
    - Missing initial and final states ([*])
@@ -128,7 +153,16 @@ When you are ready to create the diagram, follow these guidelines:
    - Incorrect transition labels
    - Exceeding line length limits
    - Missing blank lines before and after Mermaid code block
+   - Missing authentication flows from the PRD and auth-spec
+   - Incorrect state names (use: RegisterForm, LoginForm, Dashboard, etc.)
+   - Missing email verification requirement in user flows
 
-After creating the diagram, review it carefully to ensure there are no syntax errors or rendering issues. Make necessary corrections to improve clarity and accuracy.
+After creating the diagram, review it carefully to ensure:
+
+- All authentication journeys from PRD section 3.1 are represented
+- User flows match the auth-spec routing structure
+- Email verification is properly represented as a required step
+- Decision points correctly handle verified vs unverified states
+- No syntax errors or rendering issues exist
 
 When you are ready to present the final diagram, use <mermaid_diagram> tags to enclose it.
