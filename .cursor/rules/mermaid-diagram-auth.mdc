@@ -6,26 +6,28 @@ alwaysApply: false
 
 # Mermaid Diagram - Auth Architecture
 
-You are a security specialist whose task is to create a Mermaid diagram to visualize the authentication flow for the login and registration module. The diagram should be created in the following file: DESTINATION
+You are a security specialist whose task is to create a Mermaid diagram to visualize the authentication flow for the i18n-mate application. The diagram should be created in the following file: DESTINATION
 
 You will need to refer to the following files to understand existing requirements:
 
 <file_references>
-[project-prd.md](mdc:.ai/project-prd.md)
+[prd.md](mdc:.ai/prd.md)
+[auth-spec.md](mdc:.ai/auth-spec.md)
+[tech-stack.md](mdc:.ai/tech-stack.md)
 </file_references>
 
 <destination>
 .ai/diagrams/auth.md
 </destination>
 
-Your task is to analyze the login and registration module specifications and create a comprehensive Mermaid diagram that accurately represents the authentication sequence. The diagram should be in English.
+Your task is to analyze the authentication module specifications and create a comprehensive Mermaid diagram that accurately represents the authentication flows described in the i18n-mate PRD and technical specifications. The diagram should be in English.
 
 Before creating the diagram, analyze the requirements and plan your approach. Place your analysis within <authentication_analysis> tags. In this analysis:
 
-1. List all authentication flows mentioned in the reference files.
-2. Identify main actors and their interactions.
-3. Determine token verification and refresh processes.
-4. Provide a brief description of each authentication step.
+1. List all authentication flows mentioned in the reference files (registration, login, password reset).
+2. Identify main actors and their interactions based on the React 19 + Supabase architecture.
+3. Determine session management and email verification processes.
+4. Provide a brief description of each authentication step from the technical specification.
 
 When you are ready to create the diagram, follow these guidelines:
 
@@ -36,12 +38,12 @@ When you are ready to create the diagram, follow these guidelines:
    ```
 
 2. Include the following elements in your diagram:
-   - Full lifecycle of the authentication process in a modern application using React, Astro and Supabase Auth
-   - Communication between actors: 1) Browser 2) Middleware 3) Astro API 4) Supabase Auth
-   - Clear points where user redirection or token verification occurs
-   - Data flow after implementing new authentication requirements
-   - How user session works after login and how the system responds to token expiration
-   - Token refresh process and protection against unauthorized access
+   - Authentication flows: registration, login, and password reset processes
+   - Communication between actors: 1) User/Browser 2) React App 3) Supabase Auth 4) Email Service
+   - Session lifecycle: creation, verification requirements, and expiration handling
+   - Email verification flow: sending verification emails and token validation
+   - Password reset flow: email-based reset with token verification
+   - Error handling and redirects for different authentication states
 
 3. Follow these Mermaid syntax rules:
    - Use the `autonumber` attribute for sequence step clarity
@@ -55,46 +57,70 @@ When you are ready to create the diagram, follow these guidelines:
      - `->>` for solid arrows with empty tips (e.g. `Browser->>Auth: Login request`)
      - `-->>` for dotted arrows with empty tips
    - For activation blocks, correctly use `activate` and `deactivate`:
-     ```
+
+     ```mermaid
      activate Browser
      Browser->>API: Request data
      deactivate Browser
      ```
+
    - Use `alt`/`else`/`end` for conditional paths:
-     ```
-     alt Authentication successful
-       Browser->>Dashboard: Redirect to dashboard
-     else Authentication failed
-       Browser->>LoginPage: Show error message
+
+     ```mermaid
+     alt Email verified
+       React App->>Supabase Auth: Create session
+       Supabase Auth-->>React App: Session created
+     else Email not verified
+       React App-->>Browser: Redirect to verification page
      end
      ```
+
    - For parallel actions, use `par`/`and`/`end`:
-     ```
-     par Send confirmation email
-       API->>EmailService: Send verification
-     and Update user status
-       API->>Database: Update status
+
+     ```mermaid
+     par Send verification email
+       Supabase Auth->>Email Service: Send verification link
+     and Create user record
+       Supabase Auth->>Database: Store user data
      end
      ```
+
    - For multi-line notes, use correct syntax:
+
+     ```mermaid
+     Note over React App,Supabase Auth: User session requires
+     email verification before access
+     to protected routes
      ```
-     Note over Browser,API: This text will appear
-     in a note spanning both elements
-     ```
+
    - DO NOT exceed 80 characters in a single Mermaid code line
    - DO NOT place URLs, endpoint addresses, parentheses, long function names or complex expressions in diagram names:
-     BAD: [Main Page<br/>(Rule Creator)]
+     BAD: [Main Page (Rule Creator)]
      GOOD: [Rule Creator]
    - Use consistent naming throughout the document
 
-4. Avoid these common errors:
+4. Authentication-specific guidelines:
+   - Include all three main flows: registration, login, and password reset
+   - Show email verification requirement for session creation
+   - Include error handling for unverified emails and invalid credentials
+   - Show redirects to appropriate pages based on authentication state
+   - Include session persistence and automatic redirects
+
+5. Avoid these common errors:
    - Missing Mermaid section and diagram type declaration at the beginning
    - Incorrect arrow syntax (e.g. -> instead of ->>)
    - Using disallowed characters in identifiers without placing them in quotes
    - Unbalanced code blocks (missing end for started blocks)
    - Exceeding line length limits
    - Incorrect nesting of conditional blocks
+   - Missing authentication flows from the PRD and auth-spec
+   - Incorrect actor names (use: User/Browser, React App, Supabase Auth, Email Service)
 
-After creating the diagram, review it carefully to ensure there are no syntax errors or rendering issues. Make necessary corrections to improve clarity and accuracy.
+After creating the diagram, review it carefully to ensure:
+
+- All authentication flows from PRD section 3.1 are represented
+- Technical details match the auth-spec implementation
+- Actor interactions follow the React 19 + Supabase architecture
+- No syntax errors or rendering issues exist
 
 When you are ready to present the final diagram, use <mermaid_diagram> tags to enclose it.
