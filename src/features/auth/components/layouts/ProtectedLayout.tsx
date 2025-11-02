@@ -25,7 +25,10 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   return (
     <div className="bg-background min-h-screen">
       {/* header with navigation and user menu */}
-      <header className="bg-sidebar supports-[backdrop-filter]:bg-sidebar/60 sticky top-0 z-50 w-full border-b backdrop-blur">
+      <header
+        className="bg-sidebar supports-[backdrop-filter]:bg-sidebar/60 sticky top-0 z-50 w-full border-b backdrop-blur"
+        data-testid="protected-layout-header"
+      >
         <div className="container mx-auto flex h-14 items-center">
           {/* logo / branding */}
           <div className="mr-4 flex">
@@ -35,7 +38,7 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
           </div>
 
           {/* main navigation */}
-          <nav className="flex flex-1 items-center space-x-2">
+          <nav className="flex flex-1 items-center space-x-2" data-testid="protected-layout-nav">
             <Button asChild size="sm" variant="ghost">
               <Link to="/projects">
                 <Home className="mr-2 h-4 w-4" />

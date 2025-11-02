@@ -1,4 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
+
+// Validate required environment variables for E2E tests
+const required = ['E2E_USERNAME', 'E2E_PASSWORD'];
+const missing = required.filter((name) => !process.env[name]?.trim());
+
+if (missing.length) {
+  throw new Error(
+    `Missing required environment variables for E2E tests: ${missing.join(', ')}\n` +
+      'Please ensure these variables are set in your .env file.'
+  );
+}
 
 /**
  * Playwright E2E Test Configuration
@@ -8,6 +23,10 @@ import { defineConfig, devices } from '@playwright/test';
  * - Browser contexts for test isolation
  * - Trace viewer for debugging
  * - Parallel execution for speed
+ *
+ * Environment variables required for E2E tests:
+ * - E2E_USERNAME: Test user email
+ * - E2E_PASSWORD: Test user password
  *
  * @see https://playwright.dev/docs/test-configuration
  */

@@ -41,7 +41,7 @@ export function LoginForm({ isSubmitting = false, onSubmit, registrationEnabled 
 
   return (
     <Form {...form}>
-      <form className="space-y-6" onSubmit={formHandleSubmit(handleSubmit)}>
+      <form className="space-y-6" data-testid="login-form" onSubmit={formHandleSubmit(handleSubmit)}>
         <div className="space-y-4">
           <FormField
             control={control}
@@ -54,6 +54,7 @@ export function LoginForm({ isSubmitting = false, onSubmit, registrationEnabled 
                     {...field}
                     aria-invalid={!!formState.errors.email}
                     autoComplete="email"
+                    data-testid="login-email-input"
                     placeholder="you@example.com"
                     type="email"
                   />
@@ -74,6 +75,7 @@ export function LoginForm({ isSubmitting = false, onSubmit, registrationEnabled 
                     {...field}
                     aria-invalid={!!formState.errors.password}
                     autoComplete="current-password"
+                    data-testid="login-password-input"
                     placeholder="Enter your password"
                     type="password"
                   />
@@ -93,7 +95,12 @@ export function LoginForm({ isSubmitting = false, onSubmit, registrationEnabled 
           </Link>
         </div>
 
-        <Button className="w-full" disabled={!formState.isValid || isSubmitting} type="submit">
+        <Button
+          className="w-full"
+          data-testid="login-submit-button"
+          disabled={!formState.isValid || isSubmitting}
+          type="submit"
+        >
           {isSubmitting ? 'Logging in...' : 'Log in'}
         </Button>
 

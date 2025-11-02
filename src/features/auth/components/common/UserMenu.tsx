@@ -35,13 +35,13 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className="gap-2" size="sm" variant="outline">
+        <Button className="gap-2" data-testid="user-menu-trigger" size="sm" variant="outline">
           <User className="h-4 w-4" />
           <span className="max-w-[150px] truncate">{user.email}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem disabled={signOut.isPending} onClick={handleLogout}>
+      <DropdownMenuContent align="end" className="w-56" data-testid="user-menu-content">
+        <DropdownMenuItem data-testid="user-menu-logout" disabled={signOut.isPending} onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

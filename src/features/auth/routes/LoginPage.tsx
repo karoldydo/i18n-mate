@@ -40,7 +40,7 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <div className="space-y-6">
+      <div className="space-y-6" data-testid="login-page">
         <div className="text-center">
           <h2 className="text-2xl font-semibold tracking-tight">Welcome back</h2>
           <p className="text-muted-foreground mt-2 text-sm">Sign in to your account to continue</p>

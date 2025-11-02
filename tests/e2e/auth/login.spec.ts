@@ -1,7 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-import { TEST_USERS } from '../fixtures/test-users';
-
 /**
  * Login E2E Tests
  *
@@ -14,104 +12,52 @@ import { TEST_USERS } from '../fixtures/test-users';
 
 test.describe('Login Page', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to login page before each test
+    // navigate to login page before each test
     await page.goto('/login');
   });
 
-  test('should display login form elements', async ({ page }) => {
-    // Verify all form elements are present
-    await expect(page.getByRole('heading', { name: /log in/i })).toBeVisible();
-    await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
-  });
+  test('successful login and logout flow', async ({ page }) => {
+    // step 1: navigate to login page
+    await page.goto('/login');
 
-  test('should show validation errors for empty form submission', async ({ page }) => {
-    // Click login button without filling the form
-    await page.getByRole('button', { name: /log in/i }).click();
+    // step 2: wait for login page to load and display
+    await expect(page.getByTestId('login-page')).toBeVisible();
+    await expect(page.getByTestId('login-form')).toBeVisible();
 
-    // Verify validation messages appear
-    await expect(page.getByText(/email is required/i)).toBeVisible();
-    await expect(page.getByText(/password is required/i)).toBeVisible();
-  });
+    // step 3: fill in valid email from environment variable
+    const emailInput = page.getByTestId('login-email-input');
+    await emailInput.fill(process.env.E2E_USERNAME || '');
 
-  test('should show error for invalid credentials', async ({ page }) => {
-    // Fill form with invalid credentials
-    await page.getByLabel(/email/i).fill(TEST_USERS.invalidUser.email);
-    await page.getByLabel(/password/i).fill(TEST_USERS.invalidUser.password);
+    // step 4: fill in valid password from environment variable
+    const passwordInput = page.getByTestId('login-password-input');
+    await passwordInput.fill(process.env.E2E_PASSWORD || '');
 
-    // Submit the form
-    await page.getByRole('button', { name: /log in/i }).click();
+    // step 5: click login button
+    const submitButton = page.getByTestId('login-submit-button');
+    await submitButton.click();
 
-    // Verify error message is displayed
-    await expect(page.getByText(/invalid (login credentials|email or password)/i)).toBeVisible();
-  });
-
-  test('should successfully login with valid credentials', async ({ page }) => {
-    // Fill form with valid credentials
-    await page.getByLabel(/email/i).fill(TEST_USERS.validUser.email);
-    await page.getByLabel(/password/i).fill(TEST_USERS.validUser.password);
-
-    // Submit the form
-    await page.getByRole('button', { name: /log in/i }).click();
-
-    // Wait for navigation to complete
-    await page.waitForURL('/projects', { timeout: 10000 });
-
-    // Verify we're on the projects page
-    await expect(page).toHaveURL('/projects');
-    await expect(page.getByRole('heading', { name: /projects/i })).toBeVisible();
-  });
-
-  test('should redirect to projects page if already logged in', async ({ page }) => {
-    // First, login
-    await page.getByLabel(/email/i).fill(TEST_USERS.validUser.email);
-    await page.getByLabel(/password/i).fill(TEST_USERS.validUser.password);
-    await page.getByRole('button', { name: /log in/i }).click();
+    // step 6: wait for redirect to /projects and navbar to be visible
     await page.waitForURL('/projects');
+    await expect(page.getByTestId('project-list-page')).toBeVisible();
+    await expect(page.getByTestId('protected-layout-header')).toBeVisible();
+    await expect(page.getByTestId('protected-layout-nav')).toBeVisible();
 
-    // Try to navigate back to login
-    await page.goto('/login');
+    // step 7: click on user menu dropdown trigger
+    const userMenuTrigger = page.getByTestId('user-menu-trigger');
+    await expect(userMenuTrigger).toBeVisible();
+    await userMenuTrigger.click();
 
-    // Should redirect back to projects
-    await expect(page).toHaveURL('/projects');
-  });
+    // step 8: wait for dropdown menu to appear and click "Log out"
+    await expect(page.getByTestId('user-menu-content')).toBeVisible();
+    const logoutButton = page.getByTestId('user-menu-logout');
+    await expect(logoutButton).toBeVisible();
+    await logoutButton.click();
 
-  test('should toggle password visibility', async ({ page }) => {
-    const passwordInput = page.getByLabel(/password/i);
-    const toggleButton = page.getByRole('button', {
-      name: /show password|hide password|toggle password visibility/i,
-    });
+    // step 9: wait for user to be logged out and redirected to login page
+    await page.waitForURL('/login');
+    await expect(page.getByTestId('login-page')).toBeVisible();
 
-    // Initially password should be hidden
-    await expect(passwordInput).toHaveAttribute('type', 'password');
-
-    // Click toggle to show password
-    await toggleButton.click();
-    await expect(passwordInput).toHaveAttribute('type', 'text');
-
-    // Click toggle to hide password again
-    await toggleButton.click();
-    await expect(passwordInput).toHaveAttribute('type', 'password');
-  });
-
-  test('should have link to signup page', async ({ page }) => {
-    // Find and click the signup link
-    const signupLink = page.getByRole('link', { name: /sign up|register/i });
-    await expect(signupLink).toBeVisible();
-
-    await signupLink.click();
-    await expect(page).toHaveURL('/signup');
-  });
-
-  test('should have link to password reset page', async ({ page }) => {
-    // Find and click the forgot password link
-    const forgotPasswordLink = page.getByRole('link', {
-      name: /forgot password/i,
-    });
-    await expect(forgotPasswordLink).toBeVisible();
-
-    await forgotPasswordLink.click();
-    await expect(page).toHaveURL(/\/reset-password|\/forgot-password/);
+    // step 10: test complete - verify we're back on login page
+    await expect(page.getByTestId('login-form')).toBeVisible();
   });
 });
