@@ -39,8 +39,47 @@ export default defineConfig({
 
   // Configure projects for Chromium only (per guidelines)
   projects: [
+    // setup project: authenticates user and saves state
     {
+      name: 'setup',
+      testDir: './tests',
+      testMatch: /.*\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // authenticated tests: use saved authentication state
+    {
+      dependencies: ['setup'],
       name: 'chromium',
+      testIgnore: [
+        // exclude authentication-related tests
+        /.*auth\/login\.spec\.ts/,
+        /.*auth\/register\.spec\.ts/,
+        /.*auth\/reset-password\.spec\.ts/,
+        /.*auth\/forgot-password\.spec\.ts/,
+      ],
+      testMatch: /.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+    },
+    // unauthenticated tests: authentication flow tests (login, register, reset password)
+    {
+      name: 'chromium-auth',
+      testMatch: [
+        /.*auth\/login\.spec\.ts/,
+        /.*auth\/register\.spec\.ts/,
+        /.*auth\/reset-password\.spec\.ts/,
+        /.*auth\/forgot-password\.spec\.ts/,
+      ],
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // teardown project: cleans up test data after all tests complete
+    {
+      dependencies: ['chromium', 'chromium-auth'],
+      name: 'teardown',
+      testDir: './tests',
+      testMatch: /.*\.teardown\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
   ],

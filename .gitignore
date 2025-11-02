@@ -24,3 +24,8 @@ scripts/tests/export-*.zip
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright
+.auth
+playwright-report
+test-results
