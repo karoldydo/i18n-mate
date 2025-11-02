@@ -81,6 +81,10 @@ VITE_SUPABASE_ANON_KEY=your_anon_key_here
 TEST_EMAIL=testuser@example.com
 TEST_PASSWORD=YourSecurePassword123!
 
+# E2E Test User Credentials (required for E2E tests)
+E2E_USERNAME=testuser@example.com
+E2E_PASSWORD=YourSecurePassword123!
+
 # OpenRouter Configuration (for translation jobs)
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=google/gemini-2.5-flash-lite

@@ -20,12 +20,24 @@ A web application for centralized management of i18n translations for frontend p
     - [Installation](#installation)
     - [Environment Variables](#environment-variables)
   - [Available Scripts](#available-scripts)
-    - [`npm run dev`](#npm-run-dev)
-    - [`npm run test`](#npm-run-test)
-    - [`npm run build`](#npm-run-build)
-    - [`npm run preview`](#npm-run-preview)
-    - [`npm run lint`](#npm-run-lint)
-    - [`npm run pre-commit`](#npm-run-pre-commit)
+    - [Development](#development)
+      - [`npm run dev`](#npm-run-dev)
+      - [`npm run build`](#npm-run-build)
+      - [`npm run preview`](#npm-run-preview)
+    - [Testing](#testing)
+      - [Unit Tests (Vitest + Testing Library)](#unit-tests-vitest--testing-library)
+      - [E2E Tests (Playwright)](#e2e-tests-playwright)
+    - [Code Quality](#code-quality)
+      - [`npm run lint`](#npm-run-lint)
+      - [`npm run lint:fix`](#npm-run-lintfix)
+      - [`npm run pre-commit`](#npm-run-pre-commit)
+    - [Supabase Scripts](#supabase-scripts)
+      - [`npm run supabase:start`](#npm-run-supabasestart)
+      - [`npm run supabase:stop`](#npm-run-supabasestop)
+      - [`npm run supabase:reset`](#npm-run-supabasereset)
+      - [`npm run supabase:migration`](#npm-run-supabasemigration)
+      - [`npm run supabase:types`](#npm-run-supabasetypes)
+      - [`npm run supabase:functions:serve`](#npm-run-supabasefunctionsserve)
   - [Project Scope](#project-scope)
     - [MVP Features](#mvp-features)
       - [Authentication \& Authorization](#authentication--authorization)
@@ -149,6 +161,10 @@ OPENROUTER_MODEL=model_name
 # Testing (optional)
 TEST_EMAIL=your_test_email
 TEST_PASSWORD=your_test_password
+
+# E2E Testing (required for E2E tests)
+E2E_USERNAME=your_e2e_test_email
+E2E_PASSWORD=your_e2e_test_password
 ```
 
 **Note**: Refer to [Supabase documentation](https://supabase.com/docs) and [OpenRouter documentation](https://openrouter.ai/docs) for obtaining the required credentials.
@@ -235,12 +251,44 @@ The project is configured with strict linting rules including:
 - Import organization
 - Prettier integration
 
-Use `npm run lint:fix` to automatically fix linting issues where possible.
+#### `npm run lint:fix`
+
+Automatically fixes linting issues where possible, including:
+
+- Import organization and sorting
+- Code formatting with Prettier
+- Simple ESLint rule violations
 
 #### `npm run pre-commit`
 
 Runs lint-staged to check staged files before committing.
 This is automatically executed by Husky pre-commit hooks.
+
+### Supabase Scripts
+
+#### `npm run supabase:start`
+
+Starts local Supabase services (requires Docker).
+
+#### `npm run supabase:stop`
+
+Stops local Supabase services.
+
+#### `npm run supabase:reset`
+
+Resets the local Supabase database to initial state.
+
+#### `npm run supabase:migration`
+
+Applies pending database migrations to the local instance.
+
+#### `npm run supabase:types`
+
+Generates TypeScript types from the local database schema and saves them to `src/shared/types/database.types.ts`.
+
+#### `npm run supabase:functions:serve`
+
+Serves Supabase Edge Functions locally for development and testing.
 
 ## Project Scope
 

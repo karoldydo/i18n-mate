@@ -44,6 +44,9 @@ npm run supabase:migration # Apply migrations to local instance
 ```bash
 npm run test -- --watch    # Run tests in watch mode
 npm run test -- --ui       # Open Vitest UI
+npm run test:e2e           # Run E2E tests with Playwright
+npm run test:e2e:ui        # Open Playwright UI for visual test debugging
+npm run test:e2e:debug     # Run E2E tests in debug mode
 ```
 
 ## Architecture
@@ -194,6 +197,9 @@ OPENROUTER_MODEL=model_name
 
 TEST_EMAIL=your_test_email (optional)
 TEST_PASSWORD=your_test_password (optional)
+
+E2E_USERNAME=your_e2e_test_email (required for E2E tests)
+E2E_PASSWORD=your_e2e_test_password (required for E2E tests)
 ```
 
 ## MVP Features

@@ -82,6 +82,10 @@ nvm use
    # Testing (optional)
    TEST_EMAIL=your_test_email
    TEST_PASSWORD=your_test_password
+
+   # E2E Testing (required for E2E tests)
+   E2E_USERNAME=your_e2e_test_email
+   E2E_PASSWORD=your_e2e_test_password
    ```
 
 ### Available Scripts
@@ -89,6 +93,9 @@ nvm use
 - `npm run dev` - Runs the app in development mode with hot module replacement (HMR)
 - `npm run build` - Builds the app for production to the `dist` folder
 - `npm run test` - Executes unit tests with Vitest
+- `npm run test:e2e` - Runs E2E tests with Playwright
+- `npm run test:e2e:ui` - Opens Playwright UI for visual test debugging
+- `npm run test:e2e:debug` - Runs E2E tests in debug mode
 - `npm run preview` - Locally preview the production build before deploying
 - `npm run lint` - Runs ESLint to check code quality and catch potential errors
 - `npm run lint:fix` - Runs ESLint with auto-fix
