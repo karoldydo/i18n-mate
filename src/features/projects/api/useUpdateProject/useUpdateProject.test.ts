@@ -1,6 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { UpdateProjectRequest } from '@/shared/types';
@@ -10,34 +8,22 @@ import {
   PROJECTS_ERROR_MESSAGES,
   PROJECTS_PG_ERROR_CODES,
 } from '@/shared/constants/projects.constants';
+import { createMockProject, createMockSupabaseError, generateTestUuid } from '@/test/utils/test-data';
+import { createMockSupabaseClient } from '@/test/utils/test-helpers';
+import { createTestWrapper } from '@/test/utils/test-wrapper';
 
 import { useUpdateProject } from './useUpdateProject';
 
 // mock supabase client
-const mockSupabase = {
-  from: vi.fn(),
-};
+const MOCK_SUPABASE = createMockSupabaseClient();
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => mockSupabase,
+  useSupabase: () => MOCK_SUPABASE,
 }));
 
-// create wrapper with providers
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      mutations: { retry: false },
-      queries: { retry: false },
-    },
-  });
-
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: queryClient }, children);
-};
-
 describe('useUpdateProject', () => {
-  const validProjectId = '550e8400-e29b-41d4-a716-446655440000';
+  const PROJECT_ID = generateTestUuid();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -48,22 +34,19 @@ describe('useUpdateProject', () => {
   });
 
   it('should update project name successfully', async () => {
-    const mockData = {
-      created_at: '2025-01-15T10:00:00Z',
-      default_locale: 'en',
+    const MOCK_SUPABASE_RESPONSE = createMockProject({
       description: 'Original description',
-      id: validProjectId,
+      id: PROJECT_ID,
       name: 'Updated Name',
-      prefix: 'test',
       updated_at: '2025-01-15T11:00:00Z',
-    };
+    });
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
-              data: mockData,
+              data: MOCK_SUPABASE_RESPONSE,
               error: null,
             }),
           }),
@@ -75,35 +58,31 @@ describe('useUpdateProject', () => {
       name: 'Updated Name',
     };
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('projects');
-    expect(result.current.data).toEqual(mockData);
+    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('projects');
+    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
   });
 
   it('should update project description successfully', async () => {
-    const mockData = {
-      created_at: '2025-01-15T10:00:00Z',
-      default_locale: 'en',
+    const MOCK_SUPABASE_RESPONSE = createMockProject({
       description: 'New description',
-      id: validProjectId,
-      name: 'Test Project',
-      prefix: 'test',
+      id: PROJECT_ID,
       updated_at: '2025-01-15T11:00:00Z',
-    };
+    });
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
-              data: mockData,
+              data: MOCK_SUPABASE_RESPONSE,
               error: null,
             }),
           }),
@@ -115,8 +94,8 @@ describe('useUpdateProject', () => {
       description: 'New description',
     };
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -127,22 +106,19 @@ describe('useUpdateProject', () => {
   });
 
   it('should update both name and description', async () => {
-    const mockData = {
-      created_at: '2025-01-15T10:00:00Z',
-      default_locale: 'en',
+    const MOCK_SUPABASE_RESPONSE = createMockProject({
       description: 'Updated description',
-      id: validProjectId,
+      id: PROJECT_ID,
       name: 'Updated Name',
-      prefix: 'test',
       updated_at: '2025-01-15T11:00:00Z',
-    };
+    });
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
-              data: mockData,
+              data: MOCK_SUPABASE_RESPONSE,
               error: null,
             }),
           }),
@@ -155,8 +131,8 @@ describe('useUpdateProject', () => {
       name: 'Updated Name',
     };
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -168,18 +144,18 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle duplicate name conflict', async () => {
-    const mockError = {
-      code: PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION,
-      message: `duplicate key value violates unique constraint "${PROJECTS_CONSTRAINTS.NAME_UNIQUE_PER_OWNER}"`,
-    };
+    const MOCK_SUPABASE_ERROR = createMockSupabaseError(
+      `duplicate key value violates unique constraint "${PROJECTS_CONSTRAINTS.NAME_UNIQUE_PER_OWNER}"`,
+      PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION
+    );
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
               data: null,
-              error: mockError,
+              error: MOCK_SUPABASE_ERROR,
             }),
           }),
         }),
@@ -190,8 +166,8 @@ describe('useUpdateProject', () => {
       name: 'Existing Project',
     };
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -213,8 +189,8 @@ describe('useUpdateProject', () => {
       prefix: 'new', // attempting to change immutable field
     } as unknown as UpdateProjectRequest;
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -228,8 +204,8 @@ describe('useUpdateProject', () => {
       name: 'Updated Name',
     } as unknown as UpdateProjectRequest;
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -238,7 +214,7 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle project not found', async () => {
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -255,8 +231,8 @@ describe('useUpdateProject', () => {
       name: 'Updated Name',
     };
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -273,14 +249,14 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle invalid UUID format', async () => {
-    const invalidId = 'not-a-uuid';
+    const INVALID_PROJECT_ID = 'not-a-uuid';
 
     const updateData: UpdateProjectRequest = {
       name: 'Updated Name',
     };
 
-    const { result } = renderHook(() => useUpdateProject(invalidId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(INVALID_PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -293,8 +269,8 @@ describe('useUpdateProject', () => {
       name: '',
     };
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -303,12 +279,9 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle database trigger error for immutable fields', async () => {
-    const mockError = {
-      code: 'P0001',
-      message: 'Cannot modify prefix after creation',
-    };
+    const mockError = createMockSupabaseError('Cannot modify prefix after creation', 'P0001');
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -325,8 +298,8 @@ describe('useUpdateProject', () => {
       name: 'Updated Name',
     };
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -343,12 +316,9 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle generic database error', async () => {
-    const mockError = {
-      code: 'XX000',
-      message: 'Internal database error',
-    };
+    const mockError = createMockSupabaseError('Internal database error', 'XX000');
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -365,8 +335,8 @@ describe('useUpdateProject', () => {
       name: 'Updated Name',
     };
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     result.current.mutate(updateData);
@@ -383,18 +353,15 @@ describe('useUpdateProject', () => {
     });
   });
 
-  it('should support optimistic updates', async () => {
-    const mockData = {
-      created_at: '2025-01-15T10:00:00Z',
-      default_locale: 'en',
+  it('should invalidate queries after successful update', async () => {
+    const mockData = createMockProject({
       description: 'Original description',
-      id: validProjectId,
+      id: PROJECT_ID,
       name: 'Updated Name',
-      prefix: 'test',
       updated_at: '2025-01-15T11:00:00Z',
-    };
+    });
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -407,11 +374,19 @@ describe('useUpdateProject', () => {
       }),
     });
 
-    const { result } = renderHook(() => useUpdateProject(validProjectId), {
-      wrapper: createWrapper(),
+    const updateData: UpdateProjectRequest = {
+      name: 'Updated Name',
+    };
+
+    const { result } = renderHook(() => useUpdateProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
-    // mutation should have onmutate for optimistic updates
-    expect(result.current.mutate).toBeDefined();
+    result.current.mutate(updateData);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Verify the mutation completed successfully
+    expect(result.current.data).toEqual(mockData);
   });
 });

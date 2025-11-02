@@ -1,34 +1,27 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ProjectLocaleWithDefault } from '@/shared/types';
+import {
+  createErrorBoundaryWrapper,
+  createMockProjectLocale,
+  createMockSupabaseClient,
+  createMockSupabaseError,
+  createMockSupabaseResponse,
+  createTestWrapper,
+  generateTestUuid,
+} from '@/test/utils';
 
 import { useProjectLocales } from './useProjectLocales';
 
 // mock supabase client
-const mockSupabase = {
+const MOCK_SUPABASE = createMockSupabaseClient({
   rpc: vi.fn(),
-};
+});
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => mockSupabase,
+  useSupabase: () => MOCK_SUPABASE,
 }));
-
-// create wrapper with providers
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      mutations: { retry: false },
-      queries: { retry: false },
-    },
-  });
-
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: queryClient }, children);
-};
 
 describe('useProjectLocales', () => {
   beforeEach(() => {
@@ -40,134 +33,198 @@ describe('useProjectLocales', () => {
   });
 
   it('should fetch project locales successfully', async () => {
-    const mockData: ProjectLocaleWithDefault[] = [
-      {
-        created_at: '2025-01-15T10:00:00Z',
-        id: '550e8400-e29b-41d4-a716-446655440000',
+    const PROJECT_ID = generateTestUuid();
+    const MOCK_LOCALES = [
+      createMockProjectLocale({
         is_default: true,
         label: 'English',
         locale: 'en',
-        project_id: '550e8400-e29b-41d4-a716-446655440000',
-        updated_at: '2025-01-15T10:00:00Z',
-      },
-      {
-        created_at: '2025-01-15T10:00:00Z',
-        id: '550e8400-e29b-41d4-a716-446655440001',
+        project_id: PROJECT_ID,
+      }),
+      createMockProjectLocale({
         is_default: false,
         label: 'Spanish',
         locale: 'es',
-        project_id: '550e8400-e29b-41d4-a716-446655440000',
-        updated_at: '2025-01-15T10:00:00Z',
-      },
+        project_id: PROJECT_ID,
+      }),
     ];
 
-    // Mock the rpc method to return the correct structure
-    mockSupabase.rpc.mockImplementation(async () => {
-      // Simulate the actual async behavior of the hook
-      return {
-        data: mockData,
-        error: null,
-      };
+    MOCK_SUPABASE.rpc.mockResolvedValue(createMockSupabaseResponse(MOCK_LOCALES, null));
+
+    const { result } = renderHook(() => useProjectLocales(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
-    const projectId = '550e8400-e29b-41d4-a716-446655440000';
-    const { result } = renderHook(() => useProjectLocales(projectId), {
-      wrapper: createWrapper(),
-    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // Wait for the query to complete
-    await waitFor(() => {
-      // Check if we have a success state or error state
-      if (result.current.isSuccess) {
-        expect(result.current.isSuccess).toBe(true);
-      } else if (result.current.isError) {
-        // If there's an error, we should not be in success state
-        expect(result.current.isError).toBe(true);
-      } else {
-        // If neither, we might need to wait longer or there's an issue
-        expect.fail('Query did not reach success or error state');
-      }
+    expect(MOCK_SUPABASE.rpc).toHaveBeenCalledWith('list_project_locales_with_default', {
+      p_project_id: PROJECT_ID,
     });
-
-    expect(mockSupabase.rpc).toHaveBeenCalledWith('list_project_locales_with_default', { p_project_id: projectId });
-    expect(result.current.data).toEqual(mockData);
+    expect(result.current.data).toEqual(MOCK_LOCALES);
   });
 
   it('should handle validation error for invalid project ID', async () => {
-    const projectId = 'invalid-uuid';
-    const { result } = renderHook(() => useProjectLocales(projectId), {
-      wrapper: createWrapper(),
+    const INVALID_PROJECT_ID = 'invalid-uuid';
+
+    const errorBoundary = { current: null };
+    renderHook(() => useProjectLocales(INVALID_PROJECT_ID), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(result.current.error).toBeDefined();
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      issues: [
+        {
+          code: 'invalid_string',
+          message: 'Invalid project ID format',
+          validation: 'uuid',
+        },
+      ],
+    });
   });
 
   it('should handle database error', async () => {
-    const mockError = {
-      code: 'PGRST301',
-      message: 'Database error',
-    };
+    const MOCK_ERROR = createMockSupabaseError('Database connection error', 'PGRST301');
 
-    mockSupabase.rpc.mockImplementation(async () => {
-      return {
-        data: null,
-        error: mockError,
-      };
+    MOCK_SUPABASE.rpc.mockResolvedValue(createMockSupabaseResponse(null, MOCK_ERROR));
+
+    const errorBoundary = { current: null };
+    const PROJECT_ID = generateTestUuid();
+
+    renderHook(() => useProjectLocales(PROJECT_ID), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    const projectId = '550e8400-e29b-41d4-a716-446655440000';
-    const { result } = renderHook(() => useProjectLocales(projectId), {
-      wrapper: createWrapper(),
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      data: null,
+      error: {
+        code: 500,
+        details: { original: MOCK_ERROR },
+        message: 'Failed to fetch project locales',
+      },
     });
-
-    await waitFor(() => expect(result.current.isError).toBe(true));
-
-    expect(result.current.error).toBeDefined();
   });
 
   it('should handle no data returned from server', async () => {
-    mockSupabase.rpc.mockImplementation(async () => {
-      return {
-        data: null,
-        error: null,
-      };
+    MOCK_SUPABASE.rpc.mockResolvedValue(createMockSupabaseResponse(null, null));
+
+    const errorBoundary = { current: null };
+    const PROJECT_ID = generateTestUuid();
+
+    renderHook(() => useProjectLocales(PROJECT_ID), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    const projectId = '550e8400-e29b-41d4-a716-446655440000';
-    const { result } = renderHook(() => useProjectLocales(projectId), {
-      wrapper: createWrapper(),
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      data: null,
+      error: {
+        code: 500,
+        message: 'No data returned from server',
+      },
     });
-
-    await waitFor(() => expect(result.current.isError).toBe(true));
-
-    expect(result.current.error).toBeDefined();
   });
 
   it('should handle invalid data format from server', async () => {
     // Mock invalid data that doesn't match the schema
-    const mockInvalidData = [
+    const MOCK_INVALID_DATA = [
       {
         created_at: '2025-01-15T10:00:00Z',
-        id: '550e8400-e29b-41d4-a716-446655440000',
+        id: generateTestUuid(),
         // Missing required fields for ProjectLocaleWithDefault
       },
     ];
 
-    mockSupabase.rpc.mockImplementation(async () => {
-      return {
-        data: mockInvalidData,
-        error: null,
-      };
+    MOCK_SUPABASE.rpc.mockResolvedValue(createMockSupabaseResponse(MOCK_INVALID_DATA, null));
+
+    const errorBoundary = { current: null };
+    const PROJECT_ID = generateTestUuid();
+
+    renderHook(() => useProjectLocales(PROJECT_ID), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    const projectId = '550e8400-e29b-41d4-a716-446655440000';
-    const { result } = renderHook(() => useProjectLocales(projectId), {
-      wrapper: createWrapper(),
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      issues: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'invalid_type',
+        }),
+      ]),
+    });
+  });
+
+  it('should handle empty locales array', async () => {
+    MOCK_SUPABASE.rpc.mockResolvedValue(createMockSupabaseResponse([], null));
+
+    const PROJECT_ID = generateTestUuid();
+    const { result } = renderHook(() => useProjectLocales(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(result.current.error).toBeDefined();
+    expect(result.current.data).toEqual([]);
+  });
+
+  it('should validate empty string as invalid UUID', async () => {
+    const errorBoundary = { current: null };
+    renderHook(() => useProjectLocales(''), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
+    });
+
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      issues: [
+        {
+          code: 'invalid_string',
+          message: 'Invalid project ID format',
+          validation: 'uuid',
+        },
+      ],
+    });
+  });
+
+  it('should fetch multiple locales with default marked correctly', async () => {
+    const PROJECT_ID = generateTestUuid();
+    const MOCK_LOCALES = [
+      createMockProjectLocale({
+        is_default: true,
+        label: 'German',
+        locale: 'de',
+        project_id: PROJECT_ID,
+      }),
+      createMockProjectLocale({
+        is_default: false,
+        label: 'French',
+        locale: 'fr',
+        project_id: PROJECT_ID,
+      }),
+      createMockProjectLocale({
+        is_default: false,
+        label: 'Italian',
+        locale: 'it',
+        project_id: PROJECT_ID,
+      }),
+    ];
+
+    MOCK_SUPABASE.rpc.mockResolvedValue(createMockSupabaseResponse(MOCK_LOCALES, null));
+
+    const { result } = renderHook(() => useProjectLocales(PROJECT_ID), {
+      wrapper: createTestWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data).toHaveLength(3);
+    expect(result.current.data?.[0].is_default).toBe(true);
+    expect(result.current.data?.[1].is_default).toBe(false);
+    expect(result.current.data?.[2].is_default).toBe(false);
   });
 });

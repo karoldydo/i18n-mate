@@ -8,7 +8,7 @@ export default mergeConfig(
     test: {
       coverage: {
         clean: true,
-        enabled: false, // TODO: Enable coverage when we have more tests
+        enabled: true,
         exclude: [
           'node_modules',
           'dist',

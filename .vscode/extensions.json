@@ -29,6 +29,7 @@
     "denoland.vscode-deno",
     "yzhang.markdown-all-in-one",
     "vscode-icons-team.vscode-icons",
-    "bierner.markdown-mermaid"
+    "bierner.markdown-mermaid",
+    "ms-playwright.playwright"
   ]
 }

@@ -4,25 +4,41 @@ A web application for centralized management of i18n translations for frontend p
 
 ## Table of Contents
 
-- [Project Description](#project-description)
-- [Tech Stack](#tech-stack)
-  - [Frontend](#frontend)
-  - [Backend](#backend)
-  - [AI](#ai)
-  - [CI/CD and Hosting](#cicd-and-hosting)
-  - [Testing & Quality](#testing--quality)
-  - [Developer Experience](#developer-experience)
-- [Getting Started Locally](#getting-started-locally)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Variables](#environment-variables)
-- [Available Scripts](#available-scripts)
-- [Project Scope](#project-scope)
-  - [MVP Features](#mvp-features)
-  - [Out of Scope](#out-of-scope)
-- [Project Status](#project-status)
-- [Repository Guidelines](#repository-guidelines)
-- [License](#license)
+- [i18n-mate](#i18n-mate)
+  - [Table of Contents](#table-of-contents)
+  - [Project Description](#project-description)
+    - [Target Users](#target-users)
+  - [Tech Stack](#tech-stack)
+    - [Frontend](#frontend)
+    - [Backend](#backend)
+    - [AI](#ai)
+    - [CI/CD and Hosting](#cicd-and-hosting)
+    - [Testing \& Quality](#testing--quality)
+    - [Developer Experience](#developer-experience)
+  - [Getting Started Locally](#getting-started-locally)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Environment Variables](#environment-variables)
+  - [Available Scripts](#available-scripts)
+    - [`npm run dev`](#npm-run-dev)
+    - [`npm run test`](#npm-run-test)
+    - [`npm run build`](#npm-run-build)
+    - [`npm run preview`](#npm-run-preview)
+    - [`npm run lint`](#npm-run-lint)
+    - [`npm run pre-commit`](#npm-run-pre-commit)
+  - [Project Scope](#project-scope)
+    - [MVP Features](#mvp-features)
+      - [Authentication \& Authorization](#authentication--authorization)
+      - [Project Management](#project-management)
+      - [Language Management](#language-management)
+      - [Translation Keys \& Values](#translation-keys--values)
+      - [LLM Translation](#llm-translation)
+      - [Export](#export)
+    - [Out of Scope](#out-of-scope)
+  - [Project Status](#project-status)
+    - [Success Metrics](#success-metrics)
+  - [Repository Guidelines](#repository-guidelines)
+  - [License](#license)
 
 ## Project Description
 
@@ -70,6 +86,7 @@ Frontend developers managing i18n in their applications.
 - **Vitest** - Unit testing framework for JavaScript and TypeScript with Vite-native DX
 - **Testing Library** - User-focused testing utilities for exercising React components
 - **@vitest/coverage-v8** - Coverage reporting powered by the V8 engine
+- **Playwright** - End-to-end testing framework for complete user workflow automation
 
 ### Developer Experience
 
@@ -140,25 +157,74 @@ TEST_PASSWORD=your_test_password
 
 In the project directory, you can run:
 
-### `npm run dev`
+### Development
+
+#### `npm run dev`
 
 Runs the app in development mode with hot module replacement (HMR).
 Open [http://localhost:5173](http://localhost:5173) to view it in your browser.
 
-### `npm run test`
-
-Executes unit tests with Vitest.
-
-### `npm run build`
+#### `npm run build`
 
 Builds the app for production to the `dist` folder.
 It compiles TypeScript and optimizes the build for best performance.
 
-### `npm run preview`
+#### `npm run preview`
 
 Locally preview the production build before deploying.
 
-### `npm run lint`
+### Testing
+
+#### Unit Tests (Vitest + Testing Library)
+
+- **`npm run test`** - Run all unit tests
+- **`npm run test:watch`** - Run tests in watch mode for development
+- **`npm run test:ui`** - Open Vitest UI for visual test debugging
+- **`npm run test:coverage`** - Run tests with coverage report (90% thresholds)
+
+**Example:**
+
+```bash
+# Run all unit tests
+npm run test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run specific test file
+npm run test -- MyComponent.test.tsx
+
+# Run tests matching pattern
+npm run test -- -t "should display welcome"
+```
+
+#### E2E Tests (Playwright)
+
+- **`npm run test:e2e`** - Run all E2E tests (Chromium only)
+- **`npm run test:e2e:ui`** - Open Playwright UI for visual test debugging
+- **`npm run test:e2e:debug`** - Run E2E tests in debug mode with step-through
+
+**Example:**
+
+```bash
+# Run all E2E tests
+npm run test:e2e
+
+# Run specific test file
+npm run test:e2e -- login.spec.ts
+
+# Open Playwright UI
+npm run test:e2e:ui
+
+# Generate tests with codegen
+npx playwright codegen http://localhost:5173
+```
+
+**Note:** E2E tests require the development server to be running. The test suite will automatically start it if not running.
+
+### Code Quality
+
+#### `npm run lint`
 
 Runs ESLint to check code quality and catch potential errors.
 The project is configured with strict linting rules including:
@@ -169,7 +235,9 @@ The project is configured with strict linting rules including:
 - Import organization
 - Prettier integration
 
-### `npm run pre-commit`
+Use `npm run lint:fix` to automatically fix linting issues where possible.
+
+#### `npm run pre-commit`
 
 Runs lint-staged to check staged files before committing.
 This is automatically executed by Husky pre-commit hooks.

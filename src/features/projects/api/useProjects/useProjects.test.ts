@@ -1,36 +1,23 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ListProjectsParams } from '@/shared/types';
 
 import { PROJECTS_DEFAULT_LIMIT, PROJECTS_MAX_LIMIT } from '@/shared/constants/projects.constants';
+import { createErrorBoundaryWrapper, createMockProjectWithCounts, createMockSupabaseError } from '@/test/utils';
+import { createTestWrapper } from '@/test/utils/test-wrapper';
 
 import { useProjects } from './useProjects';
 
 // mock supabase client
-const mockSupabase = {
+const MOCK_SUPABASE = {
   rpc: vi.fn(),
 };
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => mockSupabase,
+  useSupabase: () => MOCK_SUPABASE,
 }));
-
-// create wrapper with providers
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      mutations: { retry: false },
-      queries: { retry: false },
-    },
-  });
-
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: queryClient }, children);
-};
 
 describe('useProjects', () => {
   beforeEach(() => {
@@ -42,41 +29,29 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with default params', async () => {
-    const mockData = [
-      {
-        created_at: '2025-01-15T10:00:00Z',
-        default_locale: 'en',
-        description: 'Test project',
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        key_count: 10,
-        locale_count: 2,
-        name: 'Test Project',
-        prefix: 'test',
-        updated_at: '2025-01-15T10:00:00Z',
-      },
-    ];
+    const MOCK_SUPABASE_RESPONSE = [createMockProjectWithCounts()];
 
-    mockSupabase.rpc.mockReturnValue({
+    MOCK_SUPABASE.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 1,
-        data: mockData,
+        data: MOCK_SUPABASE_RESPONSE,
         error: null,
       }),
     });
 
     const { result } = renderHook(() => useProjects(), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.rpc).toHaveBeenCalledWith(
+    expect(MOCK_SUPABASE.rpc).toHaveBeenCalledWith(
       'list_projects_with_counts',
       { p_limit: PROJECTS_DEFAULT_LIMIT, p_offset: 0 },
       expect.objectContaining({ count: 'exact' })
     );
     expect(result.current.data).toEqual({
-      data: mockData,
+      data: MOCK_SUPABASE_RESPONSE,
       metadata: {
         end: 0,
         start: 0,
@@ -86,24 +61,21 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with custom pagination', async () => {
-    const mockData = [
-      {
-        created_at: '2025-01-15T10:00:00Z',
-        default_locale: 'en',
+    const MOCK_SUPABASE_RESPONSE = [
+      createMockProjectWithCounts({
         description: null,
         id: '550e8400-e29b-41d4-a716-446655440001',
         key_count: 5,
         locale_count: 1,
         name: 'Project 2',
         prefix: 'pr2',
-        updated_at: '2025-01-15T10:00:00Z',
-      },
+      }),
     ];
 
-    mockSupabase.rpc.mockReturnValue({
+    MOCK_SUPABASE.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 50,
-        data: mockData,
+        data: MOCK_SUPABASE_RESPONSE,
         error: null,
       }),
     });
@@ -114,18 +86,18 @@ describe('useProjects', () => {
     };
 
     const { result } = renderHook(() => useProjects(params), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.rpc).toHaveBeenCalledWith(
+    expect(MOCK_SUPABASE.rpc).toHaveBeenCalledWith(
       'list_projects_with_counts',
       { p_limit: 10, p_offset: 20 },
       expect.objectContaining({ count: 'exact' })
     );
     expect(result.current.data).toEqual({
-      data: mockData,
+      data: MOCK_SUPABASE_RESPONSE,
       metadata: {
         end: 20,
         start: 20,
@@ -135,27 +107,24 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with ascending name sort', async () => {
-    const mockData = [
-      {
-        created_at: '2025-01-15T10:00:00Z',
-        default_locale: 'en',
+    const MOCK_SUPABASE_RESPONSE = [
+      createMockProjectWithCounts({
         description: null,
         id: '550e8400-e29b-41d4-a716-446655440002',
         key_count: 0,
         locale_count: 1,
         name: 'A Project',
         prefix: 'apr',
-        updated_at: '2025-01-15T10:00:00Z',
-      },
+      }),
     ];
 
     const orderMock = vi.fn().mockResolvedValue({
       count: 1,
-      data: mockData,
+      data: MOCK_SUPABASE_RESPONSE,
       error: null,
     });
 
-    mockSupabase.rpc.mockReturnValue({
+    MOCK_SUPABASE.rpc.mockReturnValue({
       order: orderMock,
     });
 
@@ -164,14 +133,14 @@ describe('useProjects', () => {
     };
 
     const { result } = renderHook(() => useProjects(params), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(orderMock).toHaveBeenCalledWith('name', { ascending: true });
     expect(result.current.data).toEqual({
-      data: mockData,
+      data: MOCK_SUPABASE_RESPONSE,
       metadata: {
         end: 0,
         start: 0,
@@ -181,10 +150,9 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with descending created_at sort', async () => {
-    const mockData = [
-      {
+    const MOCK_SUPABASE_RESPONSE = [
+      createMockProjectWithCounts({
         created_at: '2025-01-15T12:00:00Z',
-        default_locale: 'en',
         description: null,
         id: '550e8400-e29b-41d4-a716-446655440003',
         key_count: 0,
@@ -192,16 +160,16 @@ describe('useProjects', () => {
         name: 'Newest Project',
         prefix: 'new',
         updated_at: '2025-01-15T12:00:00Z',
-      },
+      }),
     ];
 
     const orderMock = vi.fn().mockResolvedValue({
       count: 1,
-      data: mockData,
+      data: MOCK_SUPABASE_RESPONSE,
       error: null,
     });
 
-    mockSupabase.rpc.mockReturnValue({
+    MOCK_SUPABASE.rpc.mockReturnValue({
       order: orderMock,
     });
 
@@ -210,14 +178,14 @@ describe('useProjects', () => {
     };
 
     const { result } = renderHook(() => useProjects(params), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(orderMock).toHaveBeenCalledWith('created_at', { ascending: false });
     expect(result.current.data).toEqual({
-      data: mockData,
+      data: MOCK_SUPABASE_RESPONSE,
       metadata: {
         end: 0,
         start: 0,
@@ -227,7 +195,7 @@ describe('useProjects', () => {
   });
 
   it('should return empty array when no projects found', async () => {
-    mockSupabase.rpc.mockReturnValue({
+    MOCK_SUPABASE.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 0,
         data: [],
@@ -236,7 +204,7 @@ describe('useProjects', () => {
     });
 
     const { result } = renderHook(() => useProjects(), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -252,29 +220,25 @@ describe('useProjects', () => {
   });
 
   it('should handle database error', async () => {
-    const mockError = {
-      code: 'PGRST301',
-      message: 'Database error',
-    };
+    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Database error', 'PGRST301');
 
-    mockSupabase.rpc.mockReturnValue({
+    MOCK_SUPABASE.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         data: null,
-        error: mockError,
+        error: MOCK_SUPABASE_ERROR,
       }),
     });
 
-    const { result } = renderHook(() => useProjects(), {
-      wrapper: createWrapper(),
+    const errorBoundary = { current: null };
+    renderHook(() => useProjects(), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
 
-    expect(result.current.error).toEqual({
-      data: null,
+    expect(errorBoundary.current).toMatchObject({
       error: {
         code: 500,
-        details: { original: mockError },
         message: 'Failed to fetch projects',
       },
     });
@@ -285,11 +249,21 @@ describe('useProjects', () => {
       limit: PROJECTS_MAX_LIMIT + 50, // over max
     };
 
-    const { result } = renderHook(() => useProjects(params), {
-      wrapper: createWrapper(),
+    const errorBoundary = { current: null };
+    renderHook(() => useProjects(params), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      issues: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'too_big',
+          path: ['limit'],
+        }),
+      ]),
+    });
   });
 
   it('should validate negative offset', async () => {
@@ -297,29 +271,33 @@ describe('useProjects', () => {
       offset: -10,
     };
 
-    const { result } = renderHook(() => useProjects(params), {
-      wrapper: createWrapper(),
+    const errorBoundary = { current: null };
+    renderHook(() => useProjects(params), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      issues: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'too_small',
+          path: ['offset'],
+        }),
+      ]),
+    });
   });
 
   it('should return correct pagination metadata for multiple items', async () => {
-    const mockData = [
-      {
-        created_at: '2025-01-15T10:00:00Z',
-        default_locale: 'en',
+    const MOCK_SUPABASE_RESPONSE = [
+      createMockProjectWithCounts({
         description: 'Project 1',
         id: '550e8400-e29b-41d4-a716-446655440000',
-        key_count: 10,
-        locale_count: 2,
         name: 'Project 1',
         prefix: 'pr1',
-        updated_at: '2025-01-15T10:00:00Z',
-      },
-      {
+      }),
+      createMockProjectWithCounts({
         created_at: '2025-01-15T11:00:00Z',
-        default_locale: 'en',
         description: 'Project 2',
         id: '550e8400-e29b-41d4-a716-446655440001',
         key_count: 5,
@@ -327,10 +305,9 @@ describe('useProjects', () => {
         name: 'Project 2',
         prefix: 'pr2',
         updated_at: '2025-01-15T11:00:00Z',
-      },
-      {
+      }),
+      createMockProjectWithCounts({
         created_at: '2025-01-15T12:00:00Z',
-        default_locale: 'en',
         description: 'Project 3',
         id: '550e8400-e29b-41d4-a716-446655440002',
         key_count: 15,
@@ -338,13 +315,13 @@ describe('useProjects', () => {
         name: 'Project 3',
         prefix: 'pr3',
         updated_at: '2025-01-15T12:00:00Z',
-      },
+      }),
     ];
 
-    mockSupabase.rpc.mockReturnValue({
+    MOCK_SUPABASE.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 150,
-        data: mockData,
+        data: MOCK_SUPABASE_RESPONSE,
         error: null,
       }),
     });
@@ -355,7 +332,7 @@ describe('useProjects', () => {
     };
 
     const { result } = renderHook(() => useProjects(params), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -369,24 +346,21 @@ describe('useProjects', () => {
   });
 
   it('should handle pagination metadata for last page', async () => {
-    const mockData = [
-      {
-        created_at: '2025-01-15T10:00:00Z',
-        default_locale: 'en',
+    const MOCK_SUPABASE_RESPONSE = [
+      createMockProjectWithCounts({
         description: 'Last Project',
         id: '550e8400-e29b-41d4-a716-446655440000',
         key_count: 1,
         locale_count: 1,
         name: 'Last Project',
         prefix: 'last',
-        updated_at: '2025-01-15T10:00:00Z',
-      },
+      }),
     ];
 
-    mockSupabase.rpc.mockReturnValue({
+    MOCK_SUPABASE.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 26,
-        data: mockData,
+        data: MOCK_SUPABASE_RESPONSE,
         error: null,
       }),
     });
@@ -397,7 +371,7 @@ describe('useProjects', () => {
     };
 
     const { result } = renderHook(() => useProjects(params), {
-      wrapper: createWrapper(),
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

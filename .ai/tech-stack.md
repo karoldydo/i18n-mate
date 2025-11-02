@@ -20,6 +20,7 @@
 - **Vitest** - Unit testing framework for JavaScript and TypeScript with Vite-native DX
 - **@vitest/coverage-v8** - Coverage reports powered by the V8 engine
 - **Testing Library** - User-focused testing utilities for React components
+- **Playwright** - End-to-end testing framework for complete user workflow automation
 
 ## AI
 

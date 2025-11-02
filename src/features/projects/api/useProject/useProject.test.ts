@@ -1,37 +1,29 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants/projects.constants';
+import {
+  createErrorBoundaryWrapper,
+  createMockProject,
+  createMockSupabaseClient,
+  createMockSupabaseError,
+  createMockSupabaseResponse,
+  createTestWrapper,
+  generateTestUuid,
+} from '@/test/utils';
 
 import { useProject } from './useProject';
 
 // mock supabase client
-const mockSupabase = {
-  from: vi.fn(),
-};
+const MOCK_SUPABASE = createMockSupabaseClient();
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => mockSupabase,
+  useSupabase: () => MOCK_SUPABASE,
 }));
 
-// create wrapper with providers
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      mutations: { retry: false },
-      queries: { retry: false },
-    },
-  });
-
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: queryClient }, children);
-};
-
 describe('useProject', () => {
-  const validProjectId = '550e8400-e29b-41d4-a716-446655440000';
+  const PROJECT_ID = generateTestUuid();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,56 +34,45 @@ describe('useProject', () => {
   });
 
   it('should fetch project successfully', async () => {
-    const mockData = {
-      created_at: '2025-01-15T10:00:00Z',
-      default_locale: 'en',
-      description: 'Test project',
-      id: validProjectId,
-      name: 'Test Project',
-      prefix: 'test',
-      updated_at: '2025-01-15T10:00:00Z',
-    };
+    const MOCK_SUPABASE_RESPONSE = createMockProject({
+      id: PROJECT_ID,
+    });
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue({
-            data: mockData,
-            error: null,
-          }),
+          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(MOCK_SUPABASE_RESPONSE, null)),
         }),
       }),
     });
 
-    const { result } = renderHook(() => useProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('projects');
-    expect(result.current.data).toEqual(mockData);
+    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('projects');
+    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
   });
 
   it('should handle project not found', async () => {
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue({
-            data: null,
-            error: null,
-          }),
+          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
         }),
       }),
     });
 
-    const { result } = renderHook(() => useProject(validProjectId), {
-      wrapper: createWrapper(),
+    const errorBoundary = { current: null };
+    renderHook(() => useProject(PROJECT_ID), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
 
-    expect(result.current.error).toEqual({
+    expect(errorBoundary.current).toMatchObject({
       data: null,
       error: {
         code: 404,
@@ -101,24 +82,22 @@ describe('useProject', () => {
   });
 
   it('should handle RLS access denied (appears as not found)', async () => {
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue({
-            data: null,
-            error: null,
-          }),
+          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
         }),
       }),
     });
 
-    const { result } = renderHook(() => useProject(validProjectId), {
-      wrapper: createWrapper(),
+    const errorBoundary = { current: null };
+    renderHook(() => useProject(PROJECT_ID), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
 
-    expect(result.current.error).toEqual({
+    expect(errorBoundary.current).toMatchObject({
       data: null,
       error: {
         code: 404,
@@ -128,80 +107,89 @@ describe('useProject', () => {
   });
 
   it('should handle database error', async () => {
-    const mockError = {
-      code: 'PGRST301',
-      message: 'Database connection error',
-    };
+    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Database connection error', 'PGRST301');
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue({
-            data: null,
-            error: mockError,
-          }),
+          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, MOCK_SUPABASE_ERROR)),
         }),
       }),
     });
 
-    const { result } = renderHook(() => useProject(validProjectId), {
-      wrapper: createWrapper(),
+    const errorBoundary = { current: null };
+    renderHook(() => useProject(PROJECT_ID), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
 
-    expect(result.current.error).toEqual({
+    expect(errorBoundary.current).toMatchObject({
       data: null,
       error: {
         code: 500,
-        details: { original: mockError },
+        details: { original: MOCK_SUPABASE_ERROR },
         message: 'Failed to fetch project',
       },
     });
   });
 
   it('should validate invalid UUID format', async () => {
-    const invalidId = 'not-a-uuid';
+    const INVALID_PROJECT_ID = 'not-a-uuid';
 
-    const { result } = renderHook(() => useProject(invalidId), {
-      wrapper: createWrapper(),
+    const errorBoundary = { current: null };
+    renderHook(() => useProject(INVALID_PROJECT_ID), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      issues: [
+        {
+          code: 'invalid_string',
+          message: 'Invalid UUID format',
+          validation: 'uuid',
+        },
+      ],
+    });
   });
 
   it('should validate empty string as invalid UUID', async () => {
-    const { result } = renderHook(() => useProject(''), {
-      wrapper: createWrapper(),
+    const errorBoundary = { current: null };
+    renderHook(() => useProject(''), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    await waitFor(() => expect(errorBoundary.current).toBeDefined());
+
+    expect(errorBoundary.current).toMatchObject({
+      issues: [
+        {
+          code: 'invalid_string',
+          message: 'Invalid UUID format',
+          validation: 'uuid',
+        },
+      ],
+    });
   });
 
   it('should fetch project with null description', async () => {
-    const mockData = {
-      created_at: '2025-01-15T10:00:00Z',
-      default_locale: 'en',
+    const mockData = createMockProject({
       description: null,
-      id: validProjectId,
-      name: 'Test Project',
-      prefix: 'test',
-      updated_at: '2025-01-15T10:00:00Z',
-    };
+      id: PROJECT_ID,
+    });
 
-    mockSupabase.from.mockReturnValue({
+    MOCK_SUPABASE.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue({
-            data: mockData,
-            error: null,
-          }),
+          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockData, null)),
         }),
       }),
     });
 
-    const { result } = renderHook(() => useProject(validProjectId), {
-      wrapper: createWrapper(),
+    const { result } = renderHook(() => useProject(PROJECT_ID), {
+      wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
