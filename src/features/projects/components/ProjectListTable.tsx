@@ -88,9 +88,12 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
 
   if (!hasProjects) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+      <div
+        className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12"
+        data-testid="project-list-empty"
+      >
         <p className="text-muted-foreground mb-4">No projects found. Create your first project to get started.</p>
-        <Button onClick={onCreateClick}>
+        <Button data-testid="create-project-button-empty" onClick={onCreateClick}>
           <Plus className="mr-2 h-4 w-4" />
           Create Project
         </Button>
@@ -99,9 +102,9 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="project-list-table">
       <div className="flex justify-end">
-        <Button onClick={onCreateClick}>
+        <Button data-testid="create-project-button" onClick={onCreateClick}>
           <Plus className="mr-2 h-4 w-4" />
           <span className="hidden sm:inline">Create Project</span>
           <span className="sm:hidden">Create</span>
@@ -122,15 +125,28 @@ export function ProjectListTable({ onCreateClick, onDeleteClick, onEditClick }: 
           </TableHeader>
           <TableBody>
             {projects.map((project) => (
-              <TableRow className="cursor-pointer" key={project.id} onClick={() => handleRowClick(project.id)}>
+              <TableRow
+                className="cursor-pointer"
+                data-testid={`project-row-${project.id}`}
+                key={project.id}
+                onClick={() => handleRowClick(project.id)}
+              >
                 <TableCell>
                   <div>
-                    <p className="font-medium">{project.name}</p>
-                    {project.description && <p className="text-muted-foreground text-sm">{project.description}</p>}
+                    <p className="font-medium" data-testid={`project-name-${project.id}`}>
+                      {project.name}
+                    </p>
+                    {project.description && (
+                      <p className="text-muted-foreground text-sm" data-testid={`project-description-${project.id}`}>
+                        {project.description}
+                      </p>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <code className="bg-muted rounded px-2 py-1 text-sm">{project.prefix}</code>
+                  <code className="bg-muted rounded px-2 py-1 text-sm" data-testid={`project-prefix-${project.id}`}>
+                    {project.prefix}
+                  </code>
                 </TableCell>
                 <TableCell>{project.default_locale}</TableCell>
                 <TableCell className="text-right">{project.locale_count}</TableCell>

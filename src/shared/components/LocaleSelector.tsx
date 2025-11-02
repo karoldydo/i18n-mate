@@ -2,6 +2,7 @@ import { PRIMARY_LOCALES } from '@/shared/constants/locales.constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 
 interface LocaleSelectorProps {
+  'data-testid'?: string;
   disabled?: boolean;
   onValueChange: (value: string) => void;
   value?: string;
@@ -13,19 +14,26 @@ interface LocaleSelectorProps {
  * Provides a pre-populated list of common primary language subtags (IETF language tags)
  * for selecting the default locale during project creation.
  */
-export function LocaleSelector({ disabled = false, onValueChange, value }: LocaleSelectorProps) {
+export function LocaleSelector({
+  'data-testid': dataTestId,
+  disabled = false,
+  onValueChange,
+  value,
+}: LocaleSelectorProps) {
   return (
-    <Select disabled={disabled} onValueChange={onValueChange} value={value}>
-      <SelectTrigger>
-        <SelectValue placeholder="Select a locale" />
-      </SelectTrigger>
-      <SelectContent>
-        {PRIMARY_LOCALES.map((locale) => (
-          <SelectItem key={locale.code} value={locale.code}>
-            {locale.label} ({locale.code})
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div data-testid={dataTestId}>
+      <Select disabled={disabled} onValueChange={onValueChange} value={value}>
+        <SelectTrigger data-testid="locale-selector-trigger">
+          <SelectValue placeholder="Select a locale" />
+        </SelectTrigger>
+        <SelectContent data-testid="locale-selector-content">
+          {PRIMARY_LOCALES.map((locale) => (
+            <SelectItem data-testid={`locale-option-${locale.code}`} key={locale.code} value={locale.code}>
+              {locale.label} ({locale.code})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

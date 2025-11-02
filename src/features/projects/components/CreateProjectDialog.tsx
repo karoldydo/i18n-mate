@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
@@ -30,6 +31,7 @@ interface CreateProjectDialogProps {
  */
 export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const createProject = useCreateProject();
 
   const form = useForm<CreateProjectRequest>({
@@ -66,6 +68,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
           toast.error(error.message);
         },
         onSuccess: (project) => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
           toast.success('Project created successfully');
           reset();
           onOpenChange(false);
@@ -73,7 +76,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
         },
       });
     },
-    [createProject, navigate, onOpenChange, reset]
+    [createProject, navigate, onOpenChange, queryClient, reset]
   );
 
   const handleOpenChange = useCallback(
@@ -103,7 +106,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px]" data-testid="create-project-dialog">
         <DialogHeader>
           <DialogTitle>Create Project</DialogTitle>
           <DialogDescription>Create a new translation project with a default locale.</DialogDescription>
@@ -118,7 +121,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
                 <FormItem>
                   <FormLabel>Project Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="My Application" {...field} />
+                    <Input data-testid="create-project-name-input" placeholder="My Application" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -132,7 +135,12 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
                 <FormItem>
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Project description" {...field} value={field.value || ''} />
+                    <Textarea
+                      data-testid="create-project-description-input"
+                      placeholder="Project description"
+                      {...field}
+                      value={field.value || ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,7 +154,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
                 <FormItem>
                   <FormLabel>Prefix</FormLabel>
                   <FormControl>
-                    <Input placeholder="app" {...field} />
+                    <Input data-testid="create-project-prefix-input" placeholder="app" {...field} />
                   </FormControl>
                   <FormDescription>
                     2-4 characters: lowercase letters, numbers, dots, underscores, hyphens. No trailing dot.
@@ -164,6 +172,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
                   <FormLabel>Default Locale</FormLabel>
                   <FormControl>
                     <LocaleSelector
+                      data-testid="create-project-locale-selector"
                       onValueChange={(value) => handleLocaleValueChange(value, field.onChange)}
                       value={field.value}
                     />
@@ -181,7 +190,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
                 <FormItem>
                   <FormLabel>Locale Label</FormLabel>
                   <FormControl>
-                    <Input placeholder="English" {...field} />
+                    <Input data-testid="create-project-locale-label-input" placeholder="English" {...field} />
                   </FormControl>
                   <FormDescription>Human-readable name for the default locale</FormDescription>
                   <FormMessage />
@@ -190,7 +199,7 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
             />
 
             <DialogFooter>
-              <Button disabled={isSubmitDisabled} type="submit">
+              <Button data-testid="create-project-submit-button" disabled={isSubmitDisabled} type="submit">
                 {createProject.isPending ? 'Creating...' : 'Create Project'}
               </Button>
             </DialogFooter>

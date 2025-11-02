@@ -38,6 +38,7 @@ export function ProjectDetailsLayout({ onDelete, onEdit, onExport, project, proj
           <Button
             aria-label="Back to projects list"
             className="mb-4"
+            data-testid="back-to-projects-button"
             onClick={handleBackToProjects}
             size="sm"
             variant="ghost"

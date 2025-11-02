@@ -30,11 +30,16 @@ export function ProjectDetailsPage() {
 
   if (!validation.success) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto py-8" data-testid="project-details-page">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={handleBackToProjects} variant="outline">
+          <Button
+            className="mt-4"
+            data-testid="back-to-projects-button-error"
+            onClick={handleBackToProjects}
+            variant="outline"
+          >
             Back to Projects
           </Button>
         </div>
@@ -43,10 +48,12 @@ export function ProjectDetailsPage() {
   }
 
   return (
-    <ErrorBoundary resetKeys={[projectId]}>
-      <Suspense fallback={<Loading />}>
-        <ProjectDetailsContent projectId={projectId} />
-      </Suspense>
-    </ErrorBoundary>
+    <div data-testid="project-details-page">
+      <ErrorBoundary resetKeys={[projectId]}>
+        <Suspense fallback={<Loading />}>
+          <ProjectDetailsContent projectId={projectId} />
+        </Suspense>
+      </ErrorBoundary>
+    </div>
   );
 }

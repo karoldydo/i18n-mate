@@ -6,4 +6,6 @@
 
 export { LoginPage } from './auth/LoginPage';
 export { ProtectedPage } from './auth/ProtectedPage';
+export { CreateProjectDialogPage } from './projects/CreateProjectDialogPage';
+export { ProjectDetailsPage } from './projects/ProjectDetailsPage';
 export { ProjectListPage } from './projects/ProjectListPage';

@@ -107,40 +107,96 @@ teardown('cleanup e2e test user data', async () => {
   // create supabase client
   // prefer service role key if available for direct access, otherwise use anon key with user context
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabase = createClient<Database>(supabaseUrl, serviceRoleKey || supabaseAnonKey, {
+
+  // if using anon key, set up client with access token in global headers
+  const clientOptions: {
+    auth: { autoRefreshToken: boolean; persistSession: boolean };
+    global?: { headers: Record<string, string> };
+  } = {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
-  });
+  };
 
-  // if using anon key, set session from extracted auth data
+  // add authorization header if using anon key (for RLS)
+  if (!serviceRoleKey && authData.access_token) {
+    clientOptions.global = {
+      headers: {
+        Authorization: `Bearer ${authData.access_token}`,
+      },
+    };
+  }
+
+  const supabase = createClient<Database>(supabaseUrl, serviceRoleKey || supabaseAnonKey, clientOptions);
+
+  // if using anon key, also try to set session (for auth.uid() to work in RLS)
   if (!serviceRoleKey) {
     try {
-      await supabase.auth.setSession({
+      const { error: sessionError } = await supabase.auth.setSession({
         access_token: authData.access_token,
         refresh_token: authData.refresh_token || '',
       });
-    } catch {
-      console.warn('[teardown] Could not set session. Continuing with cleanup...');
+
+      if (sessionError) {
+        console.warn(`[teardown] Could not set session: ${sessionError.message}`);
+        console.warn('[teardown] Continuing with Authorization header only - RLS may not work correctly');
+      } else {
+        // verify session is set correctly
+        const {
+          data: { user: sessionUser },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !sessionUser) {
+          console.warn(`[teardown] Session set but could not get user: ${userError?.message || 'Unknown error'}`);
+        } else if (sessionUser.id !== userId) {
+          console.warn(`[teardown] Session user ID mismatch. Expected: ${userId}, Got: ${sessionUser.id}`);
+        } else {
+          console.log(`[teardown] Session verified for user: ${userId}`);
+        }
+      }
+    } catch (error) {
+      console.warn(`[teardown] Failed to set session: ${error instanceof Error ? error.message : String(error)}`);
+      console.warn('[teardown] Continuing with Authorization header only');
     }
   }
 
   // fetch all projects for the user
+  // with service role key: use explicit filter
+  // with anon key: rely on RLS policies (requires valid session)
   const query = supabase.from('projects').select('id, name');
   const projectsQuery = serviceRoleKey ? query.eq('owner_user_id', userId) : query;
 
   const { data: projects, error: fetchError } = await projectsQuery;
 
   if (fetchError) {
-    console.error('[teardown] Failed to fetch projects:', fetchError.message);
+    console.error(`[teardown] Failed to fetch projects: ${fetchError.message}`);
+    console.error(`[teardown] Error details:`, fetchError);
+    if (!serviceRoleKey) {
+      console.warn(
+        '[teardown] Using anon key - RLS may be blocking access. Consider setting SUPABASE_SERVICE_ROLE_KEY.'
+      );
+    }
     return;
   }
 
   if (!projects || projects.length === 0) {
-    console.log('[teardown] No projects found for E2E test user');
+    console.log(`[teardown] No projects found for E2E test user (${userId})`);
+    // additional diagnostic: try to count all projects (if using service role)
+    if (serviceRoleKey) {
+      const { count, error: countError } = await supabase
+        .from('projects')
+        .select('id', { count: 'exact', head: true })
+        .eq('owner_user_id', userId);
+      if (!countError && count !== undefined) {
+        console.log(`[teardown] Diagnostic: Found ${count} project(s) for user ${userId}`);
+      }
+    }
     return;
   }
+
+  console.log(`[teardown] Found ${projects.length} project(s) for cleanup`);
 
   // delete all projects (cascade deletes all related data)
   let deletedCount = 0;
