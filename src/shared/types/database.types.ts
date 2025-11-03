@@ -114,7 +114,7 @@ export interface Database {
       };
       create_project_with_default_locale: {
         Args: {
-          p_default_locale: string;
+          p_default_locale: unknown;
           p_default_locale_label: string;
           p_description?: string;
           p_name: string;
@@ -122,12 +122,23 @@ export interface Database {
         };
         Returns: {
           created_at: string;
-          default_locale: string;
+          default_locale: unknown;
           description: string;
           id: string;
           name: string;
           prefix: string;
           updated_at: string;
+        }[];
+      };
+      ensure_telemetry_partition_exists: {
+        Args: { p_timestamp?: string };
+        Returns: undefined;
+      };
+      get_public_app_config: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          key: string;
+          value: string;
         }[];
       };
       gtrgm_compress: {
@@ -225,6 +236,27 @@ export interface Database {
       };
     };
     Tables: {
+      app_config: {
+        Insert: {
+          description?: null | string;
+          key: string;
+          updated_at?: string;
+          value: string;
+        };
+        Relationships: [];
+        Row: {
+          description: null | string;
+          key: string;
+          updated_at: string;
+          value: string;
+        };
+        Update: {
+          description?: null | string;
+          key?: string;
+          updated_at?: string;
+          value?: string;
+        };
+      };
       keys: {
         Insert: {
           created_at?: string;
@@ -692,9 +724,9 @@ export interface Database {
       };
       translation_jobs: {
         Insert: {
-          completed_keys?: null | number;
+          completed_keys?: number;
           created_at?: string;
-          failed_keys?: null | number;
+          failed_keys?: number;
           finished_at?: null | string;
           id?: string;
           mode: Database['public']['Enums']['translation_mode'];
@@ -719,9 +751,9 @@ export interface Database {
           },
         ];
         Row: {
-          completed_keys: null | number;
+          completed_keys: number;
           created_at: string;
-          failed_keys: null | number;
+          failed_keys: number;
           finished_at: null | string;
           id: string;
           mode: Database['public']['Enums']['translation_mode'];
@@ -737,9 +769,9 @@ export interface Database {
           updated_at: string;
         };
         Update: {
-          completed_keys?: null | number;
+          completed_keys?: number;
           created_at?: string;
-          failed_keys?: null | number;
+          failed_keys?: number;
           finished_at?: null | string;
           id?: string;
           mode?: Database['public']['Enums']['translation_mode'];

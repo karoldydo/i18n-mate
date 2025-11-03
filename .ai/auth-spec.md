@@ -7,7 +7,7 @@
 #### Unauthenticated Mode (Public Routes)
 
 - `/login` - login page
-- `/register` - registration page (conditionally available based on `VITE_REGISTRATION_ENABLED` environment variable)
+- `/register` - registration page (conditionally available based on `app_config.registration_enabled` database setting)
 - `/verify-email` - email verification page with confirmation link
 - `/resend-verification` - resend verification page
 - `/forgot-password` - password reset page
@@ -41,7 +41,7 @@
 - Fields: email, password
 - Button: "Log in"
 - Link: "Forgot password?"
-- Link: "Don't have an account? Sign up" (conditionally displayed based on `VITE_REGISTRATION_ENABLED`)
+- Link: "Don't have an account? Sign up" (conditionally displayed based on `app_config.registration_enabled`)
 - Validation: email format, password required
 - Error handling: invalid credentials, unverified email
 
@@ -281,10 +281,11 @@ According to application pattern:
 #### Supabase Client Configuration
 
 - URL and anon key from environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
-- Registration control:
-  - **Backend:** `app_config.registration_enabled` database setting (default: `'true'`) validated by Edge Function (`supabase/functions/signup`)
-  - **Frontend:** `VITE_REGISTRATION_ENABLED` environment variable controls UI visibility (default: `'true'`)
+- Registration control: `app_config.registration_enabled` database setting (default: `'true'`)
+  - **Backend:** Validated by Edge Function (`supabase/functions/signup`)
+  - **Frontend:** Read via RPC function `get_public_app_config()` and `ConfigProvider` context
 - Email verification control: `app_config.email_verification_required` database setting (default: `'true'`)
+  - **Frontend:** Read via RPC function `get_public_app_config()` and used in `AuthGuard` component
 - Session persistence: localStorage via Supabase client
 - Auto-refresh tokens: enabled via client configuration
 - Event listeners for session changes: `supabase.auth.onAuthStateChange()`
@@ -353,17 +354,22 @@ According to application pattern:
 - **Database-level:** `app_config` table stores `registration_enabled` setting
   - Default value: `'true'`
   - Editable only by `service_role` (via RLS policy)
+  - Exposed to frontend via `get_public_app_config()` RPC function
 - **Edge Function:** `supabase/functions/signup/index.ts` validates setting before user creation
   - Returns 403 if registration disabled
   - Uses `supabase.auth.admin.createUser()` for server-side user creation
-- **Frontend-level:** `VITE_REGISTRATION_ENABLED` controls UI visibility
-  - Hides registration links and routes when `'false'`
-  - Independent from backend setting (UI optimization only)
+- **Frontend-level:** `ConfigProvider` fetches config from database
+  - `RegisterPage` shows loading state until config loads (fail-closed)
+  - `LoginPage` hides registration link until config confirms it's enabled
+  - Uses `useAppConfig()` TanStack Query hook for data fetching
 
 #### Email Verification Control
 
 - **Database-level:** `app_config.email_verification_required` setting (default: `'true'`)
-- **Enforcement:** AuthGuard checks `user.email_confirmed_at` before granting access
+  - Exposed to frontend via `get_public_app_config()` RPC function
+- **Enforcement:** `AuthGuard` component checks `user.email_confirmed_at` dynamically based on config
+  - Reads config via `useConfig()` hook
+  - Fail-closed: requires verification if config unavailable
 - Auto-signOut after registration ensures no session exists until verification
 
 ### 3.4 Email Templates
@@ -503,10 +509,12 @@ Authentication constants stored in `src/shared/constants/auth.constants.ts`:
 - Environment variables:
   - `VITE_SUPABASE_URL` - Supabase project URL
   - `VITE_SUPABASE_ANON_KEY` - Supabase anon key
-  - `VITE_REGISTRATION_ENABLED` (optional, default: `'true'`) - frontend UI visibility only
-- Database configuration:
-  - `app_config.registration_enabled` - backend validation (Edge Function)
-  - `app_config.email_verification_required` - frontend enforcement (AuthGuard)
+- Database configuration (via `app_config` table):
+  - `app_config.registration_enabled` (default: `'true'`) - controls registration availability
+    - Backend: validated by Edge Function (`supabase/functions/signup`)
+    - Frontend: fetched via `get_public_app_config()` RPC and `ConfigProvider`
+  - `app_config.email_verification_required` (default: `'true'`) - controls email verification requirement
+    - Frontend: enforced by `AuthGuard` component via `useConfig()` hook
 
 ### 5.2 Performance Considerations
 

@@ -47,8 +47,8 @@ User assumptions: no roles in the MVP; the target user is a frontend developer m
 ### 3.1 Authorization and Authentication
 
 - Account registration, login, logout.
-- **Registration control:** Access to registration functionality is controlled by the `app_config` table in the database (key: `registration_enabled`, default: `'true'`). When set to `'false'`, registration is disabled via Edge Function validation, the registration page is inaccessible, and related UI elements (registration links, buttons) are hidden. Frontend also checks `VITE_REGISTRATION_ENABLED` environment variable for UI visibility.
-- **Email verification control:** Email verification requirement is controlled by the `app_config` table (key: `email_verification_required`, default: `'true'`). When enabled, the user **does not have an active session** until verification and sees **public screens** informing about the need for verification and allowing **resending the email**.
+- **Registration control:** Access to registration functionality is controlled by the `app_config.registration_enabled` database setting (default: `'true'`). When set to `'false'`, registration is disabled via Edge Function validation, the registration page is inaccessible, and related UI elements are hidden. Frontend fetches this setting via `get_public_app_config()` RPC function and `ConfigProvider` context.
+- **Email verification control:** Email verification requirement is controlled by `app_config.email_verification_required` database setting (default: `'true'`). Frontend `AuthGuard` component dynamically enforces this via `useConfig()` hook. When enabled, users cannot access protected routes until email is verified.
 - **Email verification is required before obtaining a session.** Until verification, the user **does not have an active session** and sees **public screens** informing about the need for verification and allowing **resending the email**.
 - Password reset via email.
 - **Application features** are available only to **logged-in and verified** users.
@@ -141,8 +141,8 @@ Assumptions:
 - Export available only from the UI; no external API; removed languages do not appear in the ZIP.
 - Save metadata is a global rule: LLM → is_machine_translated=true, updated_source=system, updated_by_user_id=null, updated_at set; manual edit → `is_machine_translated=false`, `updated_source=user`, `updated_by_user_id=<user_id>`, `updated_at` set.
 - Access condition: a session is created only after email verification (no session before verification).
-- Registration access control: Backend validation via `app_config.registration_enabled` database setting (checked by Edge Function). Frontend UI visibility controlled by `VITE_REGISTRATION_ENABLED` environment variable.
-- Email verification requirement: Controlled by `app_config.email_verification_required` database setting.
+- Registration access control: Controlled by `app_config.registration_enabled` database setting (default: `'true'`). Backend validates via Edge Function. Frontend fetches via `get_public_app_config()` RPC and `ConfigProvider` context, showing fail-closed UI (registration hidden until config confirms enabled).
+- Email verification requirement: Controlled by `app_config.email_verification_required` database setting (default: `'true'`). Frontend `AuthGuard` enforces dynamically via `useConfig()` hook.
 
 ## 5. Functional Requirements (User Stories)
 

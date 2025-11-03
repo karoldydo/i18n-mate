@@ -21,13 +21,15 @@
 // Database Types (Supabase-generated)
 // ============================================================================
 
-export type { CompositeTypes, Database, Enums, Json, Tables, TablesInsert, TablesUpdate } from './database.types';
+export type { AppConfig } from './config';
 
-export { Constants } from './database.types';
+export type { CompositeTypes, Database, Enums, Json, Tables, TablesInsert, TablesUpdate } from './database.types';
 
 // ============================================================================
 // Shared Types (API responses, pagination, authentication)
 // ============================================================================
+
+export { Constants } from './database.types';
 
 export type { ExportedTranslations, ExportTranslationsData } from './export';
 

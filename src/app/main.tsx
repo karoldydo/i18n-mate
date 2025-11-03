@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 
 import { queryClient } from './config/queryClient';
 import { AuthProvider } from './providers/AuthProvider';
+import { ConfigProvider } from './providers/ConfigProvider';
 import { SupabaseProvider } from './providers/SupabaseProvider';
 import router from './routes.tsx';
 
@@ -17,12 +18,14 @@ if (!root) throw new Error('Root element not found');
 createRoot(root).render(
   <StrictMode>
     <SupabaseProvider>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-          <Toaster />
-        </QueryClientProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <ConfigProvider>
+          <AuthProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </AuthProvider>
+        </ConfigProvider>
+      </QueryClientProvider>
     </SupabaseProvider>
   </StrictMode>
 );

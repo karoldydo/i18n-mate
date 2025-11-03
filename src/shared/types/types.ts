@@ -7,6 +7,7 @@
  * - Authentication types
  *
  * Feature-specific types are organized in their respective feature directories:
+ * - config/: Application configuration types
  * - export/: Export-related types
  * - keys/: Key management types
  * - locales/: Locale management types

@@ -33,6 +33,9 @@ begin
     partition_name, start_date, end_date
   );
 
+  -- enable RLS on the partition (inherits policies from parent table)
+  execute format('alter table %I enable row level security', partition_name);
+
   raise notice 'Partition % created or already exists (range: % to %)',
     partition_name, start_date, end_date;
 exception
@@ -81,6 +84,9 @@ begin
       partition_name, start_date, end_date
     );
 
+    -- enable RLS on the partition (inherits policies from parent table)
+    execute format('alter table %I enable row level security', partition_name);
+
     raise notice 'Emergency partition creation: % (range: % to %)',
       partition_name, start_date, end_date;
   end if;
@@ -109,3 +115,28 @@ select cron.schedule(
 
 -- verify scheduled job
 -- select jobid, jobname, schedule, active from cron.job where jobname = 'create-telemetry-partitions';
+
+-- ---------------------------------------------------------------------
+-- enable RLS on existing partition tables
+-- ---------------------------------------------------------------------
+
+-- enable RLS on all existing telemetry_events partitions
+do $$
+declare
+  partition_record record;
+begin
+  for partition_record in
+    select c.relname as partition_name
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    join pg_inherits i on i.inhrelid = c.oid
+    join pg_class parent on parent.oid = i.inhparent
+    where n.nspname = 'public'
+      and parent.relname = 'telemetry_events'
+      and c.relkind = 'r'
+  loop
+    execute format('alter table %I enable row level security', partition_record.partition_name);
+    raise notice 'Enabled RLS on partition: %', partition_record.partition_name;
+  end loop;
+end;
+$$;

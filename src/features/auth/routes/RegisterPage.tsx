@@ -15,14 +15,11 @@ import { AuthLayout } from '../components/layouts/AuthLayout';
  *
  * Displays the registration form within the authentication layout.
  * Redirects to verification page after successful registration.
- * Conditionally available based on VITE_REGISTRATION_ENABLED environment variable.
+ * Route access is protected by RegistrationGuard component.
  */
 export function RegisterPage() {
   const navigate = useNavigate();
   const signUp = useSignUp();
-
-  // check if registration is enabled
-  const registrationEnabled = import.meta.env.VITE_REGISTRATION_ENABLED !== 'false';
 
   const handleSubmit = useCallback(
     (data: RegisterFormData) => {
@@ -39,19 +36,6 @@ export function RegisterPage() {
     },
     [navigate, signUp]
   );
-
-  // if registration is disabled, show message
-  if (!registrationEnabled) {
-    return (
-      <AuthLayout>
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold tracking-tight">Registration Unavailable</h2>
-          <p className="text-muted-foreground mt-4 text-sm">Registration is currently disabled.</p>
-          <p className="text-muted-foreground mt-2 text-sm">Please contact the administrator for access.</p>
-        </div>
-      </AuthLayout>
-    );
-  }
 
   return (
     <AuthLayout>

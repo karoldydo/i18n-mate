@@ -1,6 +1,9 @@
 import { lazy } from 'react';
 import { createBrowserRouter } from 'react-router';
 
+import { RegistrationGuard } from '@/features/auth/components/guards/RegistrationGuard';
+import { VerificationGuard } from '@/features/auth/components/guards/VerificationGuard';
+
 import App from './App.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -91,7 +94,11 @@ const router = createBrowserRouter([
     path: '/login',
   },
   {
-    Component: RegisterPage,
+    element: (
+      <RegistrationGuard>
+        <RegisterPage />
+      </RegistrationGuard>
+    ),
     path: '/register',
   },
   {
@@ -103,7 +110,11 @@ const router = createBrowserRouter([
     path: '/reset-password',
   },
   {
-    Component: VerifyEmailPage,
+    element: (
+      <VerificationGuard>
+        <VerifyEmailPage />
+      </VerificationGuard>
+    ),
     path: '/verify-email',
   },
   // protected routes - all nested under App layout with ProtectedRoute

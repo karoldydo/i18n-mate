@@ -23,7 +23,7 @@ alwaysApply: false
 - Do NOT use `cleanup` - it happens automatically in modern Testing Library versions
 - Do NOT use `any` - provide a type instead, if not possible use `as unknown as ...` or `as ...`
 - Co-locate tests with their source files (Component.test.tsx next to Component.tsx)
-- Each constant variable that represents a `mock` should be named as upper-cased SNAKE_CASE (e.g. `MOCK_PROJECT`, `MOCK_LOCALE`, `MOCK_KEY`, `MOCK_TRANSLATION`, `MOCK_USER`, `MOCK_SUPABASE_ERROR`, `MOCK_SUPABASE_RESPONSE`, etc.) or use factory functions (e.g. `createMockProject()`, `createMockSupabaseError()`)
+- each constant variable that represents a `mock` should be named in camelCase (e.g. `mockProject`, `mockLocale`, `mockKey`, `mockTranslation`, `mockUser`, `mockSupabaseError`, `mockSupabaseResponse`, etc.) or use factory functions (e.g. `createMockProject()`, `createMockSupabaseError()`)
 - Each constant variable that represents a `mock` should be typed by using existing types from the codebase
 - All comments should be in inline comments (//) and written in lowercase.
 

@@ -1,6 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { toast } from 'sonner';
+
+import { useConfig } from '@/app/providers/ConfigProvider';
 
 import type { LoginFormData } from '../api/auth.schemas';
 
@@ -18,9 +20,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const signIn = useSignIn();
-
-  // read registration enabled from environment variable
-  const registrationEnabled = import.meta.env.VITE_REGISTRATION_ENABLED !== 'false';
+  const { config } = useConfig();
 
   const handleSubmit = useCallback(
     (data: LoginFormData) => {
@@ -36,6 +36,11 @@ export function LoginPage() {
       });
     },
     [location.state, navigate, signIn]
+  );
+
+  const { registrationEnabled } = useMemo(
+    () => ({ registrationEnabled: config?.registrationEnabled ?? false }),
+    [config]
   );
 
   return (
