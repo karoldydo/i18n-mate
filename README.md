@@ -158,10 +158,6 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=model_name
 
-# Testing (optional)
-TEST_EMAIL=your_test_email
-TEST_PASSWORD=your_test_password
-
 # E2E Testing (required for E2E tests)
 E2E_USERNAME=your_e2e_test_email
 E2E_PASSWORD=your_e2e_test_password
