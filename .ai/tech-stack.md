@@ -29,7 +29,7 @@
 ## CI/CD and Hosting
 
 - **GitHub Actions** - CI/CD pipeline automation for testing and deployment
-- **Vercel** - Development and staging environment with zero-config deployment and automatic preview URLs
+- **Cloudflare Pages** - Production hosting with global CDN, manual deployments, and edge computing capabilities
 - **Docker + DigitalOcean** - Pre-production environment for testing deployment scripts and production-ready pipelines
 
 ## Developer Experience

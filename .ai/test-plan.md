@@ -128,7 +128,7 @@ Below are example scenarios for key modules. Each scenario will be expanded into
   - Static analysis (linting, type checking).
   - Unit and integration tests (`npm run test`).
   - E2E tests (Playwright).
-- **Staging (Vercel):** Each Pull Request is automatically deployed to a unique URL (Preview URL), enabling manual and exploratory testing before merging.
+- **Staging (Cloudflare Pages):** Each Pull Request can be automatically deployed to a unique preview URL, enabling manual and exploratory testing before merging.
 - **Pre-production (Docker + DigitalOcean):** Environment reflecting production configuration, used for final regression testing before deploying a new version.
 
 ## 6. Testing Tools
