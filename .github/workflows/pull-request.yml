@@ -1,10 +1,7 @@
-name: CI
+name: Pull Request
 
 on:
   pull_request:
-    branches:
-      - main
-  push:
     branches:
       - main
 
@@ -132,3 +129,4 @@ jobs:
             - ✅ **E2E Tests**: All end-to-end tests passed
 
             This PR is ready for review!
+
