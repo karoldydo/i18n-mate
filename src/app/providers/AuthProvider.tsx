@@ -66,13 +66,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signUp = useCallback(
     async (email: string, password: string) => {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
+      // call Edge Function instead of direct auth.signUp() to enforce server-side validation
+      // of registration_enabled config
+      const { data, error } = await supabase.functions.invoke('signup', {
+        body: { email, password },
       });
 
+      // Edge Function returns custom error format: { error: { code, message, details? } }
       if (error) {
-        throw error;
+        // FunctionsHttpError from Edge Function
+        throw new Error(error.message || 'Failed to create account');
+      }
+
+      // check for application-level errors in the response
+      if (data?.error) {
+        throw new Error(data.error.message || 'Failed to create account');
       }
 
       // immediately sign out to enforce "no session before verification" requirement

@@ -11,7 +11,7 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 describe('supabase.client', () => {
-  const ORIGINAL_ENV = { ...import.meta.env };
+  const originalEnv = { ...import.meta.env };
 
   beforeEach(() => {
     vi.resetModules();
@@ -19,7 +19,7 @@ describe('supabase.client', () => {
 
   afterEach(() => {
     // restore original environment
-    Object.assign(import.meta.env, ORIGINAL_ENV);
+    Object.assign(import.meta.env, originalEnv);
   });
 
   it('should create Supabase client when both environment variables are set', async () => {

@@ -9,11 +9,11 @@ import { createTestWrapper } from '@/test/utils/test-wrapper';
 import { useDeleteProjectLocale } from './useDeleteProjectLocale';
 
 // mock supabase client
-const MOCK_SUPABASE = createMockSupabaseClient();
+const mockSupabase = createMockSupabaseClient();
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => MOCK_SUPABASE,
+  useSupabase: () => mockSupabase,
 }));
 
 describe('useDeleteProjectLocale', () => {
@@ -26,13 +26,13 @@ describe('useDeleteProjectLocale', () => {
   });
 
   it('should delete a locale successfully', async () => {
-    const MOCK_SUPABASE_RESPONSE = {
+    const mockSupabaseResponse = {
       error: null,
     };
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue(MOCK_SUPABASE_RESPONSE),
+        eq: vi.fn().mockResolvedValue(mockSupabaseResponse),
       }),
     });
 
@@ -40,15 +40,15 @@ describe('useDeleteProjectLocale', () => {
       wrapper: createTestWrapper(),
     });
 
-    const LOCALE_ID = generateTestUuid();
+    const localeId = generateTestUuid();
 
     // execute the mutation
-    await result.current.mutateAsync(LOCALE_ID);
+    await result.current.mutateAsync(localeId);
 
     // wait for mutation to complete
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('project_locales');
+    expect(mockSupabase.from).toHaveBeenCalledWith('project_locales');
     expect(result.current.data).toBeUndefined();
   });
 
@@ -57,10 +57,10 @@ describe('useDeleteProjectLocale', () => {
       wrapper: createTestWrapper(),
     });
 
-    const INVALID_UUID = 'invalid-uuid';
+    const invalidUuid = 'invalid-uuid';
 
     // execute the mutation and expect it to throw
-    await expect(() => result.current.mutateAsync(INVALID_UUID)).rejects.toThrow();
+    await expect(() => result.current.mutateAsync(invalidUuid)).rejects.toThrow();
 
     // wait for mutation to complete
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -69,12 +69,12 @@ describe('useDeleteProjectLocale', () => {
   });
 
   it('should handle database error during deletion', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Database error during deletion', 'PGRST301');
+    const mockSupabaseError = createMockSupabaseError('Database error during deletion', 'PGRST301');
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
-          error: MOCK_SUPABASE_ERROR,
+          error: mockSupabaseError,
         }),
       }),
     });
@@ -83,10 +83,10 @@ describe('useDeleteProjectLocale', () => {
       wrapper: createTestWrapper(),
     });
 
-    const LOCALE_ID = generateTestUuid();
+    const localeId = generateTestUuid();
 
     // execute the mutation and expect it to throw
-    await expect(() => result.current.mutateAsync(LOCALE_ID)).rejects.toThrow();
+    await expect(() => result.current.mutateAsync(localeId)).rejects.toThrow();
 
     // wait for mutation to complete
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -96,12 +96,12 @@ describe('useDeleteProjectLocale', () => {
   });
 
   it('should handle attempt to delete default locale', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError(LOCALE_ERROR_MESSAGES.LOCALE_CANNOT_DELETE_MESSAGE, 'PGRST301');
+    const mockSupabaseError = createMockSupabaseError(LOCALE_ERROR_MESSAGES.LOCALE_CANNOT_DELETE_MESSAGE, 'PGRST301');
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
-          error: MOCK_SUPABASE_ERROR,
+          error: mockSupabaseError,
         }),
       }),
     });
@@ -110,10 +110,10 @@ describe('useDeleteProjectLocale', () => {
       wrapper: createTestWrapper(),
     });
 
-    const LOCALE_ID = generateTestUuid();
+    const localeId = generateTestUuid();
 
     // execute the mutation and expect it to throw
-    await expect(() => result.current.mutateAsync(LOCALE_ID)).rejects.toThrow();
+    await expect(() => result.current.mutateAsync(localeId)).rejects.toThrow();
 
     // wait for mutation to complete
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -129,12 +129,12 @@ describe('useDeleteProjectLocale', () => {
   });
 
   it('should handle 404 error when locale not found', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Record not found', 'PGRST301');
+    const mockSupabaseError = createMockSupabaseError('Record not found', 'PGRST301');
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
-          error: MOCK_SUPABASE_ERROR,
+          error: mockSupabaseError,
         }),
       }),
     });
@@ -143,10 +143,10 @@ describe('useDeleteProjectLocale', () => {
       wrapper: createTestWrapper(),
     });
 
-    const LOCALE_ID = generateTestUuid();
+    const localeId = generateTestUuid();
 
     // execute the mutation and expect it to throw
-    await expect(() => result.current.mutateAsync(LOCALE_ID)).rejects.toThrow();
+    await expect(() => result.current.mutateAsync(localeId)).rejects.toThrow();
 
     // wait for mutation to complete
     await waitFor(() => expect(result.current.isError).toBe(true));

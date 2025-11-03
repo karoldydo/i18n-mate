@@ -11,7 +11,7 @@ import { createTestWrapper } from '@/test/utils/test-wrapper';
 import { useTelemetryEvents } from './useTelemetryEvents';
 
 // mock supabase client methods
-const MOCK_QUERY = {
+const mockQuery = {
   eq: vi.fn(),
   limit: vi.fn(),
   order: vi.fn(),
@@ -19,31 +19,31 @@ const MOCK_QUERY = {
   select: vi.fn(),
 };
 
-const MOCK_SUPABASE = {
-  from: vi.fn(() => MOCK_QUERY),
+const mockSupabase = {
+  from: vi.fn(() => mockQuery),
 };
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => MOCK_SUPABASE,
+  useSupabase: () => mockSupabase,
 }));
 
 describe('useTelemetryEvents', () => {
-  const MOCK_PROJECT = createMockProject();
-  const MOCK_PROJECT_ID = MOCK_PROJECT.id;
-  const MOCK_SUPABASE_RESPONSE = [
+  const mockProject = createMockProject();
+  const mockProjectId = mockProject.id;
+  const mockSupabaseResponse = [
     createMockTelemetryEvent({
       created_at: '2023-01-01T00:00:00Z',
       event_name: 'project_created',
       id: '550e8400-e29b-41d4-a716-446655440000',
-      project_id: MOCK_PROJECT_ID,
+      project_id: mockProjectId,
       properties: null,
     }),
     createMockTelemetryEvent({
       created_at: '2023-01-02T00:00:00Z',
       event_name: 'language_added',
       id: '550e8400-e29b-41d4-a716-446655440001',
-      project_id: MOCK_PROJECT_ID,
+      project_id: mockProjectId,
       properties: { locale: 'en' },
     }),
   ];
@@ -52,11 +52,11 @@ describe('useTelemetryEvents', () => {
     vi.clearAllMocks();
 
     // setup default method chain
-    MOCK_QUERY.select.mockReturnValue(MOCK_QUERY);
-    MOCK_QUERY.eq.mockReturnValue(MOCK_QUERY);
-    MOCK_QUERY.order.mockReturnValue(MOCK_QUERY);
-    MOCK_QUERY.limit.mockReturnValue(MOCK_QUERY);
-    MOCK_QUERY.range.mockReturnValue(MOCK_QUERY);
+    mockQuery.select.mockReturnValue(mockQuery);
+    mockQuery.eq.mockReturnValue(mockQuery);
+    mockQuery.order.mockReturnValue(mockQuery);
+    mockQuery.limit.mockReturnValue(mockQuery);
+    mockQuery.range.mockReturnValue(mockQuery);
   });
 
   afterEach(() => {
@@ -64,129 +64,129 @@ describe('useTelemetryEvents', () => {
   });
 
   it('should fetch telemetry events with default params', async () => {
-    MOCK_QUERY.limit.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.limit.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId), {
       wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('telemetry_events');
-    expect(MOCK_QUERY.select).toHaveBeenCalledWith('*');
-    expect(MOCK_QUERY.eq).toHaveBeenCalledWith('project_id', MOCK_PROJECT_ID);
-    expect(MOCK_QUERY.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(MOCK_QUERY.limit).toHaveBeenCalledWith(TELEMETRY_DEFAULT_LIMIT);
-    expect(MOCK_QUERY.range).not.toHaveBeenCalled();
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockSupabase.from).toHaveBeenCalledWith('telemetry_events');
+    expect(mockQuery.select).toHaveBeenCalledWith('*');
+    expect(mockQuery.eq).toHaveBeenCalledWith('project_id', mockProjectId);
+    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(mockQuery.limit).toHaveBeenCalledWith(TELEMETRY_DEFAULT_LIMIT);
+    expect(mockQuery.range).not.toHaveBeenCalled();
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should apply custom pagination params correctly', async () => {
-    const PARAMS: TelemetryEventsParams = { limit: 50, offset: 10 };
+    const params: TelemetryEventsParams = { limit: 50, offset: 10 };
 
-    MOCK_QUERY.range.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.range.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId, params), {
       wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('telemetry_events');
-    expect(MOCK_QUERY.eq).toHaveBeenCalledWith('project_id', MOCK_PROJECT_ID);
-    expect(MOCK_QUERY.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(MOCK_QUERY.limit).toHaveBeenCalledWith(50);
-    expect(MOCK_QUERY.range).toHaveBeenCalledWith(10, 59); // offset + limit - 1
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockSupabase.from).toHaveBeenCalledWith('telemetry_events');
+    expect(mockQuery.eq).toHaveBeenCalledWith('project_id', mockProjectId);
+    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(mockQuery.limit).toHaveBeenCalledWith(50);
+    expect(mockQuery.range).toHaveBeenCalledWith(10, 59); // offset + limit - 1
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should handle ascending order correctly', async () => {
-    const PARAMS: TelemetryEventsParams = { order: TELEMETRY_SORT_OPTIONS.CREATED_AT_ASC };
+    const params: TelemetryEventsParams = { order: TELEMETRY_SORT_OPTIONS.CREATED_AT_ASC };
 
-    MOCK_QUERY.limit.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.limit.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId, params), {
       wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_QUERY.order).toHaveBeenCalledWith('created_at', { ascending: true });
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: true });
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should handle descending order correctly', async () => {
-    const PARAMS: TelemetryEventsParams = { order: TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC };
+    const params: TelemetryEventsParams = { order: TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC };
 
-    MOCK_QUERY.limit.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.limit.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId, params), {
       wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_QUERY.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should not apply range when offset is 0', async () => {
-    const PARAMS: TelemetryEventsParams = { limit: 25, offset: 0 };
+    const params: TelemetryEventsParams = { limit: 25, offset: 0 };
 
-    MOCK_QUERY.limit.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.limit.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId, params), {
       wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_QUERY.limit).toHaveBeenCalledWith(25);
-    expect(MOCK_QUERY.range).not.toHaveBeenCalled();
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockQuery.limit).toHaveBeenCalledWith(25);
+    expect(mockQuery.range).not.toHaveBeenCalled();
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should apply range when offset is greater than 0', async () => {
-    const PARAMS: TelemetryEventsParams = { limit: 20, offset: 5 };
+    const params: TelemetryEventsParams = { limit: 20, offset: 5 };
 
-    MOCK_QUERY.range.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.range.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId, params), {
       wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_QUERY.limit).toHaveBeenCalledWith(20);
-    expect(MOCK_QUERY.range).toHaveBeenCalledWith(5, 24); // offset 5, limit 20 -> range(5, 24)
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockQuery.limit).toHaveBeenCalledWith(20);
+    expect(mockQuery.range).toHaveBeenCalledWith(5, 24); // offset 5, limit 20 -> range(5, 24)
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should return empty array when no events found', async () => {
-    MOCK_QUERY.limit.mockResolvedValue({
+    mockQuery.limit.mockResolvedValue({
       data: [],
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId), {
       wrapper: createTestWrapper(),
     });
 
@@ -196,12 +196,12 @@ describe('useTelemetryEvents', () => {
   });
 
   it('should handle null data from database', async () => {
-    MOCK_QUERY.limit.mockResolvedValue({
+    mockQuery.limit.mockResolvedValue({
       data: null,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId), {
       wrapper: createTestWrapper(),
     });
 
@@ -212,22 +212,22 @@ describe('useTelemetryEvents', () => {
 
   it('should handle Supabase error correctly', async () => {
     // cspell:disable-next-line
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Database connection failed', 'PGRST301');
+    const mockSupabaseError = createMockSupabaseError('Database connection failed', 'PGRST301');
 
-    MOCK_QUERY.limit.mockResolvedValue({
+    mockQuery.limit.mockResolvedValue({
       data: null,
-      error: MOCK_SUPABASE_ERROR,
+      error: mockSupabaseError,
     });
 
-    const ERROR_BOUNDARY = { current: null };
+    const errorBoundary = { current: null };
 
-    renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID), {
-      wrapper: createErrorBoundaryWrapper(ERROR_BOUNDARY),
+    renderHook(() => useTelemetryEvents(mockProjectId), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(ERROR_BOUNDARY.current).toBeTruthy());
+    await waitFor(() => expect(errorBoundary.current).toBeTruthy());
 
-    expect(ERROR_BOUNDARY.current).toMatchObject({
+    expect(errorBoundary.current).toMatchObject({
       data: null,
       error: {
         code: 500,
@@ -237,18 +237,18 @@ describe('useTelemetryEvents', () => {
   });
 
   it('should validate invalid project ID format', async () => {
-    const INVALID_PROJECT_ID = 'invalid-uuid';
+    const invalidProjectId = 'invalid-uuid';
 
-    const ERROR_BOUNDARY = { current: null };
+    const errorBoundary = { current: null };
 
-    renderHook(() => useTelemetryEvents(INVALID_PROJECT_ID), {
-      wrapper: createErrorBoundaryWrapper(ERROR_BOUNDARY),
+    renderHook(() => useTelemetryEvents(invalidProjectId), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(ERROR_BOUNDARY.current).toBeTruthy());
+    await waitFor(() => expect(errorBoundary.current).toBeTruthy());
 
     // Zod validation error should be caught
-    expect(ERROR_BOUNDARY.current).toBeTruthy();
+    expect(errorBoundary.current).toBeTruthy();
   });
 
   it('should validate limit max value', async () => {
@@ -256,85 +256,85 @@ describe('useTelemetryEvents', () => {
       limit: TELEMETRY_MAX_LIMIT + 50, // over max
     };
 
-    const ERROR_BOUNDARY = { current: null };
+    const errorBoundary = { current: null };
 
-    renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, params), {
-      wrapper: createErrorBoundaryWrapper(ERROR_BOUNDARY),
+    renderHook(() => useTelemetryEvents(mockProjectId, params), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(ERROR_BOUNDARY.current).toBeTruthy());
+    await waitFor(() => expect(errorBoundary.current).toBeTruthy());
 
     // Zod validation error for max limit
-    expect(ERROR_BOUNDARY.current).toBeTruthy();
+    expect(errorBoundary.current).toBeTruthy();
   });
 
   it('should validate negative offset', async () => {
-    const PARAMS: TelemetryEventsParams = {
+    const params: TelemetryEventsParams = {
       offset: -10,
     };
 
-    const ERROR_BOUNDARY = { current: null };
+    const errorBoundary = { current: null };
 
-    renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
-      wrapper: createErrorBoundaryWrapper(ERROR_BOUNDARY),
+    renderHook(() => useTelemetryEvents(mockProjectId, params), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(ERROR_BOUNDARY.current).toBeTruthy());
+    await waitFor(() => expect(errorBoundary.current).toBeTruthy());
 
     // Zod validation error for negative offset
-    expect(ERROR_BOUNDARY.current).toBeTruthy();
+    expect(errorBoundary.current).toBeTruthy();
   });
 
   it('should validate minimum limit value', async () => {
-    const PARAMS: TelemetryEventsParams = {
+    const params: TelemetryEventsParams = {
       limit: 0, // below minimum
     };
 
-    const ERROR_BOUNDARY = { current: null };
+    const errorBoundary = { current: null };
 
-    renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
-      wrapper: createErrorBoundaryWrapper(ERROR_BOUNDARY),
+    renderHook(() => useTelemetryEvents(mockProjectId, params), {
+      wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
-    await waitFor(() => expect(ERROR_BOUNDARY.current).toBeTruthy());
+    await waitFor(() => expect(errorBoundary.current).toBeTruthy());
 
     // Zod validation error for min limit
-    expect(ERROR_BOUNDARY.current).toBeTruthy();
+    expect(errorBoundary.current).toBeTruthy();
   });
 
   it('should handle complex pagination scenario', async () => {
-    const PARAMS: TelemetryEventsParams = {
+    const params: TelemetryEventsParams = {
       limit: 15,
       offset: 100,
       order: TELEMETRY_SORT_OPTIONS.CREATED_AT_ASC,
     };
 
-    MOCK_QUERY.range.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.range.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId, params), {
       wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('telemetry_events');
-    expect(MOCK_QUERY.eq).toHaveBeenCalledWith('project_id', MOCK_PROJECT_ID);
-    expect(MOCK_QUERY.order).toHaveBeenCalledWith('created_at', { ascending: true });
-    expect(MOCK_QUERY.limit).toHaveBeenCalledWith(15);
-    expect(MOCK_QUERY.range).toHaveBeenCalledWith(100, 114); // offset 100, limit 15 -> range(100, 114)
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockSupabase.from).toHaveBeenCalledWith('telemetry_events');
+    expect(mockQuery.eq).toHaveBeenCalledWith('project_id', mockProjectId);
+    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: true });
+    expect(mockQuery.limit).toHaveBeenCalledWith(15);
+    expect(mockQuery.range).toHaveBeenCalledWith(100, 114); // offset 100, limit 15 -> range(100, 114)
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should handle events with properties', async () => {
-    const MOCK_SUPABASE_RESPONSE = [
+    const mockSupabaseResponse = [
       createMockTelemetryEvent({
         created_at: '2023-01-01T00:00:00Z',
         event_name: 'key_created',
         id: '550e8400-e29b-41d4-a716-446655440002',
-        project_id: MOCK_PROJECT_ID,
+        project_id: mockProjectId,
         properties: {
           key: 'test.key',
           locale: 'en',
@@ -344,7 +344,7 @@ describe('useTelemetryEvents', () => {
         created_at: '2023-01-02T00:00:00Z',
         event_name: 'translation_completed',
         id: '550e8400-e29b-41d4-a716-446655440003',
-        project_id: MOCK_PROJECT_ID,
+        project_id: mockProjectId,
         properties: {
           count: 10,
           locale: 'es',
@@ -352,29 +352,29 @@ describe('useTelemetryEvents', () => {
       }),
     ];
 
-    MOCK_QUERY.limit.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.limit.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId), {
       wrapper: createTestWrapper(),
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should use correct query key for cache management', async () => {
-    const PARAMS: TelemetryEventsParams = { limit: 50, offset: 10 };
+    const params: TelemetryEventsParams = { limit: 50, offset: 10 };
 
-    MOCK_QUERY.range.mockResolvedValue({
-      data: MOCK_SUPABASE_RESPONSE,
+    mockQuery.range.mockResolvedValue({
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    const { result } = renderHook(() => useTelemetryEvents(MOCK_PROJECT_ID, PARAMS), {
+    const { result } = renderHook(() => useTelemetryEvents(mockProjectId, params), {
       wrapper: createTestWrapper(),
     });
 
@@ -382,6 +382,6 @@ describe('useTelemetryEvents', () => {
 
     // The query key should be ['telemetry-events', projectId, params]
     // This ensures proper cache invalidation and refetching
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 });

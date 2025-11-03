@@ -13,13 +13,13 @@ import { createMockSupabaseError, createMockSupabaseResponse, createTestWrapper 
 import { useCreateProject } from './useCreateProject';
 
 // mock supabase client
-const MOCK_SUPABASE = {
+const mockSupabase = {
   rpc: vi.fn(),
 };
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => MOCK_SUPABASE,
+  useSupabase: () => mockSupabase,
 }));
 
 // shared test constants for consistent ids and timestamps
@@ -36,7 +36,7 @@ describe('useCreateProject', () => {
   });
 
   it('should create project successfully', async () => {
-    const MOCK_SUPABASE_RESPONSE = {
+    const mockSupabaseResponse = {
       created_at: TEST_TIMESTAMP,
       default_locale: 'en',
       description: 'Test project',
@@ -47,11 +47,11 @@ describe('useCreateProject', () => {
       updated_at: TEST_TIMESTAMP,
     };
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(MOCK_SUPABASE_RESPONSE, null)),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockSupabaseResponse, null)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       description: 'Test project',
@@ -63,11 +63,11 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.rpc).toHaveBeenCalledWith('create_project_with_default_locale', {
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('create_project_with_default_locale', {
       p_default_locale: 'en',
       p_default_locale_label: 'English',
       p_description: 'Test project',
@@ -87,7 +87,7 @@ describe('useCreateProject', () => {
   });
 
   it('should create project with null description', async () => {
-    const MOCK_SUPABASE_RESPONSE = {
+    const mockSupabaseResponse = {
       created_at: TEST_TIMESTAMP,
       default_locale: 'en',
       description: null,
@@ -98,11 +98,11 @@ describe('useCreateProject', () => {
       updated_at: TEST_TIMESTAMP,
     };
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(MOCK_SUPABASE_RESPONSE, null)),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockSupabaseResponse, null)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Minimal Project',
@@ -113,11 +113,11 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.rpc).toHaveBeenCalledWith('create_project_with_default_locale', {
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('create_project_with_default_locale', {
       p_default_locale: 'en',
       p_default_locale_label: 'English',
       p_description: undefined,
@@ -127,16 +127,16 @@ describe('useCreateProject', () => {
   });
 
   it('should handle duplicate name conflict', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError(
+    const mockSupabaseError = createMockSupabaseError(
       `duplicate key value violates unique constraint "${PROJECTS_CONSTRAINTS.NAME_UNIQUE_PER_OWNER}"`,
       PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION
     );
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, MOCK_SUPABASE_ERROR)),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, mockSupabaseError)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Existing Project',
@@ -147,7 +147,7 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -161,16 +161,16 @@ describe('useCreateProject', () => {
   });
 
   it('should handle duplicate prefix conflict', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError(
+    const mockSupabaseError = createMockSupabaseError(
       `duplicate key value violates unique constraint "${PROJECTS_CONSTRAINTS.PREFIX_UNIQUE_PER_OWNER}"`,
       PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION
     );
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, MOCK_SUPABASE_ERROR)),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, mockSupabaseError)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'New Project',
@@ -181,7 +181,7 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -195,7 +195,7 @@ describe('useCreateProject', () => {
   });
 
   it('should validate invalid prefix (too short)', async () => {
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',
@@ -206,13 +206,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should validate invalid prefix (too long)', async () => {
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',
@@ -223,13 +223,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should validate invalid prefix (ends with dot)', async () => {
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',
@@ -240,13 +240,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should validate invalid locale code format', async () => {
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'invalid',
       default_locale_label: 'Invalid',
       name: 'Test',
@@ -257,13 +257,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should accept valid BCP-47 locale codes', async () => {
-    const MOCK_SUPABASE_RESPONSE = {
+    const mockSupabaseResponse = {
       created_at: TEST_TIMESTAMP,
       default_locale: 'en-US',
       description: null,
@@ -274,11 +274,11 @@ describe('useCreateProject', () => {
       updated_at: TEST_TIMESTAMP,
     };
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(MOCK_SUPABASE_RESPONSE, null)),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockSupabaseResponse, null)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en-US',
       default_locale_label: 'English (US)',
       name: 'US Project',
@@ -289,7 +289,7 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -306,13 +306,13 @@ describe('useCreateProject', () => {
   });
 
   it('should handle generic database error', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Database error', 'PGRST301');
+    const mockSupabaseError = createMockSupabaseError('Database error', 'PGRST301');
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, MOCK_SUPABASE_ERROR)),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, mockSupabaseError)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test',
@@ -323,7 +323,7 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -331,18 +331,18 @@ describe('useCreateProject', () => {
       data: null,
       error: {
         code: 500,
-        details: { original: MOCK_SUPABASE_ERROR },
+        details: { original: mockSupabaseError },
         message: 'Failed to create project',
       },
     });
   });
 
   it('should handle no data returned from database', async () => {
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test Project',
@@ -353,7 +353,7 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -368,11 +368,11 @@ describe('useCreateProject', () => {
 
   it('should handle network error when RPC call fails', async () => {
     const networkError = new Error('Network request failed');
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       maybeSingle: vi.fn().mockRejectedValue(networkError),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test Project',
@@ -383,7 +383,7 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error).toBeDefined();
@@ -392,7 +392,7 @@ describe('useCreateProject', () => {
   it('should validate maximum name length', async () => {
     const longName = 'a'.repeat(256); // exceeds max length
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: longName,
@@ -403,13 +403,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should validate empty name', async () => {
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: '',
@@ -420,13 +420,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should validate locale label minimum length', async () => {
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: '', // empty label
       name: 'Test Project',
@@ -437,17 +437,17 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should validate locale label maximum length', async () => {
-    const LONG_LABEL = 'a'.repeat(256); // exceeds max length
+    const longLabel = 'a'.repeat(256); // exceeds max length
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
-      default_locale_label: LONG_LABEL,
+      default_locale_label: longLabel,
       name: 'Test Project',
       prefix: 'test',
     };
@@ -456,13 +456,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should validate prefix with uppercase letters', async () => {
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test Project',
@@ -473,13 +473,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should validate prefix with special characters', async () => {
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       name: 'Test Project',
@@ -490,13 +490,13 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
 
   it('should accept valid two-letter locale code', async () => {
-    const MOCK_SUPABASE_RESPONSE = {
+    const mockSupabaseResponse = {
       created_at: TEST_TIMESTAMP,
       default_locale: 'zh',
       description: null,
@@ -507,11 +507,11 @@ describe('useCreateProject', () => {
       updated_at: TEST_TIMESTAMP,
     };
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(MOCK_SUPABASE_RESPONSE, null)),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockSupabaseResponse, null)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'zh',
       default_locale_label: 'Chinese',
       name: 'Chinese Project',
@@ -522,14 +522,14 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.default_locale).toBe('zh');
   });
 
   it('should trim whitespace from name and description', async () => {
-    const MOCK_SUPABASE_RESPONSE = {
+    const mockSupabaseResponse = {
       created_at: TEST_TIMESTAMP,
       default_locale: 'en',
       description: 'Trimmed description',
@@ -540,11 +540,11 @@ describe('useCreateProject', () => {
       updated_at: TEST_TIMESTAMP,
     };
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
-      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(MOCK_SUPABASE_RESPONSE, null)),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockSupabaseResponse, null)),
     });
 
-    const PROJECT_DATA: CreateProjectRequest = {
+    const projectData: CreateProjectRequest = {
       default_locale: 'en',
       default_locale_label: 'English',
       description: '  Trimmed description  ',
@@ -556,11 +556,11 @@ describe('useCreateProject', () => {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(PROJECT_DATA);
+    result.current.mutate(projectData);
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.rpc).toHaveBeenCalledWith('create_project_with_default_locale', {
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('create_project_with_default_locale', {
       p_default_locale: 'en',
       p_default_locale_label: 'English',
       p_description: 'Trimmed description',

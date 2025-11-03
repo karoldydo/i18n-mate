@@ -15,11 +15,11 @@ import { createTestWrapper } from '@/test/utils/test-wrapper';
 import { useUpdateProject } from './useUpdateProject';
 
 // mock supabase client
-const MOCK_SUPABASE = createMockSupabaseClient();
+const mockSupabase = createMockSupabaseClient();
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => MOCK_SUPABASE,
+  useSupabase: () => mockSupabase,
 }));
 
 describe('useUpdateProject', () => {
@@ -34,19 +34,19 @@ describe('useUpdateProject', () => {
   });
 
   it('should update project name successfully', async () => {
-    const MOCK_SUPABASE_RESPONSE = createMockProject({
+    const mockSupabaseResponse = createMockProject({
       description: 'Original description',
       id: PROJECT_ID,
       name: 'Updated Name',
       updated_at: '2025-01-15T11:00:00Z',
     });
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
-              data: MOCK_SUPABASE_RESPONSE,
+              data: mockSupabaseResponse,
               error: null,
             }),
           }),
@@ -66,23 +66,23 @@ describe('useUpdateProject', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('projects');
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockSupabase.from).toHaveBeenCalledWith('projects');
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should update project description successfully', async () => {
-    const MOCK_SUPABASE_RESPONSE = createMockProject({
+    const mockSupabaseResponse = createMockProject({
       description: 'New description',
       id: PROJECT_ID,
       updated_at: '2025-01-15T11:00:00Z',
     });
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
-              data: MOCK_SUPABASE_RESPONSE,
+              data: mockSupabaseResponse,
               error: null,
             }),
           }),
@@ -106,19 +106,19 @@ describe('useUpdateProject', () => {
   });
 
   it('should update both name and description', async () => {
-    const MOCK_SUPABASE_RESPONSE = createMockProject({
+    const mockSupabaseResponse = createMockProject({
       description: 'Updated description',
       id: PROJECT_ID,
       name: 'Updated Name',
       updated_at: '2025-01-15T11:00:00Z',
     });
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
-              data: MOCK_SUPABASE_RESPONSE,
+              data: mockSupabaseResponse,
               error: null,
             }),
           }),
@@ -144,18 +144,18 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle duplicate name conflict', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError(
+    const mockSupabaseError = createMockSupabaseError(
       `duplicate key value violates unique constraint "${PROJECTS_CONSTRAINTS.NAME_UNIQUE_PER_OWNER}"`,
       PROJECTS_PG_ERROR_CODES.UNIQUE_VIOLATION
     );
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             maybeSingle: vi.fn().mockResolvedValue({
               data: null,
-              error: MOCK_SUPABASE_ERROR,
+              error: mockSupabaseError,
             }),
           }),
         }),
@@ -214,7 +214,7 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle project not found', async () => {
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -249,13 +249,13 @@ describe('useUpdateProject', () => {
   });
 
   it('should handle invalid UUID format', async () => {
-    const INVALID_PROJECT_ID = 'not-a-uuid';
+    const invalidProjectId = 'not-a-uuid';
 
     const updateData: UpdateProjectRequest = {
       name: 'Updated Name',
     };
 
-    const { result } = renderHook(() => useUpdateProject(INVALID_PROJECT_ID), {
+    const { result } = renderHook(() => useUpdateProject(invalidProjectId), {
       wrapper: createTestWrapper(),
     });
 
@@ -281,7 +281,7 @@ describe('useUpdateProject', () => {
   it('should handle database trigger error for immutable fields', async () => {
     const mockError = createMockSupabaseError('Cannot modify prefix after creation', 'P0001');
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -318,7 +318,7 @@ describe('useUpdateProject', () => {
   it('should handle generic database error', async () => {
     const mockError = createMockSupabaseError('Internal database error', 'XX000');
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -361,7 +361,7 @@ describe('useUpdateProject', () => {
       updated_at: '2025-01-15T11:00:00Z',
     });
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({

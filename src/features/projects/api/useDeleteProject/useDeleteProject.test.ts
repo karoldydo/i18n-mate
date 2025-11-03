@@ -7,11 +7,11 @@ import { createMockSupabaseClient, createMockSupabaseError, createTestWrapper, g
 import { useDeleteProject } from './useDeleteProject';
 
 // mock supabase client
-const MOCK_SUPABASE = createMockSupabaseClient();
+const mockSupabase = createMockSupabaseClient();
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => MOCK_SUPABASE,
+  useSupabase: () => mockSupabase,
 }));
 
 // test constants
@@ -27,7 +27,7 @@ describe('useDeleteProject', () => {
   });
 
   it('should delete project successfully', async () => {
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
           count: 1,
@@ -44,14 +44,14 @@ describe('useDeleteProject', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('projects');
+    expect(mockSupabase.from).toHaveBeenCalledWith('projects');
   });
 
   it('should handle project not found or RLS access denied (count = 0)', async () => {
     // NOTE: Supabase RLS policies cause count = 0 (not explicit errors),
     // so both "project doesn't exist" and "access denied" scenarios
     // produce the same 404 response. This is intentional behavior.
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
           count: 0,
@@ -78,13 +78,13 @@ describe('useDeleteProject', () => {
   });
 
   it('should handle database error', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Database connection error', 'PGRST301');
+    const mockSupabaseError = createMockSupabaseError('Database connection error', 'PGRST301');
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
           count: null,
-          error: MOCK_SUPABASE_ERROR,
+          error: mockSupabaseError,
         }),
       }),
     });
@@ -101,20 +101,20 @@ describe('useDeleteProject', () => {
       data: null,
       error: {
         code: 500,
-        details: { original: MOCK_SUPABASE_ERROR },
+        details: { original: mockSupabaseError },
         message: 'Failed to delete project',
       },
     });
   });
 
   it('should validate invalid UUID format', async () => {
-    const INVALID_PROJECT_ID = 'not-a-uuid';
+    const invalidProjectId = 'not-a-uuid';
 
     const { result } = renderHook(() => useDeleteProject(), {
       wrapper: createTestWrapper(),
     });
 
-    result.current.mutate(INVALID_PROJECT_ID);
+    result.current.mutate(invalidProjectId);
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });
@@ -132,7 +132,7 @@ describe('useDeleteProject', () => {
   it('should cascade delete related data', async () => {
     // this test verifies that the delete operation is called correctly
     // the actual cascade is handled by the database ON DELETE CASCADE
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
           count: 1,
@@ -150,12 +150,12 @@ describe('useDeleteProject', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     // verify delete was called with correct id
-    const deleteMock = MOCK_SUPABASE.from().delete;
+    const deleteMock = mockSupabase.from().delete;
     expect(deleteMock).toHaveBeenCalled();
   });
 
   it('should handle multiple delete attempts gracefully', async () => {
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({
           count: 1,
@@ -176,8 +176,8 @@ describe('useDeleteProject', () => {
     result.current.reset();
 
     // second delete of different project
-    const SECOND_PROJECT_ID = generateTestId();
-    result.current.mutate(SECOND_PROJECT_ID);
+    const secondProjectId = generateTestId();
+    result.current.mutate(secondProjectId);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 });

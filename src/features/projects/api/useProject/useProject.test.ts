@@ -15,11 +15,11 @@ import {
 import { useProject } from './useProject';
 
 // mock supabase client
-const MOCK_SUPABASE = createMockSupabaseClient();
+const mockSupabase = createMockSupabaseClient();
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => MOCK_SUPABASE,
+  useSupabase: () => mockSupabase,
 }));
 
 describe('useProject', () => {
@@ -34,14 +34,14 @@ describe('useProject', () => {
   });
 
   it('should fetch project successfully', async () => {
-    const MOCK_SUPABASE_RESPONSE = createMockProject({
+    const mockSupabaseResponse = createMockProject({
       id: PROJECT_ID,
     });
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(MOCK_SUPABASE_RESPONSE, null)),
+          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockSupabaseResponse, null)),
         }),
       }),
     });
@@ -52,12 +52,12 @@ describe('useProject', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.from).toHaveBeenCalledWith('projects');
-    expect(result.current.data).toEqual(MOCK_SUPABASE_RESPONSE);
+    expect(mockSupabase.from).toHaveBeenCalledWith('projects');
+    expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should handle project not found', async () => {
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
@@ -82,7 +82,7 @@ describe('useProject', () => {
   });
 
   it('should handle RLS access denied (appears as not found)', async () => {
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
@@ -107,12 +107,12 @@ describe('useProject', () => {
   });
 
   it('should handle database error', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Database connection error', 'PGRST301');
+    const mockSupabaseError = createMockSupabaseError('Database connection error', 'PGRST301');
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, MOCK_SUPABASE_ERROR)),
+          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, mockSupabaseError)),
         }),
       }),
     });
@@ -128,17 +128,17 @@ describe('useProject', () => {
       data: null,
       error: {
         code: 500,
-        details: { original: MOCK_SUPABASE_ERROR },
+        details: { original: mockSupabaseError },
         message: 'Failed to fetch project',
       },
     });
   });
 
   it('should validate invalid UUID format', async () => {
-    const INVALID_PROJECT_ID = 'not-a-uuid';
+    const invalidProjectId = 'not-a-uuid';
 
     const errorBoundary = { current: null };
-    renderHook(() => useProject(INVALID_PROJECT_ID), {
+    renderHook(() => useProject(invalidProjectId), {
       wrapper: createErrorBoundaryWrapper(errorBoundary),
     });
 
@@ -180,7 +180,7 @@ describe('useProject', () => {
       id: PROJECT_ID,
     });
 
-    MOCK_SUPABASE.from.mockReturnValue({
+    mockSupabase.from.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockData, null)),

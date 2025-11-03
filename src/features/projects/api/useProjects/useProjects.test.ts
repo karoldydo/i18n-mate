@@ -10,13 +10,13 @@ import { createTestWrapper } from '@/test/utils/test-wrapper';
 import { useProjects } from './useProjects';
 
 // mock supabase client
-const MOCK_SUPABASE = {
+const mockSupabase = {
   rpc: vi.fn(),
 };
 
 // mock the useSupabase hook
 vi.mock('@/app/providers/SupabaseProvider', () => ({
-  useSupabase: () => MOCK_SUPABASE,
+  useSupabase: () => mockSupabase,
 }));
 
 describe('useProjects', () => {
@@ -29,12 +29,12 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with default params', async () => {
-    const MOCK_SUPABASE_RESPONSE = [createMockProjectWithCounts()];
+    const mockSupabaseResponse = [createMockProjectWithCounts()];
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 1,
-        data: MOCK_SUPABASE_RESPONSE,
+        data: mockSupabaseResponse,
         error: null,
       }),
     });
@@ -45,13 +45,13 @@ describe('useProjects', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.rpc).toHaveBeenCalledWith(
+    expect(mockSupabase.rpc).toHaveBeenCalledWith(
       'list_projects_with_counts',
       { p_limit: PROJECTS_DEFAULT_LIMIT, p_offset: 0 },
       expect.objectContaining({ count: 'exact' })
     );
     expect(result.current.data).toEqual({
-      data: MOCK_SUPABASE_RESPONSE,
+      data: mockSupabaseResponse,
       metadata: {
         end: 0,
         start: 0,
@@ -61,7 +61,7 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with custom pagination', async () => {
-    const MOCK_SUPABASE_RESPONSE = [
+    const mockSupabaseResponse = [
       createMockProjectWithCounts({
         description: null,
         id: '550e8400-e29b-41d4-a716-446655440001',
@@ -72,10 +72,10 @@ describe('useProjects', () => {
       }),
     ];
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 50,
-        data: MOCK_SUPABASE_RESPONSE,
+        data: mockSupabaseResponse,
         error: null,
       }),
     });
@@ -91,13 +91,13 @@ describe('useProjects', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(MOCK_SUPABASE.rpc).toHaveBeenCalledWith(
+    expect(mockSupabase.rpc).toHaveBeenCalledWith(
       'list_projects_with_counts',
       { p_limit: 10, p_offset: 20 },
       expect.objectContaining({ count: 'exact' })
     );
     expect(result.current.data).toEqual({
-      data: MOCK_SUPABASE_RESPONSE,
+      data: mockSupabaseResponse,
       metadata: {
         end: 20,
         start: 20,
@@ -107,7 +107,7 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with ascending name sort', async () => {
-    const MOCK_SUPABASE_RESPONSE = [
+    const mockSupabaseResponse = [
       createMockProjectWithCounts({
         description: null,
         id: '550e8400-e29b-41d4-a716-446655440002',
@@ -120,11 +120,11 @@ describe('useProjects', () => {
 
     const orderMock = vi.fn().mockResolvedValue({
       count: 1,
-      data: MOCK_SUPABASE_RESPONSE,
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       order: orderMock,
     });
 
@@ -140,7 +140,7 @@ describe('useProjects', () => {
 
     expect(orderMock).toHaveBeenCalledWith('name', { ascending: true });
     expect(result.current.data).toEqual({
-      data: MOCK_SUPABASE_RESPONSE,
+      data: mockSupabaseResponse,
       metadata: {
         end: 0,
         start: 0,
@@ -150,7 +150,7 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with descending created_at sort', async () => {
-    const MOCK_SUPABASE_RESPONSE = [
+    const mockSupabaseResponse = [
       createMockProjectWithCounts({
         created_at: '2025-01-15T12:00:00Z',
         description: null,
@@ -165,11 +165,11 @@ describe('useProjects', () => {
 
     const orderMock = vi.fn().mockResolvedValue({
       count: 1,
-      data: MOCK_SUPABASE_RESPONSE,
+      data: mockSupabaseResponse,
       error: null,
     });
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       order: orderMock,
     });
 
@@ -185,7 +185,7 @@ describe('useProjects', () => {
 
     expect(orderMock).toHaveBeenCalledWith('created_at', { ascending: false });
     expect(result.current.data).toEqual({
-      data: MOCK_SUPABASE_RESPONSE,
+      data: mockSupabaseResponse,
       metadata: {
         end: 0,
         start: 0,
@@ -195,7 +195,7 @@ describe('useProjects', () => {
   });
 
   it('should return empty array when no projects found', async () => {
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 0,
         data: [],
@@ -220,12 +220,12 @@ describe('useProjects', () => {
   });
 
   it('should handle database error', async () => {
-    const MOCK_SUPABASE_ERROR = createMockSupabaseError('Database error', 'PGRST301');
+    const mockSupabaseError = createMockSupabaseError('Database error', 'PGRST301');
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         data: null,
-        error: MOCK_SUPABASE_ERROR,
+        error: mockSupabaseError,
       }),
     });
 
@@ -289,7 +289,7 @@ describe('useProjects', () => {
   });
 
   it('should return correct pagination metadata for multiple items', async () => {
-    const MOCK_SUPABASE_RESPONSE = [
+    const mockSupabaseResponse = [
       createMockProjectWithCounts({
         description: 'Project 1',
         id: '550e8400-e29b-41d4-a716-446655440000',
@@ -318,10 +318,10 @@ describe('useProjects', () => {
       }),
     ];
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 150,
-        data: MOCK_SUPABASE_RESPONSE,
+        data: mockSupabaseResponse,
         error: null,
       }),
     });
@@ -346,7 +346,7 @@ describe('useProjects', () => {
   });
 
   it('should handle pagination metadata for last page', async () => {
-    const MOCK_SUPABASE_RESPONSE = [
+    const mockSupabaseResponse = [
       createMockProjectWithCounts({
         description: 'Last Project',
         id: '550e8400-e29b-41d4-a716-446655440000',
@@ -357,10 +357,10 @@ describe('useProjects', () => {
       }),
     ];
 
-    MOCK_SUPABASE.rpc.mockReturnValue({
+    mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
         count: 26,
-        data: MOCK_SUPABASE_RESPONSE,
+        data: mockSupabaseResponse,
         error: null,
       }),
     });
