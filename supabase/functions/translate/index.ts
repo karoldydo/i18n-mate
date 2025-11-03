@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
+import { withCors } from '../_shared/cors.ts';
+
 // =============================================================================
 // Constants
 // =============================================================================
@@ -740,4 +742,4 @@ async function updateJobItem(
 // Deno HTTP Handler
 // =============================================================================
 
-Deno.serve(handleTranslateRequest);
+Deno.serve(withCors(handleTranslateRequest));

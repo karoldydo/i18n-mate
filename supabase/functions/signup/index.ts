@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
+import { withCors } from '../_shared/cors.ts';
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -46,30 +48,7 @@ function createErrorResponse(code: number, message: string, details?: Record<str
   };
 }
 
-/**
- * Check if registration is enabled in app_config
- */
-async function isRegistrationEnabled(supabaseAdmin: ReturnType<typeof createClient>): Promise<boolean> {
-  const { data, error } = await supabaseAdmin
-    .from('app_config')
-    .select('value')
-    .eq('key', 'registration_enabled')
-    .single();
-
-  if (error) {
-    console.error('[signup] Failed to check registration status:', error);
-    // fail open: if we can't check config, allow registration
-    return true;
-  }
-
-  return data?.value === 'true';
-}
-
-// =============================================================================
-// Main Handler
-// =============================================================================
-
-Deno.serve(async (req) => {
+async function handleSignup(req: Request): Promise<Response> {
   // only allow POST requests
   if (req.method !== 'POST') {
     return new Response(JSON.stringify(createErrorResponse(405, 'Method not allowed')), {
@@ -182,4 +161,30 @@ Deno.serve(async (req) => {
       }
     );
   }
-});
+}
+
+// =============================================================================
+// Main Handler
+// =============================================================================
+
+/**
+ * Check if registration is enabled in app_config
+ */
+async function isRegistrationEnabled(supabaseAdmin: ReturnType<typeof createClient>): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from('app_config')
+    .select('value')
+    .eq('key', 'registration_enabled')
+    .single();
+
+  if (error) {
+    console.error('[signup] Failed to check registration status:', error);
+    // fail open: if we can't check config, allow registration
+    return true;
+  }
+
+  return data?.value === 'true';
+}
+
+// Wrap handler with CORS middleware
+Deno.serve(withCors(handleSignup));

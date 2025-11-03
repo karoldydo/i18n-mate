@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import JSZip from 'jszip';
 import { z } from 'zod';
 
+import { withCors } from '../_shared/cors.ts';
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -247,4 +249,4 @@ async function handleExportRequest(req: Request): Promise<Response> {
 // Deno HTTP Handler
 // =============================================================================
 
-Deno.serve(handleExportRequest);
+Deno.serve(withCors(handleExportRequest));
