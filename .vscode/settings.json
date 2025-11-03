@@ -6,6 +6,7 @@
     "fanout",
     "FKEY",
     "ILIKE",
+    "nvmrc",
     "openrouter",
     "PGRST",
     "Postgrest",

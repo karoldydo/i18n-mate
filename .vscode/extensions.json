@@ -30,6 +30,7 @@
     "yzhang.markdown-all-in-one",
     "vscode-icons-team.vscode-icons",
     "bierner.markdown-mermaid",
-    "ms-playwright.playwright"
+    "ms-playwright.playwright",
+    "github.vscode-github-actions"
   ]
 }
