@@ -23,6 +23,8 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        env:
+          HUSKY: 0
         run: npm ci
 
       - name: Run linter
@@ -43,6 +45,8 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        env:
+          HUSKY: 0
         run: npm ci
 
       - name: Run unit tests with coverage
@@ -78,6 +82,8 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
+        env:
+          HUSKY: 0
         run: npm ci
 
       - name: Install Playwright browsers
