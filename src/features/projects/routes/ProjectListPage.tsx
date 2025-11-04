@@ -4,10 +4,10 @@ import type { ProjectWithCounts } from '@/shared/types';
 
 import { ErrorBoundary, Loading } from '@/shared/components';
 
-import { CreateProjectDialog } from '../components/CreateProjectDialog';
-import { DeleteProjectDialog } from '../components/DeleteProjectDialog';
-import { EditProjectDialog } from '../components/EditProjectDialog';
-import { ProjectListTable } from '../components/ProjectListTable';
+import { CreateProjectDialog } from '../components/dialogs/CreateProjectDialog';
+import { DeleteProjectDialog } from '../components/dialogs/DeleteProjectDialog';
+import { EditProjectDialog } from '../components/dialogs/EditProjectDialog';
+import { ProjectListTable } from '../components/tables/ProjectListTable';
 
 /**
  * ProjectListPage - Main page component for displaying and managing projects

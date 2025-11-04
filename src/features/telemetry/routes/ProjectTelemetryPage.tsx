@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { ErrorBoundary, Loading } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
-import { ProjectTelemetryContent } from '../components/ProjectTelemetryContent';
+import { ProjectTelemetryContent } from '../components/views/ProjectTelemetryContent';
 
 const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 

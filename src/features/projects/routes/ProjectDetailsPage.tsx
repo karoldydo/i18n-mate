@@ -5,7 +5,7 @@ import { ErrorBoundary, Loading } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { UUID_SCHEMA } from '../api/projects.schemas';
-import { ProjectDetailsContent } from '../components/ProjectDetailsContent';
+import { ProjectDetailsContent } from '../components/views/ProjectDetailsContent';
 
 interface RouteParams {
   id: string;

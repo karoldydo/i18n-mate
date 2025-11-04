@@ -5,7 +5,7 @@ import { ErrorBoundary, Loading } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
-import { KeysPerLanguageContent } from '../components/KeysPerLanguageContent';
+import { KeysPerLanguageContent } from '../components/views/KeysPerLanguageContent';
 
 interface RouteParams {
   locale: string;
