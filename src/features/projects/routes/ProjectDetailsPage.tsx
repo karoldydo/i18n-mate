@@ -1,7 +1,7 @@
-import { Suspense, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { ErrorBoundary, Loading } from '@/shared/components';
+import { ErrorBoundary } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { UUID_SCHEMA } from '../api/projects.schemas';
@@ -50,9 +50,7 @@ export function ProjectDetailsPage() {
   return (
     <div data-testid="project-details-page">
       <ErrorBoundary resetKeys={[projectId]}>
-        <Suspense fallback={<Loading />}>
-          <ProjectDetailsContent projectId={projectId} />
-        </Suspense>
+        <ProjectDetailsContent projectId={projectId} />
       </ErrorBoundary>
     </div>
   );

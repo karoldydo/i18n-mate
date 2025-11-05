@@ -1,7 +1,7 @@
-import { Suspense, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useParams } from 'react-router';
 
-import { ErrorBoundary, Loading } from '@/shared/components';
+import { ErrorBoundary } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { UUID_SCHEMA } from '../api';
@@ -14,9 +14,9 @@ interface RouteParams {
 /**
  * ProjectTelemetryPage - Route component for project telemetry view
  *
- * Wraps the telemetry content in a Suspense boundary with a global loader to
- * prevent blinking while data is fetched. Handles invalid route params before
- * rendering the main telemetry content.
+ * Displays telemetry data for a specific project. Handles invalid route params
+ * before rendering the main telemetry content. Loading states are managed by
+ * TanStack Query within the content component.
  */
 export function ProjectTelemetryPage() {
   const { id } = useParams<keyof RouteParams>();
@@ -44,9 +44,7 @@ export function ProjectTelemetryPage() {
 
   return (
     <ErrorBoundary resetKeys={[projectId]}>
-      <Suspense fallback={<Loading />}>
-        <ProjectTelemetryContent projectId={projectId} />
-      </Suspense>
+      <ProjectTelemetryContent projectId={projectId} />
     </ErrorBoundary>
   );
 }

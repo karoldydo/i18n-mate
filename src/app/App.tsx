@@ -1,11 +1,11 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router';
 
-import { AppSidebar, BreadcrumbNavigation, ErrorBoundary, Loading } from '@/shared/components';
-import { Separator } from '@/shared/ui/separator';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/shared/ui/sidebar';
+import { AppSidebar, BreadcrumbNavigation, ErrorBoundary, InlineLoading } from '@/shared/components';
 
 import './App.css';
+import { Separator } from '@/shared/ui/separator';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/shared/ui/sidebar';
 
 function App() {
   return (
@@ -26,7 +26,7 @@ function App() {
             <BreadcrumbNavigation />
           </header>
           <div className="flex flex-1 flex-col p-6">
-            <Suspense fallback={<Loading />}>
+            <Suspense fallback={<InlineLoading />}>
               <Outlet />
             </Suspense>
           </div>

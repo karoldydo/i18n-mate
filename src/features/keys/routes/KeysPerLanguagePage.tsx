@@ -1,7 +1,7 @@
-import { Suspense, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { ErrorBoundary, Loading } from '@/shared/components';
+import { ErrorBoundary } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
@@ -70,9 +70,7 @@ export function KeysPerLanguagePage() {
 
   return (
     <ErrorBoundary resetKeys={[projectId, locale]}>
-      <Suspense fallback={<Loading />}>
-        <KeysPerLanguageContent locale={locale} projectId={projectId} />
-      </Suspense>
+      <KeysPerLanguageContent locale={locale} projectId={projectId} />
     </ErrorBoundary>
   );
 }

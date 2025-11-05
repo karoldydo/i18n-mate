@@ -1,7 +1,6 @@
-import { type ComponentType, Suspense } from 'react';
+import { type ComponentType } from 'react';
 
 import { AuthGuard } from '@/features/auth';
-import { Loading } from '@/shared/components';
 
 interface ProtectedRouteProps {
   Component: ComponentType;
@@ -10,15 +9,13 @@ interface ProtectedRouteProps {
 /**
  * ProtectedRoute - Wrapper for protected route components
  *
- * Combines AuthGuard with Suspense for lazy-loaded protected routes.
  * Ensures user is authenticated and email is verified before rendering component.
+ * Loading states for lazy-loaded routes are handled by the Suspense boundary in App.tsx.
  */
 export function ProtectedRoute({ Component }: ProtectedRouteProps) {
   return (
     <AuthGuard>
-      <Suspense fallback={<Loading />}>
-        <Component />
-      </Suspense>
+      <Component />
     </AuthGuard>
   );
 }

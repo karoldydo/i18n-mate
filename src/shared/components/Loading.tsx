@@ -1,10 +1,11 @@
 import { Loader2 } from 'lucide-react';
 
 /**
- * Loading - Centered loading spinner with backdrop blur and fade-in animation
+ * Loading - Full-screen loading spinner with backdrop blur
  *
- * Provides a full-screen loading indicator with blurred background.
- * Used as Suspense fallback to prevent content blinking during navigation.
+ * Provides a full-screen loading indicator with blurred background (fixed positioning).
+ * Used primarily for initial authentication checks in AuthGuard.
+ * For route transitions, use InlineLoading instead to keep navigation visible.
  * Includes smooth fade-in animation for better UX.
  */
 export function Loading() {

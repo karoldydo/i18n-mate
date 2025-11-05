@@ -1,7 +1,7 @@
-import { Suspense, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { ErrorBoundary, Loading } from '@/shared/components';
+import { ErrorBoundary } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
@@ -47,9 +47,7 @@ export function TranslationJobsPage() {
 
   return (
     <ErrorBoundary resetKeys={[projectId]}>
-      <Suspense fallback={<Loading />}>
-        <TranslationJobsContent projectId={projectId} />
-      </Suspense>
+      <TranslationJobsContent projectId={projectId} />
     </ErrorBoundary>
   );
 }
