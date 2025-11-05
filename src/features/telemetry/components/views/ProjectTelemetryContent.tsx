@@ -76,7 +76,7 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
   }
 
   return (
-    <div className="animate-in fade-in container mx-auto py-8 duration-500">
+    <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
         <div>
           <Button

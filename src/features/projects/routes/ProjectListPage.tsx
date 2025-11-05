@@ -36,10 +36,7 @@ export function ProjectListPage() {
   }, []);
 
   return (
-    <div
-      className="animate-in fade-in container mx-auto h-full py-6 duration-500 sm:py-10"
-      data-testid="project-list-page"
-    >
+    <div className="animate-in fade-in container h-full duration-500" data-testid="project-list-page">
       <div className="mb-6 flex items-center justify-between sm:mb-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Projects</h1>

@@ -30,7 +30,7 @@ export function ProjectDetailsPage() {
 
   if (!validation.success) {
     return (
-      <div className="container mx-auto py-8" data-testid="project-details-page">
+      <div className="container" data-testid="project-details-page">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>

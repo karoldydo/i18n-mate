@@ -43,13 +43,7 @@ export function ProjectDetailsContent({ projectId }: ProjectDetailsContentProps)
 
   return (
     <div className="animate-in fade-in duration-500">
-      <ProjectDetailsLayout
-        onDelete={handleDelete}
-        onEdit={handleEdit}
-        onExport={handleExport}
-        project={project}
-        projectId={projectId}
-      />
+      <ProjectDetailsLayout onDelete={handleDelete} onEdit={handleEdit} onExport={handleExport} project={project} />
       {projectWithCounts && (
         <>
           <EditProjectDialog onOpenChange={setEditDialogOpen} open={editDialogOpen} project={projectWithCounts} />

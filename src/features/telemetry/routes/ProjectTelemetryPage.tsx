@@ -1,13 +1,15 @@
 import { Suspense, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router';
-import { z } from 'zod';
 
 import { ErrorBoundary, Loading } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
+import { UUID_SCHEMA } from '../api';
 import { ProjectTelemetryContent } from '../components/views/ProjectTelemetryContent';
 
-const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
+interface RouteParams {
+  id: string;
+}
 
 /**
  * ProjectTelemetryPage - Route component for project telemetry view
@@ -17,7 +19,7 @@ const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
  * rendering the main telemetry content.
  */
 export function ProjectTelemetryPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<keyof RouteParams>();
 
   const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
   const projectId = useMemo(() => validation.data ?? '', [validation.data]);
@@ -28,7 +30,7 @@ export function ProjectTelemetryPage() {
 
   if (!validation.success) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>

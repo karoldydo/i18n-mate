@@ -8,8 +8,8 @@ import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
 import { KeysPerLanguageContent } from '../components/views/KeysPerLanguageContent';
 
 interface RouteParams {
+  id: string;
   locale: string;
-  projectId: string;
 }
 
 /**
@@ -22,26 +22,26 @@ interface RouteParams {
  * and timestamps.
  */
 export function KeysPerLanguagePage() {
-  const { locale, projectId } = useParams<keyof RouteParams>();
+  const { id, locale: languageCode } = useParams<keyof RouteParams>();
   const navigate = useNavigate();
 
   // validate UUID format
-  const validation = useMemo(() => UUID_SCHEMA.safeParse(projectId), [projectId]);
-  const validProjectId = useMemo(() => validation.data ?? '', [validation.data]);
-  const validLocale = useMemo(() => locale || '', [locale]);
+  const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
+  const projectId = useMemo(() => validation.data ?? '', [validation.data]);
+  const locale = useMemo(() => languageCode || '', [languageCode]);
 
   const handleBackToProjects = useCallback(() => {
     navigate('/projects');
   }, [navigate]);
 
   const handleBackToKeys = useCallback(() => {
-    navigate(`/projects/${validProjectId}/keys`);
-  }, [navigate, validProjectId]);
+    navigate(`/projects/${projectId}/keys`);
+  }, [navigate, projectId]);
 
   // invalid project ID
   if (!validation.success) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
@@ -56,7 +56,7 @@ export function KeysPerLanguagePage() {
   // invalid locale
   if (!locale) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Locale</h2>
           <p className="text-muted-foreground text-sm">The locale specified is not valid for this project.</p>
@@ -69,9 +69,9 @@ export function KeysPerLanguagePage() {
   }
 
   return (
-    <ErrorBoundary resetKeys={[validProjectId, validLocale]}>
+    <ErrorBoundary resetKeys={[projectId, locale]}>
       <Suspense fallback={<Loading />}>
-        <KeysPerLanguageContent locale={validLocale} projectId={validProjectId} />
+        <KeysPerLanguageContent locale={locale} projectId={projectId} />
       </Suspense>
     </ErrorBoundary>
   );

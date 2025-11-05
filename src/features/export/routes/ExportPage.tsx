@@ -8,7 +8,7 @@ import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
 import { ProjectExportContent } from '../components/views/ProjectExportContent';
 
 interface RouteParams {
-  projectId: string;
+  id: string;
 }
 
 /**
@@ -18,11 +18,11 @@ interface RouteParams {
  * all translations as a ZIP archive containing individual JSON files for each locale.
  */
 export function ExportPage() {
-  const { projectId } = useParams<keyof RouteParams>();
+  const { id } = useParams<keyof RouteParams>();
   const navigate = useNavigate();
 
-  const validation = useMemo(() => UUID_SCHEMA.safeParse(projectId), [projectId]);
-  const validatedProjectId = useMemo(() => validation.data ?? '', [validation.data]);
+  const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
+  const projectId = useMemo(() => validation.data ?? '', [validation.data]);
 
   const handleNavigateToProjects = useCallback(() => {
     navigate('/projects');
@@ -43,9 +43,9 @@ export function ExportPage() {
   }
 
   return (
-    <ErrorBoundary resetKeys={[validatedProjectId]}>
+    <ErrorBoundary resetKeys={[projectId]}>
       <Suspense fallback={<Loading />}>
-        <ProjectExportContent projectId={validatedProjectId} />
+        <ProjectExportContent projectId={projectId} />
       </Suspense>
     </ErrorBoundary>
   );

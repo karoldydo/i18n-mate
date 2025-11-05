@@ -8,14 +8,12 @@ import { Button } from '@/shared/ui/button';
 
 import { ProjectHeader } from './ProjectHeader';
 import { ProjectMetadata } from './ProjectMetadata';
-import { ProjectNavigation } from './ProjectNavigation';
 
 interface ProjectDetailsLayoutProps {
   onDelete: () => void;
   onEdit: () => void;
   onExport: () => void;
   project: ProjectResponse;
-  projectId: string;
 }
 
 /**
@@ -24,7 +22,7 @@ interface ProjectDetailsLayoutProps {
  * Provides consistent structure with header, navigation tabs, and metadata display.
  * Organizes the view into clear sections with responsive design.
  */
-export function ProjectDetailsLayout({ onDelete, onEdit, onExport, project, projectId }: ProjectDetailsLayoutProps) {
+export function ProjectDetailsLayout({ onDelete, onEdit, onExport, project }: ProjectDetailsLayoutProps) {
   const navigate = useNavigate();
 
   const handleBackToProjects = useCallback(() => {
@@ -32,7 +30,7 @@ export function ProjectDetailsLayout({ onDelete, onEdit, onExport, project, proj
   }, [navigate]);
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container">
       <div className="space-y-6">
         <div>
           <Button
@@ -48,7 +46,6 @@ export function ProjectDetailsLayout({ onDelete, onEdit, onExport, project, proj
           </Button>
         </div>
         <ProjectHeader onDelete={onDelete} onEdit={onEdit} onExport={onExport} project={project} />
-        <ProjectNavigation projectId={projectId} />
         <ProjectMetadata project={project} />
       </div>
     </div>

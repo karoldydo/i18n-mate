@@ -30,6 +30,9 @@ export const EVENT_NAME_SCHEMA = z.enum([
   TELEMETRY_EVENT_TYPES.TRANSLATION_COMPLETED,
 ]) satisfies z.ZodType<EventType>;
 
+// UUID schema
+export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
+
 // list telemetry events schema
 export const LIST_TELEMETRY_EVENTS_SCHEMA = z.object({
   limit: z

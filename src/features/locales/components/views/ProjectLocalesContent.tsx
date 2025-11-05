@@ -62,7 +62,7 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
 
   return (
     <>
-      <div className="animate-in fade-in container mx-auto py-8 duration-500">
+      <div className="animate-in fade-in container duration-500">
         <div className="space-y-6">
           <Button aria-label="Back to project details" onClick={handleBackClick} size="sm" variant="ghost">
             <ArrowLeft aria-hidden="true" className="mr-2 h-4 w-4" />

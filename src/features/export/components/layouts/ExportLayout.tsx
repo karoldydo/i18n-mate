@@ -23,7 +23,7 @@ interface ProjectStats {
  */
 export function ExportLayout({ children, project, stats }: ExportLayoutProps) {
   return (
-    <div className="container mx-auto py-8">
+    <div className="container">
       <ExportHeader projectId={project.id} />
 
       <div className="space-y-8">

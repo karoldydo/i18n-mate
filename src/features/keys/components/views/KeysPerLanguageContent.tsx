@@ -105,7 +105,7 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
   const totalPages = Math.max(1, Math.ceil(keysData.metadata.total / pageSize));
 
   return (
-    <div className="animate-in fade-in container mx-auto py-8 duration-500">
+    <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
         <div>
           <Button

@@ -24,7 +24,7 @@ export function TranslationJobsPage() {
 
   // validate UUID format
   const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
-  const validProjectId = useMemo(() => validation.data ?? '', [validation.data]);
+  const projectId = useMemo(() => validation.data ?? '', [validation.data]);
 
   const handleBackToProjects = useCallback(() => {
     navigate('/projects');
@@ -33,7 +33,7 @@ export function TranslationJobsPage() {
   // invalid project ID
   if (!validation.success) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
@@ -46,9 +46,9 @@ export function TranslationJobsPage() {
   }
 
   return (
-    <ErrorBoundary resetKeys={[validProjectId]}>
+    <ErrorBoundary resetKeys={[projectId]}>
       <Suspense fallback={<Loading />}>
-        <TranslationJobsContent projectId={validProjectId} />
+        <TranslationJobsContent projectId={projectId} />
       </Suspense>
     </ErrorBoundary>
   );

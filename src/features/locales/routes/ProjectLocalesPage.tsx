@@ -8,7 +8,7 @@ import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
 import { ProjectLocalesContent } from '../components/views/ProjectLocalesContent';
 
 interface RouteParams {
-  projectId: string;
+  id: string;
 }
 
 /**
@@ -21,12 +21,12 @@ interface RouteParams {
  * Route: /projects/:projectId/locales
  */
 export function ProjectLocalesPage() {
-  const { projectId } = useParams<keyof RouteParams>();
+  const { id } = useParams<keyof RouteParams>();
   const navigate = useNavigate();
 
   // validate UUID format
-  const validation = useMemo(() => UUID_SCHEMA.safeParse(projectId), [projectId]);
-  const validProjectId = useMemo(() => validation.data ?? '', [validation.data]);
+  const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
+  const projectId = useMemo(() => validation.data ?? '', [validation.data]);
 
   const handleBackToProjects = useCallback(() => {
     navigate('/projects');
@@ -35,7 +35,7 @@ export function ProjectLocalesPage() {
   // invalid project ID
   if (!validation.success) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container">
         <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
           <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
           <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
@@ -48,9 +48,9 @@ export function ProjectLocalesPage() {
   }
 
   return (
-    <ErrorBoundary resetKeys={[validProjectId]}>
+    <ErrorBoundary resetKeys={[projectId]}>
       <Suspense fallback={<Loading />}>
-        <ProjectLocalesContent projectId={validProjectId} />
+        <ProjectLocalesContent projectId={projectId} />
       </Suspense>
     </ErrorBoundary>
   );

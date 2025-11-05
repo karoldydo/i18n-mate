@@ -135,15 +135,15 @@ const router = createBrowserRouter([
       },
       {
         Component: ProjectLocalesPage,
-        path: 'projects/:projectId/locales',
+        path: 'projects/:id/locales',
       },
       {
         Component: KeysListPage,
-        path: 'projects/:projectId/keys',
+        path: 'projects/:id/keys',
       },
       {
         Component: KeysPerLanguagePage,
-        path: 'projects/:projectId/keys/:locale',
+        path: 'projects/:id/keys/:locale',
       },
       {
         Component: TranslationJobsPage,
@@ -155,7 +155,7 @@ const router = createBrowserRouter([
       },
       {
         Component: ExportPage,
-        path: 'projects/:projectId/export',
+        path: 'projects/:id/export',
       },
     ],
     element: <ProtectedRoute Component={App} />,
