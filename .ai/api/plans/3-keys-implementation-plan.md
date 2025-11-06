@@ -129,10 +129,9 @@ Create validation schemas in `src/features/keys/api/keys.schemas.ts`:
 
 - `FULL_KEY_SCHEMA` — uses `KEY_FORMAT_PATTERN`, min/max, forbids `..` and trailing dot per `KEYS_ERROR_MESSAGES`.
 - `TRANSLATION_VALUE_SCHEMA` — trims and bounds length, disallows newlines for default values.
-
 - `LOCALE_CODE_SCHEMA` — validates BCP‑47 (`ll` or `ll-CC`); `UUID_SCHEMA` — validates UUIDs for identifiers.
-- `LIST_KEYS_DEFAULT_VIEW_SCHEMA` — normalizes `limit`/`offset` and `missing_only`, requires `project_id`, optional `search`.
-- `LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA` — extends default view schema with required `locale`.
+- `KEYS_SCHEMA` — normalizes `limit`/`offset` and `missing_only`, requires `project_id`, optional `search` for default view.
+- `KEY_TRANSLATIONS_SCHEMA` — extends default view schema with required `locale` for per-language view.
 - `CREATE_KEY_REQUEST_SCHEMA` — validates UI payload; `CREATE_KEY_SCHEMA` — maps to RPC args with `p_` prefixes.
 - `KEY_DEFAULT_VIEW_RESPONSE_SCHEMA` / `KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA` / `CREATE_KEY_RESPONSE_SCHEMA` — runtime response validation.
 

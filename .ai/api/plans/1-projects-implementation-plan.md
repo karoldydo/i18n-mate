@@ -139,15 +139,17 @@ The Projects API provides full CRUD operations for managing translation projects
 
 Create validation schemas in `src/features/projects/api/projects.schemas.ts`:
 
+- `LOCALE_CODE_INPUT_PATTERN`: regex pattern for BCP-47 format validation.
 - `LOCALE_CODE_SCHEMA`: validates BCP‑47 format for `default_locale` (e.g., "en", "en-US").
 - `PREFIX_SCHEMA`: enforces length bounds, character pattern, and no trailing dot using shared constants.
-- `LIST_PROJECTS_SCHEMA`: constrains `limit`/`offset`, normalizes defaults, and restricts order to allowed values.
+- `PROJECTS_REQUEST_SCHEMA`: constrains `limit`/`offset`, normalizes defaults, and restricts order to allowed values.
 - `CREATE_PROJECT_REQUEST_SCHEMA`: trims strings and requires `name`, `prefix`, `default_locale`, and `default_locale_label`.
 - `CREATE_PROJECT_SCHEMA`: transforms validated input into RPC parameter shape for `create_project_with_default_locale`.
 - `UPDATE_PROJECT_SCHEMA`: strict object that allows only `name`/`description`; blocks `prefix` and `default_locale` changes.
 - `UUID_SCHEMA`: ensures `projectId` is a valid UUID before DB access.
-- `PROJECT_RESPONSE_SCHEMA`: runtime validation of the canonical project shape.
-- `PROJECT_WITH_COUNTS_SCHEMA`: adds `key_count` and `locale_count` to list results.
+- `CREATE_PROJECT_RESPONSE_SCHEMA`: runtime validation for create project response.
+- `PROJECT_RESPONSE_SCHEMA`: runtime validation of the canonical project shape with counts.
+- `PROJECTS_RESPONSE_ITEM_SCHEMA`: adds `total_count` to project response for list operations.
 
 ## 4. Response Details
 

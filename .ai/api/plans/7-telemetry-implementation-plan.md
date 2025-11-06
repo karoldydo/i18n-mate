@@ -108,9 +108,9 @@ Telemetry events are created **automatically** by the database. No manual POST e
 - `TranslationCompletedEvent`: complete event structure for translation completion events
 
 - `EVENT_NAME_SCHEMA`: validates event names against allowed telemetry event types
-- `LIST_TELEMETRY_EVENTS_SCHEMA`: validates list query parameters with limit, offset, order, and project_id constraints
+- `TELEMETRY_EVENTS_SCHEMA`: validates list query parameters with limit, offset, order, and project_id constraints
 - `TELEMETRY_EVENT_RESPONSE_SCHEMA`: runtime validation for telemetry event response payloads
-- `ListTelemetryEventsParams`: interface extending pagination params with optional order and required project_id
+- `TelemetryEventsRequest`: interface extending pagination params with optional order and required project_id
 
 ## 4. Response Details
 

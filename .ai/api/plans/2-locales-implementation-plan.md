@@ -120,11 +120,11 @@ Create validation schemas in `src/features/locales/api/locales.schemas.ts`:
 - Define schemas in `src/features/locales/api/locales.schemas.ts` using shared constants for consistency with DB.
 - `LOCALE_CODE_SCHEMA` validates BCP‑47 subset and uses `LOCALE_NORMALIZATION.isValidFormatClient`.
 - `LOCALE_LABEL_SCHEMA` trims and bounds label length with `LOCALE_LABEL_MAX_LENGTH` and `LOCALE_ERROR_MESSAGES`.
-- `LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA` enforces a UUID `p_project_id`.
-- `CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA` validates `p_label`, `p_locale`, and `p_project_id` for RPC.
-- `UPDATE_PROJECT_LOCALE_SCHEMA` is strict, allowing `label` only and rejecting `locale` via `z.never()`.
+- `CREATE_LOCALE_SCHEMA` validates `label` and `locale` for API input (without p\_ prefixes).
+- `UPDATE_LOCALE_SCHEMA` is strict, allowing `label` only and rejecting `locale` via `z.never()`.
 - `UUID_SCHEMA` standardizes identifier validation.
-- `PROJECT_LOCALE_RESPONSE_SCHEMA` and `PROJECT_LOCALE_WITH_DEFAULT_SCHEMA` validate list/create results at runtime.
+- `LOCALE_RESPONSE_SCHEMA` validates individual locale records.
+- `LOCALES_RESPONSE_SCHEMA` validates array of locales with `is_default` flag for list operations.
 
 ## 4. Response Details
 
