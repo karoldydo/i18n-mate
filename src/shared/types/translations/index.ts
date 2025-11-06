@@ -1,20 +1,7 @@
-// Translations Feature Types
+import type { Tables } from '../database.types';
 
-import type { Enums, Tables, TablesInsert, TablesUpdate } from '../database.types';
+export type TranslationResponse = Tables<'translations'>;
 
-// Translation entity
-export type Translation = Tables<'translations'>;
-
-export type TranslationInsert = TablesInsert<'translations'>;
-
-// Standard translation representation
-export type TranslationResponse = Translation;
-
-export type TranslationUpdate = TablesUpdate<'translations'>;
-
-export type UpdateSourceType = Enums<'update_source_type'>;
-
-// Update translation request with all parameters
 export interface UpdateTranslationRequest {
   is_machine_translated: boolean;
   key_id: string;
