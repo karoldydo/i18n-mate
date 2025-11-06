@@ -206,15 +206,16 @@ test('should display welcome message', () => {
 
 ```
 tests/e2e/
-├── auth/
-│   ├── login.spec.ts       # Login flow tests
-│   └── signup.spec.ts      # Registration flow tests
-├── projects/
-│   └── project-management.spec.ts  # Project CRUD tests
-├── locales/
-│   └── locale-management.spec.ts   # Language management tests
+├── [feature]/
+│   ├── [feature].spec.ts          # Feature-specific test suites
+│   └── [additional-tests].spec.ts # Additional test files as needed
+├── pages/
+│   ├── [feature]/
+│   │   ├── PageObject.ts          # Page Object Model classes
+│   │   └── ComponentObject.ts     # Component-specific page objects
+│   └── index.ts                   # Central export of all page objects
 └── fixtures/
-    └── test-users.ts       # Test data and credentials
+    └── test-data.ts               # Test data, constants, and utilities
 ```
 
 **Commands:**
@@ -237,11 +238,12 @@ npm run test:e2e:debug    # Run E2E tests in debug mode
 - Implement test hooks (beforeEach, afterEach) for setup and teardown
 
 **Fixtures:**
-Test credentials are defined in `tests/e2e/fixtures/test-users.ts`:
+Test data and credentials are defined in `tests/e2e/fixtures/test-data.ts`:
 
 - `TEST_USERS.validUser` - Valid user credentials (from .env)
 - `TEST_USERS.invalidUser` - Invalid credentials for error testing
-- `TEST_PROJECTS.validProject` - Sample project data
+- `TEST_DATA.sampleProject` - Sample project data
+- Additional test constants and utilities
 
 **Example:**
 
@@ -314,8 +316,8 @@ test.describe('Login Page', () => {
 
 **E2E Tests:**
 
-- Use test credentials from `.env` (TEST_EMAIL, TEST_PASSWORD)
-- Test fixtures in `tests/e2e/fixtures/test-users.ts`
+- Use test credentials from `.env` (E2E_USERNAME, E2E_PASSWORD)
+- Test fixtures in `tests/e2e/fixtures/test-data.ts`
 - Database state managed by Supabase local instance
 - Consider using `beforeAll` hooks to seed test data
 
