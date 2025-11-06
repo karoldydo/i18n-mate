@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import type { ProjectLocaleWithDefault } from '@/shared/types';
+import type { LocaleItem } from '@/shared/types';
 
 import {
   AlertDialog,
@@ -18,7 +18,7 @@ import {
 import { useDeleteProjectLocale } from '../../api/useDeleteProjectLocale';
 
 interface DeleteLocaleDialogProps {
-  locale: null | ProjectLocaleWithDefault;
+  locale: LocaleItem | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }

@@ -53,18 +53,15 @@ export type {
 // ============================================================================
 
 export type {
-  CreateProjectLocaleRequest,
-  CreateProjectLocaleResponse,
+  CreateLocaleRequest,
+  CreateLocaleResponse,
   LanguageAddedEvent,
   LanguageAddedProperties,
-  ListProjectLocalesWithDefaultArgs,
   LocaleCode,
-  ProjectLocale,
-  ProjectLocaleInsert,
-  ProjectLocaleResponse,
-  ProjectLocaleUpdate,
-  ProjectLocaleWithDefault,
-  UpdateProjectLocaleRequest,
+  LocaleItem,
+  LocalesResponse,
+  UpdateLocaleRequest,
+  UpdateLocaleResponse,
 } from './locales';
 
 // ============================================================================

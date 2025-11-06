@@ -1,24 +1,24 @@
 import { MoreHorizontal, Pencil, Star, Trash2 } from 'lucide-react';
 import { memo, useCallback } from 'react';
 
-import type { ProjectLocaleWithDefault } from '@/shared/types';
+import type { LocaleItem, LocalesResponse } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 
 interface LocaleRowProps {
-  locale: ProjectLocaleWithDefault;
-  onDelete: (locale: ProjectLocaleWithDefault) => void;
-  onEdit: (locale: ProjectLocaleWithDefault) => void;
-  onRowClick: (locale: ProjectLocaleWithDefault) => void;
+  locale: LocaleItem;
+  onDelete: (locale: LocaleItem) => void;
+  onEdit: (locale: LocaleItem) => void;
+  onRowClick: (locale: LocaleItem) => void;
 }
 
 interface LocalesDataTableProps {
-  locales: ProjectLocaleWithDefault[];
-  onDelete: (locale: ProjectLocaleWithDefault) => void;
-  onEdit: (locale: ProjectLocaleWithDefault) => void;
-  onRowClick: (locale: ProjectLocaleWithDefault) => void;
+  locales: LocalesResponse;
+  onDelete: (locale: LocaleItem) => void;
+  onEdit: (locale: LocaleItem) => void;
+  onRowClick: (locale: LocaleItem) => void;
 }
 
 const LocaleRow = memo(function LocaleRow({ locale, onDelete, onEdit, onRowClick }: LocaleRowProps) {

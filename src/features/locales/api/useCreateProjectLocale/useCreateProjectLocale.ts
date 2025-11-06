@@ -1,13 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, CreateProjectLocaleRequest, CreateProjectLocaleResponse } from '@/shared/types';
+import type { ApiErrorResponse, CreateLocaleRequest, CreateLocaleResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { LOCALE_NORMALIZATION } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../locales.errors';
-import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } from '../locales.schemas';
+import { CREATE_LOCALE_SCHEMA, LOCALE_RESPONSE_SCHEMA } from '../locales.schemas';
 
 /**
  * Add a new locale to a project using atomic RPC function
@@ -40,20 +40,19 @@ import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA, PROJECT_LOCALE_RESPONSE_SCHEMA } f
 export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();
 
-  return useMutation<CreateProjectLocaleResponse, ApiErrorResponse, Omit<CreateProjectLocaleRequest, 'p_project_id'>>({
+  return useMutation<CreateLocaleResponse, ApiErrorResponse, CreateLocaleRequest>({
     mutationFn: async (payload) => {
       // normalize locale code before validation
-      const normalized = LOCALE_NORMALIZATION.normalize(payload.p_locale);
+      const normalized = LOCALE_NORMALIZATION.normalize(payload.locale);
 
       // validate input with normalized locale
-      const { p_label, p_locale, p_project_id } = CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA.parse({
+      const { label, locale } = CREATE_LOCALE_SCHEMA.parse({
         ...payload,
-        p_locale: normalized,
-        p_project_id: projectId,
+        locale: normalized,
       });
 
       const { data, error } = await supabase
-        .rpc('create_project_locale_atomic', { p_label, p_locale, p_project_id })
+        .rpc('create_project_locale_atomic', { p_label: label, p_locale: locale, p_project_id: projectId })
         .single();
 
       if (error) {
@@ -64,7 +63,7 @@ export function useCreateProjectLocale(projectId: string) {
         throw createApiErrorResponse(500, 'No data returned from atomic locale creation');
       }
 
-      return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
+      return LOCALE_RESPONSE_SCHEMA.parse(data);
     },
   });
 }

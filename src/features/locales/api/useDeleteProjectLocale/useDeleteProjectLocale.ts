@@ -29,8 +29,8 @@ export function useDeleteProjectLocale() {
   const supabase = useSupabase();
 
   return useMutation<unknown, ApiErrorResponse, string>({
-    mutationFn: async (uuid) => {
-      const id = UUID_SCHEMA.parse(uuid);
+    mutationFn: async (localeId) => {
+      const id = UUID_SCHEMA.parse(localeId);
 
       const { error } = await supabase.from('project_locales').delete().eq('id', id);
 

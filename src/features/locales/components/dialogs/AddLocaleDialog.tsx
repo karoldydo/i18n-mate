@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import type { CreateProjectLocaleRequest } from '@/shared/types';
+import type { CreateLocaleRequest } from '@/shared/types';
 
 import { LocaleSelector } from '@/shared/components/LocaleSelector';
 import { LOCALE_NORMALIZATION, PRIMARY_LOCALES } from '@/shared/constants';
@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form';
 import { Input } from '@/shared/ui/input';
 
-import { CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA } from '../../api/locales.schemas';
+import { CREATE_LOCALE_SCHEMA } from '../../api/locales.schemas';
 import { useCreateProjectLocale } from '../../api/useCreateProjectLocale';
 
 interface AddLocaleDialogProps {
@@ -33,35 +33,33 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
   const queryClient = useQueryClient();
   const createLocale = useCreateProjectLocale(projectId);
 
-  const form = useForm<CreateProjectLocaleRequest>({
+  const form = useForm<CreateLocaleRequest>({
     defaultValues: {
-      p_label: '',
-      p_locale: '',
-      p_project_id: projectId,
+      label: '',
+      locale: '',
     },
     mode: 'onChange',
-    resolver: zodResolver(CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA),
+    resolver: zodResolver(CREATE_LOCALE_SCHEMA),
   });
   const { control, formState, handleSubmit, reset, setValue } = form;
 
   const handleLocaleChange = useCallback(
     (localeCode: string) => {
-      setValue('p_locale', localeCode, { shouldValidate: true });
+      setValue('locale', localeCode, { shouldValidate: true });
 
       const locale = PRIMARY_LOCALES.find((locale) => locale.code === localeCode);
       if (locale) {
-        setValue('p_label', locale.label, { shouldValidate: true });
+        setValue('label', locale.label, { shouldValidate: true });
       }
     },
     [setValue]
   );
 
   const onSubmit = useCallback(
-    (data: CreateProjectLocaleRequest) => {
-      const payload: CreateProjectLocaleRequest = {
-        p_label: data.p_label.trim(),
-        p_locale: LOCALE_NORMALIZATION.normalize(data.p_locale),
-        p_project_id: projectId,
+    (data: CreateLocaleRequest) => {
+      const payload: CreateLocaleRequest = {
+        label: data.label.trim(),
+        locale: LOCALE_NORMALIZATION.normalize(data.locale),
       };
 
       createLocale.mutate(payload, {
@@ -76,7 +74,7 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
         },
       });
     },
-    [projectId, createLocale, queryClient, reset, onOpenChange]
+    [createLocale, queryClient, reset, onOpenChange]
   );
 
   const handleOpenChange = useCallback(
@@ -100,7 +98,7 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <FormField
               control={control}
-              name="p_locale"
+              name="locale"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Locale Code</FormLabel>
@@ -118,7 +116,7 @@ export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDial
             />
             <FormField
               control={control}
-              name="p_label"
+              name="label"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Language Label</FormLabel>

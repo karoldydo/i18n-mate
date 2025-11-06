@@ -1,12 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, ProjectLocaleResponse, UpdateProjectLocaleRequest } from '@/shared/types';
+import type { ApiErrorResponse, UpdateLocaleRequest, UpdateLocaleResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../locales.errors';
-import { PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
+import { LOCALE_RESPONSE_SCHEMA, UPDATE_LOCALE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
 
 /**
  * Update a project locale's label
@@ -25,10 +25,10 @@ import { PROJECT_LOCALE_RESPONSE_SCHEMA, UPDATE_PROJECT_LOCALE_SCHEMA, UUID_SCHE
 export function useUpdateProjectLocale(localeId: string) {
   const supabase = useSupabase();
 
-  return useMutation<ProjectLocaleResponse, ApiErrorResponse, UpdateProjectLocaleRequest>({
+  return useMutation<UpdateLocaleResponse, ApiErrorResponse, UpdateLocaleRequest>({
     mutationFn: async (payload) => {
       const id = UUID_SCHEMA.parse(localeId);
-      const body = UPDATE_PROJECT_LOCALE_SCHEMA.parse(payload);
+      const body = UPDATE_LOCALE_SCHEMA.parse(payload);
 
       const { data, error } = await supabase.from('project_locales').update(body).eq('id', id).select().single();
 
@@ -40,7 +40,7 @@ export function useUpdateProjectLocale(localeId: string) {
         throw createApiErrorResponse(404, 'Locale not found or access denied');
       }
 
-      return PROJECT_LOCALE_RESPONSE_SCHEMA.parse(data);
+      return LOCALE_RESPONSE_SCHEMA.parse(data);
     },
   });
 }

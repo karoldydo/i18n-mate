@@ -77,7 +77,7 @@ describe('useProjectLocales', () => {
       issues: [
         {
           code: 'invalid_string',
-          message: 'Invalid project ID format',
+          message: 'Invalid UUID format',
           validation: 'uuid',
         },
       ],
@@ -184,7 +184,7 @@ describe('useProjectLocales', () => {
       issues: [
         {
           code: 'invalid_string',
-          message: 'Invalid project ID format',
+          message: 'Invalid UUID format',
           validation: 'uuid',
         },
       ],

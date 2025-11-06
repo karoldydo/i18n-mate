@@ -2,7 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import type { ProjectLocaleWithDefault } from '@/shared/types';
+import type { LocaleItem } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
 
@@ -27,22 +27,22 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedLocale, setSelectedLocale] = useState<null | ProjectLocaleWithDefault>(null);
+  const [selectedLocale, setSelectedLocale] = useState<LocaleItem | null>(null);
 
   const { data: locales } = useProjectLocales(projectId);
 
-  const handleEdit = useCallback((locale: ProjectLocaleWithDefault) => {
+  const handleEdit = useCallback((locale: LocaleItem) => {
     setSelectedLocale(locale);
     setEditDialogOpen(true);
   }, []);
 
-  const handleDelete = useCallback((locale: ProjectLocaleWithDefault) => {
+  const handleDelete = useCallback((locale: LocaleItem) => {
     setSelectedLocale(locale);
     setDeleteDialogOpen(true);
   }, []);
 
   const handleRowClick = useCallback(
-    (locale: ProjectLocaleWithDefault) => {
+    (locale: LocaleItem) => {
       navigate(`/projects/${projectId}/keys/${locale.locale}`);
     },
     [navigate, projectId]

@@ -1,13 +1,12 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { z } from 'zod';
 
-import type { ApiErrorResponse, ProjectLocaleWithDefault } from '@/shared/types';
+import type { ApiErrorResponse, LocalesResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../locales.errors';
-import { LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA, PROJECT_LOCALE_WITH_DEFAULT_SCHEMA } from '../locales.schemas';
+import { LOCALES_RESPONSE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
 
 /**
  * Fetch all locales for a project with default locale indicator
@@ -30,9 +29,9 @@ import { LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA, PROJECT_LOCALE_WITH_DEFAULT_S
 export function useProjectLocales(projectId: string) {
   const supabase = useSupabase();
 
-  return useSuspenseQuery<ProjectLocaleWithDefault[], ApiErrorResponse>({
+  return useSuspenseQuery<LocalesResponse, ApiErrorResponse>({
     queryFn: async () => {
-      const { p_project_id } = LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA.parse({ p_project_id: projectId });
+      const p_project_id = UUID_SCHEMA.parse(projectId);
 
       const { data, error } = await supabase.rpc('list_project_locales_with_default', { p_project_id });
 
@@ -45,7 +44,7 @@ export function useProjectLocales(projectId: string) {
       }
 
       // runtime validation of response data
-      return z.array(PROJECT_LOCALE_WITH_DEFAULT_SCHEMA).parse(data);
+      return LOCALES_RESPONSE_SCHEMA.parse(data);
     },
     queryKey: ['project-locales', projectId],
   });

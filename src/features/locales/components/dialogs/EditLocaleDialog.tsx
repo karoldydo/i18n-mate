@@ -4,18 +4,18 @@ import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import type { ProjectLocaleWithDefault, UpdateProjectLocaleRequest } from '@/shared/types';
+import type { LocaleItem, UpdateLocaleRequest } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form';
 import { Input } from '@/shared/ui/input';
 
-import { UPDATE_PROJECT_LOCALE_SCHEMA } from '../../api/locales.schemas';
+import { UPDATE_LOCALE_SCHEMA } from '../../api/locales.schemas';
 import { useUpdateProjectLocale } from '../../api/useUpdateProjectLocale';
 
 interface EditLocaleDialogProps {
-  locale: null | ProjectLocaleWithDefault;
+  locale: LocaleItem | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }
@@ -30,11 +30,11 @@ export function EditLocaleDialog({ locale, onOpenChange, open }: EditLocaleDialo
   const queryClient = useQueryClient();
   const updateLocale = useUpdateProjectLocale(locale?.id ?? '');
 
-  const form = useForm<UpdateProjectLocaleRequest>({
+  const form = useForm<UpdateLocaleRequest>({
     defaultValues: {
       label: locale?.label ?? '',
     },
-    resolver: zodResolver(UPDATE_PROJECT_LOCALE_SCHEMA),
+    resolver: zodResolver(UPDATE_LOCALE_SCHEMA),
   });
   const { control, handleSubmit, reset } = form;
 
@@ -47,10 +47,10 @@ export function EditLocaleDialog({ locale, onOpenChange, open }: EditLocaleDialo
   }, [open, locale, reset]);
 
   const onSubmit = useCallback(
-    (data: UpdateProjectLocaleRequest) => {
+    (data: UpdateLocaleRequest) => {
       if (!locale) return;
 
-      const payload: UpdateProjectLocaleRequest = {
+      const payload: UpdateLocaleRequest = {
         label: data.label?.trim(),
       };
 

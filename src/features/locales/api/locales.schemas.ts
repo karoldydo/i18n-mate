@@ -1,11 +1,6 @@
 import { z } from 'zod';
 
-import type {
-  CreateProjectLocaleRequest,
-  ListProjectLocalesWithDefaultArgs,
-  ProjectLocaleWithDefault,
-  UpdateProjectLocaleRequest,
-} from '@/shared/types';
+import type { CreateLocaleRequest, LocalesResponse, UpdateLocaleRequest } from '@/shared/types';
 
 import { LOCALE_ERROR_MESSAGES, LOCALE_LABEL_MAX_LENGTH, LOCALE_NORMALIZATION } from '@/shared/constants';
 
@@ -21,32 +16,24 @@ const LOCALE_LABEL_SCHEMA = z
   .max(LOCALE_LABEL_MAX_LENGTH, LOCALE_ERROR_MESSAGES.LABEL_TOO_LONG)
   .trim();
 
-// list project locales with default schema
-export const LIST_PROJECT_LOCALES_WITH_DEFAULT_SCHEMA = z.object({
-  p_project_id: z.string().uuid('Invalid project ID format'),
-}) satisfies z.ZodType<ListProjectLocalesWithDefaultArgs>;
+// create locale request schema
+export const CREATE_LOCALE_SCHEMA = z.object({
+  label: LOCALE_LABEL_SCHEMA,
+  locale: LOCALE_CODE_SCHEMA,
+}) satisfies z.ZodType<CreateLocaleRequest>;
 
-// create project locale atomic request schema
-export const CREATE_PROJECT_LOCALE_ATOMIC_SCHEMA = z.object({
-  p_label: LOCALE_LABEL_SCHEMA,
-  p_locale: LOCALE_CODE_SCHEMA,
-  p_project_id: z.string().uuid('Invalid project ID format'),
-}) satisfies z.ZodType<CreateProjectLocaleRequest>;
-
-// update project locale schema
-export const UPDATE_PROJECT_LOCALE_SCHEMA = z
+// update locale schema
+export const UPDATE_LOCALE_SCHEMA = z
   .object({
     label: LOCALE_LABEL_SCHEMA.optional(),
-    // prevent immutable field modification
-    locale: z.never().optional(),
   })
-  .strict() satisfies z.ZodType<UpdateProjectLocaleRequest>;
+  .strict() satisfies z.ZodType<UpdateLocaleRequest>;
 
 // UUID schema
 export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
-// project locale response schema
-export const PROJECT_LOCALE_RESPONSE_SCHEMA = z.object({
+// locale response schema
+export const LOCALE_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   id: z.string().uuid(),
   label: z.string(),
@@ -55,7 +42,9 @@ export const PROJECT_LOCALE_RESPONSE_SCHEMA = z.object({
   updated_at: z.string(),
 });
 
-// project locale with default flag schema
-export const PROJECT_LOCALE_WITH_DEFAULT_SCHEMA = PROJECT_LOCALE_RESPONSE_SCHEMA.extend({
-  is_default: z.boolean(),
-}) satisfies z.ZodType<ProjectLocaleWithDefault>;
+// locales response schema (with is_default flag)
+export const LOCALES_RESPONSE_SCHEMA = z.array(
+  LOCALE_RESPONSE_SCHEMA.extend({
+    is_default: z.boolean(),
+  })
+) satisfies z.ZodType<LocalesResponse>;
