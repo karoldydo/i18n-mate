@@ -4,13 +4,13 @@ import type {
   CancelTranslationJobRpcArgs,
   CreateTranslationJobRequest,
   CreateTranslationJobResponse,
-  GetJobItemsParams,
   ItemStatus,
   JobStatus,
-  ListTranslationJobsParams,
   TranslationJobItemResponse,
+  TranslationJobItemsRequest,
   TranslationJobParams,
   TranslationJobResponse,
+  TranslationJobsRequest,
   TranslationMode,
 } from '@/shared/types';
 
@@ -129,7 +129,7 @@ export const LIST_TRANSLATION_JOBS_SCHEMA = z.object({
     .default('created_at.desc'),
   project_id: PROJECT_ID_SCHEMA,
   status: z.union([JOB_STATUS_SCHEMA, z.array(JOB_STATUS_SCHEMA)]).optional(),
-}) satisfies z.ZodType<ListTranslationJobsParams>;
+}) satisfies z.ZodType<TranslationJobsRequest>;
 
 // create translation job schema
 // validates job creation requests with comprehensive mode-specific validation
@@ -188,7 +188,7 @@ export const GET_JOB_ITEMS_SCHEMA = z.object({
     .default(TRANSLATION_JOBS_DEFAULT_ITEMS_LIMIT),
   offset: z.number().int().min(TRANSLATION_JOBS_MIN_OFFSET).optional().default(TRANSLATION_JOBS_MIN_OFFSET),
   status: ITEM_STATUS_SCHEMA.optional(),
-}) satisfies z.ZodType<GetJobItemsParams>;
+}) satisfies z.ZodType<TranslationJobItemsRequest>;
 
 // response schemas for runtime validation
 export const TRANSLATION_JOB_RESPONSE_SCHEMA = z.object({

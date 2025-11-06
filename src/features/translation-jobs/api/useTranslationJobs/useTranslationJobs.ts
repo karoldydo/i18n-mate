@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import type { ApiErrorResponse, ListTranslationJobsParams, ListTranslationJobsResponse } from '@/shared/types';
+import type { ApiErrorResponse, TranslationJobsRequest, TranslationJobsResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { calculatePaginationMetadata } from '@/shared/utils';
@@ -38,10 +38,10 @@ import { LIST_TRANSLATION_JOBS_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '.
  *
  * @returns TanStack Query result with jobs data and pagination metadata
  */
-export function useTranslationJobs(params: ListTranslationJobsParams) {
+export function useTranslationJobs(params: TranslationJobsRequest) {
   const supabase = useSupabase();
 
-  return useSuspenseQuery<ListTranslationJobsResponse, ApiErrorResponse>({
+  return useSuspenseQuery<TranslationJobsResponse, ApiErrorResponse>({
     queryFn: async () => {
       const { limit, offset, order, project_id, status } = LIST_TRANSLATION_JOBS_SCHEMA.parse(params);
 
