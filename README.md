@@ -35,7 +35,9 @@ A web application for centralized management of i18n translations for frontend p
       - [`npm run supabase:start`](#npm-run-supabasestart)
       - [`npm run supabase:stop`](#npm-run-supabasestop)
       - [`npm run supabase:reset`](#npm-run-supabasereset)
+      - [`npm run supabase:reset:remote`](#npm-run-supabaseresetremote)
       - [`npm run supabase:migration`](#npm-run-supabasemigration)
+      - [`npm run supabase:migration:remote`](#npm-run-supabasemigrationremote)
       - [`npm run supabase:types`](#npm-run-supabasetypes)
       - [`npm run supabase:functions:serve`](#npm-run-supabasefunctionsserve)
   - [Project Scope](#project-scope)
@@ -153,6 +155,9 @@ Create a `.env` file in the root directory with the following variables:
 # Supabase
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Remote migration: comma-separated list of project references (e.g., "abc123,def456")
+SUPABASE_PROJECT_REFS=project_ref_1,project_ref_2
 
 # OpenRouter.ai
 OPENROUTER_API_KEY=your_openrouter_api_key
@@ -274,9 +279,51 @@ Stops local Supabase services.
 
 Resets the local Supabase database to initial state.
 
+#### `npm run supabase:reset:remote`
+
+Resets the database for remote Supabase projects specified in `SUPABASE_PROJECT_REFS` environment variable. The script will:
+
+1. Link to each project reference
+2. Reset the database (`npx supabase db reset`)
+3. Display a summary of all operations
+
+**Usage:**
+
+```bash
+# Set in .env file:
+# SUPABASE_PROJECT_REFS=project_ref_1,project_ref_2
+
+npm run supabase:reset:remote
+```
+
+**Warning:** This operation will delete all data in the remote database. Use with caution!
+
+**Note:** The script processes projects sequentially, requires confirmation before each project (with a warning about data deletion), and stops on the first error (user cancellations are allowed and don't stop the process).
+
 #### `npm run supabase:migration`
 
 Applies pending database migrations to the local instance.
+
+#### `npm run supabase:migration:remote`
+
+Applies database migrations and deploys Edge Functions to remote Supabase projects specified in `SUPABASE_PROJECT_REFS` environment variable. The script will:
+
+1. Link to each project reference
+2. List current migrations
+3. Push database migrations (`npx supabase db push`)
+4. Deploy Edge Functions (`npx supabase functions deploy`)
+5. Display a summary of all operations
+
+**Usage:**
+
+```bash
+# Set in .env file:
+# SUPABASE_PROJECT_REFS=project_ref_1,project_ref_2
+
+npm run supabase:migration:remote
+```
+
+**Note:** The script processes projects sequentially, requires confirmation before each project, and stops on the first error (user cancellations are allowed and don't stop the process).
 
 #### `npm run supabase:types`
 

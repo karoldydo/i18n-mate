@@ -71,11 +71,19 @@ const jsxA11yConfig = defineConfig({
   },
 });
 
+const nodeConfig = defineConfig({
+  files: ['scripts/**/*.js'],
+  languageOptions: {
+    globals: globals.node,
+  },
+});
+
 export default defineConfig([
   globalIgnores(['dist', 'node_modules', '.history']),
   baseConfig,
   reactConfig,
   jsxA11yConfig,
+  nodeConfig,
   testingConfig,
   eslintPluginPrettierRecommended,
 ]);
