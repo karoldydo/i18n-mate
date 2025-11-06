@@ -1,4 +1,4 @@
-import type { KeyDefaultViewResponse } from '@/shared/types';
+import type { KeyDefaultViewItem } from '@/shared/types';
 
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 
@@ -10,8 +10,8 @@ interface KeysDataTableProps {
   editingKeyId: null | string;
   isLoading: boolean;
   isSaving: boolean;
-  keys: KeyDefaultViewResponse[];
-  onDeleteKey: (key: KeyDefaultViewResponse) => void;
+  keys: KeyDefaultViewItem[];
+  onDeleteKey: (key: KeyDefaultViewItem) => void;
   onEditEnd: () => void;
   onEditSave: (keyId: string, newValue: string) => void;
   onEditStart: (keyId: string) => void;

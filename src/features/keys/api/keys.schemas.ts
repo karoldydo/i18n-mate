@@ -39,8 +39,8 @@ const LOCALE_CODE_SCHEMA = z.string().regex(LOCALE_CODE_PATTERN, {
 // project id validation
 export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
-// list keys default view schema
-export const LIST_KEYS_DEFAULT_VIEW_SCHEMA = z.object({
+// keys list schema (default view)
+export const KEYS_SCHEMA = z.object({
   limit: z.number().int().min(1).max(KEYS_MAX_LIMIT).optional().default(KEYS_DEFAULT_LIMIT),
   missing_only: z.boolean().optional().default(KEYS_DEFAULT_PARAMS.MISSING_ONLY),
   offset: z.number().int().min(KEYS_MIN_OFFSET).optional().default(KEYS_DEFAULT_PARAMS.OFFSET),
@@ -48,8 +48,8 @@ export const LIST_KEYS_DEFAULT_VIEW_SCHEMA = z.object({
   search: z.string().optional(),
 });
 
-// list keys per-language view schema
-export const LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA = LIST_KEYS_DEFAULT_VIEW_SCHEMA.extend({
+// key translations list schema (per-language view)
+export const KEY_TRANSLATIONS_SCHEMA = KEYS_SCHEMA.extend({
   locale: LOCALE_CODE_SCHEMA,
 });
 

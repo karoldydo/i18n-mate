@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import type { KeyDefaultViewResponse } from '@/shared/types';
+import type { KeyDefaultViewItem } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
 
@@ -36,7 +36,7 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
   const [editError, setEditError] = useState<null | string>(null);
   const [addKeyDialogOpen, setAddKeyDialogOpen] = useState(false);
   const [deleteKeyDialogOpen, setDeleteKeyDialogOpen] = useState(false);
-  const [keyToDelete, setKeyToDelete] = useState<KeyDefaultViewResponse | null>(null);
+  const [keyToDelete, setKeyToDelete] = useState<KeyDefaultViewItem | null>(null);
 
   // manage filter state with URL synchronization
   const { missingOnly, page, pageSize, searchValue, setMissingOnly, setPage, setSearchValue } = useKeysListFilters();
@@ -103,7 +103,7 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
     setIsSaving(false);
   }, []);
 
-  const handleDeleteKey = useCallback((key: KeyDefaultViewResponse) => {
+  const handleDeleteKey = useCallback((key: KeyDefaultViewItem) => {
     setKeyToDelete(key);
     setDeleteKeyDialogOpen(true);
   }, []);

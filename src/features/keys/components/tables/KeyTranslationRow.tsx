@@ -1,4 +1,4 @@
-import type { KeyPerLanguageViewResponse } from '@/shared/types';
+import type { KeyTranslationItem } from '@/shared/types';
 
 import { TranslationStatus } from '@/shared/components/TranslationStatus';
 import { TableCell, TableRow } from '@/shared/ui/table';
@@ -9,7 +9,7 @@ interface KeyTranslationRowProps {
   editError?: string;
   isEditing: boolean;
   isSaving: boolean;
-  keyData: KeyPerLanguageViewResponse;
+  keyData: KeyTranslationItem;
   onEditEnd: () => void;
   onEditStart: () => void;
   onValueChange: (value: string) => void;

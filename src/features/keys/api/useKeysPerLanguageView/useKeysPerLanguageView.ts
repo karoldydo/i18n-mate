@@ -1,12 +1,12 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import type { ApiErrorResponse, KeyPerLanguageViewListResponse, ListKeysPerLanguageParams } from '@/shared/types';
+import type { ApiErrorResponse, KeyTranslationsRequest, KeyTranslationsResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA, LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA } from '../keys.schemas';
+import { KEY_PER_LANGUAGE_VIEW_RESPONSE_SCHEMA, KEY_TRANSLATIONS_SCHEMA } from '../keys.schemas';
 
 type KeysPerLanguageQueryKey = [
   'keys-per-language-view',
@@ -45,7 +45,7 @@ type KeysPerLanguageQueryKey = [
  * @returns TanStack Query result with keys data and pagination metadata
  */
 export function useKeysPerLanguageView(
-  params: ListKeysPerLanguageParams,
+  params: KeyTranslationsRequest,
   options?: {
     enabled?: boolean;
     suspense?: boolean;
@@ -54,8 +54,7 @@ export function useKeysPerLanguageView(
   const supabase = useSupabase();
 
   const queryFn = async () => {
-    const { limit, locale, missing_only, offset, project_id, search } =
-      LIST_KEYS_PER_LANGUAGE_VIEW_SCHEMA.parse(params);
+    const { limit, locale, missing_only, offset, project_id, search } = KEY_TRANSLATIONS_SCHEMA.parse(params);
 
     const { count, data, error } = await supabase.rpc(
       'list_keys_per_language_view',
@@ -98,14 +97,14 @@ export function useKeysPerLanguageView(
   ];
 
   if (options?.suspense === false) {
-    return useQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
+    return useQuery<KeyTranslationsResponse, ApiErrorResponse>({
       enabled: options.enabled ?? true,
       queryFn,
       queryKey,
     });
   }
 
-  return useSuspenseQuery<KeyPerLanguageViewListResponse, ApiErrorResponse>({
+  return useSuspenseQuery<KeyTranslationsResponse, ApiErrorResponse>({
     queryFn,
     queryKey,
   });

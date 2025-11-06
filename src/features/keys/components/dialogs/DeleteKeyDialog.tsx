@@ -3,7 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import type { KeyDefaultViewResponse } from '@/shared/types';
+import type { KeyDefaultViewItem } from '@/shared/types';
 
 import {
   AlertDialog,
@@ -19,7 +19,7 @@ import {
 import { useDeleteKey } from '../../api/useDeleteKey';
 
 interface DeleteKeyDialogProps {
-  keyData: KeyDefaultViewResponse | null;
+  keyData: KeyDefaultViewItem | null;
   onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;

@@ -1,6 +1,6 @@
 import { MoreHorizontal, Trash2 } from 'lucide-react';
 
-import type { KeyDefaultViewResponse } from '@/shared/types';
+import type { KeyDefaultViewItem } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
@@ -12,7 +12,7 @@ interface KeyTableRowProps {
   editError?: string;
   isEditing: boolean;
   isSaving: boolean;
-  keyData: KeyDefaultViewResponse;
+  keyData: KeyDefaultViewItem;
   onDelete: () => void;
   onEditEnd: () => void;
   onEditStart: () => void;

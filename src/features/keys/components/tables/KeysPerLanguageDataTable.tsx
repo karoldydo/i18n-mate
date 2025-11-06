@@ -1,4 +1,4 @@
-import type { KeyPerLanguageViewResponse } from '@/shared/types';
+import type { KeyTranslationItem } from '@/shared/types';
 
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 
@@ -10,7 +10,7 @@ interface KeysPerLanguageDataTableProps {
   editingKeyId: null | string;
   isLoading: boolean;
   isSaving: boolean;
-  keys: KeyPerLanguageViewResponse[];
+  keys: KeyTranslationItem[];
   onEditEnd: () => void;
   onEditSave: (keyId: string, value: string) => void;
   onEditStart: (keyId: string) => void;

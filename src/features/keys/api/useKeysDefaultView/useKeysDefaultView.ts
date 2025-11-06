@@ -1,12 +1,12 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import type { ApiErrorResponse, KeyDefaultViewListResponse, ListKeysDefaultViewParams } from '@/shared/types';
+import type { ApiErrorResponse, KeysRequest, KeysResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, LIST_KEYS_DEFAULT_VIEW_SCHEMA } from '../keys.schemas';
+import { KEY_DEFAULT_VIEW_RESPONSE_SCHEMA, KEYS_SCHEMA } from '../keys.schemas';
 
 type KeysDefaultViewQueryKey = [
   'keys-default-view',
@@ -43,7 +43,7 @@ type KeysDefaultViewQueryKey = [
  * @returns TanStack Query result with keys data and pagination metadata
  */
 export function useKeysDefaultView(
-  params: ListKeysDefaultViewParams,
+  params: KeysRequest,
   options?: {
     enabled?: boolean;
     suspense?: boolean;
@@ -52,7 +52,7 @@ export function useKeysDefaultView(
   const supabase = useSupabase();
 
   const queryFn = async () => {
-    const { limit, missing_only, offset, project_id, search } = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse(params);
+    const { limit, missing_only, offset, project_id, search } = KEYS_SCHEMA.parse(params);
 
     const { count, data, error } = await supabase.rpc(
       'list_keys_default_view',
@@ -93,14 +93,14 @@ export function useKeysDefaultView(
   ];
 
   if (options?.suspense === false) {
-    return useQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
+    return useQuery<KeysResponse, ApiErrorResponse>({
       enabled: options.enabled ?? true,
       queryFn,
       queryKey,
     });
   }
 
-  return useSuspenseQuery<KeyDefaultViewListResponse, ApiErrorResponse>({
+  return useSuspenseQuery<KeysResponse, ApiErrorResponse>({
     queryFn,
     queryKey,
   });

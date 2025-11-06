@@ -1,12 +1,12 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 
-import type { ApiErrorResponse } from '@/shared/types';
+import type { ApiErrorResponse, KeyCountResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../keys.errors';
-import { LIST_KEYS_DEFAULT_VIEW_SCHEMA, UUID_SCHEMA } from '../keys.schemas';
+import { KEYS_SCHEMA, UUID_SCHEMA } from '../keys.schemas';
 
 /**
  * Fetch the total count of keys for a project
@@ -28,11 +28,11 @@ import { LIST_KEYS_DEFAULT_VIEW_SCHEMA, UUID_SCHEMA } from '../keys.schemas';
 export function useProjectKeyCount(projectId: string) {
   const supabase = useSupabase();
 
-  return useSuspenseQuery<number, ApiErrorResponse>({
+  return useSuspenseQuery<KeyCountResponse, ApiErrorResponse>({
     queryFn: async () => {
       const validatedProjectId = UUID_SCHEMA.parse(projectId);
 
-      const params = LIST_KEYS_DEFAULT_VIEW_SCHEMA.parse({
+      const params = KEYS_SCHEMA.parse({
         limit: 1, // We only need count, so limit to 1
         offset: 0,
         project_id: validatedProjectId,
