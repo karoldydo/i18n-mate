@@ -43,9 +43,10 @@ export class ProjectDetailsPage extends ProtectedPage {
     await super.waitForLoad(); // wait for protected layout
     await this.pageContainer.waitFor({ state: 'visible' }); // wait for page content
     // wait for back button (either normal or error state)
-    await Promise.race([
-      this.backToProjectsButton.waitFor({ state: 'visible' }).catch(() => undefined),
-      this.backToProjectsButtonError.waitFor({ state: 'visible' }).catch(() => undefined),
-    ]);
+    try {
+      await this.backToProjectsButton.waitFor({ state: 'visible', timeout: 5000 });
+    } catch {
+      await this.backToProjectsButtonError.waitFor({ state: 'visible', timeout: 5000 });
+    }
   }
 }

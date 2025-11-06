@@ -29,7 +29,7 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const { id: projectId } = useParams<keyof RouteParams>();
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="offcanvas" data-testid="app-sidebar" {...props}>
       <SidebarHeader className="border-sidebar-border border-b">
         <Link className="flex items-center gap-2 px-2 py-2" to="/projects">
           <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">

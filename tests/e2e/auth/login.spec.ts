@@ -36,20 +36,20 @@ test.describe('Login Page', () => {
     const submitButton = page.getByTestId('login-submit-button');
     await submitButton.click();
 
-    // step 6: wait for redirect to /projects and navbar to be visible
+    // step 6: wait for redirect to /projects and app layout to be visible
     await page.waitForURL('/projects');
     await expect(page.getByTestId('project-list-page')).toBeVisible();
-    await expect(page.getByTestId('protected-layout-header')).toBeVisible();
-    await expect(page.getByTestId('protected-layout-nav')).toBeVisible();
+    await expect(page.getByTestId('app-header')).toBeVisible();
+    await expect(page.getByTestId('app-sidebar')).toBeVisible();
 
-    // step 7: click on user menu dropdown trigger
-    const userMenuTrigger = page.getByTestId('user-menu-trigger');
+    // step 7: click on user menu dropdown trigger in sidebar
+    const userMenuTrigger = page.getByTestId('sidebar-user-menu-trigger');
     await expect(userMenuTrigger).toBeVisible();
     await userMenuTrigger.click();
 
     // step 8: wait for dropdown menu to appear and click "Log out"
-    await expect(page.getByTestId('user-menu-content')).toBeVisible();
-    const logoutButton = page.getByTestId('user-menu-logout');
+    await expect(page.getByTestId('sidebar-user-menu-content')).toBeVisible();
+    const logoutButton = page.getByTestId('sidebar-user-menu-logout');
     await expect(logoutButton).toBeVisible();
     await logoutButton.click();
 

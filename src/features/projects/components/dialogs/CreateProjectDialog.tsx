@@ -24,10 +24,29 @@ interface CreateProjectDialogProps {
 }
 
 /**
- * CreateProjectDialog - Modal dialog for creating new projects
+ * CreateProjectDialog – Modal dialog for creating a new project.
  *
- * Provides form with validation for project creation including name, description,
- * prefix, default locale, and locale label. Navigates to project details on success.
+ * Renders a controlled form with comprehensive validation for the following fields:
+ *   - Project name (required)
+ *   - Description (optional)
+ *   - Prefix (required, 2-4 chars, validates allowed charset)
+ *   - Default locale (required, BCP-47 code; updates human label)
+ *   - Locale label (required; may auto-update from locale selection)
+ *
+ * Behavior:
+ * - Disables submit if mutation is in progress or form is invalid.
+ * - Upon successful creation:
+ *   - Invalidates project queries to ensure cache consistency.
+ *   - Shows success toast notification.
+ *   - Closes dialog and resets form state.
+ *   - Navigates to the details view of the created project.
+ * - On failure, displays a relevant error toast.
+ * - Resets form fields when dialog is closed via user action.
+ *
+ * @component
+ * @param {Object} props - Component props
+ * @param {boolean} props.open - Whether the dialog is visible/open
+ * @param {(open: boolean) => void} props.onOpenChange - Callback triggered when dialog open state changes
  */
 export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogProps) {
   const navigate = useNavigate();
@@ -107,69 +126,76 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent className="sm:max-w-[525px]" data-testid="create-project-dialog">
-        <DialogHeader>
-          <DialogTitle>Create Project</DialogTitle>
-          <DialogDescription>Create a new translation project with a default locale.</DialogDescription>
+        <DialogHeader className="gap-1">
+          <DialogTitle className="text-lg font-semibold">Create Project</DialogTitle>
+          <DialogDescription className="text-xs font-light">
+            Create a new project with a default language.
+          </DialogDescription>
         </DialogHeader>
-
         <Form {...form}>
-          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Name</FormLabel>
+                  <FormLabel className="flex items-center gap-1">
+                    Project name
+                    <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input data-testid="create-project-name-input" placeholder="My Application" {...field} />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
                       data-testid="create-project-description-input"
-                      placeholder="Project description"
+                      placeholder="Project description..."
                       {...field}
                       value={field.value || ''}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="prefix"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Prefix</FormLabel>
+                  <FormLabel className="flex items-center gap-1">
+                    Prefix
+                    <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input data-testid="create-project-prefix-input" placeholder="app" {...field} />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                     2-4 characters: lowercase letters, numbers, dots, underscores, hyphens. No trailing dot.
                   </FormDescription>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="default_locale"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Default Locale</FormLabel>
+                  <FormLabel className="flex items-center gap-1">
+                    Default language
+                    <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <LocaleSelector
                       data-testid="create-project-locale-selector"
@@ -177,30 +203,33 @@ export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogP
                       value={field.value}
                     />
                   </FormControl>
-                  <FormDescription>BCP-47 format (e.g., &ldquo;en&rdquo; or &ldquo;en-US&rdquo;)</FormDescription>
-                  <FormMessage />
+                  <FormDescription className="text-xs">
+                    BCP-47 language code (e.g., &ldquo;en&rdquo; or &ldquo;en-US&rdquo;)
+                  </FormDescription>
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="default_locale_label"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Locale Label</FormLabel>
+                  <FormLabel className="flex items-center gap-1">
+                    Language label
+                    <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input data-testid="create-project-locale-label-input" placeholder="English" {...field} />
                   </FormControl>
-                  <FormDescription>Human-readable name for the default locale</FormDescription>
-                  <FormMessage />
+                  <FormDescription className="text-xs">Human-readable name for the default language</FormDescription>
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
-
             <DialogFooter>
               <Button data-testid="create-project-submit-button" disabled={isSubmitDisabled} type="submit">
-                {createProject.isPending ? 'Creating...' : 'Create Project'}
+                {createProject.isPending ? 'Creating...' : 'Create project'}
               </Button>
             </DialogFooter>
           </form>

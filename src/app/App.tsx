@@ -20,7 +20,10 @@ function App() {
       >
         <AppSidebar variant="inset" />
         <SidebarInset>
-          <header className="bg-background flex h-16 shrink-0 items-center gap-2 border-b px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <header
+            className="bg-background flex h-16 shrink-0 items-center gap-2 border-b px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
+            data-testid="app-header"
+          >
             <SidebarTrigger className="-ml-1" />
             <Separator className="mr-2 !h-4" orientation="vertical" />
             <BreadcrumbNavigation />

@@ -60,6 +60,7 @@ export type ProjectUpdate = TablesUpdate<'projects'>;
 export type ProjectWithCounts = ProjectResponse & {
   key_count: number;
   locale_count: number;
+  total_count: number;
 };
 
 // Only name and description are mutable

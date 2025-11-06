@@ -49,6 +49,7 @@ export function AppSidebarMenu() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              data-testid="sidebar-user-menu-trigger"
               size="lg"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
@@ -66,6 +67,7 @@ export function AppSidebarMenu() {
           <DropdownMenuContent
             align="end"
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            data-testid="sidebar-user-menu-content"
             side={isMobile ? 'bottom' : 'right'}
             sideOffset={4}
           >
@@ -90,7 +92,7 @@ export function AppSidebarMenu() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem data-testid="sidebar-user-menu-logout" onClick={handleLogout}>
               <LogOut className="mr-2 size-4" />
               Log out
             </DropdownMenuItem>

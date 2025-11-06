@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -22,10 +22,22 @@ interface EditProjectDialogProps {
 }
 
 /**
- * EditProjectDialog - Modal dialog for editing existing projects
+ * EditProjectDialog – Modal dialog for editing an existing project.
  *
- * Provides form with validation for updating project name and description only.
- * Prefix and default locale are immutable after project creation.
+ * Displays a form for updating project name and description,
+ * with validation using react-hook-form and zod.
+ *
+ * Prefix and default locale fields are immutable after creation and
+ * are not editable here.
+ *
+ * On successful update, the dialog closes and the projects list is invalidated.
+ * Shows toast notifications for success or error cases.
+ *
+ * @component
+ * @param {Object} props - Component props
+ * @param {boolean} props.open - Whether the dialog is open
+ * @param {function(boolean):void} props.onOpenChange - Callback for dialog open state changes
+ * @param {ProjectWithCounts} props.project - Project object being edited
  */
 export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDialogProps) {
   const queryClient = useQueryClient();
@@ -36,10 +48,16 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
       description: project.description,
       name: project.name,
     },
+    mode: 'onChange',
     resolver: zodResolver(UPDATE_PROJECT_SCHEMA),
   });
 
-  const { handleSubmit, reset } = form;
+  const { formState, handleSubmit, reset } = form;
+
+  const isSubmitDisabled = useMemo(
+    () => updateProject.isPending || !formState.isValid,
+    [updateProject.isPending, formState.isValid]
+  );
 
   useEffect(() => {
     if (open) {
@@ -89,20 +107,20 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
     <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Edit Project</DialogTitle>
-          <DialogDescription>
-            Update project name and description. Prefix and default locale cannot be changed.
-          </DialogDescription>
+          <DialogTitle>Edit project</DialogTitle>
+          <DialogDescription>Update project name and description.</DialogDescription>
         </DialogHeader>
-
         <Form {...form}>
-          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Name</FormLabel>
+                  <FormLabel className="flex items-center gap-1">
+                    Project name
+                    <span className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="My Application" {...field} />
                   </FormControl>
@@ -110,40 +128,25 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Project description" {...field} value={field.value || ''} />
+                    <Textarea placeholder="Project description..." {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div className="space-y-2">
-              <div className="text-sm">
-                <span className="font-medium">Prefix:</span>{' '}
-                <code className="bg-muted rounded px-2 py-1 text-sm">{project.prefix}</code>
-                <span className="text-muted-foreground ml-2">(immutable)</span>
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">Default Locale:</span>{' '}
-                <code className="bg-muted rounded px-2 py-1 text-sm">{project.default_locale}</code>
-                <span className="text-muted-foreground ml-2">(immutable)</span>
-              </div>
-            </div>
-
             <DialogFooter>
               <Button disabled={updateProject.isPending} onClick={handleCancel} type="button" variant="outline">
                 Cancel
               </Button>
-              <Button disabled={updateProject.isPending} type="submit">
-                {updateProject.isPending ? 'Saving...' : 'Save Changes'}
+              <Button disabled={isSubmitDisabled} type="submit">
+                {updateProject.isPending ? 'Saving...' : 'Save changes'}
               </Button>
             </DialogFooter>
           </form>

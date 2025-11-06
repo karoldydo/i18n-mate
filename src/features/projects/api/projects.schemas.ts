@@ -115,4 +115,5 @@ export const PROJECT_RESPONSE_SCHEMA = z.object({
 export const PROJECT_WITH_COUNTS_SCHEMA = PROJECT_RESPONSE_SCHEMA.extend({
   key_count: z.number(),
   locale_count: z.number(),
+  total_count: z.number(),
 }) satisfies z.ZodType<ProjectWithCounts>;

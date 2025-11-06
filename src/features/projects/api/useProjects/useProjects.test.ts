@@ -29,11 +29,10 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with default params', async () => {
-    const mockSupabaseResponse = [createMockProjectWithCounts()];
+    const mockSupabaseResponse = [createMockProjectWithCounts({ total_count: 1 })];
 
     mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
-        count: 1,
         data: mockSupabaseResponse,
         error: null,
       }),
@@ -45,11 +44,10 @@ describe('useProjects', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.rpc).toHaveBeenCalledWith(
-      'list_projects_with_counts',
-      { p_limit: PROJECTS_DEFAULT_LIMIT, p_offset: 0 },
-      expect.objectContaining({ count: 'exact' })
-    );
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('list_projects_with_counts', {
+      p_limit: PROJECTS_DEFAULT_LIMIT,
+      p_offset: 0,
+    });
     expect(result.current.data).toEqual({
       data: mockSupabaseResponse,
       metadata: {
@@ -69,12 +67,12 @@ describe('useProjects', () => {
         locale_count: 1,
         name: 'Project 2',
         prefix: 'pr2',
+        total_count: 50,
       }),
     ];
 
     mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
-        count: 50,
         data: mockSupabaseResponse,
         error: null,
       }),
@@ -91,11 +89,7 @@ describe('useProjects', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.rpc).toHaveBeenCalledWith(
-      'list_projects_with_counts',
-      { p_limit: 10, p_offset: 20 },
-      expect.objectContaining({ count: 'exact' })
-    );
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('list_projects_with_counts', { p_limit: 10, p_offset: 20 });
     expect(result.current.data).toEqual({
       data: mockSupabaseResponse,
       metadata: {
@@ -115,11 +109,11 @@ describe('useProjects', () => {
         locale_count: 1,
         name: 'A Project',
         prefix: 'apr',
+        total_count: 1,
       }),
     ];
 
     const orderMock = vi.fn().mockResolvedValue({
-      count: 1,
       data: mockSupabaseResponse,
       error: null,
     });
@@ -159,12 +153,12 @@ describe('useProjects', () => {
         locale_count: 1,
         name: 'Newest Project',
         prefix: 'new',
+        total_count: 1,
         updated_at: '2025-01-15T12:00:00Z',
       }),
     ];
 
     const orderMock = vi.fn().mockResolvedValue({
-      count: 1,
       data: mockSupabaseResponse,
       error: null,
     });
@@ -197,7 +191,6 @@ describe('useProjects', () => {
   it('should return empty array when no projects found', async () => {
     mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
-        count: 0,
         data: [],
         error: null,
       }),
@@ -295,6 +288,7 @@ describe('useProjects', () => {
         id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Project 1',
         prefix: 'pr1',
+        total_count: 150,
       }),
       createMockProjectWithCounts({
         created_at: '2025-01-15T11:00:00Z',
@@ -304,6 +298,7 @@ describe('useProjects', () => {
         locale_count: 1,
         name: 'Project 2',
         prefix: 'pr2',
+        total_count: 150,
         updated_at: '2025-01-15T11:00:00Z',
       }),
       createMockProjectWithCounts({
@@ -314,13 +309,13 @@ describe('useProjects', () => {
         locale_count: 3,
         name: 'Project 3',
         prefix: 'pr3',
+        total_count: 150,
         updated_at: '2025-01-15T12:00:00Z',
       }),
     ];
 
     mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
-        count: 150,
         data: mockSupabaseResponse,
         error: null,
       }),
@@ -354,12 +349,12 @@ describe('useProjects', () => {
         locale_count: 1,
         name: 'Last Project',
         prefix: 'last',
+        total_count: 26,
       }),
     ];
 
     mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
-        count: 26,
         data: mockSupabaseResponse,
         error: null,
       }),

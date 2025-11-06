@@ -85,16 +85,14 @@ test.describe('Create Project', () => {
     const projectExists = await projectListPage.hasProjectWithName(projectName);
     expect(projectExists).toBe(true);
 
-    // step 13: verify project details are visible in the table
+    // step 13: verify project name is visible in the card list
     const nameLocators = await page.getByTestId(/^project-name-/).all();
     let projectFound = false;
     for (const locator of nameLocators) {
       const text = await locator.textContent();
       if (text?.trim() === projectName) {
         projectFound = true;
-        // verify project details are visible
-        const parentRow = locator.locator('xpath=ancestor::tr[1]');
-        await expect(parentRow).toBeVisible();
+        await expect(locator).toBeVisible();
         break;
       }
     }

@@ -9,10 +9,10 @@ import type { Locator, Page } from '@playwright/test';
 export class ProtectedPage {
   // layout elements
   readonly header: Locator;
-  readonly navigation: Locator;
   readonly page: Page;
+  readonly sidebar: Locator;
 
-  // user menu elements
+  // user menu elements (in sidebar)
   readonly userMenuContent: Locator;
   readonly userMenuLogout: Locator;
   readonly userMenuTrigger: Locator;
@@ -21,11 +21,11 @@ export class ProtectedPage {
     this.page = page;
 
     // initialize locators using data-testid
-    this.header = page.getByTestId('protected-layout-header');
-    this.navigation = page.getByTestId('protected-layout-nav');
-    this.userMenuTrigger = page.getByTestId('user-menu-trigger');
-    this.userMenuContent = page.getByTestId('user-menu-content');
-    this.userMenuLogout = page.getByTestId('user-menu-logout');
+    this.header = page.getByTestId('app-header');
+    this.sidebar = page.getByTestId('app-sidebar');
+    this.userMenuTrigger = page.getByTestId('sidebar-user-menu-trigger');
+    this.userMenuContent = page.getByTestId('sidebar-user-menu-content');
+    this.userMenuLogout = page.getByTestId('sidebar-user-menu-logout');
   }
 
   /**
@@ -71,6 +71,6 @@ export class ProtectedPage {
    */
   async waitForLoad() {
     await this.header.waitFor({ state: 'visible' });
-    await this.navigation.waitFor({ state: 'visible' });
+    await this.sidebar.waitFor({ state: 'visible' });
   }
 }

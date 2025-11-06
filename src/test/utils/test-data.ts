@@ -67,6 +67,7 @@ export function createMockProjectWithCounts(overrides?: {
   locale_count?: number;
   name?: string;
   prefix?: string;
+  total_count?: number;
   updated_at?: string;
 }) {
   return {
@@ -78,6 +79,7 @@ export function createMockProjectWithCounts(overrides?: {
     locale_count: 2,
     name: 'Test Project',
     prefix: 'test',
+    total_count: 1,
     updated_at: '2025-01-15T10:00:00Z',
     ...overrides,
   };

@@ -11,9 +11,9 @@ import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.sc
 /**
  * Fetch a paginated list of projects with counts
  *
- * Uses the RPC function `list_projects_with_counts` with exact total counting
- * enabled. Returns projects with aggregated locale and key counts. Data items
- * are validated at runtime and pagination metadata is computed from input params.
+ * Uses the RPC function `list_projects_with_counts` which returns projects with
+ * aggregated locale and key counts, plus total count for pagination. Data items
+ * are validated at runtime and pagination metadata includes the total count.
  *
  * @param params - Optional listing parameters (limit, offset, order)
  * @param params.limit - Items per page (1-100, default: 50)
@@ -32,8 +32,8 @@ export function useProjects(params: ListProjectsParams = {}) {
     queryFn: async () => {
       const { limit, offset, order } = LIST_PROJECTS_SCHEMA.parse(params);
 
-      const { count, data, error } = await supabase
-        .rpc('list_projects_with_counts', { p_limit: limit, p_offset: offset }, { count: 'exact' })
+      const { data, error } = await supabase
+        .rpc('list_projects_with_counts', { p_limit: limit, p_offset: offset })
         .order(order?.split('.')[0] || 'name', {
           ascending: order?.endsWith('.asc') ?? true,
         });
@@ -45,12 +45,15 @@ export function useProjects(params: ListProjectsParams = {}) {
       // runtime validation of response data
       const projects = z.array(PROJECT_WITH_COUNTS_SCHEMA).parse(data || []);
 
+      // get total count from first record (all records have the same total_count)
+      const totalCount = projects[0]?.total_count ?? 0;
+
       return {
         data: projects,
         metadata: {
           end: (offset || 0) + projects.length - 1,
           start: offset || 0,
-          total: count || 0,
+          total: totalCount,
         },
       };
     },

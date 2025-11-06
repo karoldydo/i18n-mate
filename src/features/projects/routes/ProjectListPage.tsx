@@ -7,13 +7,25 @@ import { ErrorBoundary } from '@/shared/components';
 import { CreateProjectDialog } from '../components/dialogs/CreateProjectDialog';
 import { DeleteProjectDialog } from '../components/dialogs/DeleteProjectDialog';
 import { EditProjectDialog } from '../components/dialogs/EditProjectDialog';
-import { ProjectListTable } from '../components/tables/ProjectListTable';
+import { ProjectList } from '../components/lists/ProjectList';
 
 /**
- * ProjectListPage - Main page component for displaying and managing projects
+ * ProjectListPage – Main page for displaying and managing all translation projects.
  *
- * Orchestrates the project list view with table display and dialog management.
- * Handles routing and navigation after project creation.
+ * Renders a list of all projects with options to:
+ *   - Create a new project (opens CreateProjectDialog)
+ *   - Edit an existing project (opens EditProjectDialog with selected project)
+ *   - Delete a project (opens DeleteProjectDialog with selected project)
+ *
+ * Features:
+ * - Uses an ErrorBoundary to catch and display errors from the project list.
+ * - Utilizes card-based layout for projects with inline actions (edit/delete).
+ * - Dialogs are controlled through local state; the currently selected project is tracked for edit/delete actions.
+ * - After a project is created, edited, or deleted, the dialogs close and list updates (per underlying query behaviors).
+ *
+ * @component
+ *
+ * @returns {JSX.Element} The project list overview page with dialogs for CRUD operations.
  */
 export function ProjectListPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -38,26 +50,28 @@ export function ProjectListPage() {
   return (
     <div className="animate-in fade-in container h-full duration-500" data-testid="project-list-page">
       <div className="mb-6 flex items-center justify-between sm:mb-8">
-        <div>
+        <div className="flex flex-col gap-3">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Projects</h1>
-          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-            Manage your translation projects and their locales
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Organize and oversee all your translation projects in one place!
+            </p>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Start new projects, update project information, or remove projects you no longer need. Get a clear
+              overview of your translation work with easy access to project details and progress tracking.
+            </p>
+          </div>
         </div>
       </div>
-
       <ErrorBoundary>
-        <ProjectListTable
+        <ProjectList
           onCreateClick={handleCreateClick}
           onDeleteClick={handleDeleteClick}
           onEditClick={handleEditClick}
         />
       </ErrorBoundary>
-
       <CreateProjectDialog onOpenChange={setIsCreateDialogOpen} open={isCreateDialogOpen} />
-
       {project && <EditProjectDialog onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen} project={project} />}
-
       {project && (
         <DeleteProjectDialog onOpenChange={setIsDeleteDialogOpen} open={isDeleteDialogOpen} project={project} />
       )}

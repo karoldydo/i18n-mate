@@ -41,7 +41,7 @@ setup('authenticate', async ({ page }) => {
   const protectedPage = new ProtectedPage(page);
   await protectedPage.waitForLoad();
   await expect(protectedPage.header).toBeVisible();
-  await expect(protectedPage.navigation).toBeVisible();
+  await expect(protectedPage.sidebar).toBeVisible();
 
   // save authentication state to file
   await page.context().storageState({ path: authFile });

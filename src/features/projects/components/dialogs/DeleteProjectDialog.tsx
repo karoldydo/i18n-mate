@@ -25,10 +25,24 @@ interface DeleteProjectDialogProps {
 }
 
 /**
- * DeleteProjectDialog - Confirmation dialog for irreversible project deletion
+ * DeleteProjectDialog – Modal dialog for confirming irreversible project deletion.
  *
- * Displays project name and warning about cascading deletion of all related data.
- * Requires explicit confirmation before executing the delete operation.
+ * Presents a confirmation dialog to the user before performing permanent deletion
+ * of the specified project and all its related data (languages, keys, translations, metadata).
+ * Lists summary statistics for the project, and displays appropriate warnings
+ * about the destructive nature of the action.
+ *
+ * On confirmation, attempts deletion via mutation hook, then:
+ *   - On success: notifies the user, navigates to the projects list, and closes the dialog.
+ *   - On error: displays the error message as a toast notification.
+ *
+ * Disables actions while the deletion is in progress.
+ *
+ * @component
+ * @param {Object} props - Component props
+ * @param {boolean} props.open - Whether the dialog is visible
+ * @param {function(boolean): void} props.onOpenChange - Callback triggered when dialog open state changes
+ * @param {ProjectWithCounts} props.project - The project object being deleted (includes name, counts)
  */
 export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProjectDialogProps) {
   const queryClient = useQueryClient();
@@ -61,7 +75,7 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
     <AlertDialog onOpenChange={onOpenChange} open={open}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Project</AlertDialogTitle>
+          <AlertDialogTitle>Delete project</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-2">
               <p>
@@ -86,7 +100,7 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
             disabled={deleteProject.isPending}
             onClick={handleDeleteClick}
           >
-            {deleteProject.isPending ? 'Deleting...' : 'Delete Project'}
+            {deleteProject.isPending ? 'Deleting...' : 'Delete project'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

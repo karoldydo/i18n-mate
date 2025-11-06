@@ -35,7 +35,10 @@ export function ProjectDetailsContent({ projectId }: ProjectDetailsContentProps)
     navigate(`/projects/${projectId}/export`);
   }, [navigate, projectId]);
 
-  const projectWithCounts = useMemo(() => (project ? { ...project, key_count: 0, locale_count: 0 } : null), [project]);
+  const projectWithCounts = useMemo(
+    () => (project ? { ...project, key_count: 0, locale_count: 0, total_count: 0 } : null),
+    [project]
+  );
 
   if (!project) {
     return null;

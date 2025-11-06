@@ -9,10 +9,23 @@ interface LocaleSelectorProps {
 }
 
 /**
- * LocaleSelector - Dropdown for selecting locale codes
+ * LocaleSelector – Accessible dropdown for selecting a locale code.
  *
- * Provides a pre-populated list of common primary language subtags (IETF language tags)
- * for selecting the default locale during project creation.
+ * Renders a dropdown menu populated with a curated list of primary language sub-tags
+ * (IETF BCP 47 codes with language and region), intended for user selection of a default
+ * locale (for example, during project creation or configuration).
+ *
+ * Integrates with shadcn/ui Select components for accessibility, form handling, and keyboard support.
+ *
+ * @component
+ * @param {object} props - Component props
+ * @param {string} [props.data-testid] - Optional test ID for querying in tests
+ * @param {boolean} [props.disabled] - Disables the selector when true
+ * @param {function(string):void} props.onValueChange - Callback when a locale is selected
+ * @param {string} [props.value] - Currently selected locale code
+ *
+ * @example
+ *   <LocaleSelector value="en-US" onValueChange={console.log} />
  */
 export function LocaleSelector({
   'data-testid': dataTestId,
@@ -24,7 +37,7 @@ export function LocaleSelector({
     <div data-testid={dataTestId}>
       <Select disabled={disabled} onValueChange={onValueChange} value={value}>
         <SelectTrigger data-testid="locale-selector-trigger">
-          <SelectValue placeholder="Select a locale" />
+          <SelectValue placeholder="Select language" />
         </SelectTrigger>
         <SelectContent data-testid="locale-selector-content">
           {PRIMARY_LOCALES.map((locale) => (

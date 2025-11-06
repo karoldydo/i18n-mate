@@ -13,8 +13,8 @@ export class ProjectListPage extends ProtectedPage {
   readonly createProjectButton: Locator;
   readonly createProjectButtonEmpty: Locator;
   readonly pageContainer: Locator;
+  readonly projectListCards: Locator;
   readonly projectListEmpty: Locator;
-  readonly projectListTable: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -22,13 +22,13 @@ export class ProjectListPage extends ProtectedPage {
     // initialize project list specific locators
     this.pageContainer = page.getByTestId('project-list-page');
     this.projectListEmpty = page.getByTestId('project-list-empty');
-    this.projectListTable = page.getByTestId('project-list-table');
+    this.projectListCards = page.getByTestId('project-list-table');
     this.createProjectButton = page.getByTestId('create-project-button');
     this.createProjectButtonEmpty = page.getByTestId('create-project-button-empty');
   }
 
   /**
-   * Click create project button (handles both empty state and table state)
+   * Click create project button (handles both empty state and card list state)
    */
   async clickCreateProject() {
     const isEmptyState = await this.projectListEmpty.isVisible().catch(() => false);
@@ -40,18 +40,18 @@ export class ProjectListPage extends ProtectedPage {
   }
 
   /**
+   * Get project card locator by project ID
+   */
+  getProjectCard(projectId: string): Locator {
+    return this.page.getByTestId(`project-card-${projectId}`);
+  }
+
+  /**
    * Get project name by project ID
    */
   async getProjectName(projectId: string): Promise<null | string> {
     const locator = this.page.getByTestId(`project-name-${projectId}`);
     return await locator.textContent();
-  }
-
-  /**
-   * Get project row locator by project ID
-   */
-  getProjectRow(projectId: string): Locator {
-    return this.page.getByTestId(`project-row-${projectId}`);
   }
 
   /**
@@ -65,7 +65,7 @@ export class ProjectListPage extends ProtectedPage {
    * Check if project exists in the list by name
    */
   async hasProjectWithName(projectName: string): Promise<boolean> {
-    // check if project name exists anywhere in the table
+    // check if project name exists anywhere in the card list
     const nameLocators = await this.page.getByTestId(/^project-name-/).all();
     for (const locator of nameLocators) {
       const text = await locator.textContent();
@@ -89,10 +89,11 @@ export class ProjectListPage extends ProtectedPage {
   async waitForPageLoad() {
     await super.waitForLoad(); // wait for protected layout
     await this.pageContainer.waitFor({ state: 'visible' }); // wait for page content
-    // wait for either empty state or table to be visible
-    await Promise.race([
-      this.projectListEmpty.waitFor({ state: 'visible' }).catch(() => undefined),
-      this.projectListTable.waitFor({ state: 'visible' }).catch(() => undefined),
-    ]);
+    // wait for either empty state or card list to be visible
+    try {
+      await this.projectListCards.waitFor({ state: 'visible', timeout: 5000 });
+    } catch {
+      await this.projectListEmpty.waitFor({ state: 'visible', timeout: 5000 });
+    }
   }
 }
