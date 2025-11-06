@@ -36,14 +36,12 @@ describe('useProject', () => {
   it('should fetch project successfully', async () => {
     const mockSupabaseResponse = createMockProject({
       id: PROJECT_ID,
+      key_count: 5,
+      locale_count: 3,
     });
 
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockSupabaseResponse, null)),
-        }),
-      }),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockSupabaseResponse, null)),
     });
 
     const { result } = renderHook(() => useProject(PROJECT_ID), {
@@ -52,17 +50,13 @@ describe('useProject', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('projects');
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('get_project_with_counts', { p_project_id: PROJECT_ID });
     expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
   it('should handle project not found', async () => {
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
-        }),
-      }),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
     });
 
     const errorBoundary = { current: null };
@@ -82,12 +76,8 @@ describe('useProject', () => {
   });
 
   it('should handle RLS access denied (appears as not found)', async () => {
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
-        }),
-      }),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, null)),
     });
 
     const errorBoundary = { current: null };
@@ -109,12 +99,8 @@ describe('useProject', () => {
   it('should handle database error', async () => {
     const mockSupabaseError = createMockSupabaseError('Database connection error', 'PGRST301');
 
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, mockSupabaseError)),
-        }),
-      }),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(null, mockSupabaseError)),
     });
 
     const errorBoundary = { current: null };
@@ -175,17 +161,15 @@ describe('useProject', () => {
   });
 
   it('should fetch project with null description', async () => {
-    const mockData = createMockProject({
+    const mockProject = createMockProject({
       description: null,
       id: PROJECT_ID,
+      key_count: 0,
+      locale_count: 1,
     });
 
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockData, null)),
-        }),
-      }),
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue(createMockSupabaseResponse(mockProject, null)),
     });
 
     const { result } = renderHook(() => useProject(PROJECT_ID), {

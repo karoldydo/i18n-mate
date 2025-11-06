@@ -123,7 +123,7 @@ export interface Database {
         Returns: {
           created_at: string;
           default_locale: unknown;
-          description: string;
+          description: null | string;
           id: string;
           name: string;
           prefix: string;
@@ -133,6 +133,20 @@ export interface Database {
       ensure_telemetry_partition_exists: {
         Args: { p_timestamp?: string };
         Returns: undefined;
+      };
+      get_project_with_counts: {
+        Args: { p_project_id: string };
+        Returns: {
+          created_at: string;
+          default_locale: string;
+          description: null | string;
+          id: string;
+          key_count: number;
+          locale_count: number;
+          name: string;
+          prefix: string;
+          updated_at: string;
+        }[];
       };
       get_public_app_config: {
         Args: Record<PropertyKey, never>;
@@ -213,12 +227,13 @@ export interface Database {
         Returns: {
           created_at: string;
           default_locale: string;
-          description: string;
+          description: null | string;
           id: string;
           key_count: number;
           locale_count: number;
           name: string;
           prefix: string;
+          total_count: number;
           updated_at: string;
         }[];
       };

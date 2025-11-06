@@ -1,13 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, CreateProjectRequest, ProjectResponse } from '@/shared/types';
+import type { ApiErrorResponse, CreateProjectRequest, CreateProjectResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
 import { createApiErrorResponse } from '@/shared/utils';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { CREATE_PROJECT_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.schemas';
+import { CREATE_PROJECT_RESPONSE_SCHEMA, CREATE_PROJECT_SCHEMA } from '../projects.schemas';
 
 /**
  * Create a new project with a default locale
@@ -26,7 +26,7 @@ import { CREATE_PROJECT_SCHEMA, PROJECT_RESPONSE_SCHEMA } from '../projects.sche
 export function useCreateProject() {
   const supabase = useSupabase();
 
-  return useMutation<ProjectResponse, ApiErrorResponse, CreateProjectRequest>({
+  return useMutation<CreateProjectResponse, ApiErrorResponse, CreateProjectRequest>({
     mutationFn: async (payload) => {
       const body = CREATE_PROJECT_SCHEMA.parse(payload);
 
@@ -40,7 +40,7 @@ export function useCreateProject() {
         throw createApiErrorResponse(500, PROJECTS_ERROR_MESSAGES.NO_DATA_RETURNED);
       }
 
-      return PROJECT_RESPONSE_SCHEMA.parse(data);
+      return CREATE_PROJECT_RESPONSE_SCHEMA.parse(data);
     },
   });
 }

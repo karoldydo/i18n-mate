@@ -82,19 +82,14 @@ export type {
 
 export type {
   CreateProjectRequest,
+  CreateProjectResponse,
   CreateProjectRpcArgs,
-  ListProjectsParams,
-  ListProjectsWithCountsArgs,
-  Project,
-  ProjectCreatedEvent,
-  ProjectCreatedProperties,
-  ProjectId,
-  ProjectInsert,
-  ProjectListResponse,
+  ProjectRequest,
   ProjectResponse,
-  ProjectUpdate,
-  ProjectWithCounts,
+  ProjectsRequest,
+  ProjectsResponse,
   UpdateProjectRequest,
+  UpdateProjectResponse,
 } from './projects';
 
 // ============================================================================

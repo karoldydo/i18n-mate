@@ -1,13 +1,6 @@
 import { z } from 'zod';
 
-import type {
-  CreateProjectRequest,
-  CreateProjectRpcArgs,
-  ListProjectsParams,
-  ProjectResponse,
-  ProjectWithCounts,
-  UpdateProjectRequest,
-} from '@/shared/types';
+import type { CreateProjectRequest, CreateProjectRpcArgs, ProjectsRequest, UpdateProjectRequest } from '@/shared/types';
 
 import {
   PROJECT_LOCALE_LABEL_MAX_LENGTH,
@@ -40,7 +33,7 @@ const PREFIX_SCHEMA = z
   .refine((value) => !value.endsWith('.'), PROJECTS_ERROR_MESSAGES.PREFIX_TRAILING_DOT);
 
 // list projects schema
-export const LIST_PROJECTS_SCHEMA = z.object({
+export const PROJECTS_REQUEST_SCHEMA = z.object({
   limit: z.number().int().min(1).max(PROJECTS_MAX_LIMIT).optional().default(PROJECTS_DEFAULT_LIMIT),
   offset: z.number().int().min(PROJECTS_MIN_OFFSET).optional().default(PROJECTS_MIN_OFFSET),
   order: z
@@ -52,7 +45,7 @@ export const LIST_PROJECTS_SCHEMA = z.object({
     ])
     .optional()
     .default(PROJECT_SORT_OPTIONS.NAME_ASC),
-}) satisfies z.ZodType<ListProjectsParams>;
+}) satisfies z.ZodType<ProjectsRequest>;
 
 // create project request schema (api input format without p_ prefix)
 export const CREATE_PROJECT_REQUEST_SCHEMA = z.object({
@@ -102,7 +95,7 @@ export const UPDATE_PROJECT_SCHEMA = z
 export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
 // response schemas for runtime validation
-export const PROJECT_RESPONSE_SCHEMA = z.object({
+export const CREATE_PROJECT_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   default_locale: z.string(),
   description: z.string().nullable(),
@@ -110,10 +103,20 @@ export const PROJECT_RESPONSE_SCHEMA = z.object({
   name: z.string(),
   prefix: z.string(),
   updated_at: z.string(),
-}) satisfies z.ZodType<ProjectResponse>;
+});
 
-export const PROJECT_WITH_COUNTS_SCHEMA = PROJECT_RESPONSE_SCHEMA.extend({
+export const PROJECT_RESPONSE_SCHEMA = z.object({
+  created_at: z.string(),
+  default_locale: z.string(),
+  description: z.string().nullable(),
+  id: z.string().uuid(),
   key_count: z.number(),
   locale_count: z.number(),
+  name: z.string(),
+  prefix: z.string(),
+  updated_at: z.string(),
+});
+
+export const PROJECTS_RESPONSE_ITEM_SCHEMA = PROJECT_RESPONSE_SCHEMA.extend({
   total_count: z.number(),
-}) satisfies z.ZodType<ProjectWithCounts>;
+});

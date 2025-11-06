@@ -2,7 +2,7 @@ import { Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import type { PaginationParams, ProjectWithCounts } from '@/shared/types';
+import type { PaginationParams, ProjectResponse } from '@/shared/types';
 
 import { CardList } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
@@ -12,8 +12,8 @@ import { ProjectCard } from './ProjectCard';
 
 interface ProjectListProps {
   onCreateClick: () => void;
-  onDeleteClick: (project: ProjectWithCounts) => void;
-  onEditClick: (project: ProjectWithCounts) => void;
+  onDeleteClick: (project: ProjectResponse) => void;
+  onEditClick: (project: ProjectResponse) => void;
 }
 
 /**

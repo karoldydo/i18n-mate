@@ -1,9 +1,16 @@
 // Projects Feature Types
 
-import type { Database, Tables, TablesInsert, TablesUpdate } from '../database.types';
+import type { Database } from '../database.types';
 import type { PaginatedResponse, PaginationParams } from '../types';
 
-// Primary interface for creating projects with atomic RPC approach
+// ============================================================================
+// List Operations (CRUD: Read Many)
+// ============================================================================
+
+/**
+ * User-facing request interface for creating projects
+ * Matches the frontend form structure
+ */
 export interface CreateProjectRequest {
   default_locale: string;
   default_locale_label: string;
@@ -12,56 +19,68 @@ export interface CreateProjectRequest {
   prefix: string;
 }
 
+/**
+ * Response type for create project operation
+ * Derived from RPC function: create_project_with_default_locale
+ */
+export type CreateProjectResponse = Database['public']['Functions']['create_project_with_default_locale']['Returns'][0];
+
+// ============================================================================
+// Single Item Operations (CRUD: Read One)
+// ============================================================================
+
+/**
+ * RPC arguments for create_project_with_default_locale
+ * Used internally for validation and transformation
+ */
 export type CreateProjectRpcArgs = Database['public']['Functions']['create_project_with_default_locale']['Args'];
 
-// Query parameters for listing projects
-export interface ListProjectsParams extends PaginationParams {
+/**
+ * Request parameters for getting a single project
+ * Derived from RPC function: get_project_with_counts
+ */
+export type ProjectRequest = Database['public']['Functions']['get_project_with_counts']['Args'];
+
+// ============================================================================
+// Create Operations (CRUD: Create)
+// ============================================================================
+
+/**
+ * Response type for single project operation with counts
+ * Derived from RPC function: get_project_with_counts
+ */
+export type ProjectResponse = Database['public']['Functions']['get_project_with_counts']['Returns'][0];
+
+/**
+ * Query parameters for listing projects with pagination and sorting
+ */
+export interface ProjectsRequest extends PaginationParams {
   order?: 'created_at.asc' | 'created_at.desc' | 'name.asc' | 'name.desc';
 }
 
-// RPC function arguments
-export interface ListProjectsWithCountsArgs {
-  limit?: number;
-  offset?: number;
-}
-
-// Project entity
-export type Project = Tables<'projects'>;
-
-// Telemetry event emitted when a new project is created
-export interface ProjectCreatedEvent {
-  created_at: string;
-  event_name: 'project_created';
-  project_id: string;
-  properties: ProjectCreatedProperties;
-}
-
-export interface ProjectCreatedProperties {
-  locale_count: number;
-}
-
-// Branded type for project IDs
-export type ProjectId = string & { readonly __brand: 'ProjectId' };
-
-export type ProjectInsert = TablesInsert<'projects'>;
-
-// List of projects with pagination metadata
-export type ProjectListResponse = PaginatedResponse<ProjectWithCounts>;
-
-// Standard project representation
-export type ProjectResponse = Pick<
-  Project,
-  'created_at' | 'default_locale' | 'description' | 'id' | 'name' | 'prefix' | 'updated_at'
+/**
+ * Response type for list projects operation
+ * Derived from RPC function: list_projects_with_counts
+ */
+export type ProjectsResponse = PaginatedResponse<
+  Database['public']['Functions']['list_projects_with_counts']['Returns'][0]
 >;
 
-export type ProjectUpdate = TablesUpdate<'projects'>;
+// ============================================================================
+// Update Operations (CRUD: Update)
+// ============================================================================
 
-// Enhanced project with aggregated counts
-export type ProjectWithCounts = ProjectResponse & {
-  key_count: number;
-  locale_count: number;
-  total_count: number;
-};
+/**
+ * Request interface for updating projects
+ * Only name and description are mutable after creation
+ */
+export interface UpdateProjectRequest {
+  description?: null | string;
+  name?: string;
+}
 
-// Only name and description are mutable
-export type UpdateProjectRequest = Pick<ProjectUpdate, 'description' | 'name'>;
+/**
+ * Response type for update project operation
+ * Returns the same structure as single project read
+ */
+export type UpdateProjectResponse = ProjectResponse;

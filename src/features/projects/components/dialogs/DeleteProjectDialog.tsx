@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import type { ProjectWithCounts } from '@/shared/types';
+import type { ProjectResponse } from '@/shared/types';
 
 import {
   AlertDialog,
@@ -21,7 +21,7 @@ import { useDeleteProject } from '../../api/useDeleteProject';
 interface DeleteProjectDialogProps {
   onOpenChange: (open: boolean) => void;
   open: boolean;
-  project: ProjectWithCounts;
+  project: ProjectResponse;
 }
 
 /**
@@ -42,7 +42,7 @@ interface DeleteProjectDialogProps {
  * @param {Object} props - Component props
  * @param {boolean} props.open - Whether the dialog is visible
  * @param {function(boolean): void} props.onOpenChange - Callback triggered when dialog open state changes
- * @param {ProjectWithCounts} props.project - The project object being deleted (includes name, counts)
+ * @param {ProjectResponse} props.project - The project object being deleted (includes name, counts)
  */
 export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProjectDialogProps) {
   const queryClient = useQueryClient();

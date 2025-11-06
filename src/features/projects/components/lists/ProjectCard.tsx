@@ -1,17 +1,17 @@
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useCallback } from 'react';
 
-import type { ProjectWithCounts } from '@/shared/types';
+import type { ProjectResponse } from '@/shared/types';
 
 import { CardItem } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
 
 interface ProjectCardProps {
-  onDeleteClick: (project: ProjectWithCounts) => void;
-  onEditClick: (project: ProjectWithCounts) => void;
+  onDeleteClick: (project: ProjectResponse) => void;
+  onEditClick: (project: ProjectResponse) => void;
   onNavigate: (projectId: string) => void;
-  project: ProjectWithCounts;
+  project: ProjectResponse;
 }
 
 /**
@@ -20,10 +20,10 @@ interface ProjectCardProps {
  * @component
  *
  * @param {Object} props - Component props
- * @param {ProjectWithCounts} props.project - The project data to display
+ * @param {ProjectResponse} props.project - The project data to display
  * @param {(projectId: string) => void} props.onNavigate - Called when the card is clicked, to navigate to the project detail route
- * @param {(project: ProjectWithCounts) => void} props.onEditClick - Called when the Edit action is clicked (passes the project)
- * @param {(project: ProjectWithCounts) => void} props.onDeleteClick - Called when the Delete action is clicked (passes the project)
+ * @param {(project: ProjectResponse) => void} props.onEditClick - Called when the Edit action is clicked (passes the project)
+ * @param {(project: ProjectResponse) => void} props.onDeleteClick - Called when the Delete action is clicked (passes the project)
  *
  * @returns {JSX.Element} Card structure displaying project name, description, key stats, and an action dropdown.
  *

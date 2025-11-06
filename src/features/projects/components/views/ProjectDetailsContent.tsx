@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useProject } from '../../api/useProject';
@@ -35,11 +35,6 @@ export function ProjectDetailsContent({ projectId }: ProjectDetailsContentProps)
     navigate(`/projects/${projectId}/export`);
   }, [navigate, projectId]);
 
-  const projectWithCounts = useMemo(
-    () => (project ? { ...project, key_count: 0, locale_count: 0, total_count: 0 } : null),
-    [project]
-  );
-
   if (!project) {
     return null;
   }
@@ -47,12 +42,8 @@ export function ProjectDetailsContent({ projectId }: ProjectDetailsContentProps)
   return (
     <div className="animate-in fade-in duration-500">
       <ProjectDetailsLayout onDelete={handleDelete} onEdit={handleEdit} onExport={handleExport} project={project} />
-      {projectWithCounts && (
-        <>
-          <EditProjectDialog onOpenChange={setEditDialogOpen} open={editDialogOpen} project={projectWithCounts} />
-          <DeleteProjectDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen} project={projectWithCounts} />
-        </>
-      )}
+      <EditProjectDialog onOpenChange={setEditDialogOpen} open={editDialogOpen} project={project} />
+      <DeleteProjectDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen} project={project} />
     </div>
   );
 }

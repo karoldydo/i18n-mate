@@ -10,11 +10,11 @@ import { createDatabaseErrorResponse } from '../projects.errors';
 import { PROJECT_RESPONSE_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
 
 /**
- * Fetch a single project by ID
+ * Fetch a single project by ID with counts
  *
- * Queries the `projects` table for the given ID with RLS-based access control
- * and validates the response against the runtime schema. Returns 404-style error
- * if the project is not found or the user has no access.
+ * Uses the RPC function `get_project_with_counts` which returns project data with
+ * aggregated locale and key counts. Data is validated at runtime and returns a
+ * 404-style error if the project is not found or the user has no access.
  *
  * @param projectId - UUID of the project to fetch
  *
@@ -22,7 +22,7 @@ import { PROJECT_RESPONSE_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @returns TanStack Query result with the project data
+ * @returns TanStack Query result with the project data and counts
  */
 export function useProject(projectId: string) {
   const supabase = useSupabase();
@@ -31,11 +31,7 @@ export function useProject(projectId: string) {
     queryFn: async () => {
       const id = UUID_SCHEMA.parse(projectId);
 
-      const { data, error } = await supabase
-        .from('projects')
-        .select('id,name,description,prefix,default_locale,created_at,updated_at')
-        .eq('id', id)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('get_project_with_counts', { p_project_id: id }).maybeSingle();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useProject', 'Failed to fetch project');

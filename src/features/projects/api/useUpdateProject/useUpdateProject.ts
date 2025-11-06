@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, ProjectResponse, UpdateProjectRequest } from '@/shared/types';
+import type { ApiErrorResponse, UpdateProjectRequest, UpdateProjectResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 import { PROJECTS_ERROR_MESSAGES } from '@/shared/constants';
@@ -27,21 +27,24 @@ import { PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA, UUID_SCHEMA } from '../
 export function useUpdateProject(projectId: string) {
   const supabase = useSupabase();
 
-  return useMutation<ProjectResponse, ApiErrorResponse, UpdateProjectRequest>({
+  return useMutation<UpdateProjectResponse, ApiErrorResponse, UpdateProjectRequest>({
     mutationFn: async (payload) => {
       const id = UUID_SCHEMA.parse(projectId);
       const body = UPDATE_PROJECT_SCHEMA.parse(payload);
 
-      const { data, error } = await supabase
-        .from('projects')
-        .update(body)
-        .eq('id', id)
-        .select('id,name,description,prefix,default_locale,created_at,updated_at')
-        .maybeSingle();
+      // Update the project
+      const { error: updateError } = await supabase.from('projects').update(body).eq('id', id);
 
       // handle database errors
+      if (updateError) {
+        throw createDatabaseErrorResponse(updateError, 'useUpdateProject', 'Failed to update project');
+      }
+
+      // Fetch the updated project with counts
+      const { data, error } = await supabase.rpc('get_project_with_counts', { p_project_id: id }).maybeSingle();
+
       if (error) {
-        throw createDatabaseErrorResponse(error, 'useUpdateProject', 'Failed to update project');
+        throw createDatabaseErrorResponse(error, 'useUpdateProject', 'Failed to fetch updated project');
       }
 
       // handle missing data (project not found or access denied)

@@ -8,26 +8,38 @@
 import type { TelemetryEventResponse } from '@/shared/types';
 
 /**
- * Creates a mock project object for testing
+ * Creates a mock project object with counts for testing
+ * Use this for testing single project operations (useProject, detail views)
+ * Returns ProjectResponse type (with key_count and locale_count)
  */
 export function createMockProject(overrides?: {
   created_at?: string;
   default_locale?: string;
   description?: null | string;
   id?: string;
+  key_count?: number;
+  locale_count?: number;
   name?: string;
   prefix?: string;
   updated_at?: string;
 }) {
-  return {
+  const defaults = {
     created_at: '2025-01-15T10:00:00Z',
     default_locale: 'en',
     description: 'Test project',
     id: generateTestUuid(),
+    key_count: 0,
+    locale_count: 1,
     name: 'Test Project',
     prefix: 'test',
     updated_at: '2025-01-15T10:00:00Z',
+  };
+
+  return {
+    ...defaults,
     ...overrides,
+    key_count: overrides?.key_count ?? defaults.key_count,
+    locale_count: overrides?.locale_count ?? defaults.locale_count,
   };
 }
 
@@ -56,9 +68,11 @@ export function createMockProjectLocale(overrides?: {
 }
 
 /**
- * Creates a mock project with counts (for list views) for testing
+ * Creates a mock project list item for testing
+ * Use this for testing list operations (useProjects)
+ * Returns ProjectsResponse['data'][0] type (with key_count, locale_count, and total_count)
  */
-export function createMockProjectWithCounts(overrides?: {
+export function createMockProjects(overrides?: {
   created_at?: string;
   default_locale?: string;
   description?: null | string;

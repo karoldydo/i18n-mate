@@ -1,10 +1,10 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ListProjectsParams } from '@/shared/types';
+import type { ProjectsRequest } from '@/shared/types';
 
 import { PROJECTS_DEFAULT_LIMIT, PROJECTS_MAX_LIMIT } from '@/shared/constants/projects.constants';
-import { createErrorBoundaryWrapper, createMockProjectWithCounts, createMockSupabaseError } from '@/test/utils';
+import { createErrorBoundaryWrapper, createMockProjects, createMockSupabaseError } from '@/test/utils';
 import { createTestWrapper } from '@/test/utils/test-wrapper';
 
 import { useProjects } from './useProjects';
@@ -29,7 +29,7 @@ describe('useProjects', () => {
   });
 
   it('should fetch projects with default params', async () => {
-    const mockSupabaseResponse = [createMockProjectWithCounts({ total_count: 1 })];
+    const mockSupabaseResponse = [createMockProjects({ total_count: 1 })];
 
     mockSupabase.rpc.mockReturnValue({
       order: vi.fn().mockResolvedValue({
@@ -60,7 +60,7 @@ describe('useProjects', () => {
 
   it('should fetch projects with custom pagination', async () => {
     const mockSupabaseResponse = [
-      createMockProjectWithCounts({
+      createMockProjects({
         description: null,
         id: '550e8400-e29b-41d4-a716-446655440001',
         key_count: 5,
@@ -78,7 +78,7 @@ describe('useProjects', () => {
       }),
     });
 
-    const params: ListProjectsParams = {
+    const params: ProjectsRequest = {
       limit: 10,
       offset: 20,
     };
@@ -102,7 +102,7 @@ describe('useProjects', () => {
 
   it('should fetch projects with ascending name sort', async () => {
     const mockSupabaseResponse = [
-      createMockProjectWithCounts({
+      createMockProjects({
         description: null,
         id: '550e8400-e29b-41d4-a716-446655440002',
         key_count: 0,
@@ -122,7 +122,7 @@ describe('useProjects', () => {
       order: orderMock,
     });
 
-    const params: ListProjectsParams = {
+    const params: ProjectsRequest = {
       order: 'name.asc',
     };
 
@@ -145,7 +145,7 @@ describe('useProjects', () => {
 
   it('should fetch projects with descending created_at sort', async () => {
     const mockSupabaseResponse = [
-      createMockProjectWithCounts({
+      createMockProjects({
         created_at: '2025-01-15T12:00:00Z',
         description: null,
         id: '550e8400-e29b-41d4-a716-446655440003',
@@ -167,7 +167,7 @@ describe('useProjects', () => {
       order: orderMock,
     });
 
-    const params: ListProjectsParams = {
+    const params: ProjectsRequest = {
       order: 'created_at.desc',
     };
 
@@ -238,7 +238,7 @@ describe('useProjects', () => {
   });
 
   it('should validate limit max value', async () => {
-    const params: ListProjectsParams = {
+    const params: ProjectsRequest = {
       limit: PROJECTS_MAX_LIMIT + 50, // over max
     };
 
@@ -260,7 +260,7 @@ describe('useProjects', () => {
   });
 
   it('should validate negative offset', async () => {
-    const params: ListProjectsParams = {
+    const params: ProjectsRequest = {
       offset: -10,
     };
 
@@ -283,14 +283,14 @@ describe('useProjects', () => {
 
   it('should return correct pagination metadata for multiple items', async () => {
     const mockSupabaseResponse = [
-      createMockProjectWithCounts({
+      createMockProjects({
         description: 'Project 1',
         id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Project 1',
         prefix: 'pr1',
         total_count: 150,
       }),
-      createMockProjectWithCounts({
+      createMockProjects({
         created_at: '2025-01-15T11:00:00Z',
         description: 'Project 2',
         id: '550e8400-e29b-41d4-a716-446655440001',
@@ -301,7 +301,7 @@ describe('useProjects', () => {
         total_count: 150,
         updated_at: '2025-01-15T11:00:00Z',
       }),
-      createMockProjectWithCounts({
+      createMockProjects({
         created_at: '2025-01-15T12:00:00Z',
         description: 'Project 3',
         id: '550e8400-e29b-41d4-a716-446655440002',
@@ -321,7 +321,7 @@ describe('useProjects', () => {
       }),
     });
 
-    const params: ListProjectsParams = {
+    const params: ProjectsRequest = {
       limit: 3,
       offset: 50,
     };
@@ -342,7 +342,7 @@ describe('useProjects', () => {
 
   it('should handle pagination metadata for last page', async () => {
     const mockSupabaseResponse = [
-      createMockProjectWithCounts({
+      createMockProjects({
         description: 'Last Project',
         id: '550e8400-e29b-41d4-a716-446655440000',
         key_count: 1,
@@ -360,7 +360,7 @@ describe('useProjects', () => {
       }),
     });
 
-    const params: ListProjectsParams = {
+    const params: ProjectsRequest = {
       limit: 10,
       offset: 25,
     };

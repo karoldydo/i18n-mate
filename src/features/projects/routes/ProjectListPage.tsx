@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import type { ProjectWithCounts } from '@/shared/types';
+import type { ProjectResponse } from '@/shared/types';
 
 import { ErrorBoundary } from '@/shared/components';
 
@@ -23,26 +23,24 @@ import { ProjectList } from '../components/lists/ProjectList';
  * - Dialogs are controlled through local state; the currently selected project is tracked for edit/delete actions.
  * - After a project is created, edited, or deleted, the dialogs close and list updates (per underlying query behaviors).
  *
- * @component
- *
  * @returns {JSX.Element} The project list overview page with dialogs for CRUD operations.
  */
 export function ProjectListPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [project, setProject] = useState<null | ProjectWithCounts>(null);
+  const [project, setProject] = useState<null | ProjectResponse>(null);
 
   const handleCreateClick = useCallback(() => {
     setIsCreateDialogOpen(true);
   }, []);
 
-  const handleEditClick = useCallback((project: ProjectWithCounts) => {
+  const handleEditClick = useCallback((project: ProjectResponse) => {
     setProject(project);
     setIsEditDialogOpen(true);
   }, []);
 
-  const handleDeleteClick = useCallback((project: ProjectWithCounts) => {
+  const handleDeleteClick = useCallback((project: ProjectResponse) => {
     setProject(project);
     setIsDeleteDialogOpen(true);
   }, []);

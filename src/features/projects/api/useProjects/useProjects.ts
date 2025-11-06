@@ -1,12 +1,12 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 
-import type { ApiErrorResponse, ListProjectsParams, ProjectListResponse } from '@/shared/types';
+import type { ApiErrorResponse, ProjectsRequest, ProjectsResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../projects.errors';
-import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.schemas';
+import { PROJECTS_REQUEST_SCHEMA, PROJECTS_RESPONSE_ITEM_SCHEMA } from '../projects.schemas';
 
 /**
  * Fetch a paginated list of projects with counts
@@ -25,12 +25,12 @@ import { LIST_PROJECTS_SCHEMA, PROJECT_WITH_COUNTS_SCHEMA } from '../projects.sc
  *
  * @returns TanStack Query result with projects data and pagination metadata
  */
-export function useProjects(params: ListProjectsParams = {}) {
+export function useProjects(params: ProjectsRequest = {}) {
   const supabase = useSupabase();
 
-  return useSuspenseQuery<ProjectListResponse, ApiErrorResponse>({
+  return useSuspenseQuery<ProjectsResponse, ApiErrorResponse>({
     queryFn: async () => {
-      const { limit, offset, order } = LIST_PROJECTS_SCHEMA.parse(params);
+      const { limit, offset, order } = PROJECTS_REQUEST_SCHEMA.parse(params);
 
       const { data, error } = await supabase
         .rpc('list_projects_with_counts', { p_limit: limit, p_offset: offset })
@@ -43,7 +43,7 @@ export function useProjects(params: ListProjectsParams = {}) {
       }
 
       // runtime validation of response data
-      const projects = z.array(PROJECT_WITH_COUNTS_SCHEMA).parse(data || []);
+      const projects = z.array(PROJECTS_RESPONSE_ITEM_SCHEMA).parse(data || []);
 
       // get total count from first record (all records have the same total_count)
       const totalCount = projects[0]?.total_count ?? 0;

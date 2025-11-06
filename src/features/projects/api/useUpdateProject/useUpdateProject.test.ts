@@ -37,20 +37,26 @@ describe('useUpdateProject', () => {
     const mockSupabaseResponse = createMockProject({
       description: 'Original description',
       id: PROJECT_ID,
+      key_count: 5,
+      locale_count: 3,
       name: 'Updated Name',
       updated_at: '2025-01-15T11:00:00Z',
     });
 
+    // mock the update operation (no response needed)
     mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: mockSupabaseResponse,
-              error: null,
-            }),
-          }),
+        eq: vi.fn().mockResolvedValue({
+          error: null,
         }),
+      }),
+    });
+
+    // mock the get_project_with_counts RPC call
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: mockSupabaseResponse,
+        error: null,
       }),
     });
 
@@ -67,6 +73,7 @@ describe('useUpdateProject', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(mockSupabase.from).toHaveBeenCalledWith('projects');
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('get_project_with_counts', { p_project_id: PROJECT_ID });
     expect(result.current.data).toEqual(mockSupabaseResponse);
   });
 
@@ -79,14 +86,16 @@ describe('useUpdateProject', () => {
 
     mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: mockSupabaseResponse,
-              error: null,
-            }),
-          }),
+        eq: vi.fn().mockResolvedValue({
+          error: null,
         }),
+      }),
+    });
+
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: mockSupabaseResponse,
+        error: null,
       }),
     });
 
@@ -115,14 +124,16 @@ describe('useUpdateProject', () => {
 
     mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: mockSupabaseResponse,
-              error: null,
-            }),
-          }),
+        eq: vi.fn().mockResolvedValue({
+          error: null,
         }),
+      }),
+    });
+
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: mockSupabaseResponse,
+        error: null,
       }),
     });
 
@@ -151,13 +162,8 @@ describe('useUpdateProject', () => {
 
     mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: null,
-              error: mockSupabaseError,
-            }),
-          }),
+        eq: vi.fn().mockResolvedValue({
+          error: mockSupabaseError,
         }),
       }),
     });
@@ -216,14 +222,16 @@ describe('useUpdateProject', () => {
   it('should handle project not found', async () => {
     mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: null,
-              error: null,
-            }),
-          }),
+        eq: vi.fn().mockResolvedValue({
+          error: null,
         }),
+      }),
+    });
+
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
       }),
     });
 
@@ -283,13 +291,8 @@ describe('useUpdateProject', () => {
 
     mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: null,
-              error: mockError,
-            }),
-          }),
+        eq: vi.fn().mockResolvedValue({
+          error: mockError,
         }),
       }),
     });
@@ -320,13 +323,8 @@ describe('useUpdateProject', () => {
 
     mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: null,
-              error: mockError,
-            }),
-          }),
+        eq: vi.fn().mockResolvedValue({
+          error: mockError,
         }),
       }),
     });
@@ -363,14 +361,16 @@ describe('useUpdateProject', () => {
 
     mockSupabase.from.mockReturnValue({
       update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: mockData,
-              error: null,
-            }),
-          }),
+        eq: vi.fn().mockResolvedValue({
+          error: null,
         }),
+      }),
+    });
+
+    mockSupabase.rpc.mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: mockData,
+        error: null,
       }),
     });
 

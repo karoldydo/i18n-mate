@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import type { ProjectWithCounts, UpdateProjectRequest } from '@/shared/types';
+import type { ProjectResponse, UpdateProjectRequest } from '@/shared/types';
 
 import { Button } from '@/shared/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
@@ -18,7 +18,7 @@ import { useUpdateProject } from '../../api/useUpdateProject';
 interface EditProjectDialogProps {
   onOpenChange: (open: boolean) => void;
   open: boolean;
-  project: ProjectWithCounts;
+  project: ProjectResponse;
 }
 
 /**
@@ -37,7 +37,7 @@ interface EditProjectDialogProps {
  * @param {Object} props - Component props
  * @param {boolean} props.open - Whether the dialog is open
  * @param {function(boolean):void} props.onOpenChange - Callback for dialog open state changes
- * @param {ProjectWithCounts} props.project - Project object being edited
+ * @param {ProjectResponse} props.project - Project object being edited
  */
 export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDialogProps) {
   const queryClient = useQueryClient();
