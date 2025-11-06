@@ -38,8 +38,6 @@ export type {
   CreateKeyResponse,
   CreateKeyRpcArgs,
   KeyCountResponse,
-  KeyCreatedEvent,
-  KeyCreatedProperties,
   KeyDefaultViewItem,
   KeysRequest,
   KeysResponse,
@@ -55,8 +53,6 @@ export type {
 export type {
   CreateLocaleRequest,
   CreateLocaleResponse,
-  LanguageAddedEvent,
-  LanguageAddedProperties,
   LocaleCode,
   LocaleItem,
   LocalesResponse,
@@ -81,24 +77,24 @@ export type {
 } from './projects';
 
 // ============================================================================
-// Locales Feature Types
+// Telemetry Feature Types
 // ============================================================================
 
 export type {
   CreateTelemetryEventRequest,
   EventType,
-  ListTelemetryEventsParams,
-  TelemetryEvent,
-  TelemetryEventInsert,
+  KeyCreatedProperties,
+  LanguageAddedProperties,
+  ProjectCreatedProperties,
   TelemetryEventProperties,
   TelemetryEventResponse,
-  TelemetryEventsParams,
-  TelemetryEventUnion,
-  TelemetryEventUpdate,
+  TelemetryEventsRequest,
+  TelemetryEventsResponse,
+  TranslationCompletedProperties,
 } from './telemetry';
 
 // ============================================================================
-// Projects Feature Types
+// Translation Jobs Feature Types
 // ============================================================================
 
 export type {
@@ -128,15 +124,11 @@ export type {
   TranslationMode,
 } from './translation-jobs';
 
-// ============================================================================
-// Telemetry Feature Types
-// ============================================================================
-
 // Re-export type guards from translation-jobs
 export { isActiveJob, isFinishedJob } from './translation-jobs';
 
 // ============================================================================
-// Translation Jobs Feature Types
+// Translations Feature Types
 // ============================================================================
 
 export type {

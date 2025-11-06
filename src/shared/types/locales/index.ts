@@ -7,18 +7,6 @@ export interface CreateLocaleRequest {
 
 export type CreateLocaleResponse = Database['public']['Functions']['create_project_locale_atomic']['Returns'][0];
 
-export interface LanguageAddedEvent {
-  created_at: string;
-  event_name: 'language_added';
-  project_id: string;
-  properties: LanguageAddedProperties;
-}
-
-export interface LanguageAddedProperties {
-  locale: string;
-  locale_count: number;
-}
-
 export type LocaleCode = string & { readonly __brand: 'LocaleCode' };
 
 export type LocaleItem = LocalesResponse[number];

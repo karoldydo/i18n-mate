@@ -1,7 +1,9 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TelemetryEventsParams } from '@/shared/types';
+import type { TelemetryEventsRequest } from '@/shared/types';
+
+type TelemetryEventsParams = Omit<TelemetryEventsRequest, 'project_id'>;
 
 import { TELEMETRY_DEFAULT_LIMIT, TELEMETRY_MAX_LIMIT, TELEMETRY_SORT_OPTIONS } from '@/shared/constants';
 import { createMockProject, createMockSupabaseError, createMockTelemetryEvent } from '@/test/utils/test-data';

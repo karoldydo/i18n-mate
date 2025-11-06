@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { EventType, Json, ListTelemetryEventsParams, TelemetryEventResponse } from '@/shared/types';
+import type { EventType, Json, TelemetryEventResponse, TelemetryEventsRequest } from '@/shared/types';
 
 import {
   TELEMETRY_DEFAULT_LIMIT,
@@ -33,8 +33,8 @@ export const EVENT_NAME_SCHEMA = z.enum([
 // UUID schema
 export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
-// list telemetry events schema
-export const LIST_TELEMETRY_EVENTS_SCHEMA = z.object({
+// telemetry events request schema
+export const TELEMETRY_EVENTS_SCHEMA = z.object({
   limit: z
     .number()
     .int()
@@ -53,7 +53,7 @@ export const LIST_TELEMETRY_EVENTS_SCHEMA = z.object({
     .optional()
     .default(TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC),
   project_id: z.string().uuid(TELEMETRY_ERROR_MESSAGES.INVALID_PROJECT_ID),
-}) satisfies z.ZodType<ListTelemetryEventsParams>;
+}) satisfies z.ZodType<TelemetryEventsRequest>;
 
 // response schema for runtime validation
 export const TELEMETRY_EVENT_RESPONSE_SCHEMA = z.object({

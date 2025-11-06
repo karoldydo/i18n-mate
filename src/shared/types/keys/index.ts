@@ -13,17 +13,6 @@ export type CreateKeyRpcArgs = Database['public']['Functions']['create_key_with_
 
 export type KeyCountResponse = number;
 
-export interface KeyCreatedEvent {
-  created_at: string;
-  event_name: 'key_created';
-  project_id: string;
-  properties: KeyCreatedProperties;
-}
-export interface KeyCreatedProperties {
-  full_key: string;
-  key_count: number;
-}
-
 export type KeyDefaultViewItem = Database['public']['Functions']['list_keys_default_view']['Returns'][0];
 
 export type KeysRequest = Omit<

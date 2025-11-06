@@ -1,11 +1,11 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 
-import type { ApiErrorResponse, TelemetryEventResponse, TelemetryEventsParams } from '@/shared/types';
+import type { ApiErrorResponse, TelemetryEventsRequest, TelemetryEventsResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../telemetry.errors';
-import { LIST_TELEMETRY_EVENTS_SCHEMA, TELEMETRY_EVENT_RESPONSE_SCHEMA } from '../telemetry.schemas';
+import { TELEMETRY_EVENT_RESPONSE_SCHEMA, TELEMETRY_EVENTS_SCHEMA } from '../telemetry.schemas';
 
 /**
  * Fetch telemetry events for a project
@@ -23,12 +23,12 @@ import { LIST_TELEMETRY_EVENTS_SCHEMA, TELEMETRY_EVENT_RESPONSE_SCHEMA } from '.
  *
  * @returns TanStack Query result with array of telemetry events
  */
-export function useTelemetryEvents(projectId: string, params?: TelemetryEventsParams) {
+export function useTelemetryEvents(projectId: string, params?: Omit<TelemetryEventsRequest, 'project_id'>) {
   const supabase = useSupabase();
 
-  return useSuspenseQuery<TelemetryEventResponse[], ApiErrorResponse>({
+  return useSuspenseQuery<TelemetryEventsResponse, ApiErrorResponse>({
     queryFn: async () => {
-      const { limit, offset, order, project_id } = LIST_TELEMETRY_EVENTS_SCHEMA.parse({
+      const { limit, offset, order, project_id } = TELEMETRY_EVENTS_SCHEMA.parse({
         project_id: projectId,
         ...params,
       });
