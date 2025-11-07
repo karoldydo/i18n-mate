@@ -144,8 +144,9 @@ export function CardList({
           {(filterToggle || actionButton) && (
             <div
               className={cn(
-                'flex flex-shrink-0 items-center justify-between sm:justify-start sm:gap-4',
-                !searchInput && 'sm:ml-auto'
+                'flex flex-shrink-0 items-center sm:justify-start sm:gap-4',
+                !searchInput && !filterToggle && 'justify-end sm:ml-auto',
+                (searchInput || filterToggle) && 'justify-between'
               )}
             >
               {filterToggle && <div>{filterToggle}</div>}

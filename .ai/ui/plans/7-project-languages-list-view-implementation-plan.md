@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The Project Languages List view provides a comprehensive interface for managing languages assigned to a specific project. This view allows users to view all project locales, add new languages with BCP-47 validation, update language labels, and delete languages (except the default). The view emphasizes the default language through visual indicators and prevents its deletion. Key features include real-time validation, optimistic updates, and seamless navigation to per-language key views.
+The Project Languages List view provides a comprehensive interface for managing languages assigned to a specific project. This view uses a modern card-based layout (migrated from table-based layout) for improved mobile experience and visual consistency. The view allows users to view all project locales, add new languages with BCP-47 validation, update language labels, and delete languages (except the default). The view emphasizes the default language through visual indicators (star icon) and prevents its deletion. Key features include real-time validation, optimistic updates, seamless navigation to per-language key views, and a business-focused page description that emphasizes value proposition.
 
 ## 2. View Routing
 
@@ -14,25 +14,25 @@ The view is accessible via a dynamic route where `projectId` is extracted from U
 
 ```markdown
 ProjectLocalesPage (Route Component)
-├── PageHeader
-│ ├── PageTitle ("Languages")
-│ └── AddLocaleButton
-├── LocalesDataTable
-│ ├── DataTable (shadcn/ui)
-│ │ ├── TableHeader
-│ │ │ ├── LocaleColumn ("Locale")
-│ │ │ ├── LabelColumn ("Language")
-│ │ │ ├── DefaultColumn ("Default")
-│ │ │ └── ActionsColumn ("Actions")
-│ │ └── TableBody
-│ │ └── LocaleRow (repeatable)
-│ │ ├── LocaleCell (normalized BCP-47 code)
-│ │ ├── LabelCell (human-readable label)
-│ │ ├── DefaultIndicator (badge/star icon)
-│ │ └── ActionsCell
-│ │ ├── EditButton
-│ │ └── DeleteButton (disabled for default)
+├── ProjectLocalesContent (Content Component)
+│ ├── BackButton (navigation to project details)
+│ ├── PageHeader
+│ │ ├── PageTitle ("Languages")
+│ │ └── PageDescription (business-focused description)
+│ ├── CardList (shared component)
+│ │ ├── ActionButton ("Add Language" - responsive text)
+│ │ └── LocaleCard[] (repeatable)
+│ │ ├── CardContent
+│ │ │ ├── LanguageLabel (h3 heading)
+│ │ │ └── MetadataSection
+│ │ │ ├── LocaleCode (BCP-47 code with label)
+│ │ │ └── DefaultIndicator (star icon + "Default" text)
+│ │ └── CardActions (DropdownMenu)
+│ │ ├── EditMenuItem
+│ │ └── DeleteMenuItem (disabled for default)
 │ └── EmptyState (when no locales)
+│ ├── EmptyMessage
+│ └── AddLanguageButton
 ├── AddLocaleDialog (shadcn/ui Dialog)
 │ ├── DialogHeader ("Add Language")
 │ ├── LocaleForm
@@ -53,36 +53,54 @@ ProjectLocalesPage (Route Component)
 
 ### ProjectLocalesPage
 
-- **Component description**: Main route component that orchestrates the project languages list view, managing data fetching, dialog states, and user interactions.
-- **Main elements**: PageHeader, LocalesDataTable, AddLocaleDialog, EditLocaleDialog, DeleteLocaleDialog, LoadingState, ErrorState.
+- **Component description**: Main route component that validates route parameters and renders ProjectLocalesContent within an ErrorBoundary. Handles UUID validation and error display for invalid project IDs.
+- **Main elements**: ValidationError component (for invalid UUIDs), ErrorBoundary wrapper, ProjectLocalesContent component.
+- **Handled interactions**: Route parameter extraction and validation, error boundary error handling.
+- **Handled validation**: Project ID UUID format validation using UUID_SCHEMA.
+- **Types**:
+  - DTO: None (route component)
+  - ViewModel: None
+- **Props**: None (route component gets projectId from useParams())
+
+### ProjectLocalesContent
+
+- **Component description**: Content component that orchestrates the project languages list view, managing data fetching, dialog states, and user interactions. Uses card-based layout for improved mobile experience.
+- **Main elements**: BackButton, PageHeader, CardList with LocaleCard components, EmptyState, AddLocaleDialog, EditLocaleDialog, DeleteLocaleDialog.
 - **Handled interactions**: Route parameter validation, dialog state management, navigation to key views, error handling.
 - **Handled validation**: Project ID UUID format validation, user authentication checks.
 - **Types**:
-  - DTO: ProjectLocaleWithDefault[]
-  - ViewModel: LocaleListViewModel { locales: ProjectLocaleWithDefault[], isLoading: boolean, error: ApiErrorResponse | null }
-- **Props**: None (route component gets projectId from useParams())
+  - DTO: LocalesResponse (array of LocaleItem)
+  - ViewModel: LocaleListViewModel { locales: LocaleItem[], hasLocales: boolean }
+- **Props**: projectId: string
 
 ### PageHeader
 
-- **Component description**: Header section with page title and primary action button for adding new locales.
-- **Main elements**: Typography for title, Button component for "Add Language" action.
-- **Handled interactions**: Add language dialog trigger.
+- **Component description**: Header section with page title and business-focused description. Action button is moved to CardList component for better UX consistency.
+- **Main elements**: Typography for title (h1), descriptive paragraph with business value proposition.
+- **Handled interactions**: None (action button handled by CardList).
 - **Handled validation**: None.
-- **Types**:
-  - DTO: None
-  - ViewModel: PageHeaderViewModel { title: string, onAddClick: () => void }
-- **Props**: onAddClick: () => void
+- **Types**: None (presentational component)
+- **Props**: None
 
-### LocalesDataTable
+### CardList
 
-- **Component description**: Data table displaying project locales with sorting, actions, and navigation capabilities.
-- **Main elements**: Shadcn DataTable with custom columns, action buttons, empty state.
-- **Handled interactions**: Row clicks for navigation, edit/delete button clicks, keyboard navigation.
+- **Component description**: Generic shared component for displaying lists of cards with optional action button. Used across multiple features for consistent UI.
+- **Main elements**: Action button (optional), card items container, empty state support.
+- **Handled interactions**: Action button click handling via content projection.
+- **Handled validation**: None.
+- **Types**: Generic component, accepts ReactNode for actionButton and children
+- **Props**: actionButton?: ReactNode, children: ReactNode, emptyState?: ReactNode, data-testid?: string
+
+### LocaleCard
+
+- **Component description**: Card component displaying individual locale information with actions. Follows the same pattern as ProjectCard and KeyCard for consistency.
+- **Main elements**: CardItem wrapper, language label (h3), locale code with label, default indicator (star icon), dropdown menu with Edit/Delete actions.
+- **Handled interactions**: Card click for navigation, edit/delete button clicks via dropdown menu, keyboard navigation.
 - **Handled validation**: Disable delete action for default locale.
 - **Types**:
-  - DTO: ProjectLocaleWithDefault[]
-  - ViewModel: LocaleTableRow { id: string, locale: string, label: string, isDefault: boolean, canEdit: boolean, canDelete: boolean }
-- **Props**: locales: ProjectLocaleWithDefault[], onEdit: (locale: ProjectLocaleWithDefault) => void, onDelete: (locale: ProjectLocaleWithDefault) => void, onRowClick: (locale: ProjectLocaleWithDefault) => void
+  - DTO: LocaleItem
+  - ViewModel: None (uses LocaleItem directly)
+- **Props**: locale: LocaleItem, onEdit: (locale: LocaleItem) => void, onDelete: (locale: LocaleItem) => void, onNavigate: (locale: LocaleItem) => void
 
 ### AddLocaleDialog
 
@@ -194,28 +212,33 @@ The view uses TanStack Query for server state management and local React state f
 ## 8. User Interactions
 
 1. **Adding a Language**:
-   - User clicks "Add Language" button
+   - User clicks "Add Language" button (located in CardList header, right-aligned)
    - Add dialog opens with empty form
    - User selects a locale from LocaleSelector (auto-normalized BCP-47 code) and enters a label
    - Real-time validation provides feedback
    - On submit: validation runs, API call made, success closes dialog and updates list
 
 2. **Editing a Language Label**:
-   - User clicks edit button on any locale row
+   - User clicks three-dot menu button on any locale card
+   - Dropdown menu appears with Edit and Delete options
+   - User clicks Edit option
    - Edit dialog opens pre-filled with current label
    - User modifies label with real-time validation
    - On submit: API updates label, dialog closes, list refreshes
 
 3. **Deleting a Language**:
-   - User clicks delete button (disabled for default locale)
+   - User clicks three-dot menu button on any locale card
+   - Dropdown menu appears with Edit and Delete options
+   - Delete option is disabled (grayed out) for default locale
+   - User clicks Delete option (if not default)
    - Confirmation dialog shows warning and locale details
    - User confirms irreversible action
    - On confirm: API deletes locale, dialog closes, list updates
 
 4. **Navigating to Key View**:
-   - User clicks anywhere on locale row (except action buttons)
+   - User clicks anywhere on locale card (except action buttons/dropdown menu)
    - Navigation occurs to `/projects/{projectId}/keys/{locale}`
-   - Breadcrumb navigation available to return to languages list
+   - BackButton available to return to languages list
 
 5. **Handling Validation Errors**:
    - Invalid BCP-47 format: Field error "Locale must be in BCP-47 format (e.g., 'en' or 'en-US')"
@@ -300,14 +323,17 @@ The view uses TanStack Query for server state management and local React state f
 
 1. **Set up route and basic component structure**
    - Create ProjectLocalesPage component with route definition
+   - Create ProjectLocalesContent component for content logic
    - Add TypeScript types and imports
-   - Implement basic layout with header and placeholder for table
+   - Implement basic layout with header and placeholder for card list
 
-2. **Implement data fetching and table display**
-   - Integrate useProjectLocales hook
-   - Create LocalesDataTable component using shadcn DataTable
-   - Add columns for locale, label, default indicator, and actions
-   - Implement loading and error states
+2. **Implement data fetching and card-based display**
+   - Integrate useProjectLocales hook with useSuspenseQuery
+   - Create LocaleCard component following ProjectCard/KeyCard pattern
+   - Use CardList shared component for container
+   - Add actionButton to CardList with responsive text ("Add Language" / "Add")
+   - Implement empty state with consistent styling
+   - Implement loading and error states via Suspense boundary
 
 3. **Add locale management dialogs**
    - **VERIFY**: Check for existing schemas before creating forms
@@ -325,9 +351,10 @@ The view uses TanStack Query for server state management and local React state f
    - Add optimistic updates and cache invalidation
 
 5. **Add navigation and user interactions**
-   - Implement row click navigation to key views
-   - Add keyboard navigation support
-   - Implement proper ARIA labels and roles
+   - Implement card click navigation to key views (via CardItem onClick)
+   - Add keyboard navigation support (Enter/Space on cards)
+   - Implement proper ARIA labels and roles for cards and actions
+   - Ensure action buttons don't trigger card navigation (event.stopPropagation)
 
 6. **Polish UX and accessibility**
    - Add loading states and skeleton components

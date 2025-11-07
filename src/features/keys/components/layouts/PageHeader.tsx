@@ -16,8 +16,12 @@ interface PageHeaderProps {
 export function PageHeader({ projectName }: PageHeaderProps) {
   return (
     <div>
-      <h1 className="text-3xl font-bold tracking-tight">Translation Keys</h1>
-      {projectName && <p className="text-muted-foreground mt-1 text-sm">{projectName}</p>}
+      <h1 className="text-3xl font-bold tracking-tight">Translation keys</h1>
+      {projectName && (
+        <p className="text-muted-foreground mt-1 text-sm">
+          Manage your translation keys for the <span className="font-medium">{projectName}</span> project
+        </p>
+      )}
     </div>
   );
 }

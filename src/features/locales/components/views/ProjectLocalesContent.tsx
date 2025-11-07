@@ -1,16 +1,17 @@
-import { useCallback, useState } from 'react';
+import { Plus } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import type { LocaleItem } from '@/shared/types';
 
-import { BackButton } from '@/shared/components';
+import { BackButton, CardList } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { useProjectLocales } from '../../api/useProjectLocales';
+import { LocaleCard } from '../cards/LocaleCard';
 import { AddLocaleDialog } from '../dialogs/AddLocaleDialog';
 import { DeleteLocaleDialog } from '../dialogs/DeleteLocaleDialog';
 import { EditLocaleDialog } from '../dialogs/EditLocaleDialog';
-import { LocalesDataTable } from '../tables/LocalesDataTable';
 
 interface ProjectLocalesContentProps {
   projectId: string;
@@ -52,6 +53,8 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
     setAddDialogOpen(true);
   }, []);
 
+  const hasLocales = useMemo(() => Boolean(locales && locales.length > 0), [locales]);
+
   if (!locales) {
     return null;
   }
@@ -61,26 +64,51 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
       <div className="animate-in fade-in container duration-500">
         <div className="space-y-6">
           <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
-
-          <header className="flex items-center justify-between">
+          <header>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Languages</h1>
               <p className="text-muted-foreground mt-1" id="page-description">
-                Manage languages for this project
+                Expand your project to new markets by adding languages. Manage your multilingual content, track
+                translation coverage, and ensure consistent localization across all supported locales.
               </p>
             </div>
-            <Button aria-label="Add new language" onClick={handleAddDialogOpen}>
-              Add Language
-            </Button>
           </header>
-
           <main aria-describedby="page-description" role="main">
-            <LocalesDataTable
-              locales={locales}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-              onRowClick={handleRowClick}
-            />
+            {hasLocales ? (
+              <CardList
+                actionButton={
+                  <Button aria-label="Add new language" data-testid="add-language-button" onClick={handleAddDialogOpen}>
+                    <Plus />
+                    <span className="hidden sm:inline">Add language</span>
+                    <span className="sm:hidden">Add</span>
+                  </Button>
+                }
+                data-testid="locales-list"
+              >
+                {locales.map((locale) => (
+                  <LocaleCard
+                    key={locale.id}
+                    locale={locale}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                    onNavigate={handleRowClick}
+                  />
+                ))}
+              </CardList>
+            ) : (
+              <div
+                className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12"
+                data-testid="locales-list-empty"
+              >
+                <p className="text-muted-foreground mb-4">
+                  No languages found. Add your first language to get started.
+                </p>
+                <Button data-testid="add-language-button-empty" onClick={handleAddDialogOpen}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Language
+                </Button>
+              </div>
+            )}
           </main>
         </div>
       </div>

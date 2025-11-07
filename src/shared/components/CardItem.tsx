@@ -61,7 +61,7 @@ export function CardItem({ actions, children, className, onClick }: CardItemProp
     <div
       className={cn(
         'bg-card text-card-foreground rounded-lg border px-4 py-3 transition-colors',
-        isClickable && 'hover:bg-accent/50 cursor-pointer shadow-sm',
+        isClickable && 'hover:bg-accent/50 cursor-pointer shadow-xs',
         className
       )}
       onClick={handleClick}
