@@ -12,18 +12,20 @@ import {
 } from '@/shared/ui/pagination';
 import { cn } from '@/shared/utils';
 
+export interface CardListPaginationProps {
+  metadata: PaginationMetadata;
+  onPageChange: (params: PaginationParams) => void;
+  params: PaginationParams;
+}
+
 interface CardListProps {
-  actionButton?: ReactNode;
+  actions?: ReactNode;
   children: ReactNode;
   className?: string;
   'data-testid'?: string;
   emptyState?: ReactNode;
   filterToggle?: ReactNode;
-  pagination?: {
-    metadata: PaginationMetadata;
-    onPageChange: (params: PaginationParams) => void;
-    params: PaginationParams;
-  };
+  pagination?: CardListPaginationProps;
   searchInput?: ReactNode;
 }
 
@@ -61,7 +63,7 @@ interface CardListProps {
  * </CardList>
  */
 export function CardList({
-  actionButton,
+  actions,
   children,
   className,
   'data-testid': dataTestId,
@@ -138,10 +140,10 @@ export function CardList({
   return (
     <div className={cn('space-y-4', className)} data-testid={dataTestId}>
       {/* optional search and filter section */}
-      {(searchInput || filterToggle || actionButton) && (
+      {(searchInput || filterToggle || actions) && (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {searchInput && <div className="flex-1">{searchInput}</div>}
-          {(filterToggle || actionButton) && (
+          {(filterToggle || actions) && (
             <div
               className={cn(
                 'flex flex-shrink-0 items-center sm:justify-start sm:gap-4',
@@ -150,7 +152,7 @@ export function CardList({
               )}
             >
               {filterToggle && <div>{filterToggle}</div>}
-              {actionButton && <div>{actionButton}</div>}
+              {actions && <div>{actions}</div>}
             </div>
           )}
         </div>

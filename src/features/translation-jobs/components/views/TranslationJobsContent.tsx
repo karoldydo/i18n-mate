@@ -1,12 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2Icon, PlusIcon } from 'lucide-react';
+import { Loader2Icon, PlusIcon, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import type { TranslationJobResponse } from '@/shared/types';
+import type { PaginationParams, TranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { BackButton } from '@/shared/components';
+import { BackButton, CardList } from '@/shared/components';
 import { isActiveJob } from '@/shared/types';
 import { Button } from '@/shared/ui/button';
 
@@ -14,10 +14,10 @@ import { useCancelTranslationJob } from '../../api/useCancelTranslationJob';
 import { useCreateTranslationJob } from '../../api/useCreateTranslationJob';
 import { useTranslationJobs } from '../../api/useTranslationJobs';
 import { useTranslationJobPolling } from '../../hooks/useTranslationJobPolling';
+import { TranslationJobCard } from '../cards/TranslationJobCard';
 import { CancelJobDialog } from '../dialogs/CancelJobDialog';
 import { CreateTranslationJobDialog } from '../dialogs/CreateTranslationJobDialog';
 import { JobProgressModal } from '../dialogs/JobProgressModal';
-import { TranslationJobsTable } from '../tables/TranslationJobsTable';
 
 interface TranslationJobsContentProps {
   projectId: string;
@@ -31,8 +31,11 @@ interface TranslationJobsContentProps {
  */
 export function TranslationJobsContent({ projectId }: TranslationJobsContentProps) {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(0);
-  const [pageSize] = useState(20);
+  const pageSize = 20;
+  const [paginationParams, setPaginationParams] = useState<PaginationParams>({
+    limit: pageSize,
+    offset: 0,
+  });
   const [progressModalOpen, setProgressModalOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [createJobDialogOpen, setCreateJobDialogOpen] = useState(false);
@@ -47,8 +50,8 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
     isFetching,
     refetch,
   } = useTranslationJobs({
-    limit: pageSize,
-    offset: page * pageSize,
+    limit: paginationParams.limit ?? pageSize,
+    offset: paginationParams.offset ?? 0,
     project_id: projectId,
   });
 
@@ -125,16 +128,17 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
 
   const { data: jobs, metadata } = jobsResponse;
 
-  const { displayJobs, totalPages } = useMemo(() => {
+  const displayJobs = useMemo(() => {
     const jobsWithHints = jobs.map(applyTotalHint);
     const activeJobWithHint = activeJob ? applyTotalHint(activeJob) : null;
-    const displayJobs = activeJobWithHint
+    return activeJobWithHint
       ? jobsWithHints.map((job) => (job.id === activeJobWithHint.id ? activeJobWithHint : job))
       : jobsWithHints;
-    const totalPages = Math.ceil(metadata.total / pageSize);
+  }, [jobs, activeJob, applyTotalHint]);
 
-    return { displayJobs, totalPages };
-  }, [jobs, metadata, activeJob, applyTotalHint, pageSize]);
+  const handlePageChange = useCallback((params: PaginationParams) => {
+    setPaginationParams(params);
+  }, []);
 
   const handleJobClick = useCallback(
     (job: TranslationJobResponse) => {
@@ -292,7 +296,7 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">Translation Jobs</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Translation jobs</h1>
               {hasActiveJob && isJobRunning && (
                 <span className="bg-primary/10 text-primary flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium">
                   <span className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
@@ -301,26 +305,6 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
               )}
             </div>
             <p className="text-muted-foreground">Monitor and manage LLM-powered translation jobs for this project.</p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              aria-label="Create new translation job"
-              disabled={hasActiveJob && isJobRunning}
-              onClick={handleOpenCreateDialog}
-            >
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Create Job
-            </Button>
-            <Button aria-label="Refresh job list" disabled={isFetching} onClick={handleRefresh} variant="outline">
-              {isFetching ? (
-                <>
-                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                  Refreshing...
-                </>
-              ) : (
-                'Refresh'
-              )}
-            </Button>
           </div>
         </div>
 
@@ -331,51 +315,51 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
           </div>
         )}
 
-        {jobs.length === 0 ? (
-          <div className="border-border rounded-lg border p-8 text-center">
-            <h3 className="text-lg font-semibold">No translation jobs found</h3>
-            <p className="text-muted-foreground mt-2">
-              Translation jobs will appear here after you create translations using the LLM translator.
-            </p>
-          </div>
-        ) : (
-          <>
-            <TranslationJobsTable
-              isLoading={false}
-              jobs={displayJobs}
-              onCancelJob={handleCancelJobClick}
-              onJobClick={handleJobClick}
-            />
-
-            {totalPages > 1 && (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-muted-foreground text-center text-sm sm:text-left">
-                  Showing {metadata.start + 1} to {metadata.end} of {metadata.total} jobs
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    aria-label="Go to previous page"
-                    className="flex-1 sm:flex-none"
-                    disabled={page === 0}
-                    onClick={() => setPage(page - 1)}
-                    variant="outline"
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    aria-label="Go to next page"
-                    className="flex-1 sm:flex-none"
-                    disabled={page >= totalPages - 1}
-                    onClick={() => setPage(page + 1)}
-                    variant="outline"
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+        <CardList
+          actions={
+            <div className="flex gap-2">
+              <Button aria-label="Refresh job list" disabled={isFetching} onClick={handleRefresh} variant="outline">
+                {isFetching ? (
+                  <>
+                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh
+                  </>
+                )}
+              </Button>
+              <Button
+                aria-label="Create new translation job"
+                disabled={hasActiveJob && isJobRunning}
+                onClick={handleOpenCreateDialog}
+              >
+                <PlusIcon className="h-4 w-4" />
+                Create Job
+              </Button>
+            </div>
+          }
+          data-testid="translation-jobs-list"
+          emptyState={
+            <div className="border-border rounded-lg border p-8 text-center">
+              <h3 className="text-lg font-semibold">No translation jobs found</h3>
+              <p className="text-muted-foreground mt-2">
+                Translation jobs will appear here after you create translations using the LLM translator.
+              </p>
+            </div>
+          }
+          pagination={{
+            metadata,
+            onPageChange: handlePageChange,
+            params: paginationParams,
+          }}
+        >
+          {displayJobs.map((job) => (
+            <TranslationJobCard job={job} key={job.id} onCancelJob={handleCancelJobClick} onJobClick={handleJobClick} />
+          ))}
+        </CardList>
         <JobProgressModal
           isOpen={progressModalOpen}
           job={progressJob}

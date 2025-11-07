@@ -84,7 +84,7 @@ export function ProjectList({ onCreateClick, onDeleteClick, onEditClick }: Proje
 
   return (
     <CardList
-      actionButton={
+      actions={
         <Button data-testid="create-project-button" onClick={onCreateClick}>
           <Plus />
           <span className="hidden sm:inline">Create project</span>

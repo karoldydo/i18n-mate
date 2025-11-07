@@ -76,7 +76,7 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
           <main aria-describedby="page-description" role="main">
             {hasLocales ? (
               <CardList
-                actionButton={
+                actions={
                   <Button aria-label="Add new language" data-testid="add-language-button" onClick={handleAddDialogOpen}>
                     <Plus />
                     <span className="hidden sm:inline">Add language</span>

@@ -156,7 +156,7 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
           </div>
           <PageHeader projectName={project.name} />
           <CardList
-            actionButton={
+            actions={
               <Button data-testid="add-key-button" onClick={handleAddKeyClick}>
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Add key</span>

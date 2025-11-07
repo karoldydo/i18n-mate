@@ -39,11 +39,11 @@ export function ProjectHeader({ onDelete, onEdit, project }: ProjectHeaderProps)
 
       <div className="flex gap-2">
         <Button aria-label="Edit project" onClick={onEdit} variant="outline">
-          <Pencil className="mr-2 h-4 w-4" />
+          <Pencil className="h-4 w-4" />
           Edit
         </Button>
         <Button aria-label="Delete project" onClick={onDelete} variant="destructive">
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="h-4 w-4" />
           Delete
         </Button>
       </div>
