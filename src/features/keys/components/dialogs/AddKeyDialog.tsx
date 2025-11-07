@@ -15,10 +15,22 @@ interface AddKeyDialogProps {
 }
 
 /**
- * AddKeyDialog - Modal dialog for creating new translation keys
+ * AddKeyDialog – Modal dialog for creating new translation keys with validation.
  *
- * Displays a form for creating new keys with validation and error handling.
- * Pre-fills the key prefix based on project configuration.
+ * Renders a dialog containing a key creation form. Handles optimistic UI updates, loading state,
+ * error/success toasts, and calls the `useCreateKey` mutation to persist a new key for the given project.
+ * Invalidates the default view keys query on successful creation.
+ *
+ * The form is pre-filled with the required project prefix. Handles validation and error states in the UI,
+ * and disables the submit button while submitting.
+ *
+ * @param {Object}   props                       - Props for AddKeyDialog.
+ * @param {boolean}  props.open                  - Controls dialog visibility.
+ * @param {(open: boolean) => void} props.onOpenChange - Called when dialog open state changes.
+ * @param {string}   props.projectId             - The current project ID for which the key is created.
+ * @param {string}   props.projectPrefix         - Key prefix, pre-filled and enforced in the form.
+ *
+ * @returns {JSX.Element} Dialog with key creation form, validation, and side effect handling.
  */
 export function AddKeyDialog({ onOpenChange, open, projectId, projectPrefix }: AddKeyDialogProps) {
   const queryClient = useQueryClient();

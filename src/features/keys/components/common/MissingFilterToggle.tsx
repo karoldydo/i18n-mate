@@ -8,9 +8,24 @@ interface MissingFilterToggleProps {
 }
 
 /**
- * MissingFilterToggle - Toggle switch to filter keys with missing translations
+ * MissingFilterToggle – Labeled toggle switch for filtering translation keys with missing translations.
  *
- * Provides a labeled switch for enabling/disabling the missing translations filter.
+ * Renders a labeled switch UI for enabling or disabling a filter that limits the view
+ * to keys missing translations. Used in translation key lists to quickly show or hide missing items.
+ *
+ * @param {Object} props - Component props
+ * @param {boolean} props.enabled - Whether the missing filter is currently enabled
+ * @param {string} props.label - Label text describing the filter toggle
+ * @param {(enabled: boolean) => void} props.onToggle - Callback fired when the switch is toggled
+ *
+ * @returns {JSX.Element} Toggle switch with label for filtering missing translation keys.
+ *
+ * @example
+ * <MissingFilterToggle
+ *   enabled={missingOnly}
+ *   label="Show only missing translations"
+ *   onToggle={setMissingOnly}
+ * />
  */
 export function MissingFilterToggle({ enabled, label, onToggle }: MissingFilterToggleProps) {
   return (

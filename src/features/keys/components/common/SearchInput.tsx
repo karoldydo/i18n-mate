@@ -12,10 +12,19 @@ interface SearchInputProps {
 const DEBOUNCE_DELAY = 300;
 
 /**
- * SearchInput - Debounced search input for filtering keys by name
+ * SearchInput – Debounced search input with icon for filtering translation keys by name
  *
- * Provides a search input with 300ms debouncing to prevent excessive API calls.
- * Displays search icon and handles input sanitization.
+ * Renders a search field with a leading search icon for filtering items by key name.
+ * Utilizes a 300ms debounce to optimize API or filter calls, emitting the value to
+ * the parent only after the user pauses typing. Synchronizes internal input state
+ * with the external prop value, ensuring controlled input behavior during resets.
+ *
+ * @param {Object} props - Component props
+ * @param {(value: string) => void} props.onChange - Triggered after debounce with the current input value
+ * @param {string} [props.placeholder] - Optional placeholder text for the search input (defaults to "Search...")
+ * @param {string} props.value - External controlled value for the search input
+ *
+ * @returns {JSX.Element} Styled search input component with debounce support and icon
  */
 export function SearchInput({ onChange, placeholder = 'Search...', value }: SearchInputProps) {
   const [localValue, setLocalValue] = useState(value);

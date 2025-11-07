@@ -17,11 +17,26 @@ interface TranslationValueCellProps {
 const AUTOSAVE_DELAY = 500;
 
 /**
- * TranslationValueCell - Editable cell for translation values with autosave
+ * TranslationValueCell – Editable cell for translation string values with autosave.
  *
- * Displays translation value or input field based on editing state. Supports
- * click to edit, autosave after 500ms of inactivity, real-time validation,
- * and visual saving indicators. Allows empty values (NULL) for missing translations.
+ * Renders either a static translation value or an input field depending on edit mode.
+ * - Allows users to click to enter edit mode.
+ * - In edit mode, supports autosaving the translation after 500ms of inactivity (debounced).
+ * - Runs real-time validation: value must not exceed TRANSLATION_VALUE_MAX_LENGTH, and must not contain newlines.
+ * - Displays validation errors inline and disables autosave on error.
+ * - Shows a visual indicator when the value is being saved (spinner and "Saving..." label).
+ * - Treats empty/whitespace-only strings as missing translations (null on backend).
+ *
+ * @param {Object} props - Translation value cell props.
+ * @param {string}   [props.error]         - Optional validation error to display externally.
+ * @param {boolean}   props.isEditing      - If true, renders input for editing; otherwise, renders value/placeholder.
+ * @param {boolean}   props.isSaving       - If true, shows saving indicator/spinner.
+ * @param {() => void} props.onEditEnd     - Callback to leave edit mode (blur or escape).
+ * @param {() => void} props.onEditStart   - Callback to enter edit mode.
+ * @param {(val: string) => void} props.onValueChange - Callback when value should be saved (after debounce or blur).
+ * @param {string | null} props.value      - The current translation value to display.
+ *
+ * @returns {JSX.Element} A cell UI for editing or displaying a translation string, with autosave and immediate validation.
  */
 export function TranslationValueCell({
   error,

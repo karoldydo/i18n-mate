@@ -1,15 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
-import { BackButton } from '@/shared/components';
+import type { PaginationParams } from '@/shared/types';
+
+import { BackButton, CardList } from '@/shared/components';
 
 import { useProject } from '../../../projects/api/useProject';
 import { useUpdateTranslation } from '../../../translations/api/useUpdateTranslation';
 import { useKeysPerLanguageView } from '../../api/useKeysPerLanguageView';
 import { useKeysPerLanguageState } from '../../hooks/useKeysPerLanguageState';
-import { SearchAndFilterBar } from '../layouts/SearchAndFilterBar';
-import { KeysPerLanguageDataTable } from '../tables/KeysPerLanguageDataTable';
+import { KeyTranslationCard } from '../cards/KeyTranslationCard';
+import { MissingFilterToggle } from '../common/MissingFilterToggle';
+import { SearchInput } from '../common/SearchInput';
 
 interface KeysPerLanguageContentProps {
   locale: string;
@@ -42,6 +45,24 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
     setSearchValue,
     startEditing,
   } = useKeysPerLanguageState();
+
+  // convert page-based pagination to offset-based for CardList
+  const paginationParams = useMemo<PaginationParams>(
+    () => ({
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    }),
+    [page, pageSize]
+  );
+
+  const handlePageChange = useCallback(
+    (params: PaginationParams) => {
+      const limit = params.limit ?? pageSize;
+      const newPage = limit > 0 ? Math.floor((params.offset ?? 0) / limit) + 1 : 1;
+      setPage(newPage);
+    },
+    [pageSize, setPage]
+  );
 
   // fetch project to validate locale
   const { data: project } = useProject(projectId);
@@ -95,7 +116,13 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
     return null;
   }
 
-  const totalPages = Math.max(1, Math.ceil(keysData.metadata.total / pageSize));
+  const hasKeys = Boolean(keysData.data.length);
+  const emptyState = (
+    <div className="border-border rounded-lg border p-12 text-center">
+      <p className="text-muted-foreground text-lg">No translation keys found</p>
+      <p className="text-muted-foreground mt-2 text-sm">Try adjusting your search or filters</p>
+    </div>
+  );
 
   return (
     <div className="animate-in fade-in container duration-500">
@@ -113,27 +140,39 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
             {project.name && <p className="text-muted-foreground mt-1 text-sm">{project.name}</p>}
           </div>
         </div>
-        <SearchAndFilterBar
-          missingOnly={missingOnly}
-          onMissingToggle={setMissingOnly}
-          onSearchChange={setSearchValue}
-          searchValue={searchValue}
-        />
-        <KeysPerLanguageDataTable
-          editError={editError ?? undefined}
-          editingKeyId={editingKeyId}
-          isLoading={false}
-          isSaving={isSaving}
-          keys={keysData.data}
-          onEditEnd={cancelEditing}
-          onEditSave={handleSaveEdit}
-          onEditStart={startEditing}
-          onPageChange={setPage}
-          pagination={{
-            currentPage: page,
-            totalPages,
-          }}
-        />
+        <CardList
+          emptyState={!hasKeys ? emptyState : undefined}
+          filterToggle={
+            <MissingFilterToggle
+              enabled={missingOnly}
+              label="Show only missing translations"
+              onToggle={setMissingOnly}
+            />
+          }
+          pagination={
+            hasKeys
+              ? {
+                  metadata: keysData.metadata,
+                  onPageChange: handlePageChange,
+                  params: paginationParams,
+                }
+              : undefined
+          }
+          searchInput={<SearchInput onChange={setSearchValue} placeholder="Search keys..." value={searchValue} />}
+        >
+          {keysData.data.map((key) => (
+            <KeyTranslationCard
+              editError={editingKeyId === key.key_id ? (editError ?? undefined) : undefined}
+              isEditing={editingKeyId === (key.key_id ?? '')}
+              isSaving={editingKeyId === (key.key_id ?? '') && isSaving}
+              key={key.key_id ?? undefined}
+              keyData={key}
+              onEditEnd={cancelEditing}
+              onEditStart={() => startEditing(key.key_id ?? '')}
+              onValueChange={(newValue) => handleSaveEdit(key.key_id ?? '', newValue)}
+            />
+          ))}
+        </CardList>
       </div>
     </div>
   );
