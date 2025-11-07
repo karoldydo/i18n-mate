@@ -19,22 +19,18 @@ The keys list per-language view provides an interface for editing translation va
 KeysPerLanguagePage (main page component)
 ├── PageHeader
 │ ├── PageTitle (with locale info)
-│ ├── BackToKeysButton
-│ ├── LocaleInfoBadge
-│ └── LocaleSelector (optional switcher for quick locale change; BCP-47 normalized)
-├── SearchAndFilterBar
-│ ├── SearchInput
-│ └── MissingFilterToggle
-├── KeysPerLanguageDataTable
-│ ├── TableHeader
-│ │ ├── ColumnHeader (Key)
-│ │ ├── ColumnHeader (Translation Value)
-│ │ └── ColumnHeader (Metadata)
-│ ├── KeyTranslationRow[] (with inline editing)
-│ │ ├── KeyCell (read-only)
-│ │ ├── TranslationValueCell (editable)
-│ │ └── MetadataCell
-│ └── TablePagination
+│ └── BackToKeysButton
+├── CardList (generic card container)
+│ ├── CardListHeader
+│ │ ├── SearchInput
+│ │ └── MissingFilterToggle
+│ ├── KeyTranslationCard[] (feature-specific cards)
+│ │ ├── CardContent
+│ │ │ ├── TranslationValueCell (editable)
+│ │ │ ├── KeyName (read-only, monospace)
+│ │ │ └── TranslationStatus (metadata badge)
+│ │ └── (no actions - per-language view doesn't support delete)
+│ └── CardListPagination (offset-based)
 ├── EmptyState
 └── SuspenseFallback (shared Loading overlay)
 ```
@@ -68,14 +64,14 @@ KeysPerLanguagePage (main page component)
 - **Types**: Locale string
 - **Props**: locale: string
 
-### SearchAndFilterBar
+### CardList
 
-- **Component description**: Horizontal bar containing search input and missing filter toggle for the selected language
-- **Main elements**: Flex container with search input and toggle components
-- **Handled interactions**: Search input changes with debouncing, filter toggle changes triggering query invalidation
-- **Handled validation**: Search input sanitization
-- **Types**: Search value string, missing filter boolean
-- **Props**: searchValue: string, onSearchChange: (value: string) => void, missingOnly: boolean, onMissingToggle: (enabled: boolean) => void
+- **Component description**: Generic card container component providing search, filter, pagination, and card layout
+- **Main elements**: Header with search/filter, card grid, pagination controls
+- **Handled interactions**: Search input changes, filter toggle changes, pagination navigation
+- **Handled validation**: Search input debouncing handled by SearchInput component
+- **Types**: PaginationParams, PaginationMetadata
+- **Props**: searchInput: ReactNode, filterToggle: ReactNode, pagination: { metadata, params, onPageChange }, emptyState: ReactNode, children: ReactNode
 
 ### SearchInput
 
@@ -95,32 +91,14 @@ KeysPerLanguagePage (main page component)
 - **Types**: Boolean state
 - **Props**: enabled: boolean, onToggle: (enabled: boolean) => void, label: string
 
-### KeysPerLanguageDataTable
+### KeyTranslationCard
 
-- **Component description**: Data table displaying keys with their translation values and metadata for the selected language, supporting pagination and inline editing
-- **Main elements**: Shadcn Table with custom columns, rows with inline editing, and pagination controls
-- **Handled interactions**: Row editing start/cancel/save, pagination navigation
-- **Handled validation**: Translation value validation on save (handled by child components)
-- **Types**: KeyPerLanguageViewResponse[], pagination metadata, editing state
-- **Props**: keys: KeyPerLanguageViewResponse[], isLoading: boolean, pagination: PaginationMetadata, onPageChange: (page: number) => void, editingKeyId: string | null, onEditStart: (keyId: string) => void, onEditSave: (keyId: string, value: string) => void, onEditCancel: () => void
-
-### KeyTranslationRow
-
-- **Component description**: Individual table row representing a single key with its translation value and metadata for inline editing
-- **Main elements**: Table row with three cells (key, value, metadata)
-- **Handled interactions**: Double-click or Enter to start editing, Escape to cancel, Enter to save
-- **Handled validation**: Translation value constraints (250 chars, no newlines, non-empty for non-null)
-- **Types**: KeyPerLanguageViewResponse, editing state
-- **Props**: key: KeyPerLanguageViewResponse, isEditing: boolean, onEditStart: () => void, onEditSave: (value: string) => void, onEditCancel: () => void
-
-### KeyCell
-
-- **Component description**: Read-only cell displaying the full key name
-- **Main elements**: Table cell with key text and optional tooltip for long keys
-- **Handled interactions**: None (read-only)
-- **Handled validation**: None
-- **Types**: Key string
-- **Props**: keyName: string
+- **Component description**: Individual card component representing a single key with its translation value and metadata for inline editing
+- **Main elements**: Card with editable value cell, key name display, translation status badge
+- **Handled interactions**: Value editing (click to edit), autosave on change
+- **Handled validation**: Translation value constraints (250 chars, no newlines) handled by TranslationValueCell
+- **Types**: KeyTranslationItem, editing state
+- **Props**: keyData: KeyTranslationItem, isEditing: boolean, isSaving: boolean, editError?: string, onEditStart: () => void, onEditEnd: () => void, onValueChange: (value: string) => void
 
 ### TranslationValueCell
 
@@ -129,25 +107,16 @@ KeysPerLanguagePage (main page component)
 - **Handled interactions**: Click to edit, input changes with debounced autosave, keyboard shortcuts
 - **Handled validation**: Real-time validation with error display (250 chars max, no newlines)
 - **Types**: Translation value (string | null), editing state
-- **Props**: value: string | null, isEditing: boolean, isSaving: boolean, error?: string, onValueChange: (value: string) => void, onEditStart: () => void, onSave: () => void
+- **Props**: value: string | null, isEditing: boolean, isSaving: boolean, error?: string, onValueChange: (value: string) => void, onEditStart: () => void, onEditEnd: () => void
 
-### MetadataCell
+### TranslationStatus
 
-- **Component description**: Cell displaying translation metadata (machine/manual, timestamp, user) using the shared TranslationStatus component for consistent status rendering and ARIA labels
-- **Main elements**: TranslationStatus badge/icon, formatted timestamp, user info tooltip
-- **Handled interactions**: Hover for detailed tooltip
+- **Component description**: Component displaying translation metadata (machine/manual, timestamp) with consistent status rendering and ARIA labels
+- **Main elements**: Badge/icon for translation source, formatted timestamp
+- **Handled interactions**: None (display only)
 - **Handled validation**: None
-- **Types**: Metadata object (is_machine_translated, updated_at, updated_by_user_id, updated_source)
-- **Props**: metadata: KeyTranslationMetadata
-
-### TablePagination
-
-- **Component description**: Pagination controls for navigating through key pages
-- **Main elements**: Shadcn Pagination component with page numbers and navigation buttons
-- **Handled interactions**: Page number clicks, previous/next navigation
-- **Handled validation**: Page bounds checking
-- **Types**: Pagination metadata (start, end, total)
-- **Props**: currentPage: number, totalItems: number, pageSize: number, onPageChange: (page: number) => void
+- **Types**: Metadata (is_machine_translated, updated_at)
+- **Props**: isMachineTranslated: boolean | null, updatedAt?: string | null
 
 ### SuspenseFallback
 
@@ -251,8 +220,8 @@ Integration with `useKeysPerLanguageView` hook:
 1. **Navigation**: Back button to return to default keys view
 2. **Search**: Real-time debounced search with 300ms delay
 3. **Filtering**: Missing translations toggle with immediate effect
-4. **Inline Editing**: Double-click or Enter to edit, Escape to cancel, Enter to save
-5. **Pagination**: Page navigation with maintained filters
+4. **Inline Editing**: Click TranslationValueCell to edit, Escape to cancel, autosave on change
+5. **Pagination**: Page navigation with maintained filters (offset-based)
 
 ### Autosave Behavior
 
@@ -330,12 +299,16 @@ Integration with `useKeysPerLanguageView` hook:
 
 1. **Create page component structure** with routing and basic layout
 2. **Implement state management hook** for filters, editing, and pagination
-   - **VERIFY**: Use existing `KeyPerLanguageViewResponse` type (DO NOT create aliases)
-3. **Build table components** starting with read-only display
+   - **VERIFY**: Use existing `KeyTranslationItem` type (DO NOT create aliases)
+3. **Build card components** starting with read-only display
    - **VERIFY**: Use existing response types directly
+   - Create KeyTranslationCard component using CardItem wrapper
 4. **Add search and filter functionality** with debounced queries
+   - Integrate SearchInput and MissingFilterToggle into CardList header
 5. **Implement inline editing** with validation and autosave
-6. **Add pagination controls** with proper state synchronization
+   - Use TranslationValueCell component with autosave
+6. **Add pagination controls** with proper state synchronization (offset-based)
+   - Integrate with CardList pagination
 7. **Create loading and empty states** for better UX
 8. **Add error handling and recovery** mechanisms
 9. **Implement keyboard navigation** and accessibility features

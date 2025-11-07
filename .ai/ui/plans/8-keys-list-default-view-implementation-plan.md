@@ -16,21 +16,19 @@ The keys list default view displays translation keys for a project showing value
 ```markdown
 KeysListPage (main page component)
 ├── PageHeader
-│ ├── PageTitle
-│ └── AddKeyButton
-├── SearchAndFilterBar
-│ ├── SearchInput
-│ └── MissingFilterToggle
-├── KeysDataTable
-│ ├── TableHeader
-│ │ ├── ColumnHeader (Key)
-│ │ ├── ColumnHeader (Default Value)
-│ │ └── ColumnHeader (Missing Count)
-│ ├── KeyTableRow[] (with inline editing)
-│ │ ├── KeyCell (read-only)
-│ │ ├── ValueCell (editable)
-│ │ └── MissingCountCell
-│ └── TablePagination
+│ └── PageTitle
+├── CardList (generic card container)
+│ ├── CardListHeader
+│ │ ├── SearchInput
+│ │ ├── MissingFilterToggle
+│ │ └── AddKeyButton (actionButton)
+│ ├── KeyCard[] (feature-specific cards)
+│ │ ├── CardContent
+│ │ │ ├── TranslationValueCell (editable)
+│ │ │ ├── KeyName (read-only, monospace)
+│ │ │ └── MissingCount (badge)
+│ │ └── CardActions (delete dropdown)
+│ └── CardListPagination (offset-based)
 ├── AddKeyDialog
 │ ├── KeyForm
 │ └── ValidationMessages
@@ -52,21 +50,21 @@ KeysListPage (main page component)
 
 ### PageHeader
 
-- **Component description**: Header section with page title and primary action button
-- **Main elements**: Title text and add key button
-- **Handled interactions**: Add key button click opens dialog
+- **Component description**: Header section with page title
+- **Main elements**: Title text and optional project name
+- **Handled interactions**: None (display only)
 - **Handled validation**: None
 - **Types**: Project name string (optional)
-- **Props**: projectName?: string, onAddKey: () => void
+- **Props**: projectName?: string
 
-### SearchAndFilterBar
+### CardList
 
-- **Component description**: Horizontal bar containing search input and missing filter toggle
-- **Main elements**: Flex container with search input and toggle components
-- **Handled interactions**: Search input changes, filter toggle changes
-- **Handled validation**: Search input debouncing
-- **Types**: Search value string, missing filter boolean
-- **Props**: searchValue: string, onSearchChange: (value: string) => void, missingOnly: boolean, onMissingToggle: (enabled: boolean) => void
+- **Component description**: Generic card container component providing search, filter, pagination, and card layout
+- **Main elements**: Header with search/filter/action button, card grid, pagination controls
+- **Handled interactions**: Search input changes, filter toggle changes, pagination navigation
+- **Handled validation**: Search input debouncing handled by SearchInput component
+- **Types**: PaginationParams, PaginationMetadata
+- **Props**: searchInput: ReactNode, filterToggle: ReactNode, actionButton: ReactNode, pagination: { metadata, params, onPageChange }, emptyState: ReactNode, children: ReactNode
 
 ### SearchInput
 
@@ -86,41 +84,23 @@ KeysListPage (main page component)
 - **Types**: Boolean state
 - **Props**: enabled: boolean, onToggle: (enabled: boolean) => void, label: string
 
-### KeysDataTable
+### KeyCard
 
-- **Component description**: Data table displaying keys with pagination and inline editing capabilities
-- **Main elements**: Shadcn Table with custom columns, rows, and pagination
-- **Handled interactions**: Row editing, pagination navigation, sort state changes
-- **Handled validation**: None (handled by child components)
-- **Types**: KeyDefaultViewResponse[], pagination metadata, editing state
-- **Props**: keys: KeyDefaultViewResponse[], isLoading: boolean, pagination: PaginationMetadata, onPageChange: (page: number) => void, editingKeyId: string | null, onEditStart: (keyId: string) => void, onEditSave: (keyId: string, newValue: string) => void, onEditCancel: () => void, onDeleteKey: (key: KeyDefaultViewResponse) => void
+- **Component description**: Individual card component representing a single key with inline editing for values
+- **Main elements**: Card with editable value cell, key name display, missing count badge, and delete action
+- **Handled interactions**: Value editing (click to edit), autosave on change, delete action via dropdown
+- **Handled validation**: Value format validation during editing (handled by TranslationValueCell)
+- **Types**: KeyDefaultViewItem, editing state
+- **Props**: keyData: KeyDefaultViewItem, isEditing: boolean, isSaving: boolean, editError?: string, onEditStart: () => void, onEditEnd: () => void, onValueChange: (value: string) => void, onDelete: () => void
 
-### KeyTableRow
+### TranslationValueCell
 
-- **Component description**: Individual table row representing a single key with inline editing for values
-- **Main elements**: Table row with cells for key, value, missing count, and actions
-- **Handled interactions**: Value cell editing (double-click or focus), save/cancel actions, delete action
-- **Handled validation**: Value format validation during editing
-- **Types**: KeyDefaultViewResponse, editing state
-- **Props**: key: KeyDefaultViewResponse, isEditing: boolean, onEditStart: () => void, onEditSave: (newValue: string) => void, onEditCancel: () => void, onDelete: () => void
-
-### ValueCell
-
-- **Component description**: Editable cell component for key values with inline editing
-- **Main elements**: Display text or input field with save/cancel buttons
-- **Handled interactions**: Double-click to edit, Enter/Escape keys, blur events
+- **Component description**: Editable cell component for key values with inline editing and autosave
+- **Main elements**: Display text or input field with save/cancel buttons, loading indicator
+- **Handled interactions**: Click to edit, Enter/Escape keys, blur events, autosave on change
 - **Handled validation**: Character limit (250), no newlines, required for default language
 - **Types**: String value, editing state, validation errors
-- **Props**: value: string, isEditing: boolean, onEditStart: () => void, onSave: (newValue: string) => void, onCancel: () => void, error?: string
-
-### TablePagination
-
-- **Component description**: Pagination controls for navigating through key pages
-- **Main elements**: Shadcn Pagination component with page numbers and navigation buttons
-- **Handled interactions**: Page number clicks, previous/next navigation
-- **Handled validation**: Page bounds checking
-- **Types**: Pagination metadata (total, current page, page size)
-- **Props**: currentPage: number, totalPages: number, onPageChange: (page: number) => void
+- **Props**: value: string, isEditing: boolean, isSaving: boolean, onEditStart: () => void, onEditEnd: () => void, onValueChange: (value: string) => void, error?: string
 
 ### AddKeyDialog
 
@@ -228,15 +208,15 @@ No additional custom hooks required beyond existing API hooks and basic state ma
 
 ### Keys List View
 
-- **Load**: Display paginated table (50 items/page) sorted by key ascending
+- **Load**: Display paginated card list (50 items/page) sorted by key ascending
 - **Search**: Real-time search with 300ms debouncing, "contains" semantics
 - **Filter**: Toggle shows only keys with missing translations in other languages
-- **Pagination**: Navigate between pages maintaining search/filter state
-- **Inline Edit**: Double-click value cell or Tab navigation to enter edit mode
-- **Save Edit**: Enter key or blur saves changes, shows success indicator
-- **Cancel Edit**: Escape key or click outside cancels changes
-- **Add Key**: Opens creation dialog with pre-filled project prefix
-- **Delete Key**: Opens confirmation dialog with key details
+- **Pagination**: Navigate between pages maintaining search/filter state (offset-based)
+- **Inline Edit**: Click value cell to enter edit mode
+- **Save Edit**: Autosave on change with loading indicator, shows success toast
+- **Cancel Edit**: Escape key or blur cancels changes
+- **Add Key**: Action button in CardList header opens creation dialog with pre-filled project prefix
+- **Delete Key**: Dropdown menu in card actions opens confirmation dialog with key details
 
 ### Add Key Dialog
 
@@ -247,11 +227,11 @@ No additional custom hooks required beyond existing API hooks and basic state ma
 
 ### Edit Value (Inline)
 
-- **Enter Edit**: Double-click or keyboard navigation activates input field
+- **Enter Edit**: Click TranslationValueCell activates input field
 - **Character Counter**: Shows current/max characters (250 limit)
 - **Validation**: Prevents newlines, enforces length limits
-- **Save**: Autosave on Enter/blur with loading indicator
-- **Cancel**: Escape key reverts to original value
+- **Save**: Autosave on change with loading indicator and success toast
+- **Cancel**: Escape key or blur reverts to original value
 
 ### Delete Key Dialog
 
@@ -341,20 +321,20 @@ No additional custom hooks required beyond existing API hooks and basic state ma
    - Create KeysListPage component with basic layout and loading states
    - Implement project ID validation from URL params
 
-2. **Implement data fetching and table display**
+2. **Implement data fetching and card display**
    - Set up useKeysDefaultView hook integration
-   - Create KeysDataTable component with Shadcn Table
-   - Add table columns for key, value, and missing count
-   - Implement pagination controls
+   - Create KeyCard component using CardItem wrapper
+   - Add card content: TranslationValueCell, key name, missing count
+   - Integrate with CardList for pagination and layout
 
 3. **Add search and filter functionality**
-   - Create SearchAndFilterBar component
-   - Implement debounced search input with useDebouncedValue hook
+   - Integrate SearchInput and MissingFilterToggle into CardList header
+   - Implement debounced search input (handled by SearchInput component)
    - Add missing filter toggle with state management
    - Connect filters to API query parameters
 
 4. **Implement inline editing for values**
-   - Create ValueCell component with edit/save/cancel states
+   - Use TranslationValueCell component with edit/save/cancel states
    - Add keyboard navigation (Enter, Escape, Tab)
    - Implement autosave functionality with loading indicators
    - Add character counter and validation feedback
