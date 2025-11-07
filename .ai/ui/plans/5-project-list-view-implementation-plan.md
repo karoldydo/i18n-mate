@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The project list view displays all user projects with management capabilities including create, edit, and delete operations. It provides a paginated table showing project information (name, default language, language count, key count) with inline actions for project management. After creating a project, users are automatically navigated to the project's details view.
+The project list view displays all user projects with management capabilities including create, edit, and delete operations. It provides a paginated card-based list showing project information (name, description, prefix, default language, language count, key count) with inline actions for project management. After creating a project, users are automatically navigated to the project's details view. The card-based layout improves mobile user experience and provides better visual hierarchy compared to traditional table layouts.
 
 ## 2. View Routing
 
@@ -14,13 +14,16 @@ The project list view displays all user projects with management capabilities in
 
 ```markdown
 ProjectListPage (main page component)
-├── ProjectListTable (data table component)
-│ ├── TableHeader (with create button)
-│ ├── ProjectTableRow (individual project rows)
-│ │ ├── ProjectInfo (name, description display)
-│ │ ├── ProjectStats (counts display)
-│ │ └── ProjectActions (edit/delete buttons)
-│ └── TablePagination (pagination controls)
+├── PageHeader (title and description)
+├── CardList (generic card container)
+│ ├── CardListHeader
+│ │ └── CreateProjectButton (actionButton)
+│ ├── ProjectCard[] (feature-specific cards)
+│ │ ├── CardContent
+│ │ │ ├── ProjectInfo (name, description)
+│ │ │ └── ProjectStats (prefix, default locale, locale count, key count)
+│ │ └── CardActions (edit/delete dropdown)
+│ └── CardListPagination (offset-based)
 ├── CreateProjectDialog (modal for project creation)
 ├── EditProjectDialog (modal for project editing)
 └── DeleteProjectDialog (confirmation dialog for deletion)
@@ -31,20 +34,38 @@ ProjectListPage (main page component)
 ### ProjectListPage
 
 - **Component description**: Main page component that orchestrates the project list view, handles routing, and manages dialog states
-- **Main elements**: Page layout with header, data table, and modal dialogs
+- **Main elements**: Page layout with header, card list, and modal dialogs
 - **Handled interactions**: Page load, dialog open/close, navigation after project creation
 - **Handled validation**: None (handled by child components and API)
-- **Types**: Uses ProjectWithCounts from API responses
+- **Types**: Uses ProjectResponse from API responses
 - **Props**: None (route component)
 
-### ProjectListTable
+### ProjectList
 
-- **Component description**: Data table displaying projects with pagination and sorting capabilities
-- **Main elements**: Shadcn DataTable component with custom columns and pagination
-- **Handled interactions**: Row selection, pagination, sorting (delegated to API)
+- **Component description**: Card-based list component displaying projects with pagination and actions
+- **Main elements**: CardList container with ProjectCard components and pagination
+- **Handled interactions**: Card click navigation, pagination, action button clicks
 - **Handled validation**: None
-- **Types**: ProjectWithCounts[], Table column definitions
-- **Props**: projects: ProjectWithCounts[], isLoading: boolean, pagination metadata
+- **Types**: ProjectResponse[], PaginationParams, PaginationMetadata
+- **Props**: onCreateClick: () => void, onDeleteClick: (project: ProjectResponse) => void, onEditClick: (project: ProjectResponse) => void
+
+### CardList
+
+- **Component description**: Generic card container component providing pagination and card layout
+- **Main elements**: Header with action button, card grid, pagination controls
+- **Handled interactions**: Pagination navigation, action button display
+- **Handled validation**: None
+- **Types**: PaginationParams, PaginationMetadata
+- **Props**: actionButton: ReactNode, pagination: { metadata, params, onPageChange }, emptyState: ReactNode, children: ReactNode
+
+### ProjectCard
+
+- **Component description**: Individual card component representing a single project with actions
+- **Main elements**: Card with project info (name, description), metadata (prefix, default locale), stats (locale count, key count), and action dropdown
+- **Handled interactions**: Card click navigation, edit/delete actions via dropdown
+- **Handled validation**: None
+- **Types**: ProjectResponse
+- **Props**: project: ProjectResponse, onNavigate: (projectId: string) => void, onEditClick: (project: ProjectResponse) => void, onDeleteClick: (project: ProjectResponse) => void
 
 ### CreateProjectDialog
 
@@ -156,11 +177,12 @@ No custom hooks required beyond the existing API hooks.
 
 ### Project List View
 
-- **Load**: Display paginated table sorted by name ascending
-- **Pagination**: Navigate between pages (50 items per page)
-- **Create Button**: Open create project dialog
-- **Edit Action**: Open edit dialog for selected project
-- **Delete Action**: Open delete confirmation dialog
+- **Load**: Display paginated card list sorted by name ascending
+- **Pagination**: Navigate between pages (50 items per page, offset-based)
+- **Create Button**: Action button in CardList header opens create project dialog
+- **Card Click**: Navigate to project details view
+- **Edit Action**: Dropdown menu in card opens edit dialog for selected project
+- **Delete Action**: Dropdown menu in card opens delete confirmation dialog
 
 ### Create Project Dialog
 
@@ -251,13 +273,14 @@ No custom hooks required beyond the existing API hooks.
    - Add lazy-loaded route in routes.ts
    - Create ProjectListPage component with basic layout
 
-2. **Implement project list table**
-   - Set up Shadcn DataTable with project columns
+2. **Implement project list with cards**
+   - Set up CardList component with ProjectCard
    - Integrate useProjects hook
-   - Add pagination controls
+   - Add pagination controls (offset-based)
+   - Create ProjectCard component using CardItem wrapper
 
-3. **Add table actions and dialogs**
-   - Create action buttons in table rows
+3. **Add card actions and dialogs**
+   - Create action dropdown in ProjectCard
    - Implement dialog state management
    - **VERIFY**: Use existing schemas from `projects.schemas.ts` (DO NOT create new schemas)
 

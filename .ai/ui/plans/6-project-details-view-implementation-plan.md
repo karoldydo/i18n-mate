@@ -15,102 +15,72 @@ Route parameters:
 ## 3. Component Structure
 
 ```markdown
-ProjectDetailsView (Page Component)
-├── ProjectDetailsLayout (Layout wrapper)
-│ ├── ProjectHeader (Header section with title and actions)
-│ │ ├── ProjectTitle (Project name and description)
-│ │ ├── ProjectActions (Edit/Delete buttons)
-│ │ └── ProjectStats (Key count, Locale count display)
-│ ├── ProjectNavigation (Tab navigation to subviews)
-│ │ ├── KeysTab (Navigation to keys view)
-│ │ ├── LocalesTab (Navigation to locales view)
-│ │ ├── JobsTab (Navigation to translation jobs)
-│ │ └── TelemetryTab (Navigation to project telemetry)
-│ └── ProjectMetadata (Immutable details display)
-│ ├── ProjectPrefix (Display prefix with info tooltip)
-│ ├── ProjectDefaultLocale (Display default language)
-│ └── ProjectTimestamps (Created/Updated dates)
-├── EditProjectDialog (Modal for editing project)
-│ ├── EditProjectForm (Form with validation)
-│ └── EditProjectActions (Save/Cancel buttons)
-└── DeleteProjectDialog (Confirmation dialog)
-├── DeleteProjectWarning (Warning message)
-└── DeleteProjectActions (Confirm/Cancel buttons)
+ProjectDetailsPage (Page Component)
+├── ProjectDetailsContent (Content wrapper with state management)
+│ ├── ProjectDetailsLayout (Layout wrapper)
+│ │ ├── BackButton (Navigation to projects list)
+│ │ ├── ProjectHeader (Header section with title, description, and actions)
+│ │ │ ├── ProjectTitle (Project name and description)
+│ │ │ └── ProjectActions (Edit/Delete buttons)
+│ │ └── ProjectMetadata (Card-based metadata display)
+│ │ ├── ProjectPrefix (Display prefix with info tooltip)
+│ │ ├── ProjectDefaultLocale (Display default language)
+│ │ ├── ProjectStats (Languages count, Keys count)
+│ │ └── ProjectTimestamps (Created/Updated dates)
+│ ├── EditProjectDialog (Modal for editing project)
+│ │ ├── EditProjectForm (Form with validation)
+│ │ └── EditProjectActions (Save/Cancel buttons)
+│ └── DeleteProjectDialog (Confirmation dialog)
+│ ├── DeleteProjectWarning (Warning message)
+│ └── DeleteProjectActions (Confirm/Cancel buttons)
 ```
 
 ## 4. Component Details
 
-### ProjectDetailsView
+### ProjectDetailsPage
 
-- **Component description:** Main page component that orchestrates the project details view, handles routing, data fetching, and error boundaries.
-- **Main elements:** Layout wrapper, header section, navigation tabs, metadata display, and modal dialogs for editing/deleting.
-- **Handled interactions:** Route parameter validation, project data loading, navigation to subviews, modal state management.
-- **Handled validation:** UUID format validation for route parameter, project ownership verification through API.
-- **Types:** ProjectResponse (from API), ProjectId (branded type), Route params interface.
+- **Component description:** Main page component that handles route parameter validation and error boundaries.
+- **Main elements:** Error boundary wrapper, validation error display, content component.
+- **Handled interactions:** Route parameter validation, error boundary handling.
+- **Handled validation:** UUID format validation for route parameter.
+- **Types:** Route params interface.
 - **Props:** None (uses route params from React Router).
+
+### ProjectDetailsContent
+
+- **Component description:** Content component that orchestrates the project details view, handles data fetching, and manages dialog states.
+- **Main elements:** Layout wrapper, header section, metadata display, and modal dialogs for editing/deleting.
+- **Handled interactions:** Project data loading, modal state management, dialog open/close handlers.
+- **Handled validation:** Project ownership verification through API (handled by useProject hook).
+- **Types:** ProjectResponse (from API), ProjectId (string).
+- **Props:** projectId: string.
 
 ### ProjectDetailsLayout
 
 - **Component description:** Layout wrapper that provides consistent structure and responsive design for the project details view.
-- **Main elements:** Container div with responsive padding, header section, main content area with navigation and metadata.
+- **Main elements:** Container div with responsive padding, back button, header section, and metadata card.
 - **Handled interactions:** Responsive layout adjustments, semantic HTML structure.
 - **Handled validation:** None.
-- **Types:** React.ComponentProps for layout customization.
-- **Props:** children (ReactNode), className (optional string).
+- **Types:** ProjectResponse (for passing to child components).
+- **Props:** project (ProjectResponse), onEdit (function), onDelete (function).
 
 ### ProjectHeader
 
-- **Component description:** Header section containing project title, description, actions, and statistics in a clean, organized layout.
-- **Main elements:** Flex container with title/metadata section and actions/stats section.
-- **Handled interactions:** None (stateless presentation component).
-- **Handled validation:** None.
-- **Types:** ProjectResponse (for display data), ProjectStats interface.
-- **Props:** project (ProjectResponse), stats (ProjectStats), onEdit (function), onDelete (function).
-
-### ProjectTitle
-
-- **Component description:** Displays project name and optional description with proper typography hierarchy.
-- **Main elements:** Heading elements (h1/h2) with description paragraph.
-- **Handled interactions:** None.
-- **Handled validation:** None.
-- **Types:** Pick<ProjectResponse, 'name' | 'description'>.
-- **Props:** name (string), description (string | null).
-
-### ProjectActions
-
-- **Component description:** Action buttons for editing and deleting the project with consistent styling.
-- **Main elements:** Button group with Edit and Delete buttons using Shadcn/ui Button component.
+- **Component description:** Header section containing project title, description, and action buttons in a clean, organized layout.
+- **Main elements:** Flex container with title/description section and action buttons section.
 - **Handled interactions:** Edit button click (opens edit dialog), Delete button click (opens delete confirmation).
 - **Handled validation:** None.
-- **Types:** None.
-- **Props:** onEdit (function), onDelete (function), isPending (boolean for loading states).
-
-### ProjectStats
-
-- **Component description:** Displays project statistics (key count, locale count) with icons and labels.
-- **Main elements:** Stats grid with icon + label + value for each metric.
-- **Handled interactions:** None.
-- **Handled validation:** None.
-- **Types:** ProjectStats interface { keyCount: number; localeCount: number; }.
-- **Props:** keyCount (number), localeCount (number).
-
-### ProjectNavigation
-
-- **Component description:** Tab-based navigation to project subviews (keys, locales, translation jobs, telemetry) with active state management.
-- **Main elements:** Shadcn/ui Tabs component with Keys, Locales, Jobs, and Telemetry tabs.
-- **Handled interactions:** Tab switching, navigation to subview routes.
-- **Handled validation:** None.
-- **Types:** None.
-- **Props:** projectId (ProjectId), activeTab (optional string).
+- **Types:** ProjectResponse (for display data).
+- **Props:** project (ProjectResponse), onEdit (function), onDelete (function).
 
 ### ProjectMetadata
 
-- **Component description:** Display of immutable project properties (prefix, default locale, timestamps) with informational tooltips.
-- **Main elements:** Definition list (dl/dt/dd) with labeled metadata fields.
-- **Handled interactions:** Tooltip display for prefix information.
+- **Component description:** Card-based display of immutable project properties (prefix, default locale, statistics, timestamps) with informational tooltips.
+- **Main elements:** CardItem wrapper with horizontal flex layout containing prefix, default locale, languages count, keys count, created date, and updated date.
+- **Handled interactions:** Tooltip display for prefix and default locale information.
 - **Handled validation:** None.
-- **Types:** Pick<ProjectResponse, 'prefix' | 'default_locale' | 'created_at' | 'updated_at'>.
-- **Props:** prefix (string), defaultLocale (string), createdAt (string), updatedAt (string).
+- **Types:** ProjectResponse (includes prefix, default_locale, locale_count, key_count, created_at, updated_at).
+- **Props:** project (ProjectResponse).
 
 ### EditProjectDialog
 
@@ -190,14 +160,11 @@ State variables:
 
 ## 8. User Interactions
 
-1. **View Loading:** Automatic data fetch on route entry with loading state display
+1. **View Loading:** Automatic data fetch on route entry with loading state display (handled by Suspense boundary)
 2. **Edit Project:** Click edit button → open dialog → fill form → submit → optimistic update → close dialog → show success toast
 3. **Delete Project:** Click delete button → open confirmation → confirm → optimistic update → navigate to project list → show success toast
-4. **Navigate to Keys:** Click Keys tab → navigate to `/projects/:id/keys`
-5. **Navigate to Locales:** Click Locales tab → navigate to `/projects/:id/locales`
-6. **Navigate to Jobs:** Click Jobs tab → navigate to `/projects/:id/translation-jobs`
-7. **Navigate to Telemetry:** Click Telemetry tab → navigate to `/projects/:id/telemetry`
-8. **Error Recovery:** Failed operations show error toasts with retry options where applicable
+4. **Navigate to Subviews:** Navigation to keys, locales, translation jobs, and telemetry views is handled through sidebar navigation or direct links (not via tabs in this view)
+5. **Error Recovery:** Failed operations show error toasts with retry options where applicable
 
 ## 9. Conditions and Validation
 
@@ -250,16 +217,16 @@ State variables:
 - Use existing schemas and types directly - DO NOT create duplicates or aliases
 
 1. Create project details route in `src/app/routes.ts`
-2. Implement `ProjectDetailsView` page component with data fetching
-3. Create `ProjectDetailsLayout` component for consistent structure
-4. Implement `ProjectHeader` with title, actions, and stats sections
-5. Build `ProjectNavigation` with tab-based routing to subviews
-6. Create `ProjectMetadata` component for immutable property display
+2. Implement `ProjectDetailsPage` page component with route parameter validation
+3. Implement `ProjectDetailsContent` component with data fetching and dialog state management
+4. Create `ProjectDetailsLayout` component for consistent structure
+5. Implement `ProjectHeader` with title, description, and action buttons
+6. Create `ProjectMetadata` component using CardItem for card-based immutable property display
 7. **Implement `EditProjectDialog` with form validation and submission**
    - **VERIFY**: Import and use `UPDATE_PROJECT_SCHEMA` from API
    - **VERIFY**: Use `UpdateProjectRequest` type directly (DO NOT create aliases)
 8. Build `DeleteProjectDialog` with confirmation and warning messages
-9. Add loading states and error boundaries
+9. Add loading states and error boundaries (Suspense for data fetching)
 10. Implement responsive design and accessibility features
 11. Test integration with existing API hooks
 12. Add e2e tests for critical user flows
