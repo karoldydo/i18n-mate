@@ -1,20 +1,23 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { Plus } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import type { KeyDefaultViewItem } from '@/shared/types';
+import type { KeyDefaultViewItem, PaginationParams } from '@/shared/types';
 
-import { BackButton } from '@/shared/components';
+import { BackButton, CardList } from '@/shared/components';
+import { Button } from '@/shared/ui/button';
 
 import { useProject } from '../../../projects/api/useProject';
 import { useUpdateTranslation } from '../../../translations/api/useUpdateTranslation';
 import { useKeysDefaultView } from '../../api/useKeysDefaultView';
 import { useKeysListFilters } from '../../hooks/useKeysListFilters';
+import { KeyCard } from '../cards/KeyCard';
+import { MissingFilterToggle } from '../common/MissingFilterToggle';
+import { SearchInput } from '../common/SearchInput';
 import { AddKeyDialog } from '../dialogs/AddKeyDialog';
 import { DeleteKeyDialog } from '../dialogs/DeleteKeyDialog';
 import { PageHeader } from '../layouts/PageHeader';
-import { SearchAndFilterBar } from '../layouts/SearchAndFilterBar';
-import { KeysDataTable } from '../tables/KeysDataTable';
 
 interface KeysListContentProps {
   projectId: string;
@@ -37,6 +40,24 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
 
   // manage filter state with URL synchronization
   const { missingOnly, page, pageSize, searchValue, setMissingOnly, setPage, setSearchValue } = useKeysListFilters();
+
+  // convert page-based pagination to offset-based for CardList
+  const paginationParams = useMemo<PaginationParams>(
+    () => ({
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    }),
+    [page, pageSize]
+  );
+
+  const handlePageChange = useCallback(
+    (params: PaginationParams) => {
+      const limit = params.limit ?? pageSize;
+      const newPage = limit > 0 ? Math.floor((params.offset ?? 0) / limit) + 1 : 1;
+      setPage(newPage);
+    },
+    [pageSize, setPage]
+  );
 
   // fetch project to get default locale
   const { data: project } = useProject(projectId);
@@ -113,7 +134,14 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
     return null;
   }
 
-  const totalPages = Math.max(1, Math.ceil(keysData.metadata.total / pageSize));
+  // FIXME:
+  const hasKeys = Boolean(keysData.data.length);
+  const emptyState = (
+    <div className="border-border rounded-lg border p-12 text-center">
+      <p className="text-muted-foreground text-lg">No translation keys found</p>
+      <p className="text-muted-foreground mt-2 text-sm">Get started by adding your first translation key</p>
+    </div>
+  );
 
   return (
     <>
@@ -126,29 +154,48 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
               to={`/projects/${projectId}`}
             />
           </div>
-          <PageHeader onAddKey={handleAddKeyClick} projectName={project.name} />
-          <SearchAndFilterBar
-            missingOnly={missingOnly}
-            onMissingToggle={setMissingOnly}
-            onSearchChange={setSearchValue}
-            searchValue={searchValue}
-          />
-          <KeysDataTable
-            editError={editError ?? undefined}
-            editingKeyId={editingKeyId}
-            isLoading={false}
-            isSaving={isSaving}
-            keys={keysData.data}
-            onDeleteKey={handleDeleteKey}
-            onEditEnd={handleEditEnd}
-            onEditSave={handleSaveEdit}
-            onEditStart={setEditingKeyId}
-            onPageChange={setPage}
-            pagination={{
-              currentPage: page,
-              totalPages,
-            }}
-          />
+          <PageHeader projectName={project.name} />
+          <CardList
+            actionButton={
+              <Button data-testid="add-key-button" onClick={handleAddKeyClick}>
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Add key</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+            }
+            emptyState={!hasKeys ? emptyState : undefined}
+            filterToggle={
+              <MissingFilterToggle
+                enabled={missingOnly}
+                label="Show only missing translations"
+                onToggle={setMissingOnly}
+              />
+            }
+            pagination={
+              hasKeys
+                ? {
+                    metadata: keysData.metadata,
+                    onPageChange: handlePageChange,
+                    params: paginationParams,
+                  }
+                : undefined
+            }
+            searchInput={<SearchInput onChange={setSearchValue} placeholder="Search" value={searchValue} />}
+          >
+            {keysData.data.map((key) => (
+              <KeyCard
+                editError={editingKeyId === key.id ? (editError ?? undefined) : undefined}
+                isEditing={editingKeyId === key.id}
+                isSaving={editingKeyId === key.id && isSaving}
+                key={key.id}
+                keyData={key}
+                onDelete={() => handleDeleteKey(key)}
+                onEditEnd={handleEditEnd}
+                onEditStart={() => setEditingKeyId(key.id)}
+                onValueChange={(newValue) => handleSaveEdit(key.id, newValue)}
+              />
+            ))}
+          </CardList>
         </div>
       </div>
       <AddKeyDialog

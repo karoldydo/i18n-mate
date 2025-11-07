@@ -142,7 +142,12 @@ export function CardList({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {searchInput && <div className="flex-1">{searchInput}</div>}
           {(filterToggle || actionButton) && (
-            <div className={cn('flex flex-shrink-0 items-center gap-2', !searchInput && 'sm:ml-auto')}>
+            <div
+              className={cn(
+                'flex flex-shrink-0 items-center justify-between sm:justify-start sm:gap-4',
+                !searchInput && 'sm:ml-auto'
+              )}
+            >
               {filterToggle && <div>{filterToggle}</div>}
               {actionButton && <div>{actionButton}</div>}
             </div>
