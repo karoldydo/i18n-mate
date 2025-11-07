@@ -1,9 +1,9 @@
-import { ArrowLeft } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import type { LocaleItem } from '@/shared/types';
 
+import { BackButton } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { useProjectLocales } from '../../api/useProjectLocales';
@@ -48,10 +48,6 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
     [navigate, projectId]
   );
 
-  const handleBackClick = useCallback(() => {
-    navigate(`/projects/${projectId}`);
-  }, [navigate, projectId]);
-
   const handleAddDialogOpen = useCallback(() => {
     setAddDialogOpen(true);
   }, []);
@@ -64,10 +60,7 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
     <>
       <div className="animate-in fade-in container duration-500">
         <div className="space-y-6">
-          <Button aria-label="Back to project details" onClick={handleBackClick} size="sm" variant="ghost">
-            <ArrowLeft aria-hidden="true" className="mr-2 h-4 w-4" />
-            Back to Project
-          </Button>
+          <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
 
           <header className="flex items-center justify-between">
             <div>

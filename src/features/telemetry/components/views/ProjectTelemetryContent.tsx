@@ -1,10 +1,8 @@
-import { ArrowLeft } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router';
 
 import { useProject } from '@/features/projects/api/useProject';
 import { useTelemetryEvents } from '@/features/telemetry/api/useTelemetryEvents';
-import { Button } from '@/shared/ui/button';
+import { BackButton } from '@/shared/components';
 
 import { useTelemetryPageState } from '../../hooks/useTelemetryPageState';
 import { TelemetryKPIs } from '../common/TelemetryKPIs';
@@ -22,7 +20,6 @@ interface ProjectTelemetryContentProps {
  * content blinking during navigation.
  */
 export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentProps) {
-  const navigate = useNavigate();
   const pageState = useTelemetryPageState();
 
   const { data: project } = useProject(projectId);
@@ -59,10 +56,6 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
     [pageState.sortBy, pageState.sortOrder]
   );
 
-  const handleBackToProject = useCallback(() => {
-    navigate(`/projects/${projectId}`);
-  }, [navigate, projectId]);
-
   const handleSortChange = useCallback(
     (sortBy: 'created_at') => {
       pageState.setSortBy(sortBy);
@@ -79,16 +72,7 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
     <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
         <div>
-          <Button
-            aria-label="Back to project details"
-            className="mb-4"
-            onClick={handleBackToProject}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Project
-          </Button>
+          <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
         </div>
 
         <div className="flex items-center justify-between">

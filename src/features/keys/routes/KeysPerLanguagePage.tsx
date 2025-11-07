@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useMemo } from 'react';
+import { useParams } from 'react-router';
 
 import { ErrorBoundary, ValidationError } from '@/shared/components';
 
@@ -22,29 +22,14 @@ interface RouteParams {
  */
 export function KeysPerLanguagePage() {
   const { id, locale: languageCode } = useParams<keyof RouteParams>();
-  const navigate = useNavigate();
 
   // validate UUID format
   const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
   const projectId = useMemo(() => validation.data ?? '', [validation.data]);
   const locale = useMemo(() => languageCode || '', [languageCode]);
 
-  const handleBackToProjects = useCallback(() => {
-    navigate('/projects');
-  }, [navigate]);
-
-  const handleBackToKeys = useCallback(() => {
-    navigate(`/projects/${projectId}/keys`);
-  }, [navigate, projectId]);
-
   if (!validation.success) {
-    return (
-      <ValidationError
-        buttonLabel="Back to projects"
-        dataTestId="keys-per-language-page"
-        onClick={handleBackToProjects}
-      />
-    );
+    return <ValidationError buttonLabel="Back to projects" dataTestId="keys-per-language-page" to="/projects" />;
   }
 
   if (!locale) {
@@ -52,7 +37,7 @@ export function KeysPerLanguagePage() {
       <ValidationError
         buttonLabel="Back to keys"
         dataTestId="keys-per-language-page-locale"
-        onClick={handleBackToKeys}
+        to={`/projects/${projectId}/keys`}
       />
     );
   }

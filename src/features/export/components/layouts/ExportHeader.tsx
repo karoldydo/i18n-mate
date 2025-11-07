@@ -1,8 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
-import { useCallback } from 'react';
-import { useNavigate } from 'react-router';
-
-import { Button } from '@/shared/ui/button';
+import { BackButton } from '@/shared/components';
 
 interface ExportHeaderProps {
   projectId: string;
@@ -15,18 +11,9 @@ interface ExportHeaderProps {
  * Follows the same pattern as other feature pages in the application.
  */
 export function ExportHeader({ projectId }: ExportHeaderProps) {
-  const navigate = useNavigate();
-
-  const handleBackClick = useCallback(() => {
-    navigate(`/projects/${projectId}`);
-  }, [navigate, projectId]);
-
   return (
     <div className="space-y-6">
-      <Button aria-label="Back to project details" onClick={handleBackClick} size="sm" variant="ghost">
-        <ArrowLeft aria-hidden="true" className="mr-2 h-4 w-4" />
-        Back to Project
-      </Button>
+      <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
 
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Export Translations</h1>

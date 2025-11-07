@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useMemo } from 'react';
+import { useParams } from 'react-router';
 
 import { ErrorBoundary, ValidationError } from '@/shared/components';
 
@@ -18,19 +18,12 @@ interface RouteParams {
  */
 export function ExportPage() {
   const { id } = useParams<keyof RouteParams>();
-  const navigate = useNavigate();
 
   const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
   const projectId = useMemo(() => validation.data ?? '', [validation.data]);
 
-  const handleNavigateToProjects = useCallback(() => {
-    navigate('/projects');
-  }, [navigate]);
-
   if (!validation.success) {
-    return (
-      <ValidationError buttonLabel="Back to projects" dataTestId="export-page" onClick={handleNavigateToProjects} />
-    );
+    return <ValidationError buttonLabel="Back to projects" dataTestId="export-page" to="/projects" />;
   }
 
   return (

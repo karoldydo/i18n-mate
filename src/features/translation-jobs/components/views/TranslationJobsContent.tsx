@@ -1,12 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftIcon, Loader2Icon, PlusIcon } from 'lucide-react';
+import { Loader2Icon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
 import type { TranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
+import { BackButton } from '@/shared/components';
 import { isActiveJob } from '@/shared/types';
 import { Button } from '@/shared/ui/button';
 
@@ -30,7 +30,6 @@ interface TranslationJobsContentProps {
  * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
  */
 export function TranslationJobsContent({ projectId }: TranslationJobsContentProps) {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [pageSize] = useState(20);
@@ -115,10 +114,6 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
       lastActiveJobIdRef.current = null;
     }
   }, [hasActiveJob, projectId, progressJob?.target_locale, refetch, supabase, applyTotalHint]);
-
-  const handleBackToProject = useCallback(() => {
-    navigate(`/projects/${projectId}`);
-  }, [navigate, projectId]);
 
   const handleOpenCreateDialog = useCallback(() => {
     setCreateJobDialogOpen(true);
@@ -291,10 +286,7 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
     <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
         {/* Back Button */}
-        <Button aria-label="Back to project" className="gap-2" onClick={handleBackToProject} variant="ghost">
-          <ArrowLeftIcon className="h-4 w-4" />
-          Back to Project
-        </Button>
+        <BackButton ariaLabel="Back to project" buttonLabel="Back to project" to={`/projects/${projectId}`} />
 
         {/* Page Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useParams } from 'react-router';
 
 import { ErrorBoundary, ValidationError } from '@/shared/components';
@@ -23,12 +23,8 @@ export function ProjectTelemetryPage() {
   const validation = useMemo(() => UUID_SCHEMA.safeParse(id), [id]);
   const projectId = useMemo(() => validation.data ?? '', [validation.data]);
 
-  const handleGoBack = useCallback(() => {
-    window.history.back();
-  }, []);
-
   if (!validation.success) {
-    return <ValidationError buttonLabel="Go back" dataTestId="project-telemetry-page" onClick={handleGoBack} />;
+    return <ValidationError buttonLabel="Go back" dataTestId="project-telemetry-page" to="/projects" />;
   }
 
   return (

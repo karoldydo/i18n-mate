@@ -1,10 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-import { Button } from '@/shared/ui/button';
+import { BackButton } from '@/shared/components';
 
 import { useProject } from '../../../projects/api/useProject';
 import { useUpdateTranslation } from '../../../translations/api/useUpdateTranslation';
@@ -26,7 +24,6 @@ interface KeysPerLanguageContentProps {
  */
 export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageContentProps) {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   // manage state with custom hook
   const {
@@ -61,10 +58,6 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
 
   // mutation for updating translation values (dynamic - accepts all params in payload)
   const updateTranslationMutation = useUpdateTranslation();
-
-  const handleBackToLocales = useCallback(() => {
-    navigate(`/projects/${projectId}/locales`);
-  }, [navigate, projectId]);
 
   const handleSaveEdit = useCallback(
     (keyId: string, newValue: string) => {
@@ -108,16 +101,11 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
     <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
         <div>
-          <Button
-            aria-label="Back to keys list"
-            className="mb-4"
-            onClick={handleBackToLocales}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to locales
-          </Button>
+          <BackButton
+            ariaLabel="Back to keys list"
+            buttonLabel="Back to locales"
+            to={`/projects/${projectId}/locales`}
+          />
         </div>
         <div className="flex items-start justify-between">
           <div>

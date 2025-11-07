@@ -1,12 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
 import type { KeyDefaultViewItem } from '@/shared/types';
 
-import { Button } from '@/shared/ui/button';
+import { BackButton } from '@/shared/components';
 
 import { useProject } from '../../../projects/api/useProject';
 import { useUpdateTranslation } from '../../../translations/api/useUpdateTranslation';
@@ -30,7 +28,6 @@ interface KeysListContentProps {
  */
 export function KeysListContent({ projectId }: KeysListContentProps) {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [editingKeyId, setEditingKeyId] = useState<null | string>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<null | string>(null);
@@ -55,10 +52,6 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
 
   // mutation for updating translation values
   const updateTranslationMutation = useUpdateTranslation();
-
-  const handleBackToProject = useCallback(() => {
-    navigate(`/projects/${projectId}`);
-  }, [navigate, projectId]);
 
   const handleSaveEdit = useCallback(
     (keyId: string, newValue: string) => {
@@ -127,16 +120,11 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
       <div className="animate-in fade-in container duration-500">
         <div className="space-y-6">
           <div>
-            <Button
-              aria-label="Back to project details"
-              className="mb-4"
-              onClick={handleBackToProject}
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Project
-            </Button>
+            <BackButton
+              ariaLabel="Back to project details"
+              buttonLabel="Back to project"
+              to={`/projects/${projectId}`}
+            />
           </div>
           <PageHeader onAddKey={handleAddKeyClick} projectName={project.name} />
           <SearchAndFilterBar

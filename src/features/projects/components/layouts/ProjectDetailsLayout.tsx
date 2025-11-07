@@ -1,10 +1,6 @@
-import { ArrowLeft } from 'lucide-react';
-import { useCallback } from 'react';
-import { useNavigate } from 'react-router';
-
 import type { ProjectResponse } from '@/shared/types';
 
-import { Button } from '@/shared/ui/button';
+import { BackButton } from '@/shared/components';
 
 import { ProjectHeader } from './ProjectHeader';
 import { ProjectMetadata } from './ProjectMetadata';
@@ -34,27 +30,16 @@ interface ProjectDetailsLayoutProps {
  * @returns {JSX.Element} The structured layout for project details
  */
 export function ProjectDetailsLayout({ onDelete, onEdit, project }: ProjectDetailsLayoutProps) {
-  const navigate = useNavigate();
-
-  const handleBackToProjects = useCallback(() => {
-    navigate('/projects');
-  }, [navigate]);
-
   return (
     <div className="container">
       <div className="space-y-6">
         <div>
-          <Button
-            aria-label="Back to projects list"
-            className="mb-4"
-            data-testid="back-to-projects-button"
-            onClick={handleBackToProjects}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Projects
-          </Button>
+          <BackButton
+            ariaLabel="Back to projects list"
+            buttonLabel="Back to projects"
+            dataTestId="back-to-projects-button"
+            to="/projects"
+          />
         </div>
         <ProjectHeader onDelete={onDelete} onEdit={onEdit} project={project} />
         <ProjectMetadata project={project} />
