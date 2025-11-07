@@ -19,7 +19,7 @@ export class ProjectDetailsPage extends ProtectedPage {
     // initialize project details specific locators
     this.pageContainer = page.getByTestId('project-details-page');
     this.backToProjectsButton = page.getByTestId('back-to-projects-button');
-    this.backToProjectsButtonError = page.getByTestId('back-to-projects-button-error');
+    this.backToProjectsButtonError = page.getByTestId('project-details-page-button');
   }
 
   /**

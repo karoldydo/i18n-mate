@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { ErrorBoundary } from '@/shared/components';
-import { Button } from '@/shared/ui/button';
+import { ErrorBoundary, ValidationError } from '@/shared/components';
 
 import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
 import { ProjectExportContent } from '../components/views/ProjectExportContent';
@@ -30,15 +29,7 @@ export function ExportPage() {
 
   if (!validation.success) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="border-destructive bg-destructive/10 rounded-lg border p-4">
-          <h2 className="text-destructive text-lg font-semibold">Invalid Project ID</h2>
-          <p className="text-muted-foreground text-sm">The project ID in the URL is not valid.</p>
-          <Button className="mt-4" onClick={handleNavigateToProjects} variant="outline">
-            Back to Projects
-          </Button>
-        </div>
-      </div>
+      <ValidationError buttonLabel="Back to projects" dataTestId="export-page" onClick={handleNavigateToProjects} />
     );
   }
 

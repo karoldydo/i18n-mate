@@ -7,3 +7,4 @@ export * from './InlineLoading';
 export * from './Loading';
 export * from './LocaleSelector';
 export * from './TranslationStatus';
+export * from './ValidationError';
