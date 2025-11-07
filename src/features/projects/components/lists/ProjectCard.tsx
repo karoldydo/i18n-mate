@@ -17,8 +17,6 @@ interface ProjectCardProps {
 /**
  * ProjectCard – Presents an individual project's summary and actions in a card UI.
  *
- * @component
- *
  * @param {Object} props - Component props
  * @param {ProjectResponse} props.project - The project data to display
  * @param {(projectId: string) => void} props.onNavigate - Called when the card is clicked, to navigate to the project detail route

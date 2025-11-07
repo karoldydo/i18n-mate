@@ -33,7 +33,6 @@ interface EditProjectDialogProps {
  * On successful update, the dialog closes and the projects list is invalidated.
  * Shows toast notifications for success or error cases.
  *
- * @component
  * @param {Object} props - Component props
  * @param {boolean} props.open - Whether the dialog is open
  * @param {function(boolean):void} props.onOpenChange - Callback for dialog open state changes

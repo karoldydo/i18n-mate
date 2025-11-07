@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { useNavigate } from 'react-router';
 
 import { useProject } from '../../api/useProject';
 import { DeleteProjectDialog } from '../dialogs/DeleteProjectDialog';
@@ -11,13 +10,22 @@ interface ProjectDetailsContentProps {
 }
 
 /**
- * ProjectDetailsContent - Inner component that uses Suspense query
+ * ProjectDetailsContent – Handles fetching and displaying project details,
+ * and manages UI state for editing and deleting a project.
  *
- * Fetches and displays project details with edit/delete/export actions.
- * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
+ * Fetches project information using `useProject`. Displays the main project
+ * details layout, and manages the open states for both the edit and delete
+ * project dialogs.
+ *
+ * Integrates seamlessly with Suspense boundaries by relying on
+ * TanStack Query's suspense-based data fetching.
+ *
+ * @param {Object} props - Component properties
+ * @param {string} props.projectId - The unique identifier for the project to display
+ *
+ * @returns {JSX.Element | null} The rendered project details view, or null if not found
  */
 export function ProjectDetailsContent({ projectId }: ProjectDetailsContentProps) {
-  const navigate = useNavigate();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -31,17 +39,13 @@ export function ProjectDetailsContent({ projectId }: ProjectDetailsContentProps)
     setDeleteDialogOpen(true);
   }, []);
 
-  const handleExport = useCallback(() => {
-    navigate(`/projects/${projectId}/export`);
-  }, [navigate, projectId]);
-
   if (!project) {
     return null;
   }
 
   return (
     <div className="animate-in fade-in duration-500">
-      <ProjectDetailsLayout onDelete={handleDelete} onEdit={handleEdit} onExport={handleExport} project={project} />
+      <ProjectDetailsLayout onDelete={handleDelete} onEdit={handleEdit} project={project} />
       <EditProjectDialog onOpenChange={setEditDialogOpen} open={editDialogOpen} project={project} />
       <DeleteProjectDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen} project={project} />
     </div>

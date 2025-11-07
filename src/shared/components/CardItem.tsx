@@ -19,7 +19,6 @@ interface CardItemProps {
  * otherwise, it renders as a static container. Prevents click bubbling from
  * action elements to avoid unintended card navigation.
  *
- * @component
  * @param {object} props - CardItemProps component properties
  * @param {ReactNode} props.children - Main content for the card (typically details)
  * @param {ReactNode} [props.actions] - Optional actions (e.g., menu, buttons) shown on the right; clicking an action does not trigger the card's `onClick`

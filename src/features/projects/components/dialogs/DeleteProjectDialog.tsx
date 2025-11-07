@@ -38,7 +38,6 @@ interface DeleteProjectDialogProps {
  *
  * Disables actions while the deletion is in progress.
  *
- * @component
  * @param {Object} props - Component props
  * @param {boolean} props.open - Whether the dialog is visible
  * @param {function(boolean): void} props.onOpenChange - Callback triggered when dialog open state changes

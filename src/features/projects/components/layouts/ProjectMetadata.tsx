@@ -1,5 +1,6 @@
 import type { ProjectResponse } from '@/shared/types';
 
+import { CardItem } from '@/shared/components';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui/tooltip';
 import { formatDate, formatDateTime } from '@/shared/utils';
 
@@ -8,18 +9,29 @@ interface ProjectMetadataProps {
 }
 
 /**
- * ProjectMetadata - Display of immutable project properties
+ * ProjectMetadata - Displays immutable metadata and stats for a project
  *
- * Shows prefix, default locale, creation date, and last update date.
- * Includes informational tooltips for immutable fields.
+ * Renders a horizontal property table summarizing core project attributes:
+ * - Prefix: unique immutable string used to generate translation keys (shown with tooltip)
+ * - Default Locale: source language for translations, immutable (shown with tooltip)
+ * - Languages: number of locales assigned to this project
+ * - Keys: number of translation keys in the project
+ * - Created: project creation date (short format, full timestamp on hover)
+ * - Last Updated: last update timestamp (short format, full timestamp on hover)
+ *
+ * Informational tooltips are displayed for fields that cannot be edited.
+ *
+ * @param {ProjectMetadataProps} props
+ * @param {ProjectResponse} props.project - Project object containing metadata to display
+ *
+ * @returns {JSX.Element} Metadata summary card for the project
  */
 export function ProjectMetadata({ project }: ProjectMetadataProps) {
   return (
-    <div className="bg-card rounded-lg border p-6">
-      <h2 className="mb-4 text-lg font-semibold">Project Details</h2>
-      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <dt className="text-muted-foreground text-sm font-medium">
+    <CardItem className="hover:bg-card">
+      <div className="flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="flex flex-row items-center gap-2">
+          <dt className="text-muted-foreground text-xs font-medium">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -31,14 +43,12 @@ export function ProjectMetadata({ project }: ProjectMetadataProps) {
               </Tooltip>
             </TooltipProvider>
           </dt>
-          <dd className="mt-1">
-            <code className="bg-muted rounded px-2 py-1 font-mono text-sm">{project.prefix}</code>
-            <span className="text-muted-foreground ml-2 text-xs">(immutable)</span>
+          <dd className="flex items-center gap-2">
+            <code className="bg-muted rounded px-2 py-1 font-mono text-xs">{project.prefix}</code>
           </dd>
         </div>
-
-        <div>
-          <dt className="text-muted-foreground text-sm font-medium">
+        <div className="flex flex-row items-center gap-2">
+          <dt className="text-muted-foreground text-xs font-medium">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -50,26 +60,35 @@ export function ProjectMetadata({ project }: ProjectMetadataProps) {
               </Tooltip>
             </TooltipProvider>
           </dt>
-          <dd className="mt-1">
-            <code className="bg-muted rounded px-2 py-1 font-mono text-sm">{project.default_locale}</code>
-            <span className="text-muted-foreground ml-2 text-xs">(immutable)</span>
+          <dd className="flex items-center gap-2">
+            <code className="bg-muted rounded px-2 py-1 font-mono text-xs">{project.default_locale}</code>
           </dd>
         </div>
-
-        <div>
-          <dt className="text-muted-foreground text-sm font-medium">Created</dt>
-          <dd className="mt-1 text-sm" title={formatDateTime(project.created_at)}>
+        <div className="flex flex-row items-center gap-2">
+          <dt className="text-muted-foreground text-xs font-medium">Languages</dt>
+          <dd className="flex items-center gap-2">
+            <code className="bg-muted rounded px-2 py-1 font-mono text-xs">{project.locale_count}</code>
+          </dd>
+        </div>
+        <div className="flex flex-row items-center gap-2">
+          <dt className="text-muted-foreground text-xs font-medium">Keys</dt>
+          <dd className="flex items-center gap-2">
+            <code className="bg-muted rounded px-2 py-1 font-mono text-xs">{project.key_count}</code>
+          </dd>
+        </div>
+        <div className="flex flex-col gap-1">
+          <dt className="text-muted-foreground text-xs font-medium">Created</dt>
+          <dd className="text-xs" title={formatDateTime(project.created_at)}>
             {formatDate(project.created_at)}
           </dd>
         </div>
-
-        <div>
-          <dt className="text-muted-foreground text-sm font-medium">Last Updated</dt>
-          <dd className="mt-1 text-sm" title={formatDateTime(project.updated_at)}>
+        <div className="flex flex-col gap-1">
+          <dt className="text-muted-foreground text-xs font-medium">Last Updated</dt>
+          <dd className="text-xs" title={formatDateTime(project.updated_at)}>
             {formatDate(project.updated_at)}
           </dd>
         </div>
-      </dl>
-    </div>
+      </div>
+    </CardItem>
   );
 }

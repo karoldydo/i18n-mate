@@ -17,10 +17,23 @@ interface ProjectListProps {
 }
 
 /**
- * ProjectList - Card-based list displaying projects with pagination and actions
+ * ProjectList – Renders a paginated, card-based list of projects with actions.
  *
- * Displays project information in card format with inline actions for edit/delete operations.
- * Integrates with TanStack Query for data fetching and loading states.
+ * Shows all projects as a card grid, including support for:
+ *   - Pagination (page size: 50, offset-based)
+ *   - Inline actions for edit and delete
+ *   - Navigation to project details on card click
+ *   - Global create project button (visible in header and empty state)
+ *   - Loading/empty state handling
+ *
+ * Integrates with TanStack Query for server-side pagination and loading state.
+ *
+ * @param {Object} props - Component props
+ * @param {() => void} props.onCreateClick - Handler for creating a new project (opens create dialog)
+ * @param {(project: ProjectResponse) => void} props.onDeleteClick - Handler for deleting a project (opens delete dialog)
+ * @param {(project: ProjectResponse) => void} props.onEditClick - Handler for editing a project (opens edit dialog)
+ *
+ * @returns {JSX.Element | null} The rendered project list or empty state
  */
 export function ProjectList({ onCreateClick, onDeleteClick, onEditClick }: ProjectListProps) {
   const navigate = useNavigate();

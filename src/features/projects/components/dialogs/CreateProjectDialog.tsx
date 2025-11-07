@@ -43,7 +43,6 @@ interface CreateProjectDialogProps {
  * - On failure, displays a relevant error toast.
  * - Resets form fields when dialog is closed via user action.
  *
- * @component
  * @param {Object} props - Component props
  * @param {boolean} props.open - Whether the dialog is visible/open
  * @param {(open: boolean) => void} props.onOpenChange - Callback triggered when dialog open state changes

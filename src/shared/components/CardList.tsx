@@ -38,7 +38,6 @@ interface CardListProps {
  * - Displays an optional empty state when no children are provided.
  * - Responsive design with appropriate spacing and layout for modern UIs.
  *
- * @component
  * @param {object} props - CardListProps
  * @param {string} [props.title] - Optional title shown in the header.
  * @param {string} [props.description] - Optional short description below the title.

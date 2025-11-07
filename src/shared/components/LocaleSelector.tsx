@@ -17,7 +17,6 @@ interface LocaleSelectorProps {
  *
  * Integrates with shadcn/ui Select components for accessibility, form handling, and keyboard support.
  *
- * @component
  * @param {object} props - Component props
  * @param {string} [props.data-testid] - Optional test ID for querying in tests
  * @param {boolean} [props.disabled] - Disables the selector when true
