@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 
 import type { ProjectResponse } from '@/shared/types';
 
+import { CardItem } from '@/shared/components/CardItem';
+
 import { ExportHeader } from './ExportHeader';
 
 interface ExportLayoutProps {
@@ -26,10 +28,10 @@ export function ExportLayout({ children, project, stats }: ExportLayoutProps) {
     <div className="container">
       <ExportHeader projectId={project.id} />
 
-      <div className="space-y-8">
+      <div className="space-y-4">
         {/* Export Summary */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="bg-muted/50 rounded-lg border p-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <CardItem>
             <div className="flex items-center">
               <div className="space-y-1">
                 <p className="text-sm leading-none font-medium">Project</p>
@@ -37,9 +39,9 @@ export function ExportLayout({ children, project, stats }: ExportLayoutProps) {
               </div>
             </div>
             {project.description && <p className="text-muted-foreground mt-2 text-sm">{project.description}</p>}
-          </div>
+          </CardItem>
 
-          <div className="bg-muted/50 rounded-lg border p-6">
+          <CardItem>
             <div className="flex items-center">
               <div className="space-y-1">
                 <p className="text-sm leading-none font-medium">Locales</p>
@@ -47,9 +49,9 @@ export function ExportLayout({ children, project, stats }: ExportLayoutProps) {
               </div>
             </div>
             <p className="text-muted-foreground mt-2 text-sm">Available languages</p>
-          </div>
+          </CardItem>
 
-          <div className="bg-muted/50 rounded-lg border p-6">
+          <CardItem>
             <div className="flex items-center">
               <div className="space-y-1">
                 <p className="text-sm leading-none font-medium">Keys</p>
@@ -57,11 +59,11 @@ export function ExportLayout({ children, project, stats }: ExportLayoutProps) {
               </div>
             </div>
             <p className="text-muted-foreground mt-2 text-sm">Translation keys</p>
-          </div>
+          </CardItem>
         </div>
 
         {/* Export Actions */}
-        <div className="bg-muted/50 rounded-lg border p-6">
+        <CardItem>
           <h2 className="mb-4 text-xl font-semibold">Export Options</h2>
           <div className="space-y-4">
             <p className="text-muted-foreground">
@@ -70,7 +72,7 @@ export function ExportLayout({ children, project, stats }: ExportLayoutProps) {
             </p>
             {children}
           </div>
-        </div>
+        </CardItem>
       </div>
     </div>
   );
