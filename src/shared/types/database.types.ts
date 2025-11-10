@@ -123,7 +123,7 @@ export interface Database {
         Returns: {
           created_at: string;
           default_locale: unknown;
-          description: null | string;
+          description: string;
           id: string;
           name: string;
           prefix: string;
@@ -139,7 +139,7 @@ export interface Database {
         Returns: {
           created_at: string;
           default_locale: string;
-          description: null | string;
+          description: string;
           id: string;
           key_count: number;
           locale_count: number;
@@ -227,7 +227,7 @@ export interface Database {
         Returns: {
           created_at: string;
           default_locale: string;
-          description: null | string;
+          description: string;
           id: string;
           key_count: number;
           locale_count: number;
@@ -235,6 +235,23 @@ export interface Database {
           prefix: string;
           total_count: number;
           updated_at: string;
+        }[];
+      };
+      list_telemetry_events_with_count: {
+        Args: {
+          p_ascending?: boolean;
+          p_limit?: number;
+          p_offset?: number;
+          p_order_by?: string;
+          p_project_id: string;
+        };
+        Returns: {
+          created_at: string;
+          event_name: Database['public']['Enums']['event_type'];
+          id: string;
+          project_id: string;
+          properties: Json;
+          total_count: number;
         }[];
       };
       set_limit: {

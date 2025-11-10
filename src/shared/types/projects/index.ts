@@ -1,5 +1,5 @@
 import type { Database } from '../database.types';
-import type { PaginatedResponse, PaginationParams } from '../types';
+import type { MakeNullable, PaginatedResponse, PaginationParams } from '../types';
 
 export interface CreateProjectRequest {
   default_locale: string;
@@ -9,20 +9,29 @@ export interface CreateProjectRequest {
   prefix: string;
 }
 
-export type CreateProjectResponse = Database['public']['Functions']['create_project_with_default_locale']['Returns'][0];
+export type CreateProjectResponse = MakeNullable<
+  Database['public']['Functions']['create_project_with_default_locale']['Returns'][0],
+  'description'
+>;
 
 export type CreateProjectRpcArgs = Database['public']['Functions']['create_project_with_default_locale']['Args'];
 
 export type ProjectRequest = Database['public']['Functions']['get_project_with_counts']['Args'];
 
-export type ProjectResponse = Database['public']['Functions']['get_project_with_counts']['Returns'][0];
+export type ProjectResponse = MakeNullable<
+  Database['public']['Functions']['get_project_with_counts']['Returns'][0],
+  'description'
+>;
 
 export interface ProjectsRequest extends PaginationParams {
   order?: 'created_at.asc' | 'created_at.desc' | 'name.asc' | 'name.desc';
 }
 
-export type ProjectsResponse = PaginatedResponse<
-  Database['public']['Functions']['list_projects_with_counts']['Returns'][0]
+export type ProjectsResponse = PaginatedResponse<ProjectsResponseItem>;
+
+export type ProjectsResponseItem = MakeNullable<
+  Database['public']['Functions']['list_projects_with_counts']['Returns'][0],
+  'description'
 >;
 
 export interface UpdateProjectRequest {

@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import type { EventType, Json, TelemetryEventResponse, TelemetryEventsRequest } from '@/shared/types';
+import type {
+  EventType,
+  Json,
+  TelemetryEventResponse,
+  TelemetryEventsRequest,
+  TelemetryEventsResponseItem,
+} from '@/shared/types';
 
 import {
   TELEMETRY_DEFAULT_LIMIT,
@@ -63,3 +69,13 @@ export const TELEMETRY_EVENT_RESPONSE_SCHEMA = z.object({
   project_id: z.string().uuid(),
   properties: JSON_SCHEMA.nullable(),
 }) satisfies z.ZodType<TelemetryEventResponse>;
+
+// response schema with total_count (from RPC function)
+export const TELEMETRY_EVENT_RESPONSE_ITEM_SCHEMA = z.object({
+  created_at: z.string(),
+  event_name: EVENT_NAME_SCHEMA,
+  id: z.string().uuid(),
+  project_id: z.string().uuid(),
+  properties: JSON_SCHEMA.nullable(),
+  total_count: z.number().int().min(0),
+}) satisfies z.ZodType<TelemetryEventsResponseItem>;

@@ -1,4 +1,5 @@
-import type { Enums, Json, Tables } from '../database.types';
+import type { Database, Enums, Json, Tables } from '../database.types';
+import type { PaginatedResponse } from '../types';
 
 export interface CreateTelemetryEventRequest {
   event_name: Enums<'event_type'>;
@@ -37,7 +38,10 @@ export interface TelemetryEventsRequest {
   project_id: string;
 }
 
-export type TelemetryEventsResponse = Tables<'telemetry_events'>[];
+export type TelemetryEventsResponse = PaginatedResponse<TelemetryEventsResponseItem>;
+
+export type TelemetryEventsResponseItem =
+  Database['public']['Functions']['list_telemetry_events_with_count']['Returns'][0];
 
 export interface TranslationCompletedProperties {
   completed_keys: number;

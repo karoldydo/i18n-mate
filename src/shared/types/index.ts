@@ -72,6 +72,7 @@ export type {
   ProjectResponse,
   ProjectsRequest,
   ProjectsResponse,
+  ProjectsResponseItem,
   UpdateProjectRequest,
   UpdateProjectResponse,
 } from './projects';
@@ -90,6 +91,7 @@ export type {
   TelemetryEventResponse,
   TelemetryEventsRequest,
   TelemetryEventsResponse,
+  TelemetryEventsResponseItem,
   TranslationCompletedProperties,
 } from './telemetry';
 
@@ -133,6 +135,8 @@ export type {
   ApiResponse,
   ApiResult,
   ConflictErrorResponse,
+  MakeNonNullable,
+  MakeNullable,
   PaginatedResponse,
   PaginationMetadata,
   PaginationParams,

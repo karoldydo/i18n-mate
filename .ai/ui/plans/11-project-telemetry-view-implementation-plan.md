@@ -12,13 +12,12 @@ The view should be accessible at `/projects/:id/telemetry` where `:id` is the pr
 
 ```markdown
 ProjectTelemetryPage (main page component)
-├── TelemetryKPIs (KPI visualization cards)
-├── TelemetryDataTable (events table with pagination)
-├── DataTable (Shadcn/ui component)
-│ ├── TableHeader (sortable columns)
-│ └── TableBody
-│ └── TelemetryEventRow (individual event rows)
-└── PaginationControls (pagination UI)
+├── ProjectTelemetryContent (content component)
+│ ├── TelemetryKPIs (KPI visualization cards)
+│ │ └── KPICard (individual KPI card component)
+│ └── CardList (shared card list component with pagination)
+│ └── TelemetryCard (individual event card component)
+└── ErrorBoundary + Suspense (shared error handling and loading)
 ```
 
 ## 4. Component Details
@@ -26,38 +25,49 @@ ProjectTelemetryPage (main page component)
 ### ProjectTelemetryPage
 
 - **Component description**: Main page component that orchestrates the telemetry view, handles routing, and manages the overall layout
-- **Main elements**: Page header with breadcrumbs, KPI cards section, events table section, shared ErrorBoundary + Suspense wrapper with `Loading` overlay
-- **Handled interactions**: Page load, navigation, error handling, responsive layout adjustments
+- **Main elements**: Wraps ProjectTelemetryContent in ErrorBoundary + Suspense with `Loading` overlay
+- **Handled interactions**: Page load, navigation, error handling
 - **Handled validation**: Project ID validation from URL parameters, user permissions check
 - **Types**: ProjectTelemetryPageProps { projectId: string }
 - **Props**: Accepts projectId from React Router params
 
+### ProjectTelemetryContent
+
+- **Component description**: Main content component that fetches and displays telemetry data
+- **Main elements**: Page header with back button, KPI cards section, events card list section with pagination
+- **Handled interactions**: Pagination navigation, data fetching via Suspense queries
+- **Handled validation**: Project existence validation, pagination bounds checking
+- **Types**: ProjectTelemetryContentProps { projectId: string }
+- **Props**: Accepts projectId string
+
 ### TelemetryKPIs
 
 - **Component description**: Displays key performance indicators calculated from telemetry events within a cohort window
-- **Main elements**: Three KPI cards showing percentage metrics and averages, with icons and trend indicators
+- **Main elements**: Responsive grid of three KPI cards showing percentage metrics and averages
 - **Handled interactions**: KPI calculations on data load, responsive card layout
 - **Handled validation**: Validates KPI calculation inputs, handles edge cases (no events, division by zero)
-- **Types**: TelemetryKPIsViewModel { multiLanguageProjectsPercentage: number, averageKeysPerLanguage: number, llmTranslationsPercentage: number }
-- **Props**: Accepts telemetryEvents array, project creation date, and optional cohortDays (default: 7)
+- **Types**: Uses `useTelemetryKPIs` hook return type { multiLanguageProjectsPercentage: number, averageKeysPerLanguage: number, llmTranslationsPercentage: number }
+- **Props**: Accepts telemetryEvents array (TelemetryEventResponse[]), project creation date (ISO string)
 
-### TelemetryDataTable
+### KPICard
 
-- **Component description**: Data table component displaying telemetry events with sorting and pagination
-- **Main elements**: Shadcn/ui DataTable with columns for timestamp, event type, and formatted properties
-- **Handled interactions**: Column sorting, pagination navigation, row expansion for detailed properties
-- **Handled validation**: Event data validation, pagination bounds checking
-- **Types**: TelemetryEventViewModel { id: string, created_at: string, event_name: EventType, formatted_properties: string }
-- **Props**: Accepts events array, pagination state, and sorting parameters
+- **Component description**: Reusable card component for displaying individual key performance indicators
+- **Main elements**: CardItem wrapper with title, value, and description in vertical layout
+- **Handled interactions**: None (display only)
+- **Handled validation**: None
+- **Types**: KPICardProps { title: string, value: string, description: string }
+- **Props**: Accepts title, value, and description strings
 
-### TelemetryEventRow
+### TelemetryCard
 
-- **Component description**: Individual table row component for displaying formatted telemetry events
-- **Main elements**: Table cells with timestamp, event type badge, and human-readable properties
-- **Handled interactions**: Row hover states, click to expand details
-- **Handled validation**: Properties object validation and formatting
-- **Types**: TelemetryEventViewModel (same as parent)
+- **Component description**: Card component displaying a single telemetry event in an inline format
+- **Main elements**: CardItem wrapper with flex layout: badge + timestamp on left, JSON properties on right
+- **Handled interactions**: None (display only)
+- **Handled validation**: Properties JSON validation and formatting
+- **Types**: TelemetryCardProps { event: TelemetryEventResponse }
 - **Props**: Accepts single TelemetryEventResponse object
+- **Layout**: Flex justify-between with badge + relative timestamp on left, formatted JSON in `<code>` block on right
+- **Display format**: All data inline (single row), properties displayed as formatted JSON string (not human-readable text)
 
 ## 5. Types
 
@@ -83,32 +93,46 @@ ProjectTelemetryPage (main page component)
 
 ## 6. State Management
 
-State management will use a combination of React hooks and TanStack Query. A custom `useTelemetryPageState` hook will manage local UI state for pagination and sorting, while `useTelemetryEvents` handles server state for the events data. KPI calculations will be performed client-side using a `useTelemetryKPIs` hook that processes events within a cohort window (default: 7 days after project creation) and memoizes results to avoid recalculation on every render.
+State management uses a combination of React hooks and TanStack Query. A custom `useTelemetryPageState` hook manages local UI state for pagination (page-based internally, converted to offset-based for API), while `useTelemetryEvents` handles server state for the events data with pagination metadata. KPI calculations are performed client-side using a `useTelemetryKPIs` hook that processes events within a cohort window (default: 7 days after project creation) and memoizes results to avoid recalculation on every render.
+
+**Note**: Sorting is fixed to `created_at.desc` (newest first) - no user sorting controls are provided. The `useTelemetryPageState` hook still maintains sorting state internally for potential future use, but it's not exposed in the UI.
 
 ## 7. API Integration
 
 The view integrates with the telemetry API through the existing `useTelemetryEvents` hook:
 
 ```typescript
-const { data: events } = useTelemetryEvents(projectId, {
-  limit: state.limit,
-  offset: state.page * state.limit,
-  order: `${state.sortBy}.${state.sortOrder}` as 'created_at.asc' | 'created_at.desc',
+const { data: telemetryData } = useTelemetryEvents(projectId, {
+  limit: pageState.limit,
+  offset: pageState.page * pageState.limit,
+  order: 'created_at.desc' as const, // fixed sorting, newest first
 });
 ```
 
-**Request**: GET /rest/v1/telemetry_events with query parameters
-**Response**: TelemetryEventResponse[] array of telemetry events
+**Request**: RPC call to `list_telemetry_events_with_count` function with parameters:
+
+- `p_project_id`: UUID of the project
+- `p_limit`: Items per page (1-100, default: 50)
+- `p_offset`: Pagination offset (min: 0)
+- `p_order_by`: Sort column (always 'created_at')
+- `p_ascending`: Boolean (always false for desc order)
+
+**Response**: `TelemetryEventsResponse` (PaginatedResponse) containing:
+
+- `data`: Array of `TelemetryEventsResponseItem` (includes `total_count` field)
+- `metadata`: `PaginationMetadata` with `start`, `end`, and `total` fields
+
+**Note**: The API uses an RPC function that returns pagination metadata (total count) along with the data, enabling proper pagination controls in the CardList component.
 
 Loading behaviour relies on a Suspense boundary that renders the shared `Loading` overlay, while the surrounding ErrorBoundary supplies retry and reload actions when a query fails.
 
 ## 8. User Interactions
 
-- **View KPIs**: Users can view calculated metrics in card format at the top of the page
-- **Sort events**: Click column headers to sort events by timestamp or event type
-- **Paginate**: Use pagination controls to navigate through events (default 100 per page)
-- **View event details**: Hover or click rows to see detailed event properties
-- **Responsive design**: Table adapts to different screen sizes with horizontal scrolling on mobile
+- **View KPIs**: Users can view calculated metrics in card format at the top of the page (three KPI cards in responsive grid)
+- **Paginate**: Use pagination controls in CardList to navigate through events (default limit from TELEMETRY_DEFAULT_LIMIT constant)
+- **View event details**: Each event card displays inline JSON properties in a `<code>` block on the right side
+- **Responsive design**: Card list adapts to different screen sizes, KPI cards stack on mobile (md:grid-cols-3)
+- **Note**: Sorting is fixed to newest first (created_at.desc) - no user sorting controls are provided
 
 ## 9. Conditions and Validation
 
@@ -142,11 +166,14 @@ Loading behaviour relies on a Suspense boundary that renders the shared `Loading
 2. Implement `useTelemetryPageState` hook for local UI state management
 3. Create `TelemetryKPIs` component with KPI calculation logic
 4. Implement `useTelemetryKPIs` hook for client-side metric calculations with cohort window filtering
-5. Build `TelemetryDataTable` component using Shadcn/ui DataTable
+5. Create `KPICard` component in `cards/` folder using `CardItem` wrapper
+6. Create `TelemetryCard` component for individual event display with inline layout
+7. Build `ProjectTelemetryContent` component using `CardList` instead of DataTable
    - **VERIFY**: Use existing event types directly
-6. Create `TelemetryEventRow` component for individual event display
-7. Add responsive design and accessibility features
-8. Wrap the route in the shared ErrorBoundary and Suspense with the `Loading` overlay
-9. Add comprehensive error handling for all API failure scenarios
-10. Write unit tests for components and hooks
-11. Add integration tests for the complete telemetry view
+   - Integrate with pagination metadata from API
+   - Fixed sorting to `created_at.desc` (newest first)
+8. Add responsive design and accessibility features
+9. Wrap the route in the shared ErrorBoundary and Suspense with the `Loading` overlay
+10. Add comprehensive error handling for all API failure scenarios
+11. Write unit tests for components and hooks
+12. Add integration tests for the complete telemetry view

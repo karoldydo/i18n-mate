@@ -22,26 +22,27 @@ The Telemetry Events API provides read-only access to application events and KPI
 
 ### Endpoints Summary
 
-1. **List Telemetry Events** - `GET /rest/v1/telemetry_events?project_id=eq.{project_id}&order=created_at.desc&limit=100`
+1. **List Telemetry Events** - `RPC list_telemetry_events_with_count` (returns paginated response with metadata)
 
-**Note:** No POST endpoint is exposed to the UI. All telemetry is handled automatically by the database.
+**Note:** No POST endpoint is exposed to the UI. All telemetry is handled automatically by the database. The API uses an RPC function instead of direct PostgREST queries to provide pagination metadata (total count) along with the data.
 
 ## 2. Request Details
 
 ### 2.1 List Telemetry Events
 
-- **HTTP Method:** GET
-- **URL Structure:** `/rest/v1/telemetry_events?project_id=eq.{project_id}&order=created_at.desc&limit=100`
+- **Method:** RPC Function Call
+- **Function Name:** `list_telemetry_events_with_count`
 - **Authentication:** Required (JWT via Authorization header)
 - **Authorization:** Owner or service_role only
 - **Parameters:**
   - Required:
-    - `project_id` (UUID) - Project ID (via query filter)
+    - `p_project_id` (UUID) - Project ID
   - Optional:
-    - `limit` (number) - Items per page (default: 100, max: 1000)
-    - `offset` (number) - Pagination offset (default: 0)
-    - `order` (string) - Sort order (default: `created_at.desc`)
-- **Request Body:** None
+    - `p_limit` (number) - Items per page (default: 50, max: 100)
+    - `p_offset` (number) - Pagination offset (default: 0, min: 0)
+    - `p_order_by` (string) - Sort column (always 'created_at')
+    - `p_ascending` (boolean) - Sort order (false for desc, true for asc)
+- **Returns:** `PaginatedResponse<TelemetryEventsResponseItem>` with `data` array and `metadata` object containing `start`, `end`, and `total` fields
 
 ## 2.2 How Telemetry Events Are Created
 
@@ -118,34 +119,45 @@ Telemetry events are created **automatically** by the database. No manual POST e
 
 **Success Response (200 OK):**
 
+Returns `PaginatedResponse<TelemetryEventsResponseItem>`:
+
 ```json
-[
-  {
-    "created_at": "2025-01-15T10:20:00Z",
-    "event_name": "translation_completed",
-    "id": "uuid",
-    "project_id": "uuid",
-    "properties": {
-      "completed_keys": 98,
-      "failed_keys": 2,
-      "mode": "all",
-      "target_locale": "pl"
+{
+  "data": [
+    {
+      "created_at": "2025-01-15T10:20:00Z",
+      "event_name": "translation_completed",
+      "id": "uuid",
+      "project_id": "uuid",
+      "properties": {
+        "completed_keys": 98,
+        "failed_keys": 2,
+        "mode": "all",
+        "target_locale": "pl"
+      },
+      "total_count": 150
+    },
+    {
+      "created_at": "2025-01-15T10:15:00Z",
+      "event_name": "key_created",
+      "id": "uuid",
+      "project_id": "uuid",
+      "properties": {
+        "full_key": "app.home.title",
+        "key_count": 50
+      },
+      "total_count": 150
     }
-  },
-  {
-    "created_at": "2025-01-15T10:15:00Z",
-    "event_name": "key_created",
-    "id": "uuid",
-    "project_id": "uuid",
-    "properties": {
-      "full_key": "app.home.title",
-      "key_count": 50
-    }
+  ],
+  "metadata": {
+    "end": 49,
+    "start": 0,
+    "total": 150
   }
-]
+}
 ```
 
-**Note:** This endpoint returns a raw array (not wrapped in `{ data, metadata }`) since it's a simple PostgREST query. Pagination metadata can be extracted from the `Content-Range` header if count is enabled.
+**Note:** The RPC function returns pagination metadata along with the data. Each item in the `data` array includes a `total_count` field (same value for all items in the page), which is used to construct the pagination metadata. This enables proper pagination controls in the frontend CardList component.
 
 ### 4.2 Automatic Event Creation (No API Response)
 
@@ -223,17 +235,19 @@ All error responses follow the structure: `{ data: null, error: { code, message,
 
 ### 5.1 List Telemetry Events Flow
 
-1. User navigates to analytics/dashboard view in React component
+1. User navigates to telemetry view in React component (`/projects/:id/telemetry`)
 2. TanStack Query hook (`useTelemetryEvents`) is invoked with project ID and optional params
-3. Hook validates params using Zod schema
+3. Hook validates params using Zod schema (`TELEMETRY_EVENTS_SCHEMA`)
 4. Hook retrieves Supabase client from `useSupabase()` context
-5. Client calls `.from('telemetry_events').select('*').eq('project_id', projectId).order().limit().range()`
-6. RLS policy validates ownership: `project_id in (select id from projects where owner_user_id = auth.uid())`
+5. Client calls `.rpc('list_telemetry_events_with_count', { p_project_id, p_limit, p_offset, p_order_by, p_ascending })`
+6. RPC function validates parameters and checks RLS policy for ownership: `project_id in (select id from projects where owner_user_id = auth.uid())`
 7. PostgreSQL queries the partitioned table (automatically routes to correct partition based on created_at)
-8. Results are returned as array ordered by created_at DESC (most recent first)
-9. Hook validates response data using Zod schema
-10. TanStack Query caches results
-11. Component renders analytics dashboard with event timeline
+8. RPC function calculates total count and returns events with `total_count` field in each row
+9. Hook extracts `total_count` from first item and constructs `PaginationMetadata`
+10. Hook validates response data using Zod schema (`TELEMETRY_EVENT_RESPONSE_ITEM_SCHEMA`)
+11. Hook returns `PaginatedResponse` with `data` array and `metadata` object
+12. TanStack Query caches results with key `['telemetry-events', projectId, params]`
+13. Component renders card-based list with pagination controls using CardList component
 
 ### 5.2 Automatic Telemetry Event Creation Flow
 

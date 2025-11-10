@@ -1,23 +1,35 @@
 import { useCallback, useMemo } from 'react';
 
+import type { PaginationParams } from '@/shared/types';
+
 import { useProject } from '@/features/projects/api/useProject';
 import { useTelemetryEvents } from '@/features/telemetry/api/useTelemetryEvents';
-import { BackButton } from '@/shared/components';
+import { BackButton, CardList } from '@/shared/components';
 
 import { useTelemetryPageState } from '../../hooks/useTelemetryPageState';
+import { TelemetryCard } from '../cards/TelemetryCard';
 import { TelemetryKPIs } from '../common/TelemetryKPIs';
-import { TelemetryDataTable } from '../tables/TelemetryDataTable';
 
 interface ProjectTelemetryContentProps {
   projectId: string;
 }
 
 /**
- * ProjectTelemetryContent - Suspense-enabled telemetry view for a project
+ * Displays telemetry analytics and event logs for a specific project.
  *
- * Fetches project information and telemetry events using suspense queries,
- * then renders KPIs and the events table with fade-in animation to avoid
- * content blinking during navigation.
+ * This suspense-enabled view fetches and displays project metadata and
+ * telemetry events, including usage statistics and paginated event details.
+ * Animates entry for a smoother navigation experience and minimizes UI blinking.
+ *
+ * @param {ProjectTelemetryContentProps} props - The component props.
+ * @param {string} props.projectId - The ID of the project to load telemetry for.
+ * @returns {JSX.Element | null} The rendered telemetry view, or null if project not found.
+ *
+ * Data flow:
+ * - Loads project details using suspense via useProject.
+ * - Loads paginated telemetry events with useTelemetryEvents.
+ * - KPIs and events are rendered with accessible, styled components.
+ * - Pagination logic is converted from page/limit to offset-based for API compatibility.
  */
 export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentProps) {
   const pageState = useTelemetryPageState();
@@ -28,38 +40,27 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
     () => ({
       limit: pageState.limit,
       offset: pageState.page * pageState.limit,
-      order: `${pageState.sortBy}.${pageState.sortOrder}` as 'created_at.asc' | 'created_at.desc',
+      order: 'created_at.desc' as const,
     }),
-    [pageState.limit, pageState.page, pageState.sortBy, pageState.sortOrder]
+    [pageState.limit, pageState.page]
   );
 
-  const { data: events } = useTelemetryEvents(projectId, telemetryEventsParams);
+  const { data: telemetryData } = useTelemetryEvents(projectId, telemetryEventsParams);
 
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(events.length / pageState.limit)),
-    [events.length, pageState.limit]
-  );
-
-  const pagination = useMemo(
+  // Convert page-based pagination to offset-based for CardList
+  const paginationParams = useMemo<PaginationParams>(
     () => ({
-      currentPage: pageState.page + 1,
-      totalPages,
+      limit: pageState.limit,
+      offset: pageState.page * pageState.limit,
     }),
-    [pageState.page, totalPages]
+    [pageState.limit, pageState.page]
   );
 
-  const sort = useMemo(
-    () => ({
-      sortBy: pageState.sortBy,
-      sortOrder: pageState.sortOrder,
-    }),
-    [pageState.sortBy, pageState.sortOrder]
-  );
-
-  const handleSortChange = useCallback(
-    (sortBy: 'created_at') => {
-      pageState.setSortBy(sortBy);
-      pageState.resetPagination();
+  const handlePageChange = useCallback(
+    (params: PaginationParams) => {
+      const limit = params.limit ?? pageState.limit;
+      const newPage = limit > 0 ? Math.floor((params.offset ?? 0) / limit) : 0;
+      pageState.setPage(newPage);
     },
     [pageState]
   );
@@ -82,17 +83,34 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
           </div>
         </div>
 
-        <TelemetryKPIs projectCreatedAt={project.created_at} telemetryEvents={events} />
+        <TelemetryKPIs projectCreatedAt={project.created_at} telemetryEvents={telemetryData.data} />
 
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Telemetry Events</h3>
-          <TelemetryDataTable
-            events={events}
-            onPageChange={pageState.setPage}
-            onSortChange={handleSortChange}
-            pagination={pagination}
-            sort={sort}
-          />
+          <CardList
+            data-testid="telemetry-events-list"
+            emptyState={
+              <div className="border-border rounded-lg border p-12 text-center">
+                <p className="text-muted-foreground text-lg">No telemetry events found</p>
+                <p className="text-muted-foreground mt-2 text-sm">
+                  Events will appear here as your project is used for translations
+                </p>
+              </div>
+            }
+            pagination={
+              telemetryData.data.length > 0
+                ? {
+                    metadata: telemetryData.metadata,
+                    onPageChange: handlePageChange,
+                    params: paginationParams,
+                  }
+                : undefined
+            }
+          >
+            {telemetryData.data.map((event) => (
+              <TelemetryCard event={event} key={event.id} />
+            ))}
+          </CardList>
         </div>
       </div>
     </div>

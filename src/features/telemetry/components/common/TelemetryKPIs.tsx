@@ -1,12 +1,7 @@
 import type { TelemetryEventResponse } from '@/shared/types';
 
 import { useTelemetryKPIs } from '../../hooks/useTelemetryKPIs';
-
-interface KPICardProps {
-  description: string;
-  title: string;
-  value: string;
-}
+import { KPICard } from '../cards/KPICard';
 
 interface TelemetryKPIsProps {
   projectCreatedAt: string;
@@ -14,48 +9,39 @@ interface TelemetryKPIsProps {
 }
 
 /**
- * TelemetryKPIs - Displays key performance indicators calculated from telemetry events
+ * TelemetryKPIs – Displays a summary of key performance indicators for a project.
  *
- * Shows three KPI cards with percentage metrics and averages calculated from
- * telemetry events and project creation date.
+ * Renders three KPI cards derived from telemetry events and project creation date:
+ *  - Multi-language Usage: Percentage of the project's lifetime in which multiple languages were present.
+ *  - Average Keys per Language: Mean number of translation keys distributed across all available languages.
+ *  - LLM Translations: Percentage of completed translations performed via large language models (AI).
+ *
+ * @param {Object} props - Component properties
+ * @param {string} props.projectCreatedAt - ISO timestamp indicating when the project was created
+ * @param {TelemetryEventResponse[]} props.telemetryEvents - Array of project telemetry events used to calculate KPIs
+ *
+ * @returns {JSX.Element} Responsive grid of KPI cards summarizing project activity
  */
 export function TelemetryKPIs({ projectCreatedAt, telemetryEvents }: TelemetryKPIsProps) {
-  // Calculate KPIs from telemetry events using the hook
-  const kpis = useTelemetryKPIs(telemetryEvents, projectCreatedAt);
+  const kpi = useTelemetryKPIs(telemetryEvents, projectCreatedAt);
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <KPICard
         description="Time project had multiple languages"
         title="Multi-language Usage"
-        value={`${kpis.multiLanguageProjectsPercentage}%`}
+        value={`${kpi.multiLanguageProjectsPercentage}%`}
       />
-
       <KPICard
         description="Keys distributed across languages"
         title="Average Keys per Language"
-        value={kpis.averageKeysPerLanguage.toFixed(1)}
+        value={kpi.averageKeysPerLanguage.toFixed(1)}
       />
-
       <KPICard
         description="Translations completed via AI"
         title="LLM Translations"
-        value={`${kpis.llmTranslationsPercentage}%`}
+        value={`${kpi.llmTranslationsPercentage}%`}
       />
-    </div>
-  );
-}
-
-function KPICard({ description, title, value }: KPICardProps) {
-  return (
-    <div className="bg-card text-card-foreground rounded-lg border p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="muted-foreground text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
-          <p className="muted-foreground mt-1 text-xs">{description}</p>
-        </div>
-      </div>
     </div>
   );
 }

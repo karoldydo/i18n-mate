@@ -1,27 +1,31 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { z } from 'zod';
 
 import type { ApiErrorResponse, TelemetryEventsRequest, TelemetryEventsResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 import { createDatabaseErrorResponse } from '../telemetry.errors';
-import { TELEMETRY_EVENT_RESPONSE_SCHEMA, TELEMETRY_EVENTS_SCHEMA } from '../telemetry.schemas';
+import { TELEMETRY_EVENT_RESPONSE_ITEM_SCHEMA, TELEMETRY_EVENTS_SCHEMA } from '../telemetry.schemas';
 
 /**
- * Fetch telemetry events for a project
+ * Fetch telemetry events for a project with pagination metadata
  *
- * Queries the partitioned `telemetry_events` table with filtering by project_id
- * and optional pagination. Results are ordered by created_at DESC (most recent first)
- * by default. Returns a raw array of events (not wrapped in pagination metadata).
+ * Uses the RPC function `list_telemetry_events_with_count` which returns telemetry events
+ * with total count for pagination. Data items are validated at runtime and pagination
+ * metadata includes the total count.
  *
  * @param projectId - UUID of the project to fetch events for
  * @param params - Optional query parameters (limit, offset, order)
+ * @param params.limit - Items per page (1-100, default: 50)
+ * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @param params.order - Sort order (created_at.asc|desc, default: created_at.desc)
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, limit too high, negative offset)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @returns TanStack Query result with array of telemetry events
+ * @returns TanStack Query result with telemetry events data and pagination metadata
  */
 export function useTelemetryEvents(projectId: string, params?: Omit<TelemetryEventsRequest, 'project_id'>) {
   const supabase = useSupabase();
@@ -33,25 +37,32 @@ export function useTelemetryEvents(projectId: string, params?: Omit<TelemetryEve
         ...params,
       });
 
-      let query = supabase
-        .from('telemetry_events')
-        .select('*')
-        .eq('project_id', project_id)
-        .order('created_at', { ascending: order === 'created_at.asc' })
-        .limit(limit);
-
-      // add offset if provided
-      if (offset && offset > 0) {
-        query = query.range(offset, offset + limit - 1);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await supabase.rpc('list_telemetry_events_with_count', {
+        p_ascending: order === 'created_at.asc',
+        p_limit: limit,
+        p_offset: offset,
+        p_order_by: 'created_at',
+        p_project_id: project_id,
+      });
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useTelemetryEvents', 'Failed to fetch telemetry events');
       }
 
-      return TELEMETRY_EVENT_RESPONSE_SCHEMA.array().parse(data || []);
+      // runtime validation of response data
+      const events = z.array(TELEMETRY_EVENT_RESPONSE_ITEM_SCHEMA).parse(data || []);
+
+      // get total count from first record (all records have the same total_count)
+      const totalCount = events[0]?.total_count ?? 0;
+
+      return {
+        data: events,
+        metadata: {
+          end: (offset || 0) + events.length - 1,
+          start: offset || 0,
+          total: totalCount,
+        },
+      };
     },
     queryKey: ['telemetry-events', projectId, params],
   });

@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TelemetryEventsRequest } from '@/shared/types';
+import type { TelemetryEventsRequest, TelemetryEventsResponseItem } from '@/shared/types';
 
 type TelemetryEventsParams = Omit<TelemetryEventsRequest, 'project_id'>;
 
@@ -12,17 +12,11 @@ import { createTestWrapper } from '@/test/utils/test-wrapper';
 
 import { useTelemetryEvents } from './useTelemetryEvents';
 
-// mock supabase client methods
-const mockQuery = {
-  eq: vi.fn(),
-  limit: vi.fn(),
-  order: vi.fn(),
-  range: vi.fn(),
-  select: vi.fn(),
-};
+// mock supabase client rpc method
+const mockRpc = vi.fn();
 
 const mockSupabase = {
-  from: vi.fn(() => mockQuery),
+  rpc: mockRpc,
 };
 
 // mock the useSupabase hook
@@ -33,32 +27,32 @@ vi.mock('@/app/providers/SupabaseProvider', () => ({
 describe('useTelemetryEvents', () => {
   const mockProject = createMockProject();
   const mockProjectId = mockProject.id;
-  const mockSupabaseResponse = [
-    createMockTelemetryEvent({
-      created_at: '2023-01-01T00:00:00Z',
-      event_name: 'project_created',
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      project_id: mockProjectId,
-      properties: null,
-    }),
-    createMockTelemetryEvent({
-      created_at: '2023-01-02T00:00:00Z',
-      event_name: 'language_added',
-      id: '550e8400-e29b-41d4-a716-446655440001',
-      project_id: mockProjectId,
-      properties: { locale: 'en' },
-    }),
+  const mockTotalCount = 2;
+  const mockSupabaseResponse: TelemetryEventsResponseItem[] = [
+    {
+      ...createMockTelemetryEvent({
+        created_at: '2023-01-01T00:00:00Z',
+        event_name: 'project_created',
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        project_id: mockProjectId,
+        properties: null,
+      }),
+      total_count: mockTotalCount,
+    },
+    {
+      ...createMockTelemetryEvent({
+        created_at: '2023-01-02T00:00:00Z',
+        event_name: 'language_added',
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        project_id: mockProjectId,
+        properties: { locale: 'en' },
+      }),
+      total_count: mockTotalCount,
+    },
   ];
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // setup default method chain
-    mockQuery.select.mockReturnValue(mockQuery);
-    mockQuery.eq.mockReturnValue(mockQuery);
-    mockQuery.order.mockReturnValue(mockQuery);
-    mockQuery.limit.mockReturnValue(mockQuery);
-    mockQuery.range.mockReturnValue(mockQuery);
   });
 
   afterEach(() => {
@@ -66,7 +60,7 @@ describe('useTelemetryEvents', () => {
   });
 
   it('should fetch telemetry events with default params', async () => {
-    mockQuery.limit.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: mockSupabaseResponse,
       error: null,
     });
@@ -75,21 +69,29 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('telemetry_events');
-    expect(mockQuery.select).toHaveBeenCalledWith('*');
-    expect(mockQuery.eq).toHaveBeenCalledWith('project_id', mockProjectId);
-    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(mockQuery.limit).toHaveBeenCalledWith(TELEMETRY_DEFAULT_LIMIT);
-    expect(mockQuery.range).not.toHaveBeenCalled();
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    expect(mockRpc).toHaveBeenCalledWith('list_telemetry_events_with_count', {
+      p_ascending: false,
+      p_limit: TELEMETRY_DEFAULT_LIMIT,
+      p_offset: 0,
+      p_order_by: 'created_at',
+      p_project_id: mockProjectId,
+    });
+    expect(result.current.data).toEqual({
+      data: mockSupabaseResponse,
+      metadata: {
+        end: 1,
+        start: 0,
+        total: mockTotalCount,
+      },
+    });
   });
 
   it('should apply custom pagination params correctly', async () => {
     const params: TelemetryEventsParams = { limit: 50, offset: 10 };
 
-    mockQuery.range.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: mockSupabaseResponse,
       error: null,
     });
@@ -98,20 +100,29 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('telemetry_events');
-    expect(mockQuery.eq).toHaveBeenCalledWith('project_id', mockProjectId);
-    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(mockQuery.limit).toHaveBeenCalledWith(50);
-    expect(mockQuery.range).toHaveBeenCalledWith(10, 59); // offset + limit - 1
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    expect(mockRpc).toHaveBeenCalledWith('list_telemetry_events_with_count', {
+      p_ascending: false,
+      p_limit: 50,
+      p_offset: 10,
+      p_order_by: 'created_at',
+      p_project_id: mockProjectId,
+    });
+    expect(result.current.data).toEqual({
+      data: mockSupabaseResponse,
+      metadata: {
+        end: 11,
+        start: 10,
+        total: mockTotalCount,
+      },
+    });
   });
 
   it('should handle ascending order correctly', async () => {
     const params: TelemetryEventsParams = { order: TELEMETRY_SORT_OPTIONS.CREATED_AT_ASC };
 
-    mockQuery.limit.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: mockSupabaseResponse,
       error: null,
     });
@@ -120,16 +131,29 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: true });
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    expect(mockRpc).toHaveBeenCalledWith('list_telemetry_events_with_count', {
+      p_ascending: true,
+      p_limit: TELEMETRY_DEFAULT_LIMIT,
+      p_offset: 0,
+      p_order_by: 'created_at',
+      p_project_id: mockProjectId,
+    });
+    expect(result.current.data).toEqual({
+      data: mockSupabaseResponse,
+      metadata: {
+        end: 1,
+        start: 0,
+        total: mockTotalCount,
+      },
+    });
   });
 
   it('should handle descending order correctly', async () => {
     const params: TelemetryEventsParams = { order: TELEMETRY_SORT_OPTIONS.CREATED_AT_DESC };
 
-    mockQuery.limit.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: mockSupabaseResponse,
       error: null,
     });
@@ -138,16 +162,29 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    expect(mockRpc).toHaveBeenCalledWith('list_telemetry_events_with_count', {
+      p_ascending: false,
+      p_limit: TELEMETRY_DEFAULT_LIMIT,
+      p_offset: 0,
+      p_order_by: 'created_at',
+      p_project_id: mockProjectId,
+    });
+    expect(result.current.data).toEqual({
+      data: mockSupabaseResponse,
+      metadata: {
+        end: 1,
+        start: 0,
+        total: mockTotalCount,
+      },
+    });
   });
 
   it('should not apply range when offset is 0', async () => {
     const params: TelemetryEventsParams = { limit: 25, offset: 0 };
 
-    mockQuery.limit.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: mockSupabaseResponse,
       error: null,
     });
@@ -156,17 +193,29 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(mockQuery.limit).toHaveBeenCalledWith(25);
-    expect(mockQuery.range).not.toHaveBeenCalled();
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    expect(mockRpc).toHaveBeenCalledWith('list_telemetry_events_with_count', {
+      p_ascending: false,
+      p_limit: 25,
+      p_offset: 0,
+      p_order_by: 'created_at',
+      p_project_id: mockProjectId,
+    });
+    expect(result.current.data).toEqual({
+      data: mockSupabaseResponse,
+      metadata: {
+        end: 1,
+        start: 0,
+        total: mockTotalCount,
+      },
+    });
   });
 
   it('should apply range when offset is greater than 0', async () => {
     const params: TelemetryEventsParams = { limit: 20, offset: 5 };
 
-    mockQuery.range.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: mockSupabaseResponse,
       error: null,
     });
@@ -175,15 +224,27 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(mockQuery.limit).toHaveBeenCalledWith(20);
-    expect(mockQuery.range).toHaveBeenCalledWith(5, 24); // offset 5, limit 20 -> range(5, 24)
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    expect(mockRpc).toHaveBeenCalledWith('list_telemetry_events_with_count', {
+      p_ascending: false,
+      p_limit: 20,
+      p_offset: 5,
+      p_order_by: 'created_at',
+      p_project_id: mockProjectId,
+    });
+    expect(result.current.data).toEqual({
+      data: mockSupabaseResponse,
+      metadata: {
+        end: 6,
+        start: 5,
+        total: mockTotalCount,
+      },
+    });
   });
 
   it('should return empty array when no events found', async () => {
-    mockQuery.limit.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: [],
       error: null,
     });
@@ -192,13 +253,20 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(result.current.data).toEqual([]);
+    expect(result.current.data).toEqual({
+      data: [],
+      metadata: {
+        end: -1,
+        start: 0,
+        total: 0,
+      },
+    });
   });
 
   it('should handle null data from database', async () => {
-    mockQuery.limit.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: null,
       error: null,
     });
@@ -207,16 +275,23 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(result.current.data).toEqual([]);
+    expect(result.current.data).toEqual({
+      data: [],
+      metadata: {
+        end: -1,
+        start: 0,
+        total: 0,
+      },
+    });
   });
 
   it('should handle Supabase error correctly', async () => {
     // cspell:disable-next-line
     const mockSupabaseError = createMockSupabaseError('Database connection failed', 'PGRST301');
 
-    mockQuery.limit.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: null,
       error: mockSupabaseError,
     });
@@ -311,7 +386,7 @@ describe('useTelemetryEvents', () => {
       order: TELEMETRY_SORT_OPTIONS.CREATED_AT_ASC,
     };
 
-    mockQuery.range.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: mockSupabaseResponse,
       error: null,
     });
@@ -320,42 +395,57 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(mockSupabase.from).toHaveBeenCalledWith('telemetry_events');
-    expect(mockQuery.eq).toHaveBeenCalledWith('project_id', mockProjectId);
-    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: true });
-    expect(mockQuery.limit).toHaveBeenCalledWith(15);
-    expect(mockQuery.range).toHaveBeenCalledWith(100, 114); // offset 100, limit 15 -> range(100, 114)
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    expect(mockRpc).toHaveBeenCalledWith('list_telemetry_events_with_count', {
+      p_ascending: true,
+      p_limit: 15,
+      p_offset: 100,
+      p_order_by: 'created_at',
+      p_project_id: mockProjectId,
+    });
+    expect(result.current.data).toEqual({
+      data: mockSupabaseResponse,
+      metadata: {
+        end: 101,
+        start: 100,
+        total: mockTotalCount,
+      },
+    });
   });
 
   it('should handle events with properties', async () => {
-    const mockSupabaseResponse = [
-      createMockTelemetryEvent({
-        created_at: '2023-01-01T00:00:00Z',
-        event_name: 'key_created',
-        id: '550e8400-e29b-41d4-a716-446655440002',
-        project_id: mockProjectId,
-        properties: {
-          key: 'test.key',
-          locale: 'en',
-        },
-      }),
-      createMockTelemetryEvent({
-        created_at: '2023-01-02T00:00:00Z',
-        event_name: 'translation_completed',
-        id: '550e8400-e29b-41d4-a716-446655440003',
-        project_id: mockProjectId,
-        properties: {
-          count: 10,
-          locale: 'es',
-        },
-      }),
+    const mockEventsWithProperties: TelemetryEventsResponseItem[] = [
+      {
+        ...createMockTelemetryEvent({
+          created_at: '2023-01-01T00:00:00Z',
+          event_name: 'key_created',
+          id: '550e8400-e29b-41d4-a716-446655440002',
+          project_id: mockProjectId,
+          properties: {
+            key: 'test.key',
+            locale: 'en',
+          },
+        }),
+        total_count: 2,
+      },
+      {
+        ...createMockTelemetryEvent({
+          created_at: '2023-01-02T00:00:00Z',
+          event_name: 'translation_completed',
+          id: '550e8400-e29b-41d4-a716-446655440003',
+          project_id: mockProjectId,
+          properties: {
+            count: 10,
+            locale: 'es',
+          },
+        }),
+        total_count: 2,
+      },
     ];
 
-    mockQuery.limit.mockResolvedValue({
-      data: mockSupabaseResponse,
+    mockRpc.mockResolvedValue({
+      data: mockEventsWithProperties,
       error: null,
     });
 
@@ -363,15 +453,22 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    expect(result.current.data).toEqual({
+      data: mockEventsWithProperties,
+      metadata: {
+        end: 1,
+        start: 0,
+        total: 2,
+      },
+    });
   });
 
   it('should use correct query key for cache management', async () => {
     const params: TelemetryEventsParams = { limit: 50, offset: 10 };
 
-    mockQuery.range.mockResolvedValue({
+    mockRpc.mockResolvedValue({
       data: mockSupabaseResponse,
       error: null,
     });
@@ -380,10 +477,17 @@ describe('useTelemetryEvents', () => {
       wrapper: createTestWrapper(),
     });
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toBeTruthy());
 
-    // The query key should be ['telemetry-events', projectId, params]
-    // This ensures proper cache invalidation and refetching
-    expect(result.current.data).toEqual(mockSupabaseResponse);
+    // the query key should be ['telemetry-events', projectId, params]
+    // this ensures proper cache invalidation and refetching
+    expect(result.current.data).toEqual({
+      data: mockSupabaseResponse,
+      metadata: {
+        end: 11,
+        start: 10,
+        total: mockTotalCount,
+      },
+    });
   });
 });

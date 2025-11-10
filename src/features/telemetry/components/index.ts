@@ -1,3 +1,3 @@
+export * from './cards';
 export * from './common';
-export * from './tables';
 export * from './views';

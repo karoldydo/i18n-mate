@@ -2,6 +2,7 @@
  * Shared Type Definitions for i18n-mate API
  *
  * This file contains shared types used across multiple features:
+ * - Utility types for type transformations
  * - API response wrappers (success, error, result)
  * - Pagination types
  * - Authentication types
@@ -18,7 +19,7 @@
  */
 
 // ============================================================================
-// API Response Types
+// Utility Types
 // ============================================================================
 
 /**
@@ -43,6 +44,10 @@ export interface ApiResponse<T> {
   error: null;
 }
 
+// ============================================================================
+// API Response Types
+// ============================================================================
+
 /**
  * Result Type - union of success and error responses
  */
@@ -58,6 +63,47 @@ export interface ConflictErrorResponse extends ApiErrorResponse {
     message: string;
   };
 }
+
+/**
+ * Make specific properties non-nullable in a type
+ *
+ * Removes null and undefined from specified properties. Useful when you need
+ * to enforce that certain fields must have values.
+ *
+ * @template T - The base type to transform
+ * @template K - Union of property keys to make non-nullable
+ *
+ * @example
+ * type User = { id: string | null; name: string | null };
+ * type UserWithRequiredId = MakeNonNullable<User, 'id'>;
+ * // Result: { id: string; name: string | null }
+ */
+export type MakeNonNullable<T, K extends keyof T> = Omit<T, K> & {
+  [P in K]: NonNullable<T[P]>;
+};
+
+/**
+ * Make specific properties nullable in a type
+ *
+ * Useful for fixing auto-generated types from Supabase where RPC functions
+ * incorrectly mark nullable database columns as non-nullable in return types.
+ *
+ * @template T - The base type to transform
+ * @template K - Union of property keys to make nullable
+ *
+ * @example
+ * type User = { id: string; name: string; email: string };
+ * type UserWithNullableEmail = MakeNullable<User, 'email'>;
+ * // Result: { id: string; name: string; email: string | null }
+ *
+ * @example
+ * type Project = { name: string; description: string };
+ * type ProjectWithNullables = MakeNullable<Project, 'description'>;
+ * // Result: { name: string; description: string | null }
+ */
+export type MakeNullable<T, K extends keyof T> = Omit<T, K> & {
+  [P in K]: null | T[P];
+};
 
 /**
  * Generic Paginated Response - standardized pagination format
