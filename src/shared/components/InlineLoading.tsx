@@ -1,11 +1,14 @@
 import { Loader2 } from 'lucide-react';
 
 /**
- * InlineLoading - Inline loading spinner for route transitions
+ * InlineLoading – Displays an inline, centered loading spinner for content area transitions.
  *
- * Provides a centered loading indicator without fixed positioning or backdrop.
- * Used as Suspense fallback in App.tsx to show loading state only in the content area,
- * keeping the sidebar and navigation visible during route transitions.
+ * Renders a spinning loader icon vertically and horizontally centered within its parent,
+ * without fixed positioning or backdrop. Typically used as a Suspense fallback in
+ * App.tsx to indicate route-level loading, ensuring that global UI elements like
+ * the sidebar and navigation remain visible during content updates or route transitions.
+ *
+ * @returns {JSX.Element} A visually centered loading spinner for inline content loading states.
  */
 export function InlineLoading() {
   return (
