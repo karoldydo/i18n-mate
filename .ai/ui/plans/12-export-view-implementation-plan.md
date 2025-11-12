@@ -12,10 +12,13 @@ The Export View provides users with the ability to download all translations for
 
 ```markdown
 ExportPage (main route component)
-├── ExportLayout (layout wrapper)
-│ ├── ExportHeader (title and back navigation)
+├── ProjectExportContent (content component)
+│ ├── BackButton (navigation to project details)
+│ ├── PageHeader (shared header component with title and description)
+│ └── ExportLayout (layout wrapper)
 │ ├── ExportSummary (project info and statistics)
-│ ├── ExportActions (export button and status)
+│ └── ExportActions (export button and status)
+│ ├── ExportButton (action button with loading state)
 │ └── ExportStatus (progress/error feedback)
 ```
 
@@ -39,14 +42,23 @@ ExportPage (main route component)
 - Types: React.ComponentProps<'div'>
 - Props: children (ReactNode)
 
-### ExportHeader
+### ProjectExportContent
 
-- Component description: Header section with page title and back navigation to project details.
-- Main elements: Heading, description text, back button with arrow icon
-- Handled interactions: Navigate back to project details on button click
+- Component description: Suspense-enabled content component for the export translations feature. Handles retrieval of all necessary project data and presents project export summary and available export actions when data is ready.
+- Main elements: BackButton, PageHeader, ExportLayout with ExportActions
+- Handled interactions: Data fetching, export action triggering
+- Handled validation: Disables export actions if there are no locales available
+- Types: ProjectResponse, ProjectStats
+- Props: projectId (string)
+
+### PageHeader
+
+- Component description: Shared header component from `@/shared/components` providing consistent page layouts with title and optional subheading or custom content.
+- Main elements: Heading (h1), optional subheading text or custom children content
+- Handled interactions: None (presentational component)
 - Handled validation: None
 - Types: None
-- Props: projectId (string)
+- Props: header (string), subHeading (string | null), children (ReactNode, optional)
 
 ### ExportSummary
 
@@ -77,8 +89,8 @@ ExportPage (main route component)
 
 ### ExportButton
 
-- Component description: Reusable button component with loading state for triggering translation exports.
-- Main elements: Button with download icon, loading spinner during export
+- Component description: Action button for exporting translations with loading and disabled states. Renders a large primary button to trigger the project export process. While loading, displays a spinning loader icon and updates the label to "Exporting...". Otherwise, shows the standard download icon and "Export translations" label (lowercase).
+- Main elements: Button with download icon, loading spinner during export, accessible labels
 - Handled interactions: Click to trigger export, disabled during export process
 - Handled validation: None
 - Types: None
@@ -192,14 +204,15 @@ The view integrates with the export translations endpoint:
    - **VERIFY**: Use existing route patterns and ensure consistent with project navigation
 2. Implement `ExportPage` component with route parameter validation
    - **VERIFY**: Use existing `ProjectResponse` and `ApiErrorResponse` types directly
-3. Create `ExportLayout` component for consistent structure
-4. Implement `ExportHeader` with navigation and title
-5. Create `ExportSummary` component for project information display
+3. Create `ProjectExportContent` component with data fetching and suspense support
+4. Implement `BackButton` and `PageHeader` usage (PageHeader with header "Export translations" and subHeading)
+5. Create `ExportLayout` component for consistent structure
+6. Create `ExportSummary` component for project information display
    - **VERIFY**: Use existing project types directly, avoid creating view models
-6. Implement `ExportActions` with export button and state management
-7. Create `ExportButton` component with loading states
-8. Implement `ExportStatus` for feedback and error display
-9. Add export route to project navigation tabs
-10. Test export functionality with various project states
-11. Add comprehensive error handling and edge case testing
-12. Implement responsive design and accessibility features
+7. Implement `ExportActions` with export button and state management
+8. Create `ExportButton` component with loading states (label: "Export translations" in lowercase)
+9. Implement `ExportStatus` for feedback and error display
+10. Add export route to project navigation tabs
+11. Test export functionality with various project states
+12. Add comprehensive error handling and edge case testing
+13. Implement responsive design and accessibility features

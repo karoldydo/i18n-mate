@@ -19,9 +19,9 @@ KeysListPage (main page component)
 │ └── PageTitle
 ├── CardList (generic card container)
 │ ├── CardListHeader
-│ │ ├── SearchInput
-│ │ ├── MissingFilterToggle
-│ │ └── AddKeyButton (actionButton)
+│ │ ├── SearchInput (search prop)
+│ │ ├── MissingFilterToggle (in actions)
+│ │ └── AddKeyButton (in actions)
 │ ├── KeyCard[] (feature-specific cards)
 │ │ ├── CardContent
 │ │ │ ├── TranslationValueCell (editable)
@@ -50,21 +50,21 @@ KeysListPage (main page component)
 
 ### PageHeader
 
-- **Component description**: Header section with page title
-- **Main elements**: Title text and optional project name
-- **Handled interactions**: None (display only)
+- **Component description**: Shared header component from `@/shared/components` providing consistent page layouts with title and optional subheading or custom content. Used here with header "Translation keys" and custom children content showing project context.
+- **Main elements**: Heading (h1), optional subheading text or custom children content
+- **Handled interactions**: None (presentational component)
 - **Handled validation**: None
-- **Types**: Project name string (optional)
-- **Props**: projectName?: string
+- **Types**: None
+- **Props**: header (string), subHeading (string | null), children (ReactNode, optional)
 
 ### CardList
 
-- **Component description**: Generic card container component providing search, filter, pagination, and card layout
-- **Main elements**: Header with search/filter/action button, card grid, pagination controls
-- **Handled interactions**: Search input changes, filter toggle changes, pagination navigation
+- **Component description**: Generic shared component for displaying lists of cards with optional search, actions, pagination, and empty state support. Provides consistent card layout across features.
+- **Main elements**: Header with optional search and actions, card grid, pagination controls, empty state display
+- **Handled interactions**: Search input changes, filter toggle changes, pagination navigation, action button clicks
 - **Handled validation**: Search input debouncing handled by SearchInput component
 - **Types**: PaginationParams, PaginationMetadata
-- **Props**: searchInput: ReactNode, filterToggle: ReactNode, actionButton: ReactNode, pagination: { metadata, params, onPageChange }, emptyState: ReactNode, children: ReactNode
+- **Props**: search?: ReactNode, actions?: ReactNode, pagination?: { metadata, params, onPageChange }, emptyState?: ReactNode, children: ReactNode, data-testid?: string
 
 ### SearchInput
 
@@ -304,7 +304,7 @@ No additional custom hooks required beyond existing API hooks and basic state ma
 ### UI Error States
 
 - **Loading States**: Suspense fallback renders the shared full-screen `Loading` overlay during data fetch; pagination updates keep optimistic state.
-- **Empty States**: "No keys found" message with prominent add key button
+- **Empty States**: Uses shared `EmptyState` component from `@/shared/components` with different messages for missing-only filter (shows "All translations complete" with CheckCircle2 icon) vs. no keys (shows "No translation keys yet" with Inbox icon)
 - **Error States**: Shared ErrorBoundary surfaces query failures with retry and reload actions.
 - **Partial Failures**: Handle individual operation failures without breaking entire interface
 
@@ -328,7 +328,8 @@ No additional custom hooks required beyond existing API hooks and basic state ma
    - Integrate with CardList for pagination and layout
 
 3. **Add search and filter functionality**
-   - Integrate SearchInput and MissingFilterToggle into CardList header
+   - Integrate SearchInput into CardList search prop
+   - Integrate MissingFilterToggle and AddKeyButton into CardList actions prop
    - Implement debounced search input (handled by SearchInput component)
    - Add missing filter toggle with state management
    - Connect filters to API query parameters
@@ -354,7 +355,7 @@ No additional custom hooks required beyond existing API hooks and basic state ma
 
 7. **Add error handling and edge cases**
    - Implement error boundaries and fallback UI
-   - Add loading skeletons and empty states
+   - Add loading skeletons and empty states using shared EmptyState component
    - Handle network errors and retry logic
    - Add concurrent modification handling
 

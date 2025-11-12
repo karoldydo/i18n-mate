@@ -14,15 +14,16 @@ The project list view displays all user projects with management capabilities in
 
 ```markdown
 ProjectListPage (main page component)
-├── PageHeader (title and description)
+├── PageHeader (shared header component with title and description)
 ├── CardList (generic card container)
 │ ├── CardListHeader
-│ │ └── CreateProjectButton (actionButton)
+│ │ └── CreateProjectButton (actions prop)
 │ ├── ProjectCard[] (feature-specific cards)
 │ │ ├── CardContent
 │ │ │ ├── ProjectInfo (name, description)
 │ │ │ └── ProjectStats (prefix, default locale, locale count, key count)
 │ │ └── CardActions (edit/delete dropdown)
+│ ├── EmptyState (shared component when no projects)
 │ └── CardListPagination (offset-based)
 ├── CreateProjectDialog (modal for project creation)
 ├── EditProjectDialog (modal for project editing)
@@ -51,12 +52,12 @@ ProjectListPage (main page component)
 
 ### CardList
 
-- **Component description**: Generic card container component providing pagination and card layout
-- **Main elements**: Header with action button, card grid, pagination controls
-- **Handled interactions**: Pagination navigation, action button display
+- **Component description**: Generic shared component for displaying lists of cards with optional actions, search, and empty state support. Provides pagination and consistent card layout across features.
+- **Main elements**: Header with optional search and actions, card grid, pagination controls, empty state display
+- **Handled interactions**: Pagination navigation, action button display, search input handling
 - **Handled validation**: None
 - **Types**: PaginationParams, PaginationMetadata
-- **Props**: actionButton: ReactNode, pagination: { metadata, params, onPageChange }, emptyState: ReactNode, children: ReactNode
+- **Props**: actions: ReactNode (optional), search: ReactNode (optional), pagination: { metadata, params, onPageChange } (optional), emptyState: ReactNode (optional), children: ReactNode
 
 ### ProjectCard
 
@@ -258,7 +259,7 @@ No custom hooks required beyond the existing API hooks.
 ### UI Error States
 
 - **Loading States**: Route-level Suspense boundary with the shared `Loading` overlay; dialogs keep their local button spinners.
-- **Empty States**: "No projects found" message with create prompt
+- **Empty States**: Uses shared `EmptyState` component from `@/shared/components` with icon, header ("No projects yet"), description, and optional action button for creating first project
 - **Error Boundaries**: Dedicated wrapper surfaces TanStack Query errors with retry/reload actions.
 
 ## 11. Implementation Steps
@@ -278,6 +279,7 @@ No custom hooks required beyond the existing API hooks.
    - Integrate useProjects hook
    - Add pagination controls (offset-based)
    - Create ProjectCard component using CardItem wrapper
+   - Add EmptyState component from `@/shared/components` for empty state handling
 
 3. **Add card actions and dialogs**
    - Create action dropdown in ProjectCard

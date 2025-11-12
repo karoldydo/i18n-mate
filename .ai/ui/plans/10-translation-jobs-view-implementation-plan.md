@@ -15,15 +15,17 @@ The translation jobs view provides comprehensive monitoring, management, and cre
 
 ```markdown
 TranslationJobsPage (main page component)
-├── PageHeader (title, create job button, refresh button)
-├── TranslationJobsTable (data table component)
-│ ├── TableHeader (column headers with sorting)
-│ ├── JobTableRow (individual job rows)
+├── BackButton (navigation to project details)
+├── PageHeader (shared header component with title and description)
+├── CardList (shared card container component)
+│ ├── Actions (refresh button, create job button)
+│ ├── TranslationJobCard[] (feature-specific cards)
 │ │ ├── JobBasicInfo (mode, target locale, created time)
 │ │ ├── JobProgressIndicator (progress bar, key counts)
 │ │ ├── JobStatusBadge (status with color coding)
 │ │ └── JobActions (cancel button for eligible jobs)
-│ └── TablePagination (pagination controls)
+│ ├── EmptyState (shared component when no jobs)
+│ └── CardListPagination (offset-based pagination controls)
 ├── CreateTranslationJobDialog (create new translation job)
 │ ├── JobModeSelector (all/selected/single mode selection)
 │ ├── TargetLocaleSelector (locale dropdown excluding default)
@@ -49,14 +51,32 @@ TranslationJobsPage (main page component)
 - **Types**: TranslationJobResponse[], JobProgressState, CancelJobState, CreateJobState
 - **Props**: None (route component receiving projectId from URL params)
 
-### TranslationJobsTable
+### PageHeader
 
-- **Component description**: Data table displaying translation jobs with sorting, pagination, and inline actions
-- **Main elements**: Shadcn DataTable with custom columns, sorting indicators, and pagination controls
-- **Handled interactions**: Column sorting, pagination navigation, row action clicks
-- **Handled validation**: None (data validation handled by API and parent component)
-- **Types**: TranslationJobResponse[], Table sorting and pagination state
-- **Props**: jobs: TranslationJobResponse[], isLoading: boolean, pagination: PaginationState, onSort: (column, direction) => void, onCancelJob: (job) => void
+- **Component description**: Shared header component from `@/shared/components` providing consistent page layouts with title and optional subheading or custom content. Used here with header "Translation Jobs" and custom children content with description.
+- **Main elements**: Heading (h1), optional subheading text or custom children content
+- **Handled interactions**: None (presentational component)
+- **Handled validation**: None
+- **Types**: None
+- **Props**: header (string), subHeading (string | null), children (ReactNode, optional)
+
+### CardList
+
+- **Component description**: Generic shared component for displaying lists of cards with optional actions, pagination, and empty state support. Used here to display translation job cards.
+- **Main elements**: Header with optional actions, card grid, pagination controls, empty state display
+- **Handled interactions**: Action button clicks, pagination navigation
+- **Handled validation**: None
+- **Types**: PaginationParams, PaginationMetadata
+- **Props**: actions?: ReactNode, pagination?: { metadata, params, onPageChange }, emptyState?: ReactNode, children: ReactNode, data-testid?: string
+
+### EmptyState
+
+- **Component description**: Shared empty state component from `@/shared/components` for consistent empty state handling. Displays icon, header text, description, and optional action buttons. Used here with header "No translation jobs yet" and description about creating first job.
+- **Main elements**: Icon (default Inbox), header text, description text, optional actions
+- **Handled interactions**: None (presentational component)
+- **Handled validation**: None
+- **Types**: None
+- **Props**: header (string), description (string), icon?: ReactNode, actions?: ReactElement
 
 ### JobProgressIndicator
 
@@ -281,8 +301,8 @@ Custom hooks required:
 
 ### UI Error States
 
-- **Loading States**: Route-level Suspense fallback shows the shared full-screen `Loading` overlay; table rows update once data resolves, dialogs keep local spinners.
-- **Empty States**: "No translation jobs found" message with helpful guidance
+- **Loading States**: Route-level Suspense fallback shows the shared full-screen `Loading` overlay; card list updates once data resolves, dialogs keep local spinners.
+- **Empty States**: Uses shared `EmptyState` component from `@/shared/components` with header "No translation jobs yet" and description about creating first translation job
 - **Error Boundaries**: Shared ErrorBoundary around the route surfaces query failures with retry/reload actions.
 - **Toast Notifications**: Success/error feedback for all user actions
 
@@ -301,11 +321,13 @@ Custom hooks required:
    - Implement project ID validation and error handling
    - **VERIFY**: Use existing `TranslationJobResponse` type (DO NOT create aliases)
 
-2. **Implement job list table with basic display**
-   - Set up Shadcn DataTable with job columns (mode, target_locale, status, created_at)
+2. **Implement job list with card-based display**
+   - Set up CardList shared component for job display
+   - Create TranslationJobCard component following ProjectCard/KeyCard pattern
    - Integrate useTranslationJobs hook with pagination
    - **VERIFY**: Use existing response types directly
-   - Add basic table sorting and pagination controls
+   - Add pagination controls via CardList
+   - Use shared EmptyState component for empty state handling
 
 3. **Add create translation job dialog**
    - Create CreateTranslationJobDialog component with mode selection
@@ -335,7 +357,8 @@ Custom hooks required:
    - Add cancel button to eligible job rows with proper state management
 
 8. **Integrate create job functionality**
-   - Add "Create Translation Job" button to page header
+   - Add "Create Translation Job" button to CardList actions prop
+   - Add refresh button to CardList actions prop (shown only when jobs exist)
    - Implement create job mutation with useCreateTranslationJob hook
    - Handle successful creation: close dialog, open progress modal, show success toast
    - Add error handling for validation failures and active job conflicts

@@ -124,6 +124,12 @@ Key design principles include responsiveness (Tailwind CSS breakpoints), WCAG 2.
 
 ### 5.4 Business-Specific Components
 
-- **LocaleSelector**: Dropdown for language selection with BCP-47 validation. The list is populated from the common primary language subtags (IETF language tags – see Wikipedia “List of common primary language subtags”). Used everywhere language selection is needed: creating a project (choosing default language), adding a language to a project, and any header where quick locale switching is required (e.g., per‑language keys view). Normalizes to BCP‑47 (e.g., `en`, `en-US`) and prevents invalid entries.
+- **LocaleSelector**: Dropdown for language selection with BCP-47 validation. The list is populated from the common primary language subtags (IETF language tags – see Wikipedia "List of common primary language subtags"). Used everywhere language selection is needed: creating a project (choosing default language), adding a language to a project, and any header where quick locale switching is required (e.g., per‑language keys view). Normalizes to BCP‑47 (e.g., `en`, `en-US`) and prevents invalid entries.
 - **TranslationStatus**: Consistent component rendering translation provenance/status across views. States: missing, manual, machine-translated (with optional timestamp and user). Used in the per‑language keys table (status column/metadata) and anywhere a status badge is shown; ensures unified ARIA labels/tooltips and colors. The default keys view shows aggregated missing counts and typically does not render per‑row TranslationStatus.
 - **ExportButton**: Button with loading state for ZIP export
+
+### 5.5 Shared UI Components
+
+- **PageHeader**: Generic, reusable header component for consistent page layouts with title and optional subheading or custom content.
+- **EmptyState**: Generic, reusable empty state component with icon, header, description, and optional action buttons for consistent empty state handling across views.
+- **CardList**: Generic shared component for displaying lists of cards with optional action button and empty state support.

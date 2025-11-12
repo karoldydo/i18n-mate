@@ -6,7 +6,7 @@
 - **React 19** - UI library for building interactive components and managing application state
 - **TypeScript 5** - Static typing for better code quality and IDE support
 - **Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
-- **Shadcn/ui** - Accessible React component library built on Radix UI
+- **Shadcn/ui** - Accessible React component library built on Radix UI with custom shared components (PageHeader, EmptyState, CardList)
 - **React Router v7** - Client-side routing for SPA navigation
 - **TanStack Query** - Server state management with caching and synchronization
 

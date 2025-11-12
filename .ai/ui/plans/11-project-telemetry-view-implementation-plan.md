@@ -34,11 +34,20 @@ ProjectTelemetryPage (main page component)
 ### ProjectTelemetryContent
 
 - **Component description**: Main content component that fetches and displays telemetry data
-- **Main elements**: Page header with back button, KPI cards section, events card list section with pagination
+- **Main elements**: BackButton, PageHeader (shared component), KPI cards section, events card list section with pagination
 - **Handled interactions**: Pagination navigation, data fetching via Suspense queries
 - **Handled validation**: Project existence validation, pagination bounds checking
 - **Types**: ProjectTelemetryContentProps { projectId: string }
 - **Props**: Accepts projectId string
+
+### PageHeader
+
+- **Component description**: Shared header component from `@/shared/components` providing consistent page layouts with title and optional subheading or custom content. Used here with header "Analytics & Insights" and subHeading with project-specific description.
+- **Main elements**: Heading (h1), optional subheading text or custom children content
+- **Handled interactions**: None (presentational component)
+- **Handled validation**: None
+- **Types**: None
+- **Props**: header (string), subHeading (string | null), children (ReactNode, optional)
 
 ### TelemetryKPIs
 
@@ -172,6 +181,7 @@ Loading behaviour relies on a Suspense boundary that renders the shared `Loading
    - **VERIFY**: Use existing event types directly
    - Integrate with pagination metadata from API
    - Fixed sorting to `created_at.desc` (newest first)
+   - Use shared PageHeader component with header "Analytics & Insights" and subHeading
 8. Add responsive design and accessibility features
 9. Wrap the route in the shared ErrorBoundary and Suspense with the `Loading` overlay
 10. Add comprehensive error handling for all API failure scenarios

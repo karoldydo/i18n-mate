@@ -19,9 +19,8 @@ ProjectDetailsPage (Page Component)
 ├── ProjectDetailsContent (Content wrapper with state management)
 │ ├── ProjectDetailsLayout (Layout wrapper)
 │ │ ├── BackButton (Navigation to projects list)
-│ │ ├── ProjectHeader (Header section with title, description, and actions)
-│ │ │ ├── ProjectTitle (Project name and description)
-│ │ │ └── ProjectActions (Edit/Delete buttons)
+│ │ ├── PageHeader (Shared header component with project name and description)
+│ │ ├── ProjectActions (Edit/Delete buttons component)
 │ │ └── ProjectMetadata (Card-based metadata display)
 │ │ ├── ProjectPrefix (Display prefix with info tooltip)
 │ │ ├── ProjectDefaultLocale (Display default language)
@@ -64,14 +63,23 @@ ProjectDetailsPage (Page Component)
 - **Types:** ProjectResponse (for passing to child components).
 - **Props:** project (ProjectResponse), onEdit (function), onDelete (function).
 
-### ProjectHeader
+### PageHeader
 
-- **Component description:** Header section containing project title, description, and action buttons in a clean, organized layout.
-- **Main elements:** Flex container with title/description section and action buttons section.
+- **Component description:** Shared header component from `@/shared/components` providing consistent page layouts with title and optional subheading or custom content. Used here to display project name as header and description as subHeading.
+- **Main elements:** Heading (h1), optional subheading text or custom children content.
+- **Handled interactions:** None (presentational component).
+- **Handled validation:** None.
+- **Types:** None.
+- **Props:** header (string), subHeading (string | null), children (ReactNode, optional).
+
+### ProjectActions
+
+- **Component description:** Action buttons component for project operations. Renders edit and delete buttons for project management actions. Buttons are accessible, clearly labeled, and visually grouped.
+- **Main elements:** Flex container with Edit and Delete buttons (Pencil and Trash2 icons).
 - **Handled interactions:** Edit button click (opens edit dialog), Delete button click (opens delete confirmation).
 - **Handled validation:** None.
-- **Types:** ProjectResponse (for display data).
-- **Props:** project (ProjectResponse), onEdit (function), onDelete (function).
+- **Types:** None.
+- **Props:** onEdit (function), onDelete (function).
 
 ### ProjectMetadata
 
@@ -220,13 +228,14 @@ State variables:
 2. Implement `ProjectDetailsPage` page component with route parameter validation
 3. Implement `ProjectDetailsContent` component with data fetching and dialog state management
 4. Create `ProjectDetailsLayout` component for consistent structure
-5. Implement `ProjectHeader` with title, description, and action buttons
-6. Create `ProjectMetadata` component using CardItem for card-based immutable property display
-7. **Implement `EditProjectDialog` with form validation and submission**
+5. Implement `PageHeader` usage (from `@/shared/components`) with project name as header and description as subHeading
+6. Create `ProjectActions` component with Edit and Delete buttons
+7. Create `ProjectMetadata` component using CardItem for card-based immutable property display
+8. **Implement `EditProjectDialog` with form validation and submission**
    - **VERIFY**: Import and use `UPDATE_PROJECT_SCHEMA` from API
    - **VERIFY**: Use `UpdateProjectRequest` type directly (DO NOT create aliases)
-8. Build `DeleteProjectDialog` with confirmation and warning messages
-9. Add loading states and error boundaries (Suspense for data fetching)
-10. Implement responsive design and accessibility features
-11. Test integration with existing API hooks
-12. Add e2e tests for critical user flows
+9. Build `DeleteProjectDialog` with confirmation and warning messages
+10. Add loading states and error boundaries (Suspense for data fetching)
+11. Implement responsive design and accessibility features
+12. Test integration with existing API hooks
+13. Add e2e tests for critical user flows

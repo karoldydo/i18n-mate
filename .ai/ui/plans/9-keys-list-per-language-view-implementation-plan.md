@@ -22,8 +22,8 @@ KeysPerLanguagePage (main page component)
 │ └── BackToKeysButton
 ├── CardList (generic card container)
 │ ├── CardListHeader
-│ │ ├── SearchInput
-│ │ └── MissingFilterToggle
+│ │ ├── SearchInput (search prop)
+│ │ └── MissingFilterToggle (actions prop)
 │ ├── KeyTranslationCard[] (feature-specific cards)
 │ │ ├── CardContent
 │ │ │ ├── TranslationValueCell (editable)
@@ -48,12 +48,12 @@ KeysPerLanguagePage (main page component)
 
 ### PageHeader
 
-- **Component description**: Header section displaying the page title with locale information and navigation controls
-- **Main elements**: Title text with locale badge, back navigation button, locale info display, and optional LocaleSelector to switch between project locales (BCP-47 normalized)
-- **Handled interactions**: Back button navigation to default keys view
+- **Component description**: Shared header component from `@/shared/components` providing consistent page layouts with title and optional subheading or custom content. Used here with header "Translations - {LOCALE}" and custom children content showing project context.
+- **Main elements**: Heading (h1), optional subheading text or custom children content
+- **Handled interactions**: None (presentational component)
 - **Handled validation**: None
-- **Types**: Locale string, project name string
-- **Props**: locale: string, projectName?: string, onBack: () => void
+- **Types**: None
+- **Props**: header (string), subHeading (string | null), children (ReactNode, optional)
 
 ### LocaleInfoBadge
 
@@ -66,12 +66,12 @@ KeysPerLanguagePage (main page component)
 
 ### CardList
 
-- **Component description**: Generic card container component providing search, filter, pagination, and card layout
-- **Main elements**: Header with search/filter, card grid, pagination controls
+- **Component description**: Generic shared component for displaying lists of cards with optional search, actions, pagination, and empty state support. Provides consistent card layout across features.
+- **Main elements**: Header with optional search and actions, card grid, pagination controls, empty state display
 - **Handled interactions**: Search input changes, filter toggle changes, pagination navigation
 - **Handled validation**: Search input debouncing handled by SearchInput component
 - **Types**: PaginationParams, PaginationMetadata
-- **Props**: searchInput: ReactNode, filterToggle: ReactNode, pagination: { metadata, params, onPageChange }, emptyState: ReactNode, children: ReactNode
+- **Props**: search?: ReactNode, actions?: ReactNode, pagination?: { metadata, params, onPageChange }, emptyState?: ReactNode, children: ReactNode, data-testid?: string
 
 ### SearchInput
 
@@ -129,12 +129,12 @@ KeysPerLanguagePage (main page component)
 
 ### EmptyState
 
-- **Component description**: Empty state display when no keys match current filters
-- **Main elements**: Icon, message, and optional action button
-- **Handled interactions**: Clear filters action
+- **Component description**: Shared empty state component from `@/shared/components` for consistent empty state handling. Displays icon, header text, description, and optional action buttons. Used here with different messages for missing-only filter (shows "All translations complete" with CheckCircle2 icon) vs. no keys (shows "No translation keys yet" with Inbox icon).
+- **Main elements**: Icon (default Inbox or custom), header text, description text, optional actions
+- **Handled interactions**: None (presentational component, actions handled by parent)
 - **Handled validation**: None
-- **Types**: Empty state type (no results, no keys, error)
-- **Props**: type: EmptyStateType, onClearFilters?: () => void
+- **Types**: None
+- **Props**: header (string), description (string), icon?: ReactNode, actions?: ReactElement
 
 ## 5. Types
 
@@ -304,12 +304,14 @@ Integration with `useKeysPerLanguageView` hook:
    - **VERIFY**: Use existing response types directly
    - Create KeyTranslationCard component using CardItem wrapper
 4. **Add search and filter functionality** with debounced queries
-   - Integrate SearchInput and MissingFilterToggle into CardList header
+   - Integrate SearchInput into CardList search prop
+   - Integrate MissingFilterToggle into CardList actions prop
 5. **Implement inline editing** with validation and autosave
    - Use TranslationValueCell component with autosave
 6. **Add pagination controls** with proper state synchronization (offset-based)
    - Integrate with CardList pagination
 7. **Create loading and empty states** for better UX
+   - Use shared EmptyState component from `@/shared/components` with appropriate messages for different filter states
 8. **Add error handling and recovery** mechanisms
 9. **Implement keyboard navigation** and accessibility features
 10. **Add comprehensive testing** for all components and interactions

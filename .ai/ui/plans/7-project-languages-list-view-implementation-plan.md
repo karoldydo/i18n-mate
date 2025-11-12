@@ -20,19 +20,17 @@ ProjectLocalesPage (Route Component)
 │ │ ├── PageTitle ("Languages")
 │ │ └── PageDescription (business-focused description)
 │ ├── CardList (shared component)
-│ │ ├── ActionButton ("Add Language" - responsive text)
-│ │ └── LocaleCard[] (repeatable)
-│ │ ├── CardContent
-│ │ │ ├── LanguageLabel (h3 heading)
-│ │ │ └── MetadataSection
-│ │ │ ├── LocaleCode (BCP-47 code with label)
-│ │ │ └── DefaultIndicator (star icon + "Default" text)
-│ │ └── CardActions (DropdownMenu)
-│ │ ├── EditMenuItem
-│ │ └── DeleteMenuItem (disabled for default)
-│ └── EmptyState (when no locales)
-│ ├── EmptyMessage
-│ └── AddLanguageButton
+│ │ ├── Actions ("Add Language" button - responsive text)
+│ │ ├── LocaleCard[] (repeatable)
+│ │ │ ├── CardContent
+│ │ │ │ ├── LanguageLabel (h3 heading)
+│ │ │ │ └── MetadataSection
+│ │ │ │ ├── LocaleCode (BCP-47 code with label)
+│ │ │ │ └── DefaultIndicator (star icon + "Default" text)
+│ │ │ └── CardActions (DropdownMenu)
+│ │ │ ├── EditMenuItem
+│ │ │ └── DeleteMenuItem (disabled for default)
+│ │ └── EmptyState (shared component from @/shared/components when no locales)
 ├── AddLocaleDialog (shadcn/ui Dialog)
 │ ├── DialogHeader ("Add Language")
 │ ├── LocaleForm
@@ -75,21 +73,21 @@ ProjectLocalesPage (Route Component)
 
 ### PageHeader
 
-- **Component description**: Header section with page title and business-focused description. Action button is moved to CardList component for better UX consistency.
-- **Main elements**: Typography for title (h1), descriptive paragraph with business value proposition.
-- **Handled interactions**: None (action button handled by CardList).
+- **Component description**: Shared header component from `@/shared/components` providing consistent page layouts with title and optional subheading or custom content. Used here with header "Languages" and subHeading with business-focused description.
+- **Main elements**: Heading (h1), optional subheading text or custom children content.
+- **Handled interactions**: None (presentational component).
 - **Handled validation**: None.
 - **Types**: None (presentational component)
-- **Props**: None
+- **Props**: header (string), subHeading (string | null), children (ReactNode, optional)
 
 ### CardList
 
-- **Component description**: Generic shared component for displaying lists of cards with optional action button. Used across multiple features for consistent UI.
-- **Main elements**: Action button (optional), card items container, empty state support.
-- **Handled interactions**: Action button click handling via content projection.
+- **Component description**: Generic shared component for displaying lists of cards with optional actions, search, and empty state support. Used across multiple features for consistent UI.
+- **Main elements**: Optional search input, optional actions (buttons/filters), card items container, empty state support, pagination controls.
+- **Handled interactions**: Action button click handling via content projection, search input handling, pagination navigation.
 - **Handled validation**: None.
-- **Types**: Generic component, accepts ReactNode for actionButton and children
-- **Props**: actionButton?: ReactNode, children: ReactNode, emptyState?: ReactNode, data-testid?: string
+- **Types**: Generic component, accepts ReactNode for actions, search, children, and emptyState
+- **Props**: actions?: ReactNode, search?: ReactNode, children: ReactNode, emptyState?: ReactNode, pagination?: { metadata, params, onPageChange }, data-testid?: string
 
 ### LocaleCard
 
@@ -331,8 +329,8 @@ The view uses TanStack Query for server state management and local React state f
    - Integrate useProjectLocales hook with useSuspenseQuery
    - Create LocaleCard component following ProjectCard/KeyCard pattern
    - Use CardList shared component for container
-   - Add actionButton to CardList with responsive text ("Add Language" / "Add")
-   - Implement empty state with consistent styling
+   - Add actions prop to CardList with responsive text ("Add Language" / "Add")
+   - Use shared EmptyState component from `@/shared/components` for empty state handling
    - Implement loading and error states via Suspense boundary
 
 3. **Add locale management dialogs**
