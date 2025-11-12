@@ -11,10 +11,19 @@ interface RouteParams {
 }
 
 /**
- * ExportPage - Main page component for project export view
+ * ExportPage
  *
- * Displays project information and provides functionality to export
- * all translations as a ZIP archive containing individual JSON files for each locale.
+ * Main route component for exporting translations of a specific project.
+ *
+ * - Validates the `projectId` route parameter as a UUID before initiating export logic.
+ * - If validation fails, renders a `ValidationError` with a back navigation button.
+ * - Delegates loading and export rendering to `ProjectExportContent`,
+ *   which surfaces project info and enables export as a ZIP archive
+ *   (one JSON file per locale).
+ * - Wraps content in an `ErrorBoundary` that resets on `projectId`
+ *   to gracefully handle rendering or export errors.
+ *
+ * @returns {JSX.Element} The export UI or validation error view.
  */
 export function ExportPage() {
   const { id } = useParams<keyof RouteParams>();

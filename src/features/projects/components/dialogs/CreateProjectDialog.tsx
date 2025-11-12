@@ -26,26 +26,32 @@ interface CreateProjectDialogProps {
 /**
  * CreateProjectDialog – Modal dialog for creating a new project.
  *
- * Renders a controlled form with comprehensive validation for the following fields:
- *   - Project name (required)
- *   - Description (optional)
- *   - Prefix (required, 2-4 chars, validates allowed charset)
- *   - Default locale (required, BCP-47 code; updates human label)
- *   - Locale label (required; may auto-update from locale selection)
+ * This component renders a fully controlled form for project creation,
+ * providing field-level validation, error handling, and post-submit behaviors.
  *
- * Behavior:
- * - Disables submit if mutation is in progress or form is invalid.
- * - Upon successful creation:
- *   - Invalidates project queries to ensure cache consistency.
- *   - Shows success toast notification.
- *   - Closes dialog and resets form state.
- *   - Navigates to the details view of the created project.
- * - On failure, displays a relevant error toast.
- * - Resets form fields when dialog is closed via user action.
+ * Fields:
+ * - Project name: required; free-form string
+ * - Description: optional; string
+ * - Prefix: required; 2-4 characters, accepts lowercase letters, digits, dots, underscores, hyphens, no trailing dot
+ * - Default locale: required; BCP-47 language code, updates the language label automatically
+ * - Locale label: required; human-readable language name, auto-populated when selecting a locale
+ *
+ * Main Features:
+ * - Disables submit button when a create operation is pending or the form is invalid.
+ * - On successful creation:
+ *   - Invalidates all cached project queries for data consistency.
+ *   - Displays a success toast notification.
+ *   - Resets form state and closes the dialog.
+ *   - Navigates the user to the newly created project’s detail page.
+ * - On error, displays a toast describing the failure.
+ * - Resets all form fields when the dialog is closed, ensuring a fresh state for next open.
  *
  * @param {Object} props - Component props
- * @param {boolean} props.open - Whether the dialog is visible/open
- * @param {(open: boolean) => void} props.onOpenChange - Callback triggered when dialog open state changes
+ * @param {boolean} props.open - Whether the dialog is currently open/visible.
+ * @param {(open: boolean) => void} props.onOpenChange - Called when the dialog open state changes.
+ *   Passing `false` closes the dialog and resets the form; passing `true` opens the dialog.
+ *
+ * @returns {JSX.Element} The modal dialog containing the project creation form.
  */
 export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogProps) {
   const navigate = useNavigate();

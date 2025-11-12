@@ -32,27 +32,22 @@ export function useUpdateProject(projectId: string) {
       const id = UUID_SCHEMA.parse(projectId);
       const body = UPDATE_PROJECT_SCHEMA.parse(payload);
 
-      // Update the project
       const { error: updateError } = await supabase.from('projects').update(body).eq('id', id);
 
-      // handle database errors
       if (updateError) {
         throw createDatabaseErrorResponse(updateError, 'useUpdateProject', 'Failed to update project');
       }
 
-      // Fetch the updated project with counts
       const { data, error } = await supabase.rpc('get_project_with_counts', { p_project_id: id }).maybeSingle();
 
       if (error) {
         throw createDatabaseErrorResponse(error, 'useUpdateProject', 'Failed to fetch updated project');
       }
 
-      // handle missing data (project not found or access denied)
       if (!data) {
         throw createApiErrorResponse(404, PROJECTS_ERROR_MESSAGES.PROJECT_NOT_FOUND);
       }
 
-      // runtime validation of response data
       return PROJECT_RESPONSE_SCHEMA.parse(data);
     },
   });

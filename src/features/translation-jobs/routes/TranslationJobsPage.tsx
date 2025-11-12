@@ -11,11 +11,17 @@ interface RouteParams {
 }
 
 /**
- * TranslationJobsPage - Main page component for translation jobs view
+ * TranslationJobsPage
  *
- * Displays paginated list of translation jobs with real-time status updates,
- * progress indicators, and job management capabilities (cancel running jobs).
- * Supports monitoring active translation processes initiated from other parts of the application.
+ * Main route component for managing translation jobs within a project.
+ *
+ * - Validates the `projectId` route parameter as a UUID before rendering content.
+ * - Displays a paginated list of translation jobs with real-time status updates.
+ * - Provides progress indicators and allows users to cancel running jobs.
+ * - Enables monitoring and management of translation processes initiated in other areas of the application.
+ * - Handles invalid or missing project IDs gracefully using `ValidationError` fallback.
+ *
+ * @returns {JSX.Element} Renders translation job management UI or validation error state.
  */
 export function TranslationJobsPage() {
   const { id } = useParams<keyof RouteParams>();

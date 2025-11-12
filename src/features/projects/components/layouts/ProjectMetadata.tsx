@@ -9,22 +9,24 @@ interface ProjectMetadataProps {
 }
 
 /**
- * ProjectMetadata - Displays immutable metadata and stats for a project
+ * ProjectMetadata
  *
- * Renders a horizontal property table summarizing core project attributes:
- * - Prefix: unique immutable string used to generate translation keys (shown with tooltip)
- * - Default Locale: source language for translations, immutable (shown with tooltip)
- * - Languages: number of locales assigned to this project
- * - Keys: number of translation keys in the project
- * - Created: project creation date (short format, full timestamp on hover)
- * - Last Updated: last update timestamp (short format, full timestamp on hover)
+ * Displays a horizontal summary table of immutable project metadata and statistics.
+ * All read-only fields are visually grouped. Tooltips are provided on immutable
+ * properties for discoverability.
  *
- * Informational tooltips are displayed for fields that cannot be edited.
+ * Fields rendered:
+ * - Prefix: unique, immutable project string used as a translation key namespace (tooltip with explanation)
+ * - Default Locale: project's source language, immutable after creation (tooltip with explanation)
+ * - Languages: total number of locales associated with this project
+ * - Keys: total number of translation keys in the project
+ * - Created: creation date (formatted; full timestamp shown in tooltip)
+ * - Last Updated: timestamp of latest change (formatted; full timestamp shown in tooltip)
  *
- * @param {ProjectMetadataProps} props
- * @param {ProjectResponse} props.project - Project object containing metadata to display
+ * @param {Object} props
+ * @param {ProjectResponse} props.project - The project whose metadata will be displayed.
  *
- * @returns {JSX.Element} Metadata summary card for the project
+ * @returns {JSX.Element} Card summary of key project metadata and stats.
  */
 export function ProjectMetadata({ project }: ProjectMetadataProps) {
   return (

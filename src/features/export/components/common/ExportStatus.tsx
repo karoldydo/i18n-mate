@@ -14,10 +14,23 @@ interface ExportStatusProps {
 }
 
 /**
- * ExportStatus - Shows export progress, success confirmation, or error messages with appropriate styling
+ * ExportStatus
  *
- * Displays different states of the export process with icons and user-friendly messages.
- * Provides retry option for failed exports.
+ * Displays the current status of the export process with appropriate visuals and
+ * messages for the user, including:
+ * - "exporting": Shows an info alert indicating export is in progress.
+ * - "success": Shows a success alert confirming the export completed, instructing
+ *   the user that a download should have started.
+ * - "error": Shows a destructive (error) alert with the error message and an
+ *   optional retry action if provided.
+ * - "idle": Renders nothing while no export is in progress.
+ *
+ * @param {Object} props - Component properties.
+ * @param {ApiErrorResponse|null} props.error - The API error to display if export fails, or null otherwise.
+ * @param {() => void} [props.onRetry] - Optional callback to retry the export in case of error.
+ * @param {'idle'|'exporting'|'success'|'error'} props.status - The current status of the export operation.
+ *
+ * @returns {JSX.Element|null} Status alert or null.
  */
 export function ExportStatus({ error, onRetry, status }: ExportStatusProps) {
   if (status === 'idle') {

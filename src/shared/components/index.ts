@@ -7,5 +7,6 @@ export * from './ErrorBoundary';
 export * from './InlineLoading';
 export * from './Loading';
 export * from './LocaleSelector';
+export * from './PageHeader';
 export * from './TranslationStatus';
 export * from './ValidationError';

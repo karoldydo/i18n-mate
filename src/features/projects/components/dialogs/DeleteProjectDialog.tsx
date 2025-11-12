@@ -25,23 +25,25 @@ interface DeleteProjectDialogProps {
 }
 
 /**
- * DeleteProjectDialog – Modal dialog for confirming irreversible project deletion.
+ * DeleteProjectDialog – Confirmation modal for permanently deleting a project.
  *
- * Presents a confirmation dialog to the user before performing permanent deletion
- * of the specified project and all its related data (languages, keys, translations, metadata).
- * Lists summary statistics for the project, and displays appropriate warnings
- * about the destructive nature of the action.
+ * Renders an irreversible deletion dialog for the specified project, warning the user
+ * of all associated data loss. Presents a summary of what will be deleted, including language,
+ * translation keys, and project metadata counts. Disables dialog actions while deletion is in progress.
  *
- * On confirmation, attempts deletion via mutation hook, then:
- *   - On success: notifies the user, navigates to the projects list, and closes the dialog.
- *   - On error: displays the error message as a toast notification.
+ * Handles deletion as follows:
+ * - On confirmation, calls the project deletion mutation.
+ *   - On success: invalidates project list queries, shows success toast, navigates to the project list,
+ *     and closes the dialog.
+ *   - On failure: displays the error message in a toast.
  *
- * Disables actions while the deletion is in progress.
+ * @param {Object} props - The properties object.
+ * @param {boolean} props.open - Whether the dialog is open and visible.
+ * @param {(open: boolean) => void} props.onOpenChange - Callback to control dialog open state.
+ *   When set to false, closes the dialog.
+ * @param {ProjectResponse} props.project - The project to delete. Must contain name, locale_count, and key_count.
  *
- * @param {Object} props - Component props
- * @param {boolean} props.open - Whether the dialog is visible
- * @param {function(boolean): void} props.onOpenChange - Callback triggered when dialog open state changes
- * @param {ProjectResponse} props.project - The project object being deleted (includes name, counts)
+ * @returns {JSX.Element} Modal dialog for deleting a project.
  */
 export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProjectDialogProps) {
   const queryClient = useQueryClient();

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { PaginationParams, TranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { BackButton, CardList } from '@/shared/components';
+import { BackButton, CardList, PageHeader } from '@/shared/components';
 import { isActiveJob } from '@/shared/types';
 import { Button } from '@/shared/ui/button';
 
@@ -289,32 +289,11 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
   return (
     <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
-        {/* Back Button */}
         <BackButton ariaLabel="Back to project" buttonLabel="Back to project" to={`/projects/${projectId}`} />
-
-        {/* Page Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">Translation jobs</h1>
-              {hasActiveJob && isJobRunning && (
-                <span className="bg-primary/10 text-primary flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium">
-                  <span className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
-                  Active Job
-                </span>
-              )}
-            </div>
-            <p className="text-muted-foreground">Monitor and manage LLM-powered translation jobs for this project.</p>
-          </div>
-        </div>
-
-        {hasActiveJob && activeJob && (
-          <div aria-atomic="true" aria-live="polite" className="sr-only">
-            Translation job in progress: {activeJob.completed_keys ?? 0} of {activeJob.total_keys ?? 0} keys translated
-            for {activeJob.target_locale}
-          </div>
-        )}
-
+        <PageHeader
+          header="Translation jobs"
+          subHeading="Monitor and manage LLM-powered translation jobs for this project."
+        />
         <CardList
           actions={
             <div className="flex gap-2">

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 
 import type { LocaleItem } from '@/shared/types';
 
-import { BackButton, CardList } from '@/shared/components';
+import { BackButton, CardList, PageHeader } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { useProjectLocales } from '../../api/useProjectLocales';
@@ -64,55 +64,45 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
       <div className="animate-in fade-in container duration-500">
         <div className="space-y-6">
           <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
-          <header>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Languages</h1>
-              <p className="text-muted-foreground mt-1" id="page-description">
-                Expand your project to new markets by adding languages. Manage your multilingual content, track
-                translation coverage, and ensure consistent localization across all supported locales.
-              </p>
-            </div>
-          </header>
-          <main aria-describedby="page-description" role="main">
-            {hasLocales ? (
-              <CardList
-                actions={
-                  <Button aria-label="Add new language" data-testid="add-language-button" onClick={handleAddDialogOpen}>
-                    <Plus />
-                    <span className="hidden sm:inline">Add language</span>
-                    <span className="sm:hidden">Add</span>
-                  </Button>
-                }
-                data-testid="locales-list"
-              >
-                {locales.map((locale) => (
-                  <LocaleCard
-                    key={locale.id}
-                    locale={locale}
-                    onDelete={handleDelete}
-                    onEdit={handleEdit}
-                    onNavigate={handleRowClick}
-                  />
-                ))}
-              </CardList>
-            ) : (
-              <div
-                className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12"
-                data-testid="locales-list-empty"
-              >
-                <p className="text-muted-foreground mb-4">
-                  No languages found. Add your first language to get started.
-                </p>
-                <Button data-testid="add-language-button-empty" onClick={handleAddDialogOpen}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Language
+          <PageHeader
+            header="Languages"
+            subHeading="Expand your project to new markets by adding languages. Manage your multilingual content, track translation coverage, and ensure consistent localization across all supported locales."
+          />
+          {hasLocales ? (
+            <CardList
+              actions={
+                <Button aria-label="Add new language" data-testid="add-language-button" onClick={handleAddDialogOpen}>
+                  <Plus />
+                  <span className="hidden sm:inline">Add language</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
-              </div>
-            )}
-          </main>
+              }
+              data-testid="locales-list"
+            >
+              {locales.map((locale) => (
+                <LocaleCard
+                  key={locale.id}
+                  locale={locale}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onNavigate={handleRowClick}
+                />
+              ))}
+            </CardList>
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12"
+              data-testid="locales-list-empty"
+            >
+              <p className="text-muted-foreground mb-4">No languages found. Add your first language to get started.</p>
+              <Button data-testid="add-language-button-empty" onClick={handleAddDialogOpen}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Language
+              </Button>
+            </div>
+          )}
         </div>
       </div>
-
       <AddLocaleDialog onOpenChange={setAddDialogOpen} open={addDialogOpen} projectId={projectId} />
       <EditLocaleDialog locale={selectedLocale} onOpenChange={setEditDialogOpen} open={editDialogOpen} />
       <DeleteLocaleDialog locale={selectedLocale} onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen} />

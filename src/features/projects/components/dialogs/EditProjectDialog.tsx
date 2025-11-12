@@ -24,19 +24,30 @@ interface EditProjectDialogProps {
 /**
  * EditProjectDialog – Modal dialog for editing an existing project.
  *
- * Displays a form for updating project name and description,
- * with validation using react-hook-form and zod.
+ * Provides a controlled form for updating a project's name and description,
+ * leveraging react-hook-form for form state management and Zod for schema validation.
+ * Project prefix and default locale are immutable and cannot be changed here.
  *
- * Prefix and default locale fields are immutable after creation and
- * are not editable here.
+ * Features:
+ * - Pre-populates form fields with the current project's data each time the dialog opens.
+ * - Validates inputs in real time, disabling the submit button until valid and not pending.
+ * - On submit:
+ *    - Calls the update mutation for the project.
+ *    - In case of success:
+ *        - Invalidates the project list query to ensure up-to-date data.
+ *        - Shows a success toast.
+ *        - Closes the dialog.
+ *    - In case of error:
+ *        - Displays a toast notification with an error message.
+ * - Form resets when the modal closes and the update is not pending.
+ * - Cancel button is disabled during pending mutations for safety.
  *
- * On successful update, the dialog closes and the projects list is invalidated.
- * Shows toast notifications for success or error cases.
+ * @param {Object} props - Props object
+ * @param {boolean} props.open - Controls whether the dialog is displayed
+ * @param {(open: boolean) => void} props.onOpenChange - Callback invoked when the dialog open state changes
+ * @param {ProjectResponse} props.project - The project object currently being edited
  *
- * @param {Object} props - Component props
- * @param {boolean} props.open - Whether the dialog is open
- * @param {function(boolean):void} props.onOpenChange - Callback for dialog open state changes
- * @param {ProjectResponse} props.project - Project object being edited
+ * @returns {JSX.Element} Modal dialog for editing a project's basic info
  */
 export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDialogProps) {
   const queryClient = useQueryClient();

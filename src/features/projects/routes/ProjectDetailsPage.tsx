@@ -11,19 +11,14 @@ interface RouteParams {
 }
 
 /**
- * ProjectDetailsPage – Main route/page component for displaying a project's details.
+ * Displays the details view for a single project, validating the route ID.
  *
- * Handles the following functionality:
- * - Validates the project ID from the route parameter; displays an error if invalid.
- * - Renders the full project details using the <ProjectDetailsContent> component.
- * - Wraps the content in an <ErrorBoundary> to catch and display errors gracefully.
- * - Provides navigation back to the project list on invalid ID or user action.
+ * - Extracts and validates the project ID from the route parameters using the project's UUID schema.
+ * - On invalid ID, renders a friendly <ValidationError> with navigation back to the projects list.
+ * - On valid ID, renders the <ProjectDetailsContent> within an <ErrorBoundary> to gracefully handle loading and runtime errors.
+ * - Error boundary is reset if the project ID changes, ensuring clean error state per project.
  *
- * @returns {JSX.Element} Project details view or error message for invalid project ID.
- *
- * @example
- * // Usage in a React Router route:
- * <Route path="/projects/:id" element={<ProjectDetailsPage />} />
+ * @returns {JSX.Element} Detailed view for the selected project, or an error message if the project ID is invalid.
  */
 export function ProjectDetailsPage() {
   const { id } = useParams<keyof RouteParams>();

@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import type { PaginationParams } from '@/shared/types';
 
-import { BackButton, CardList } from '@/shared/components';
+import { BackButton, CardList, PageHeader } from '@/shared/components';
 
 import { useProject } from '../../../projects/api/useProject';
 import { useUpdateTranslation } from '../../../translations/api/useUpdateTranslation';
@@ -127,19 +127,14 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
   return (
     <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
-        <div>
-          <BackButton
-            ariaLabel="Back to keys list"
-            buttonLabel="Back to locales"
-            to={`/projects/${projectId}/locales`}
-          />
-        </div>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Translation Keys - {locale}</h1>
-            {project.name && <p className="text-muted-foreground mt-1 text-sm">{project.name}</p>}
-          </div>
-        </div>
+        <BackButton ariaLabel="Back to keys list" buttonLabel="Back to locales" to={`/projects/${projectId}/locales`} />
+        <PageHeader header={`Translations - ${locale.toUpperCase()}`}>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Review and manage all translation keys for the <span className="font-medium">{locale}</span> locale. Edit
+            values, track missing translations, and ensure consistency across the{' '}
+            <span className="font-medium">{project.name}</span> project.
+          </p>
+        </PageHeader>
         <CardList
           emptyState={!hasKeys ? emptyState : undefined}
           filterToggle={

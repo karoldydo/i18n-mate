@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import type { KeyDefaultViewItem, PaginationParams } from '@/shared/types';
 
-import { BackButton, CardList } from '@/shared/components';
+import { BackButton, CardList, PageHeader } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { useProject } from '../../../projects/api/useProject';
@@ -17,7 +17,6 @@ import { MissingFilterToggle } from '../common/MissingFilterToggle';
 import { SearchInput } from '../common/SearchInput';
 import { AddKeyDialog } from '../dialogs/AddKeyDialog';
 import { DeleteKeyDialog } from '../dialogs/DeleteKeyDialog';
-import { PageHeader } from '../layouts/PageHeader';
 
 interface KeysListContentProps {
   projectId: string;
@@ -63,7 +62,7 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
   const { data: project } = useProject(projectId);
 
   // fetch keys data
-  const { data: keysData } = useKeysDefaultView({
+  const { data: keys } = useKeysDefaultView({
     limit: pageSize,
     missing_only: missingOnly,
     offset: (page - 1) * pageSize,
@@ -130,12 +129,12 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
     setAddKeyDialogOpen(true);
   }, []);
 
-  if (!project || !keysData) {
+  if (!project || !keys) {
     return null;
   }
 
   // FIXME:
-  const hasKeys = Boolean(keysData.data.length);
+  const hasKeys = Boolean(keys.data.length);
   const emptyState = (
     <div className="border-border rounded-lg border p-12 text-center">
       <p className="text-muted-foreground text-lg">No translation keys found</p>
@@ -147,14 +146,14 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
     <>
       <div className="animate-in fade-in container duration-500">
         <div className="space-y-6">
-          <div>
-            <BackButton
-              ariaLabel="Back to project details"
-              buttonLabel="Back to project"
-              to={`/projects/${projectId}`}
-            />
-          </div>
-          <PageHeader projectName={project.name} />
+          <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
+          <PageHeader header="Translation keys">
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Create and manage translation keys for the <span className="font-medium">{project.name}</span> project.
+              Organize your localization workflow, track translation status, and maintain consistency across all
+              languages.
+            </p>
+          </PageHeader>
           <CardList
             actions={
               <Button data-testid="add-key-button" onClick={handleAddKeyClick}>
@@ -174,7 +173,7 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
             pagination={
               hasKeys
                 ? {
-                    metadata: keysData.metadata,
+                    metadata: keys.metadata,
                     onPageChange: handlePageChange,
                     params: paginationParams,
                   }
@@ -182,7 +181,7 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
             }
             searchInput={<SearchInput onChange={setSearchValue} placeholder="Search" value={searchValue} />}
           >
-            {keysData.data.map((key) => (
+            {keys.data.map((key) => (
               <KeyCard
                 editError={editingKeyId === key.id ? (editError ?? undefined) : undefined}
                 isEditing={editingKeyId === key.id}

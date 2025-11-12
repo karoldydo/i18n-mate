@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 import type { ProjectResponse } from '@/shared/types';
 
-import { ErrorBoundary } from '@/shared/components';
+import { ErrorBoundary, PageHeader } from '@/shared/components';
 
 import { CreateProjectDialog } from '../components/dialogs/CreateProjectDialog';
 import { DeleteProjectDialog } from '../components/dialogs/DeleteProjectDialog';
@@ -47,27 +47,24 @@ export function ProjectListPage() {
 
   return (
     <div className="animate-in fade-in container h-full duration-500" data-testid="project-list-page">
-      <div className="mb-6 flex items-center justify-between sm:mb-8">
-        <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Projects</h1>
-          <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Organize and oversee all your translation projects in one place!
-            </p>
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Start new projects, update project information, or remove projects you no longer need. Get a clear
-              overview of your translation work with easy access to project details and progress tracking.
-            </p>
-          </div>
-        </div>
+      <div className="space-y-6">
+        <PageHeader header="Projects">
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Organize and oversee all your translation projects in one place!
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Start new projects, update project information, or remove projects you no longer need. Get a clear overview
+            of your translation work with easy access to project details and progress tracking.
+          </p>
+        </PageHeader>
+        <ErrorBoundary>
+          <ProjectList
+            onCreateClick={handleCreateClick}
+            onDeleteClick={handleDeleteClick}
+            onEditClick={handleEditClick}
+          />
+        </ErrorBoundary>
       </div>
-      <ErrorBoundary>
-        <ProjectList
-          onCreateClick={handleCreateClick}
-          onDeleteClick={handleDeleteClick}
-          onEditClick={handleEditClick}
-        />
-      </ErrorBoundary>
       <CreateProjectDialog onOpenChange={setIsCreateDialogOpen} open={isCreateDialogOpen} />
       {project && <EditProjectDialog onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen} project={project} />}
       {project && (

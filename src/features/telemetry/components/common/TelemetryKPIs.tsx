@@ -26,7 +26,7 @@ export function TelemetryKPIs({ projectCreatedAt, telemetryEvents }: TelemetryKP
   const kpi = useTelemetryKPIs(telemetryEvents, projectCreatedAt);
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-3">
       <KPICard
         description="Time project had multiple languages"
         title="Multi-language Usage"

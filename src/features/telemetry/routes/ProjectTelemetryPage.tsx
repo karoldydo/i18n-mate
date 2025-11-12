@@ -11,11 +11,19 @@ interface RouteParams {
 }
 
 /**
- * ProjectTelemetryPage - Route component for project telemetry view
+ * ProjectTelemetryPage
  *
- * Displays telemetry data for a specific project. Handles invalid route params
- * before rendering the main telemetry content. Loading states are managed by
- * TanStack Query within the content component.
+ * Main route component for displaying telemetry data for a specific project.
+ *
+ * - Validates the `projectId` route parameter as a UUID via `UUID_SCHEMA`
+ *   before rendering project telemetry content.
+ * - Renders a `ValidationError` fallback with navigation if the ID is invalid.
+ * - Delegates data loading and error handling to the content component,
+ *   which leverages TanStack Query for asynchronous state management.
+ * - Wraps main content in an `ErrorBoundary`, resetting on `projectId` change
+ *   to catch and handle unexpected rendering or data-fetching failures gracefully.
+ *
+ * @returns {JSX.Element} The telemetry view UI or validation error state.
  */
 export function ProjectTelemetryPage() {
   const { id } = useParams<keyof RouteParams>();

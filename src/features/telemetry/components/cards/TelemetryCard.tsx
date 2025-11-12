@@ -38,10 +38,10 @@ export function TelemetryCard({ event }: TelemetryCardProps) {
 
   return (
     <CardItem data-testid={`telemetry-event-${event.id}`}>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* left side: badge + timestamp */}
-        <div className="flex items-center gap-3">
-          <span className="text-muted-foreground text-sm" data-testid={`telemetry-timestamp-${event.id}`}>
+        <div className="flex items-center justify-between sm:justify-start sm:gap-3">
+          <span className="text-muted-foreground text-xs sm:text-sm" data-testid={`telemetry-timestamp-${event.id}`}>
             {formattedRelativeTimestamp}
           </span>
           <Badge variant={eventTypeVariant}>{eventTypeLabel}</Badge>
@@ -49,7 +49,10 @@ export function TelemetryCard({ event }: TelemetryCardProps) {
 
         {/* right side: json properties */}
         {formattedJson && (
-          <code className="bg-muted rounded px-2 py-1 text-xs" data-testid={`telemetry-properties-${event.id}`}>
+          <code
+            className="bg-muted max-w-full rounded px-2 py-1 text-[10px] whitespace-break-spaces sm:overflow-x-auto sm:text-xs sm:whitespace-normal"
+            data-testid={`telemetry-properties-${event.id}`}
+          >
             {formattedJson}
           </code>
         )}

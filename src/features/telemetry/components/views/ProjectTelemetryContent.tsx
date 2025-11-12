@@ -4,7 +4,7 @@ import type { PaginationParams } from '@/shared/types';
 
 import { useProject } from '@/features/projects/api/useProject';
 import { useTelemetryEvents } from '@/features/telemetry/api/useTelemetryEvents';
-import { BackButton, CardList } from '@/shared/components';
+import { BackButton, CardList, PageHeader } from '@/shared/components';
 
 import { useTelemetryPageState } from '../../hooks/useTelemetryPageState';
 import { TelemetryCard } from '../cards/TelemetryCard';
@@ -47,7 +47,7 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
 
   const { data: telemetryData } = useTelemetryEvents(projectId, telemetryEventsParams);
 
-  // Convert page-based pagination to offset-based for CardList
+  // convert page-based pagination to offset-based for CardList
   const paginationParams = useMemo<PaginationParams>(
     () => ({
       limit: pageState.limit,
@@ -72,46 +72,36 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
   return (
     <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
-        <div>
-          <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Project Telemetry</h1>
-            <p className="text-muted-foreground">View usage statistics and analytics for {project.name}</p>
-          </div>
-        </div>
-
+        <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
+        <PageHeader
+          header="Analytics & Insights"
+          subHeading={`Monitor usage patterns, track activity, and analyze translation performance for ${project.name}`}
+        />
         <TelemetryKPIs projectCreatedAt={project.created_at} telemetryEvents={telemetryData.data} />
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Telemetry Events</h3>
-          <CardList
-            data-testid="telemetry-events-list"
-            emptyState={
-              <div className="border-border rounded-lg border p-12 text-center">
-                <p className="text-muted-foreground text-lg">No telemetry events found</p>
-                <p className="text-muted-foreground mt-2 text-sm">
-                  Events will appear here as your project is used for translations
-                </p>
-              </div>
-            }
-            pagination={
-              telemetryData.data.length > 0
-                ? {
-                    metadata: telemetryData.metadata,
-                    onPageChange: handlePageChange,
-                    params: paginationParams,
-                  }
-                : undefined
-            }
-          >
-            {telemetryData.data.map((event) => (
-              <TelemetryCard event={event} key={event.id} />
-            ))}
-          </CardList>
-        </div>
+        <CardList
+          data-testid="telemetry-events-list"
+          emptyState={
+            <div className="border-border rounded-lg border p-12 text-center">
+              <p className="text-muted-foreground text-lg">No telemetry events found</p>
+              <p className="text-muted-foreground mt-2 text-sm">
+                Events will appear here as your project is used for translations
+              </p>
+            </div>
+          }
+          pagination={
+            telemetryData.data.length > 0
+              ? {
+                  metadata: telemetryData.metadata,
+                  onPageChange: handlePageChange,
+                  params: paginationParams,
+                }
+              : undefined
+          }
+        >
+          {telemetryData.data.map((event) => (
+            <TelemetryCard event={event} key={event.id} />
+          ))}
+        </CardList>
       </div>
     </div>
   );
