@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import type { LocaleItem } from '@/shared/types';
@@ -18,10 +18,19 @@ interface ProjectLocalesContentProps {
 }
 
 /**
- * ProjectLocalesContent - Content component for project locales view
+ * ProjectLocalesContent – Displays and manages all locales for a given project.
  *
- * Fetches and displays project locales with management actions.
- * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
+ * Fetches the list of locales for the specified project and renders management actions
+ * including adding, editing, and deleting locales. Presents each locale as a card with
+ * inline actions and navigates to the translation keys view for the selected locale.
+ *
+ * This component leverages Suspense boundaries via useSuspenseQuery (from useProjectLocales)
+ * for automatic loading state handling.
+ *
+ * @param {ProjectLocalesContentProps} props - The component props
+ * @param {string} props.projectId - ID of the project whose locales are being managed
+ *
+ * @returns {JSX.Element | null} The rendered locales management UI, or null if data is loading
  */
 export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps) {
   const navigate = useNavigate();
@@ -53,8 +62,6 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
     setAddDialogOpen(true);
   }, []);
 
-  const hasLocales = useMemo(() => Boolean(locales && locales.length > 0), [locales]);
-
   if (!locales) {
     return null;
   }
@@ -68,39 +75,26 @@ export function ProjectLocalesContent({ projectId }: ProjectLocalesContentProps)
             header="Languages"
             subHeading="Expand your project to new markets by adding languages. Manage your multilingual content, track translation coverage, and ensure consistent localization across all supported locales."
           />
-          {hasLocales ? (
-            <CardList
-              actions={
-                <Button aria-label="Add new language" data-testid="add-language-button" onClick={handleAddDialogOpen}>
-                  <Plus />
-                  <span className="hidden sm:inline">Add language</span>
-                  <span className="sm:hidden">Add</span>
-                </Button>
-              }
-              data-testid="locales-list"
-            >
-              {locales.map((locale) => (
-                <LocaleCard
-                  key={locale.id}
-                  locale={locale}
-                  onDelete={handleDelete}
-                  onEdit={handleEdit}
-                  onNavigate={handleRowClick}
-                />
-              ))}
-            </CardList>
-          ) : (
-            <div
-              className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12"
-              data-testid="locales-list-empty"
-            >
-              <p className="text-muted-foreground mb-4">No languages found. Add your first language to get started.</p>
-              <Button data-testid="add-language-button-empty" onClick={handleAddDialogOpen}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Language
+          <CardList
+            actions={
+              <Button aria-label="Add new language" data-testid="add-language-button" onClick={handleAddDialogOpen}>
+                <Plus />
+                <span className="hidden sm:inline">Add language</span>
+                <span className="sm:hidden">Add</span>
               </Button>
-            </div>
-          )}
+            }
+            data-testid="locales-list"
+          >
+            {locales.map((locale) => (
+              <LocaleCard
+                key={locale.id}
+                locale={locale}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+                onNavigate={handleRowClick}
+              />
+            ))}
+          </CardList>
         </div>
       </div>
       <AddLocaleDialog onOpenChange={setAddDialogOpen} open={addDialogOpen} projectId={projectId} />

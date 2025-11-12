@@ -21,10 +21,28 @@ interface EditLocaleDialogProps {
 }
 
 /**
- * EditLocaleDialog - Modal dialog for editing locale labels
+ * EditLocaleDialog – Modal dialog for editing an existing locale's label
  *
- * Provides form with validation for updating locale labels only.
- * Locale code is immutable after creation.
+ * Renders a controlled form that allows editing only the human-readable label
+ * for a project locale. The locale code itself is immutable after creation and
+ * cannot be edited here.
+ *
+ * Upon submission:
+ *   - Validates the new label using zod and react-hook-form.
+ *   - Submits an update via mutation hook.
+ *   - On success: Invalidates the project locales query, shows a success toast,
+ *     and closes the dialog.
+ *   - On error: Displays an error toast to the user.
+ *
+ * When the dialog is opened or the `locale` prop changes, resets the form to
+ * reflect the current locale's label.
+ *
+ * @param {object} props - Dialog control and state props
+ * @param {LocaleItem | null} props.locale - The locale object to be edited; if null, dialog is hidden
+ * @param {boolean} props.open - Whether the dialog is open
+ * @param {(open: boolean) => void} props.onOpenChange - Callback to change dialog open state
+ *
+ * @returns {JSX.Element | null} The dialog form if a locale is provided, otherwise null
  */
 export function EditLocaleDialog({ locale, onOpenChange, open }: EditLocaleDialogProps) {
   const queryClient = useQueryClient();

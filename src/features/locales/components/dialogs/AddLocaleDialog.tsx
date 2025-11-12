@@ -18,16 +18,30 @@ import { useCreateProjectLocale } from '../../api/useCreateProjectLocale';
 
 interface AddLocaleDialogProps {
   onOpenChange: (open: boolean) => void;
-
   open: boolean;
   projectId: string;
 }
 
 /**
- * AddLocaleDialog - Modal dialog for adding new locales to a project
+ * AddLocaleDialog – Modal dialog for adding a new locale to a project
  *
- * Provides form with BCP-47 validation for locale code and label length validation.
- * Uses LocaleSelector dropdown for common primary language subtags.
+ * Renders a controlled form for adding a new language/locale to the specified project.
+ * Form fields include:
+ *   - BCP-47 locale code (with validation and a selector for common languages)
+ *   - Human-readable language label (with length validation)
+ *
+ * Handles submission via react-hook-form and zod validation schema.
+ * On successful creation:
+ *   - Invalidates the project locales query cache
+ *   - Provides user feedback via toast messages
+ *   - Resets the form and closes the dialog
+ *
+ * @param {object} props - Dialog props
+ * @param {(open: boolean) => void} props.onOpenChange - Callback to control dialog open state
+ * @param {boolean} props.open - Whether the dialog is open
+ * @param {string} props.projectId - Project identifier for which to add the locale
+ *
+ * @returns {JSX.Element} The dialog and new locale form UI
  */
 export function AddLocaleDialog({ onOpenChange, open, projectId }: AddLocaleDialogProps) {
   const queryClient = useQueryClient();

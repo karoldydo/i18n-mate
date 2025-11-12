@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 
 import type { PaginationParams, ProjectResponse } from '@/shared/types';
 
-import { CardList } from '@/shared/components';
+import { CardList, EmptyState } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { useProjects } from '../../api/useProjects';
@@ -61,25 +61,9 @@ export function ProjectList({ onCreateClick, onDeleteClick, onEditClick }: Proje
   }, []);
 
   const projects = useMemo(() => data.data ?? [], [data]);
-  const hasProjects = useMemo(() => Boolean(projects.length), [projects]);
 
   if (!data) {
     return null;
-  }
-
-  if (!hasProjects) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12"
-        data-testid="project-list-empty"
-      >
-        <p className="text-muted-foreground mb-4">No projects found. Create your first project to get started.</p>
-        <Button data-testid="create-project-button-empty" onClick={onCreateClick}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Project
-        </Button>
-      </div>
-    );
   }
 
   return (
@@ -92,6 +76,12 @@ export function ProjectList({ onCreateClick, onDeleteClick, onEditClick }: Proje
         </Button>
       }
       data-testid="project-list-table"
+      emptyState={
+        <EmptyState
+          description="Create your first project to centralize translation management, organize multilingual content, and streamline your localization process across multiple languages."
+          header="No projects yet"
+        />
+      }
       pagination={{
         metadata: data.metadata,
         onPageChange: handlePageChange,

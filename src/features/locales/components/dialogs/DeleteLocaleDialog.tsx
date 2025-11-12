@@ -24,10 +24,22 @@ interface DeleteLocaleDialogProps {
 }
 
 /**
- * DeleteLocaleDialog - Confirmation dialog for irreversible locale deletion
+ * DeleteLocaleDialog – Modal dialog to confirm and execute the deletion of a locale
  *
- * Displays locale code and warning about cascading deletion of all translations.
- * Default locale cannot be deleted (should be prevented at UI level).
+ * Presents a strong warning and details about the consequences:
+ *   - Displays the language name and locale code being deleted
+ *   - Informs the user that deleting a locale will permanently remove all translations for that locale
+ *   - Irreversible action requiring explicit user confirmation
+ *
+ * Intended to be triggered from the project locales management view.
+ * Deletion of the default locale must be prevented elsewhere in the UI.
+ *
+ * @param {DeleteLocaleDialogProps} props - Dialog control props
+ * @param {LocaleItem | null} props.locale - The target locale for deletion, or null to remain hidden
+ * @param {boolean} props.open - Whether the dialog is open
+ * @param {(open: boolean) => void} props.onOpenChange - Callback to open/close the dialog
+ *
+ * @returns {JSX.Element | null} Confirmation dialog UI if locale is set, otherwise null
  */
 export function DeleteLocaleDialog({ locale, onOpenChange, open }: DeleteLocaleDialogProps) {
   const queryClient = useQueryClient();
