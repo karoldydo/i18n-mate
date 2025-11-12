@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2 } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 
 import type { PaginationParams } from '@/shared/types';
 
-import { BackButton, CardList, PageHeader } from '@/shared/components';
+import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/components';
 
 import { useProject } from '../../../projects/api/useProject';
 import { useUpdateTranslation } from '../../../translations/api/useUpdateTranslation';
@@ -68,7 +69,7 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
   const { data: project } = useProject(projectId);
 
   // fetch keys data for the selected language
-  const { data: keysData } = useKeysPerLanguageView({
+  const { data: keys } = useKeysPerLanguageView({
     limit: pageSize,
     locale: locale,
     missing_only: missingOnly,
@@ -112,17 +113,28 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
     [queryClient, setError, setSavingState, updateTranslationMutation, locale, projectId]
   );
 
-  if (!project || !keysData) {
+  const hasKeys = useMemo(() => Boolean(keys?.data.length), [keys?.data]);
+
+  const emptyState = useMemo(
+    () =>
+      missingOnly ? (
+        <EmptyState
+          description="All translation keys have been translated. Your project is fully localized."
+          header="All translations complete"
+          icon={<CheckCircle2 />}
+        />
+      ) : (
+        <EmptyState
+          description="Create your first translation key to start managing multilingual content for this project."
+          header="No translation keys yet"
+        />
+      ),
+    [missingOnly]
+  );
+
+  if (!project || !keys) {
     return null;
   }
-
-  const hasKeys = Boolean(keysData.data.length);
-  const emptyState = (
-    <div className="border-border rounded-lg border p-12 text-center">
-      <p className="text-muted-foreground text-lg">No translation keys found</p>
-      <p className="text-muted-foreground mt-2 text-sm">Try adjusting your search or filters</p>
-    </div>
-  );
 
   return (
     <div className="animate-in fade-in container duration-500">
@@ -136,26 +148,26 @@ export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageCon
           </p>
         </PageHeader>
         <CardList
-          emptyState={!hasKeys ? emptyState : undefined}
-          filterToggle={
+          actions={
             <MissingFilterToggle
               enabled={missingOnly}
               label="Show only missing translations"
               onToggle={setMissingOnly}
             />
           }
+          emptyState={emptyState}
           pagination={
             hasKeys
               ? {
-                  metadata: keysData.metadata,
+                  metadata: keys.metadata,
                   onPageChange: handlePageChange,
                   params: paginationParams,
                 }
               : undefined
           }
-          searchInput={<SearchInput onChange={setSearchValue} placeholder="Search keys..." value={searchValue} />}
+          search={hasKeys && <SearchInput onChange={setSearchValue} placeholder="Search keys..." value={searchValue} />}
         >
-          {keysData.data.map((key) => (
+          {keys.data.map((key) => (
             <KeyTranslationCard
               editError={editingKeyId === key.key_id ? (editError ?? undefined) : undefined}
               isEditing={editingKeyId === (key.key_id ?? '')}

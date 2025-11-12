@@ -58,7 +58,7 @@ export function ProjectExportContent({ projectId }: ProjectExportContentProps) {
       <div className="space-y-6">
         <BackButton ariaLabel="Back to project details" buttonLabel="Back to project" to={`/projects/${projectId}`} />
         <PageHeader
-          header="Export Translations"
+          header="Export translations"
           subHeading="Download all translations for this project as a ZIP archive"
         />
         <ExportLayout project={project} stats={stats}>

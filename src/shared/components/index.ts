@@ -3,6 +3,7 @@ export * from './BackButton';
 export * from './BreadcrumbNavigation';
 export * from './CardItem';
 export * from './CardList';
+export * from './EmptyState';
 export * from './ErrorBoundary';
 export * from './InlineLoading';
 export * from './Loading';

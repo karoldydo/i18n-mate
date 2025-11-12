@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { PaginationParams, TranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { BackButton, CardList, PageHeader } from '@/shared/components';
+import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/components';
 import { isActiveJob } from '@/shared/types';
 import { Button } from '@/shared/ui/button';
 
@@ -135,6 +135,8 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
       ? jobsWithHints.map((job) => (job.id === activeJobWithHint.id ? activeJobWithHint : job))
       : jobsWithHints;
   }, [jobs, activeJob, applyTotalHint]);
+
+  const hasJobs = useMemo(() => Boolean(displayJobs.length), [displayJobs.length]);
 
   const handlePageChange = useCallback((params: PaginationParams) => {
     setPaginationParams(params);
@@ -290,26 +292,30 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
     <div className="animate-in fade-in container duration-500">
       <div className="space-y-6">
         <BackButton ariaLabel="Back to project" buttonLabel="Back to project" to={`/projects/${projectId}`} />
-        <PageHeader
-          header="Translation jobs"
-          subHeading="Monitor and manage LLM-powered translation jobs for this project."
-        />
+        <PageHeader header="Translation Jobs">
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Create and manage AI-powered translation jobs to automatically translate your keys across multiple
+            languages. Monitor progress, track completion status, and streamline your localization workflow.
+          </p>
+        </PageHeader>
         <CardList
           actions={
             <div className="flex gap-2">
-              <Button aria-label="Refresh job list" disabled={isFetching} onClick={handleRefresh} variant="outline">
-                {isFetching ? (
-                  <>
-                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                    Refreshing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4" />
-                    Refresh
-                  </>
-                )}
-              </Button>
+              {hasJobs && (
+                <Button aria-label="Refresh job list" disabled={isFetching} onClick={handleRefresh} variant="outline">
+                  {isFetching ? (
+                    <>
+                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      Refresh
+                    </>
+                  )}
+                </Button>
+              )}
               <Button
                 aria-label="Create new translation job"
                 disabled={hasActiveJob && isJobRunning}
@@ -322,12 +328,10 @@ export function TranslationJobsContent({ projectId }: TranslationJobsContentProp
           }
           data-testid="translation-jobs-list"
           emptyState={
-            <div className="border-border rounded-lg border p-8 text-center">
-              <h3 className="text-lg font-semibold">No translation jobs found</h3>
-              <p className="text-muted-foreground mt-2">
-                Translation jobs will appear here after you create translations using the LLM translator.
-              </p>
-            </div>
+            <EmptyState
+              description="Create your first translation job to automatically translate keys using AI-powered translation. Monitor progress and manage all translation tasks from this dashboard."
+              header="No translation jobs yet"
+            />
           }
           pagination={{
             metadata,

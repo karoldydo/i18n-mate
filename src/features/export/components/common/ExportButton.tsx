@@ -27,7 +27,7 @@ export function ExportButton({ disabled = false, isLoading = false, onClick }: E
   return (
     <Button aria-disabled={disabled || isLoading} disabled={disabled || isLoading} onClick={onClick} size="lg">
       {isLoading ? <Loader2Icon aria-hidden="true" className="animate-spin" /> : <DownloadIcon aria-hidden="true" />}
-      {isLoading ? 'Exporting...' : 'Export Translations'}
+      {isLoading ? 'Exporting...' : 'Export translations'}
     </Button>
   );
 }

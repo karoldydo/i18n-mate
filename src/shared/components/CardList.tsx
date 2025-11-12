@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback } from 'react';
+import { Children, type ReactNode, useCallback } from 'react';
 
 import type { PaginationMetadata, PaginationParams } from '@/shared/types';
 
@@ -24,16 +24,15 @@ interface CardListProps {
   className?: string;
   'data-testid'?: string;
   emptyState?: ReactNode;
-  filterToggle?: ReactNode;
   pagination?: CardListPaginationProps;
-  searchInput?: ReactNode;
+  search?: ReactNode;
 }
 
 /**
  * CardList – Versatile container for rendering and paginating lists of cards.
  *
  * Features:
- * - Optional search input and filter toggle in the header section.
+ * - Optional search input and actions in the header section.
  * - Flexible content projection for card items (such as <CardItem> or any card-like child).
  * - Built-in pagination UI with shadcn/ui components for navigating multiple pages.
  * - Smart pagination with ellipsis for large page ranges.
@@ -41,8 +40,8 @@ interface CardListProps {
  * - Responsive design with appropriate spacing and layout for modern UIs.
  *
  * @param {object} props - CardListProps
- * @param {ReactNode} [props.searchInput] - Optional search input component.
- * @param {ReactNode} [props.filterToggle] - Optional filter toggle component.
+ * @param {ReactNode} [props.search] - Optional search input component.
+ * @param {ReactNode} [props.actions] - Optional actions component (buttons, filters, etc.).
  * @param {ReactNode} props.children - List content; typically a set of <CardItem> or similar.
  * @param {string} [props.className] - Custom className for container layout extension.
  * @param {ReactNode} [props.emptyState] - Shown instead of children if none are provided.
@@ -53,8 +52,8 @@ interface CardListProps {
  *
  * @example
  * <CardList
- *   searchInput={<SearchInput onChange={handleSearch} value={searchValue} />}
- *   filterToggle={<MissingFilterToggle enabled={missingOnly} onToggle={handleToggle} />}
+ *   search={<SearchInput onChange={handleSearch} value={searchValue} />}
+ *   actions={<Button>Add Item</Button>}
  *   pagination={{ metadata, params, onPageChange }}
  * >
  *   {projects.map(project => (
@@ -68,11 +67,10 @@ export function CardList({
   className,
   'data-testid': dataTestId,
   emptyState,
-  filterToggle,
   pagination,
-  searchInput,
+  search,
 }: CardListProps) {
-  const hasChildren = Boolean(children);
+  const hasChildren = Children.toArray(children).length > 0;
   const showPagination = pagination && pagination.metadata.total > (pagination.params.limit ?? 0);
 
   // calculate key pagination values
@@ -139,20 +137,19 @@ export function CardList({
 
   return (
     <div className={cn('space-y-4', className)} data-testid={dataTestId}>
-      {/* optional search and filter section */}
-      {(searchInput || filterToggle || actions) && (
+      {/* optional search and actions section */}
+      {(search || actions) && (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {searchInput && <div className="flex-1">{searchInput}</div>}
-          {(filterToggle || actions) && (
+          {search && <div className="flex-1">{search}</div>}
+          {actions && (
             <div
               className={cn(
                 'flex flex-shrink-0 items-center sm:justify-start sm:gap-4',
-                !searchInput && !filterToggle && 'justify-end sm:ml-auto',
-                (searchInput || filterToggle) && 'justify-between'
+                !search && 'justify-end sm:ml-auto',
+                search && 'justify-between'
               )}
             >
-              {filterToggle && <div>{filterToggle}</div>}
-              {actions && <div>{actions}</div>}
+              {actions}
             </div>
           )}
         </div>

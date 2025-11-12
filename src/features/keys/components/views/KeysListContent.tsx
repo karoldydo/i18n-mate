@@ -1,11 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { CheckCircle2, Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import type { KeyDefaultViewItem, PaginationParams } from '@/shared/types';
 
-import { BackButton, CardList, PageHeader } from '@/shared/components';
+import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
 import { useProject } from '../../../projects/api/useProject';
@@ -23,10 +23,26 @@ interface KeysListContentProps {
 }
 
 /**
- * KeysListContent - Content component for keys list default view
+ * KeysListContent – Displays the main content of the translation keys list view for a project.
  *
- * Fetches and displays translation keys with their default language values.
- * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
+ * Features:
+ * - Fetches and displays translation keys and their default language values for a specific project.
+ * - Provides add, edit, delete, and filtered (missing only, search) key management UX.
+ * - Supports paginated display, search, and missing translation filtering of keys.
+ * - Allows in-place editing of translation values, including error/saving state.
+ * - Handles add and delete dialog state, with real-time list updates on mutation.
+ * - Integrates with project context for default locale and prefix logic.
+ *
+ * State/Behavior:
+ * - Synchronizes filters and pagination with the URL.
+ * - Shows empty state if no translation keys are present.
+ * - Displays action buttons for adding keys and toggling missing translation filter.
+ *
+ * @param {object} props
+ * @param {string} props.projectId - The ID of the project whose translation keys to display.
+ *
+ * @returns {JSX.Element | null} The content for the translation keys list, including add/edit/delete controls,
+ * pagination, and appropriate empty state; or null while essential data loads.
  */
 export function KeysListContent({ projectId }: KeysListContentProps) {
   const queryClient = useQueryClient();
@@ -129,18 +145,28 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
     setAddKeyDialogOpen(true);
   }, []);
 
+  const hasKeys = useMemo(() => Boolean(keys?.data.length), [keys?.data]);
+
+  const emptyState = useMemo(
+    () =>
+      missingOnly ? (
+        <EmptyState
+          description="All translation keys have been translated. Your project is fully localized."
+          header="All translations complete"
+          icon={<CheckCircle2 />}
+        />
+      ) : (
+        <EmptyState
+          description="Create your first translation key to start managing multilingual content for this project."
+          header="No translation keys yet"
+        />
+      ),
+    [missingOnly]
+  );
+
   if (!project || !keys) {
     return null;
   }
-
-  // FIXME:
-  const hasKeys = Boolean(keys.data.length);
-  const emptyState = (
-    <div className="border-border rounded-lg border p-12 text-center">
-      <p className="text-muted-foreground text-lg">No translation keys found</p>
-      <p className="text-muted-foreground mt-2 text-sm">Get started by adding your first translation key</p>
-    </div>
-  );
 
   return (
     <>
@@ -156,20 +182,20 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
           </PageHeader>
           <CardList
             actions={
-              <Button data-testid="add-key-button" onClick={handleAddKeyClick}>
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Add key</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
+              <div className="flex flex-shrink-0 grow items-center justify-between sm:justify-start sm:gap-4">
+                <MissingFilterToggle
+                  enabled={missingOnly}
+                  label="Show only missing translations"
+                  onToggle={setMissingOnly}
+                />
+                <Button data-testid="add-key-button" onClick={handleAddKeyClick}>
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Add key</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </div>
             }
-            emptyState={!hasKeys ? emptyState : undefined}
-            filterToggle={
-              <MissingFilterToggle
-                enabled={missingOnly}
-                label="Show only missing translations"
-                onToggle={setMissingOnly}
-              />
-            }
+            emptyState={emptyState}
             pagination={
               hasKeys
                 ? {
@@ -179,7 +205,7 @@ export function KeysListContent({ projectId }: KeysListContentProps) {
                   }
                 : undefined
             }
-            searchInput={<SearchInput onChange={setSearchValue} placeholder="Search" value={searchValue} />}
+            search={hasKeys && <SearchInput onChange={setSearchValue} placeholder="Search" value={searchValue} />}
           >
             {keys.data.map((key) => (
               <KeyCard

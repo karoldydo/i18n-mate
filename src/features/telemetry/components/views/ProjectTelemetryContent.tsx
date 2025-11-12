@@ -45,7 +45,7 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
     [pageState.limit, pageState.page]
   );
 
-  const { data: telemetryData } = useTelemetryEvents(projectId, telemetryEventsParams);
+  const { data: telemetries } = useTelemetryEvents(projectId, telemetryEventsParams);
 
   // convert page-based pagination to offset-based for CardList
   const paginationParams = useMemo<PaginationParams>(
@@ -77,28 +77,20 @@ export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentPr
           header="Analytics & Insights"
           subHeading={`Monitor usage patterns, track activity, and analyze translation performance for ${project.name}`}
         />
-        <TelemetryKPIs projectCreatedAt={project.created_at} telemetryEvents={telemetryData.data} />
+        <TelemetryKPIs projectCreatedAt={project.created_at} telemetryEvents={telemetries.data} />
         <CardList
           data-testid="telemetry-events-list"
-          emptyState={
-            <div className="border-border rounded-lg border p-12 text-center">
-              <p className="text-muted-foreground text-lg">No telemetry events found</p>
-              <p className="text-muted-foreground mt-2 text-sm">
-                Events will appear here as your project is used for translations
-              </p>
-            </div>
-          }
           pagination={
-            telemetryData.data.length > 0
+            telemetries.data.length > 0
               ? {
-                  metadata: telemetryData.metadata,
+                  metadata: telemetries.metadata,
                   onPageChange: handlePageChange,
                   params: paginationParams,
                 }
               : undefined
           }
         >
-          {telemetryData.data.map((event) => (
+          {telemetries.data.map((event) => (
             <TelemetryCard event={event} key={event.id} />
           ))}
         </CardList>
