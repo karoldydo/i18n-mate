@@ -21,8 +21,8 @@ export function VerifyEmailPage() {
   const email = (location.state?.email as string) || user?.email;
 
   const handleResend = useCallback(async () => {
-    return resendVerification.mutateAsync(undefined);
-  }, [resendVerification]);
+    return resendVerification.mutateAsync(email);
+  }, [resendVerification, email]);
 
   return (
     <AuthLayout>

@@ -9,8 +9,10 @@ import { createAuthErrorResponse } from '../auth.errors';
 /**
  * Resend verification email mutation hook
  *
- * Resends email verification to the current user.
- * Requires user to be in unverified state (user object exists but email_confirmed_at is null).
+ * Resends email verification to the provided email or current user.
+ * Can be used even when user is not logged in (e.g., after registration).
+ *
+ * @param email - Optional email address. If not provided, uses current user's email.
  *
  * @throws {ApiErrorResponse} 400 - No user email available
  * @throws {ApiErrorResponse} 429 - Rate limit exceeded
@@ -21,10 +23,10 @@ import { createAuthErrorResponse } from '../auth.errors';
 export function useResendVerification() {
   const { resendVerification } = useAuth();
 
-  return useMutation<undefined, ApiErrorResponse, undefined>({
-    mutationFn: async () => {
+  return useMutation<undefined, ApiErrorResponse, string | undefined>({
+    mutationFn: async (email?: string) => {
       try {
-        await resendVerification();
+        await resendVerification(email);
       } catch (error) {
         throw createAuthErrorResponse(error as never, 'useResendVerification', 'Failed to resend verification email');
       }

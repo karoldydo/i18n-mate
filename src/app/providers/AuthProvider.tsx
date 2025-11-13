@@ -6,7 +6,7 @@ import { useSupabase } from './SupabaseProvider';
 
 interface AuthContextValue {
   isLoading: boolean;
-  resendVerification: () => Promise<void>;
+  resendVerification: (email?: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -139,20 +139,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [supabase]
   );
 
-  const resendVerification = useCallback(async () => {
-    if (!user?.email) {
-      throw new Error('No user email available for verification resend');
-    }
+  const resendVerification = useCallback(
+    async (email?: string) => {
+      // use provided email or fallback to user email
+      const emailToUse = email || user?.email;
 
-    const { error } = await supabase.auth.resend({
-      email: user.email,
-      type: 'signup',
-    });
+      if (!emailToUse) {
+        throw new Error('No user email available for verification resend');
+      }
 
-    if (error) {
-      throw error;
-    }
-  }, [supabase, user?.email]);
+      const { error } = await supabase.auth.resend({
+        email: emailToUse,
+        type: 'signup',
+      });
+
+      if (error) {
+        throw error;
+      }
+    },
+    [supabase, user?.email]
+  );
 
   const value = useMemo<AuthContextValue>(
     () => ({
