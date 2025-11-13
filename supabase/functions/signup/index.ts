@@ -138,7 +138,7 @@ async function handleSignup(req: Request): Promise<Response> {
 
     // generate verification link and send email via Resend
     const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '') || '';
-    const redirectTo = siteUrl ? `${siteUrl}/verify-email` : undefined;
+    const redirectTo = siteUrl ? `${siteUrl}/email-verified` : undefined;
 
     // generate verification link using admin API
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({

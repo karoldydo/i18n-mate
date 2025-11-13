@@ -38,6 +38,12 @@ const VerifyEmailPage = lazy(() =>
   }))
 );
 
+const EmailVerifiedPage = lazy(() =>
+  import('../features/auth/routes/EmailVerifiedPage').then((module) => ({
+    default: module.EmailVerifiedPage,
+  }))
+);
+
 // feature routes (protected)
 const ProjectListPage = lazy(() =>
   import('../features/projects/routes/ProjectListPage').then((module) => ({
@@ -116,6 +122,10 @@ const router = createBrowserRouter([
       </VerificationGuard>
     ),
     path: '/verify-email',
+  },
+  {
+    Component: EmailVerifiedPage,
+    path: '/email-verified',
   },
   // protected routes - all nested under App layout with ProtectedRoute
   {
