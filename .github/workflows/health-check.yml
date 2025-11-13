@@ -1,0 +1,33 @@
+name: Supabase Health Check
+
+on:
+  schedule:
+    # run once daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  health-check-prod:
+    name: Health Check - Production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Wake up Supabase Production
+        run: |
+          # simple GET request to REST API - this will wake up the project
+          curl -f "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/" \
+            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            || echo "Health check completed"
+
+  health-check-e2e:
+    name: Health Check - E2E
+    runs-on: ubuntu-latest
+    environment: integration
+    steps:
+      - name: Wake up Supabase E2E
+        run: |
+          curl -f "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/" \
+            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            || echo "Health check completed"
