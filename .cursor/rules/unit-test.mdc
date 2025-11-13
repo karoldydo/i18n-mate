@@ -68,6 +68,7 @@ alwaysApply: false
 
 - Use `findBy*` queries for async elements instead of `waitFor(() => getBy*())`
 - Put only ONE assertion per `waitFor` callback for faster failure feedback
+- Use **Given-When-Then** (Gherkin) pattern to structure the test code
 - Do NOT pass empty callbacks to `waitFor` - wait for specific assertions
 - Do NOT perform side-effects inside `waitFor` - put them outside
 - Do NOT use snapshot assertions inside `waitFor` - take snapshots after `waitFor` completes
