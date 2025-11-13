@@ -4,7 +4,8 @@ import { StrictMode } from 'react';
 import '@/shared/styles/index.css';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
-import { Toaster } from 'sonner';
+
+import { Toaster } from '@/shared/ui/sonner';
 
 import { queryClient } from './config/queryClient';
 import { AuthProvider } from './providers/AuthProvider';

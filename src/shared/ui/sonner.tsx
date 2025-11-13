@@ -3,7 +3,16 @@ import { useTheme } from 'next-themes';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme();
+  // safely get theme, fallback to 'system' if ThemeProvider is not available
+  let theme: ToasterProps['theme'] = 'system';
+
+  try {
+    const themeContext = useTheme();
+    theme = (themeContext?.theme || 'system') as ToasterProps['theme'];
+  } catch {
+    // ThemeProvider not available, use default
+    theme = 'system';
+  }
 
   return (
     <Sonner
@@ -23,7 +32,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           '--normal-text': 'var(--popover-foreground)',
         } as React.CSSProperties
       }
-      theme={theme as ToasterProps['theme']}
+      theme={theme}
       {...props}
     />
   );

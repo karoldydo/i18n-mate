@@ -1,7 +1,6 @@
 import { CircleCheckIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { toast } from 'sonner';
 
 import { AuthLayout } from '../components/layouts/AuthLayout';
 
@@ -10,8 +9,7 @@ import { AuthLayout } from '../components/layouts/AuthLayout';
  *
  * React component displayed when the user returns from the email verification link.
  * Shows a confirmation message indicating their email address has been successfully verified.
- * Triggers a toast notification to confirm success and automatically redirects to the login page
- * after a short delay.
+ * Automatically redirects to the login page after a short delay.
  *
  * @returns {JSX.Element} Email verification success UI and redirect logic.
  */
@@ -19,11 +17,6 @@ export function EmailVerifiedPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // show success toast on mount
-    toast.success('Email verified successfully', {
-      description: 'You can now log in to your account.',
-    });
-
     // redirect to login page after 3 seconds
     const timer = setTimeout(() => {
       navigate('/login', { replace: true });
