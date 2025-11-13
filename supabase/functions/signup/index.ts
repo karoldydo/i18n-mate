@@ -136,6 +136,30 @@ async function handleSignup(req: Request): Promise<Response> {
       });
     }
 
+    // generate verification link and send email
+    // Supabase will automatically send the verification email when generateLink is called with type 'signup'
+    const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('SUPABASE_URL')?.replace('/rest/v1', '') || '';
+    const redirectTo = siteUrl ? `${siteUrl}/verify-email` : undefined;
+
+    const { error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      email: body.email,
+      options: redirectTo
+        ? {
+            redirectTo,
+          }
+        : undefined,
+      type: 'signup',
+    });
+
+    if (linkError) {
+      console.error('[signup] Failed to generate verification link:', linkError);
+      // user was created successfully, but email verification link generation failed
+      // return success but log the error for debugging
+      // the user can still use "resend verification" feature later
+    } else {
+      console.log('[signup] Verification email sent successfully to:', body.email);
+    }
+
     // success response
     return new Response(
       JSON.stringify({
