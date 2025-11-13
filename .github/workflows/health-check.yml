@@ -14,8 +14,9 @@ jobs:
     steps:
       - name: Wake up Supabase Production
         run: |
-          # simple GET request to REST API - this will wake up the project
-          curl -f "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/" \
+          # call health check Edge Function which executes a database query
+          # this ensures actual database activity to prevent project suspension
+          curl -f "${{ secrets.VITE_SUPABASE_URL }}/functions/v1/health" \
             -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             || echo "Health check completed"
@@ -27,7 +28,9 @@ jobs:
     steps:
       - name: Wake up Supabase E2E
         run: |
-          curl -f "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/" \
+          # call health check Edge Function which executes a database query
+          # this ensures actual database activity to prevent project suspension
+          curl -f "${{ secrets.VITE_SUPABASE_URL }}/functions/v1/health" \
             -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
             || echo "Health check completed"
