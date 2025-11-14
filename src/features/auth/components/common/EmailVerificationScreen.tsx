@@ -1,8 +1,7 @@
 import { MailIcon } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 
-import { useResendCooldown } from '@/shared/hooks';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Button } from '@/shared/ui/button';
 
@@ -16,45 +15,24 @@ interface EmailVerificationScreenProps {
  *
  * Shows a message about the sent verification email with option to resend.
  * Provides feedback on resend action with success/error states.
- * Implements 60-second cooldown after registration/resend with localStorage persistence.
  */
 export function EmailVerificationScreen({ email, onResend }: EmailVerificationScreenProps) {
   const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<'error' | 'idle' | 'success'>('idle');
-  const { hasActiveCooldown, remainingSeconds, startCooldown } = useResendCooldown();
 
   const handleResend = useCallback(async () => {
-    if (hasActiveCooldown) {
-      return;
-    }
-
     setIsResending(true);
     setResendStatus('idle');
 
     try {
       await onResend();
       setResendStatus('success');
-      startCooldown(); // start 60-second cooldown after successful resend
     } catch {
       setResendStatus('error');
     } finally {
       setIsResending(false);
     }
-  }, [hasActiveCooldown, onResend, startCooldown]);
-
-  const isButtonDisabled = useMemo(() => {
-    return isResending || hasActiveCooldown;
-  }, [isResending, hasActiveCooldown]);
-
-  const buttonText = useMemo(() => {
-    if (isResending) {
-      return 'Sending...';
-    }
-    if (hasActiveCooldown) {
-      return `Try again in ${remainingSeconds}s`;
-    }
-    return 'Send again';
-  }, [isResending, hasActiveCooldown, remainingSeconds]);
+  }, [onResend]);
 
   return (
     <div className="space-y-6">
@@ -88,8 +66,8 @@ export function EmailVerificationScreen({ email, onResend }: EmailVerificationSc
           Didn&apos;t receive the email? Check your spam folder or
         </p>
 
-        <Button className="w-full" disabled={isButtonDisabled} onClick={handleResend} variant="outline">
-          {buttonText}
+        <Button className="w-full" disabled={isResending} onClick={handleResend} variant="outline">
+          {isResending ? 'Sending...' : 'Send again'}
         </Button>
 
         <p className="text-muted-foreground text-center text-sm">
