@@ -11,6 +11,7 @@ import { ProtectedPage } from '../auth/ProtectedPage';
 export class ProjectDetailsPage extends ProtectedPage {
   readonly backToProjectsButton: Locator;
   readonly backToProjectsButtonError: Locator;
+  readonly deleteButton: Locator;
   readonly editButton: Locator;
   readonly pageContainer: Locator;
   readonly pageHeaderSubheading: Locator;
@@ -24,6 +25,7 @@ export class ProjectDetailsPage extends ProtectedPage {
     this.backToProjectsButton = page.getByTestId('back-to-projects-button');
     this.backToProjectsButtonError = page.getByTestId('project-details-page-button');
     this.editButton = page.getByTestId('project-details-edit-button');
+    this.deleteButton = page.getByTestId('project-details-delete-button');
     this.pageHeaderTitle = page.getByTestId('page-header-title');
     this.pageHeaderSubheading = page.getByTestId('page-header-subheading');
   }
@@ -33,6 +35,13 @@ export class ProjectDetailsPage extends ProtectedPage {
    */
   async clickBackToProjects() {
     await this.backToProjectsButton.click();
+  }
+
+  /**
+   * Click delete button to open delete dialog
+   */
+  async clickDelete() {
+    await this.deleteButton.click();
   }
 
   /**
