@@ -543,13 +543,16 @@ The implementation uses inline query keys without structured key factories. This
 
 - Projects list: `['projects', 'list', params]`
 - Single project: `['projects', 'detail', projectId]`
+- Project name only: `['projects', 'detail', projectId, 'name']` (used by `useProjectName` hook)
 
 ### 8.3 Cache Invalidation
 
 **Cache Invalidation:**
 
-- Update project → invalidate `['projects']` cache
-- Delete project → invalidate `['projects']` cache
+- Update project → invalidate `['projects']` cache (includes project name cache)
+- Delete project → invalidate `['projects']` cache (includes project name cache)
+
+**Note:** The `useProjectName` hook uses infinite cache time (`staleTime: Infinity`, `gcTime: Infinity`) since project names are stable and rarely change. Cache invalidation on project updates ensures consistency.
 
 ### 8.4 Optimistic Updates
 
@@ -600,6 +603,7 @@ Planned hooks summary:
 
 - useProjects: validate params, call RPC list with exact count, validate items, return data + pagination metadata.
 - useProject: validate UUID, fetch single row, map 404 when missing, validate payload.
+- useProjectName: optimized hook to fetch only project name field for breadcrumbs and UI display, uses direct Supabase query (not RPC), non-blocking with useQuery (not suspense), infinite cache time.
 - useCreateProject: validate input, call RPC, map DB errors, ensure data present, validate response.
 - useUpdateProject: validate UUID and input, call update, map DB errors, ensure data present, validate response.
 - useDeleteProject: validate UUID, delete by id, map 404 when nothing deleted.
@@ -657,6 +661,17 @@ Test scenarios:
 - Invalid UUID format
 - Project not found (404)
 - RLS access denied (appears as 404)
+
+**8.2.1 Create `src/features/projects/api/useProjectName/useProjectName.test.ts`:**
+
+Test scenarios:
+
+- Successful project name fetch (returns only name field)
+- Returns undefined when projectId is null or undefined
+- Returns undefined when project not found (RLS access denied)
+- Database error handling (500)
+- Query is disabled when projectId is falsy
+- Uses infinite staleTime and gcTime for caching
 
 **8.3 Create `src/features/projects/api/useCreateProject/useCreateProject.test.ts`:**
 

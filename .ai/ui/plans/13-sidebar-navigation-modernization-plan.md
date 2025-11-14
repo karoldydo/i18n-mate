@@ -257,7 +257,7 @@ App (root) - src/app/App.tsx
 - **Handled interactions**: Breadcrumb link clicks for navigation
 - **Handled validation**: Dynamic breadcrumb generation based on route via useBreadcrumbs hook
 - **Types**: Uses internal BreadcrumbItem interface
-- **Props**: projectName?: string
+- **Props**: None (automatically fetches project name from route params)
 
 #### BreadcrumbItem Interface
 
@@ -274,8 +274,22 @@ interface BreadcrumbItem {
 **Location**: `src/shared/hooks/useBreadcrumbs.ts`
 
 - Generates breadcrumbs based on current route
+- Automatically extracts projectId from route params using `useParams`
+- Fetches project name from TanStack Query cache via `useProjectName` hook
+- Falls back to UUID if project name is not yet available
 - Handles project context and sub-page navigation
 - Formats URL segments to readable labels
+
+#### useProjectName Hook
+
+**Location**: `src/features/projects/api/useProjectName/useProjectName.ts`
+
+- **Purpose**: Optimized hook to fetch only the project `name` field for breadcrumb display
+- **Implementation**: Uses direct Supabase query (not RPC) to fetch only `name` field
+- **Query Strategy**: Uses `useQuery` (not suspense) to avoid blocking breadcrumb rendering
+- **Caching**: Infinite `staleTime` and `gcTime` to always serve cached project names
+- **Error Handling**: Honors Supabase RLS (returns undefined if no access, throws only on database errors)
+- **Performance**: More efficient than fetching full project object, leverages TanStack Query cache
 
 #### Responsive Behavior
 
@@ -336,7 +350,8 @@ interface BreadcrumbItem {
 
 3. **Implement navigation hooks**
    - **useActiveNavigation**: `src/shared/hooks/useActiveNavigation.ts`
-   - **useBreadcrumbs**: `src/shared/hooks/useBreadcrumbs.ts`
+   - **useBreadcrumbs**: `src/shared/hooks/useBreadcrumbs.ts` - Automatically fetches project name from route params
+   - **useProjectName**: `src/features/projects/api/useProjectName/useProjectName.ts` - Optimized hook for fetching project name
    - **useMobile**: `src/shared/hooks/useMobile.ts`
 
 4. **Create sidebar components**
@@ -348,7 +363,9 @@ interface BreadcrumbItem {
 5. **Implement BreadcrumbNavigation component**
    - **Location**: `src/shared/components/BreadcrumbNavigation.tsx`
    - Route-based breadcrumb generation
+   - Automatically fetches project name from route params via `useProjectName` hook
    - Responsive design with shadcn/ui breadcrumb components
+   - No props required - fully automatic based on current route
 
 6. **Update App.tsx layout**
    - Integrated SidebarProvider with custom CSS properties
@@ -510,9 +527,10 @@ The sidebar navigation modernization is implemented as a comprehensive replaceme
 - `src/shared/components/AppSidebarGlobalGroup.tsx` - Global navigation group
 - `src/shared/components/AppSidebarProjectGroup.tsx` - Project navigation group
 - `src/shared/components/AppSidebarMenu.tsx` - User menu component
-- `src/shared/components/BreadcrumbNavigation.tsx` - Breadcrumb navigation
+- `src/shared/components/BreadcrumbNavigation.tsx` - Breadcrumb navigation (automatically fetches project name)
 - `src/shared/hooks/useActiveNavigation.ts` - Active navigation state hook
-- `src/shared/hooks/useBreadcrumbs.ts` - Breadcrumb generation hook
+- `src/shared/hooks/useBreadcrumbs.ts` - Breadcrumb generation hook (uses useParams and useProjectName)
+- `src/features/projects/api/useProjectName/useProjectName.ts` - Optimized hook for fetching project name
 - `src/shared/hooks/useMobile.ts` - Mobile detection hook
 - `src/shared/lib/navigation.ts` - Navigation data structures
 - `src/shared/ui/sidebar.tsx` - shadcn/ui sidebar component
