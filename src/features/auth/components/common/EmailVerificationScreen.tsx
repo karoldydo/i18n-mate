@@ -21,10 +21,10 @@ interface EmailVerificationScreenProps {
 export function EmailVerificationScreen({ email, onResend }: EmailVerificationScreenProps) {
   const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<'error' | 'idle' | 'success'>('idle');
-  const { isBlocked, remainingSeconds, startCooldown } = useResendCooldown();
+  const { hasActiveCooldown, remainingSeconds, startCooldown } = useResendCooldown();
 
   const handleResend = useCallback(async () => {
-    if (isBlocked) {
+    if (hasActiveCooldown) {
       return;
     }
 
@@ -40,21 +40,21 @@ export function EmailVerificationScreen({ email, onResend }: EmailVerificationSc
     } finally {
       setIsResending(false);
     }
-  }, [isBlocked, onResend, startCooldown]);
+  }, [hasActiveCooldown, onResend, startCooldown]);
 
   const isButtonDisabled = useMemo(() => {
-    return isResending || isBlocked;
-  }, [isResending, isBlocked]);
+    return isResending || hasActiveCooldown;
+  }, [isResending, hasActiveCooldown]);
 
   const buttonText = useMemo(() => {
     if (isResending) {
       return 'Sending...';
     }
-    if (isBlocked) {
+    if (hasActiveCooldown) {
       return `Try again in ${remainingSeconds}s`;
     }
     return 'Send again';
-  }, [isResending, isBlocked, remainingSeconds]);
+  }, [isResending, hasActiveCooldown, remainingSeconds]);
 
   return (
     <div className="space-y-6">

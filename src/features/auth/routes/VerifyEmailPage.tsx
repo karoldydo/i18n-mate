@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useLayoutEffect, useMemo } from 'react';
 import { useLocation } from 'react-router';
 
 import { useAuth } from '@/app/providers/AuthProvider';
@@ -25,7 +25,7 @@ export function VerifyEmailPage() {
   const isFromRegistration = useMemo(() => Boolean(location.state?.email), [location.state?.email]);
 
   // start cooldown when arriving from registration, but only if no cooldown is already active
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isFromRegistration && !hasActiveCooldown) {
       startCooldown();
     }
