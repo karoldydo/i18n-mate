@@ -35,7 +35,14 @@ export function useResendCooldown() {
     return { expiresAt: null };
   });
 
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
+  // calculate initial remaining seconds from cooldownState
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(() => {
+    if (cooldownState.expiresAt === null) {
+      return 0;
+    }
+    const now = Date.now();
+    return Math.max(0, Math.ceil((cooldownState.expiresAt - now) / 1000));
+  });
 
   // calculate remaining seconds and update every second
   useEffect(() => {
@@ -89,7 +96,12 @@ export function useResendCooldown() {
     return cooldownState.expiresAt !== null && remainingSeconds > 0;
   }, [cooldownState.expiresAt, remainingSeconds]);
 
+  const hasActiveCooldown = useMemo(() => {
+    return cooldownState.expiresAt !== null && cooldownState.expiresAt > Date.now();
+  }, [cooldownState.expiresAt]);
+
   return {
+    hasActiveCooldown,
     isBlocked,
     remainingSeconds,
     startCooldown,

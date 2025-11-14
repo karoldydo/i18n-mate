@@ -19,17 +19,17 @@ export function VerifyEmailPage() {
   const location = useLocation();
   const { user } = useAuth();
   const resendVerification = useResendVerification();
-  const { startCooldown } = useResendCooldown();
+  const { hasActiveCooldown, startCooldown } = useResendCooldown();
 
   const email = useMemo(() => (location.state?.email as string) || user?.email, [location.state?.email, user?.email]);
   const isFromRegistration = useMemo(() => Boolean(location.state?.email), [location.state?.email]);
 
-  // start cooldown when arriving from registration
+  // start cooldown when arriving from registration, but only if no cooldown is already active
   useEffect(() => {
-    if (isFromRegistration) {
+    if (isFromRegistration && !hasActiveCooldown) {
       startCooldown();
     }
-  }, [isFromRegistration, startCooldown]);
+  }, [isFromRegistration, hasActiveCooldown, startCooldown]);
 
   const handleResend = useCallback(async () => {
     return resendVerification.mutateAsync(email);
