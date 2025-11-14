@@ -160,6 +160,15 @@ Available in `src/test/utils/`:
 - `wait()` - Promise-based delay utility
 - Mock data generators and fixtures
 
+**Test Setup:**
+The test setup file (`src/test/setup.ts`) includes:
+
+- Environment variable mocking for Supabase configuration
+- Polyfills for Radix UI components compatibility in jsdom:
+  - `hasPointerCapture`, `releasePointerCapture`, `setPointerCapture` for pointer events
+  - `scrollIntoView` for select components
+- Console output suppression for cleaner test output
+
 **Commands:**
 
 ```bash

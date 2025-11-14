@@ -534,13 +534,17 @@ Implement in Edge Functions:
 
 Custom Supabase Edge Functions for complex operations:
 
-| Endpoint                            | Method | Description                            |
-| ----------------------------------- | ------ | -------------------------------------- |
-| `/functions/v1/translate`           | POST   | Create and execute LLM translation job |
-| `/functions/v1/export-translations` | GET    | Export project translations as ZIP     |
+| Endpoint                            | Method | Description                                                                                                   |
+| ----------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------- |
+| `/functions/v1/signup`              | POST   | User registration with Resend API email verification                                                          |
+| `/functions/v1/health`              | GET    | Health check endpoint to verify Supabase availability and ensure service continuity (executes database query) |
+| `/functions/v1/translate`           | POST   | Create and execute LLM translation job                                                                        |
+| `/functions/v1/export-translations` | GET    | Export project translations as ZIP                                                                            |
 
 **Note:** Standard CRUD operations use Supabase PostgREST (`/rest/v1/*`). Edge Functions are reserved for:
 
+- Authentication flows requiring server-side validation (signup with registration control)
+- Health checks and system maintenance
 - LLM integration (OpenRouter API calls)
 - Complex file generation (ZIP export)
 - Multi-step transactional operations

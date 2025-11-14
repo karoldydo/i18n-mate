@@ -14,6 +14,9 @@
 
 - **Supabase** - PostgreSQL database with built-in authentication, RLS policies, and realtime subscriptions
 - **Supabase Edge Functions** - Serverless functions for custom API logic when needed
+  - **Health Check Function** - Health check endpoint that executes database queries to ensure service continuity and verify Supabase availability
+  - **Signup Function** - Custom registration with Resend API integration for email verification
+- **Resend API** - Email delivery service for verification emails (integrated in signup Edge Function)
 
 ## Testing & Quality
 
@@ -29,6 +32,7 @@
 ## CI/CD and Hosting
 
 - **GitHub Actions** - CI/CD pipeline automation for testing and deployment
+  - **Health Check Workflow** - Daily scheduled workflow to verify Supabase production and E2E environments are operational, ensuring service continuity and availability
 - **Cloudflare Pages** - Production hosting with global CDN, manual deployments, and edge computing capabilities
 - **Docker + DigitalOcean** - Pre-production environment for testing deployment scripts and production-ready pipelines
 

@@ -9,7 +9,7 @@
 - `/login` - login page
 - `/register` - registration page (conditionally available based on `app_config.registration_enabled` database setting)
 - `/verify-email` - email verification page with confirmation link
-- `/resend-verification` - resend verification page
+- `/email-verified` - email verification success page (redirects to login after 3 seconds)
 - `/forgot-password` - password reset page
 - `/reset-password` - set new password page with token
 
@@ -57,9 +57,17 @@
 
 - Component displayed after registration
 - Message about sent verification email
-- Button: "Send again"
+- Button: "Send again" (with loading state)
 - Link to return to login
 - State handling: sending, success, error
+- Uses MailIcon from lucide-react for visual consistency
+
+#### EmailVerifiedPage
+
+- Component displayed after successful email verification
+- Shows success confirmation with checkmark icon
+- Automatically redirects to login page after 3 seconds
+- Displays message: "Your email address has been successfully verified"
 
 #### ForgotPasswordForm
 
@@ -160,6 +168,8 @@
 
 - **`useResendVerification`** - Resend verification email
   - Calls `supabase.auth.resend({ type: 'signup', email })`
+  - Accepts optional email parameter (uses current user email if not provided)
+  - Enhanced to support resending to specified email address for better UX
 
 ### 2.2 Data Models
 
@@ -306,12 +316,14 @@ According to application pattern:
 3. Call `useSignUp` mutation → `AuthProvider.signUp()`
 4. Edge Function (`/signup`) checks `app_config.registration_enabled`
 5. If enabled: create user via `supabase.auth.admin.createUser()` with `email_confirm: false`
-6. Send verification email (handled by Supabase)
-7. Auto-signOut after registration (enforce "no session before verification")
-8. Redirect to `/verify-email` with email in state
-9. User clicks verification link in email
-10. Token verification by Supabase → `email_confirmed_at` set
-11. User redirected to login page (must login again after verification)
+6. Generate verification link using Supabase Admin API `generateLink()`
+7. Send verification email via Resend API with custom HTML template
+8. Auto-signOut after registration (enforce "no session before verification")
+9. Redirect to `/verify-email` with email in state
+10. User clicks verification link in email
+11. Token verification by Supabase → `email_confirmed_at` set
+12. User redirected to `/email-verified` page (success confirmation)
+13. After 3 seconds, automatic redirect to `/login` page (must login again after verification)
 
 #### Login Flow
 
@@ -358,6 +370,9 @@ According to application pattern:
 - **Edge Function:** `supabase/functions/signup/index.ts` validates setting before user creation
   - Returns 403 if registration disabled
   - Uses `supabase.auth.admin.createUser()` for server-side user creation
+  - Generates verification link using `supabase.auth.admin.generateLink()`
+  - Sends verification email via Resend API with custom HTML template
+  - Handles email sending errors gracefully (user can still use resend verification feature)
 - **Frontend-level:** `ConfigProvider` fetches config from database
   - `RegisterPage` shows loading state until config loads (fail-closed)
   - `LoginPage` hides registration link until config confirms it's enabled
@@ -379,6 +394,10 @@ According to application pattern:
 - Subject: "Confirm your email address - i18n-mate"
 - Content: verification link, instructions, branding
 - HTML + plain text version
+- **Delivery:** Sent via Resend API (not Supabase default email)
+- **Template:** Custom HTML template with branded styling, verification button, and fallback link
+- **Redirect:** After verification, redirects to `/email-verified` page
+- **Expiration:** Link valid for 1 hour
 
 #### Password Reset Email
 
@@ -442,7 +461,12 @@ src/app/components/
 └── ProtectedRoute.tsx # Wrapper combining AuthGuard + Suspense
 
 supabase/functions/signup/
-└── index.ts # Edge Function for registration control
+├── index.ts # Edge Function for registration control with Resend API integration
+└── deno.json # Deno configuration with Supabase and Zod imports
+
+supabase/functions/health/
+├── index.ts # Health check Edge Function for service continuity and availability monitoring
+└── deno.json # Deno configuration with Supabase imports
 
 supabase/migrations/
 └── 20251028100001_02_tables.sql # app_config table for feature flags
@@ -463,6 +487,7 @@ Authentication constants stored in `src/shared/constants/auth.constants.ts`:
   - `/login` → `LoginPage`
   - `/register` → `RegisterPage`
   - `/verify-email` → `VerifyEmailPage`
+  - `/email-verified` → `EmailVerifiedPage` (success page after verification)
   - `/forgot-password` → `ForgotPasswordPage`
   - `/reset-password` → `ResetPasswordPage`
 
@@ -476,13 +501,14 @@ Authentication constants stored in `src/shared/constants/auth.constants.ts`:
 
 ```tsx
 <SupabaseProvider>
-  <AuthProvider>
-    {' '}
-    {/* Global auth state */}
-    <QueryClientProvider>
-      <RouterProvider />
-    </QueryClientProvider>
-  </AuthProvider>
+  <QueryClientProvider>
+    <ConfigProvider>
+      <AuthProvider>
+        <RouterProvider />
+        <Toaster />
+      </AuthProvider>
+    </ConfigProvider>
+  </QueryClientProvider>
 </SupabaseProvider>
 ```
 
@@ -509,6 +535,9 @@ Authentication constants stored in `src/shared/constants/auth.constants.ts`:
 - Environment variables:
   - `VITE_SUPABASE_URL` - Supabase project URL
   - `VITE_SUPABASE_ANON_KEY` - Supabase anon key
+  - `RESEND_API_KEY` - Resend API key for email delivery (Edge Function)
+  - `RESEND_FROM_EMAIL` - Resend sender email address (default: 'i18n-mate <noreply@example.com>')
+  - `SITE_URL` - Site URL for email verification redirects (Edge Function)
 - Database configuration (via `app_config` table):
   - `app_config.registration_enabled` (default: `'true'`) - controls registration availability
     - Backend: validated by Edge Function (`supabase/functions/signup`)
