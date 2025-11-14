@@ -115,7 +115,7 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px]" data-testid="edit-project-dialog">
         <DialogHeader>
           <DialogTitle>Edit project</DialogTitle>
           <DialogDescription>Update project name and description.</DialogDescription>
@@ -132,7 +132,7 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
                     <span className="text-destructive">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="My Application" {...field} />
+                    <Input data-testid="edit-project-name-input" placeholder="My Application" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -145,17 +145,28 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Project description..." {...field} value={field.value || ''} />
+                    <Textarea
+                      data-testid="edit-project-description-input"
+                      placeholder="Project description..."
+                      {...field}
+                      value={field.value || ''}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button disabled={updateProject.isPending} onClick={handleCancel} type="button" variant="outline">
+              <Button
+                data-testid="edit-project-cancel-button"
+                disabled={updateProject.isPending}
+                onClick={handleCancel}
+                type="button"
+                variant="outline"
+              >
                 Cancel
               </Button>
-              <Button disabled={isSubmitDisabled} type="submit">
+              <Button data-testid="edit-project-submit-button" disabled={isSubmitDisabled} type="submit">
                 {updateProject.isPending ? 'Saving...' : 'Save changes'}
               </Button>
             </DialogFooter>

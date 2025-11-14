@@ -6,6 +6,7 @@ interface CardItemProps {
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
+  'data-testid'?: string;
   onClick?: () => void;
 }
 
@@ -41,7 +42,7 @@ interface CardItemProps {
  *   </div>
  * </CardItem>
  */
-export function CardItem({ actions, children, className, onClick }: CardItemProps) {
+export function CardItem({ actions, children, className, 'data-testid': dataTestId, onClick }: CardItemProps) {
   const isClickable = Boolean(onClick);
 
   const handleClick = () => {
@@ -64,6 +65,7 @@ export function CardItem({ actions, children, className, onClick }: CardItemProp
         isClickable && 'hover:bg-accent/50 cursor-pointer shadow-xs',
         className
       )}
+      data-testid={dataTestId}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       role={isClickable ? 'button' : undefined}

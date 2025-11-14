@@ -58,12 +58,17 @@ export function ProjectCard({ onDeleteClick, onEditClick, onNavigate, project }:
       actions={
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button aria-label={`Actions for ${project.name}`} size="icon" variant="ghost">
+            <Button
+              aria-label={`Actions for ${project.name}`}
+              data-testid={`project-card-actions-${project.id}`}
+              size="icon"
+              variant="ghost"
+            >
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleEditClick}>
+          <DropdownMenuContent align="end" data-testid={`project-card-menu-${project.id}`}>
+            <DropdownMenuItem data-testid={`project-card-edit-${project.id}`} onClick={handleEditClick}>
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
