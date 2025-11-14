@@ -11,7 +11,10 @@ import { ProtectedPage } from '../auth/ProtectedPage';
 export class ProjectDetailsPage extends ProtectedPage {
   readonly backToProjectsButton: Locator;
   readonly backToProjectsButtonError: Locator;
+  readonly editButton: Locator;
   readonly pageContainer: Locator;
+  readonly pageHeaderSubheading: Locator;
+  readonly pageHeaderTitle: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -20,6 +23,9 @@ export class ProjectDetailsPage extends ProtectedPage {
     this.pageContainer = page.getByTestId('project-details-page');
     this.backToProjectsButton = page.getByTestId('back-to-projects-button');
     this.backToProjectsButtonError = page.getByTestId('project-details-page-button');
+    this.editButton = page.getByTestId('project-details-edit-button');
+    this.pageHeaderTitle = page.getByTestId('page-header-title');
+    this.pageHeaderSubheading = page.getByTestId('page-header-subheading');
   }
 
   /**
@@ -27,6 +33,32 @@ export class ProjectDetailsPage extends ProtectedPage {
    */
   async clickBackToProjects() {
     await this.backToProjectsButton.click();
+  }
+
+  /**
+   * Click edit button to open edit dialog
+   */
+  async clickEdit() {
+    await this.editButton.click();
+  }
+
+  /**
+   * Get project description from page header
+   */
+  async getProjectDescription(): Promise<null | string> {
+    const isVisible = await this.pageHeaderSubheading.isVisible().catch(() => false);
+    if (!isVisible) {
+      return null;
+    }
+    return await this.pageHeaderSubheading.textContent();
+  }
+
+  /**
+   * Get project name from page header
+   */
+  async getProjectName(): Promise<string> {
+    const text = await this.pageHeaderTitle.textContent();
+    return text?.trim() || '';
   }
 
   /**

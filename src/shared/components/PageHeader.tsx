@@ -25,10 +25,18 @@ interface PageHeaderProps {
 export function PageHeader({ children, header, subHeading }: PageHeaderProps) {
   return (
     <div className="flex flex-col gap-3">
-      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{header}</h1>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl" data-testid="page-header-title">
+        {header}
+      </h1>
       {(children || subHeading) && (
         <div className="flex flex-col gap-1">
-          {children ? children : <p className="text-muted-foreground text-sm sm:text-base">{subHeading}</p>}
+          {children ? (
+            children
+          ) : (
+            <p className="text-muted-foreground text-sm sm:text-base" data-testid="page-header-subheading">
+              {subHeading}
+            </p>
+          )}
         </div>
       )}
     </div>

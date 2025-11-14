@@ -22,11 +22,16 @@ interface ProjectActionsProps {
 export function ProjectActions({ onDelete, onEdit }: ProjectActionsProps) {
   return (
     <div className="flex justify-end gap-2">
-      <Button aria-label="Edit project" onClick={onEdit} variant="outline">
+      <Button aria-label="Edit project" data-testid="project-details-edit-button" onClick={onEdit} variant="outline">
         <Pencil className="h-4 w-4" />
         Edit
       </Button>
-      <Button aria-label="Delete project" onClick={onDelete} variant="destructive">
+      <Button
+        aria-label="Delete project"
+        data-testid="project-details-delete-button"
+        onClick={onDelete}
+        variant="destructive"
+      >
         <Trash2 className="h-4 w-4" />
         Delete
       </Button>

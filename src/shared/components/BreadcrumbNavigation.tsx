@@ -43,13 +43,20 @@ export function BreadcrumbNavigation() {
             <Fragment key={`breadcrumb-${index}`}>
               <BreadcrumbItem>
                 {isLast || !item.href ? (
-                  <BreadcrumbPage className="flex items-center gap-1">
+                  <BreadcrumbPage
+                    className="flex items-center gap-1"
+                    data-testid={index === 1 ? 'breadcrumb-project-name' : undefined}
+                  >
                     {index === 0 && <Home className="size-3.5" />}
                     {item.label}
                   </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
-                    <Link className="flex items-center gap-1" to={item.href}>
+                    <Link
+                      className="flex items-center gap-1"
+                      data-testid={index === 1 ? 'breadcrumb-project-link' : undefined}
+                      to={item.href}
+                    >
                       {index === 0 && <Home className="size-3.5" />}
                       {item.label}
                     </Link>
