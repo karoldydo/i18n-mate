@@ -74,7 +74,7 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
 
   return (
     <AlertDialog onOpenChange={onOpenChange} open={open}>
-      <AlertDialogContent>
+      <AlertDialogContent data-testid="delete-project-dialog">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete project</AlertDialogTitle>
           <AlertDialogDescription asChild>
@@ -95,9 +95,12 @@ export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProje
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleteProject.isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel data-testid="delete-project-cancel-button" disabled={deleteProject.isPending}>
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            data-testid="delete-project-confirm-button"
             disabled={deleteProject.isPending}
             onClick={handleDeleteClick}
           >

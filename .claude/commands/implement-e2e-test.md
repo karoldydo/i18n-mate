@@ -21,11 +21,31 @@ This project uses Playwright for E2E testing with the following established patt
 
 Implement a complete E2E test scenario for the specified component following the established project patterns and conventions.
 
+## Critical Implementation Rules
+
+1. **Strict Workflow Adherence**:
+   - **MUST** follow the workflow steps in the exact order specified (Step 1 → Step 2 → Step 3 → Step 4 → Step 5)
+   - **DO NOT** skip steps or combine them
+   - **DO NOT** proceed to the next step until the current step is fully completed
+   - Each step must produce the specified output format before moving forward
+
+2. **No New Logic for Tests**:
+   - **DO NOT** implement new application logic, features, or functionality for E2E testing purposes
+   - **ONLY** add `data-testid` attributes to existing elements according to the plan from Step 3
+   - **ONLY** update components to accept and utilize `data-testid` props if they don't already support them
+   - Test the application **as it exists** - do not modify business logic, validation, or user flows
+   - If a component needs to accept `data-testid` as a prop, add it to the component's props interface and pass it through to the underlying DOM element
+
+3. **Component Updates**:
+   - When adding `data-testid` attributes, ensure components can receive and forward them properly
+   - For reusable components (e.g., Button, Input), add `data-testid` support via props if not already present
+   - Maintain component API consistency - don't break existing functionality
+
 ## Workflow
 
 ### Step 1: Component Tree Analysis
 
-Create an ASCII component tree starting from `<component>{{component}}</component>`, showing:
+Analyze the component structure specified in `<component>{{component}}</component>` and create an ASCII component tree showing:
 
 - Component hierarchy (parent → child relationships)
 - Key interactive elements (buttons, inputs, forms, dialogs)
@@ -49,13 +69,15 @@ Analyze the test scenario `<test>{{test}}</test>` and identify:
 
 For each key element identified in Steps 1-2, add `data-testid` attributes following these rules:
 
-- **Naming Convention**: `{feature}-{element-type}-{identifier}` (e.g., `login-email-input`, `project-card-{id}`)
-- **Page Container**: `{feature}-page` (e.g., `login-page`, `project-list-page`)
-- **Forms**: `{feature}-form` (e.g., `login-form`, `create-project-form`)
-- **Buttons**: `{feature}-{action}-button` (e.g., `login-submit-button`, `create-project-button`)
-- **Inputs**: `{feature}-{field-name}-input` (e.g., `login-email-input`, `project-name-input`)
-- **Dynamic Elements**: Include identifier in testid (e.g., `project-card-${projectId}`, `project-name-${projectId}`)
-- **State Elements**: Include state in testid (e.g., `project-list-empty`, `project-list-table`)
+- **Naming Convention**: `{feature}-{element-type}-{identifier}` (e.g., `feature-email-input`, `feature-card-{id}`)
+- **Page Container**: `{feature}-page` (e.g., `feature-list-page`)
+- **Forms**: `{feature}-form` (e.g., `feature-form`, `create-feature-form`)
+- **Buttons**: `{feature}-{action}-button` (e.g., `feature-submit-button`, `create-feature-button`)
+- **Inputs**: `{feature}-{field-name}-input` (e.g., `feature-name-input`, `feature-description-input`)
+- **Dynamic Elements**: Include identifier in testid (e.g., `feature-card-${id}`, `feature-name-${id}`)
+- **State Elements**: Include state in testid (e.g., `feature-list-empty`, `feature-list-table`)
+
+**Important**: Ensure all `data-testid` values follow the naming convention above
 
 **Output Format**: Code references showing exact file locations and line numbers where `data-testid` attributes should be added
 
@@ -71,10 +93,10 @@ Create POM classes following this structure:
   - `constructor(page: Page)` - Initialize all locators
   - `async goto()` - Navigate to page
   - `async waitForLoad()` - Wait for page to be ready
-  - Action methods (e.g., `async fillEmail()`, `async clickSubmit()`)
+  - Action methods (e.g., `async fillField()`, `async clickSubmit()`)
   - Query methods (e.g., `async getText()`, `async isVisible()`)
 
-**Output Format**: Complete TypeScript class implementation following existing patterns from `LoginPage.ts` and `ProjectListPage.ts`
+**Output Format**: Complete TypeScript class implementation following existing patterns from reference page objects in the codebase
 
 ### Step 5: Implement E2E Test
 
@@ -103,7 +125,8 @@ Create the test file following this structure:
 1. **No Hallucination**:
    - Use only Playwright APIs and patterns that exist in the codebase
    - Do not invent framework versions, methods, or configurations
-   - Reference existing test files (`login.spec.ts`, `create-project.spec.ts`) for patterns
+   - Reference existing test files in `tests/e2e/` for patterns
+   - Study existing page objects in `tests/e2e/pages/` to understand the established patterns
 
 2. **Selector Rules**:
    - **ONLY** use `data-testid` attributes via `page.getByTestId()`
@@ -125,6 +148,9 @@ Create the test file following this structure:
    - Include all necessary imports and type definitions
    - Do not truncate or summarize - show full implementations
 
+6. **No Logic Changes**:
+   - See "Critical Implementation Rules" section above for detailed guidelines
+
 ## Validation Checklist
 
 Before finalizing, ensure:
@@ -139,8 +165,25 @@ Before finalizing, ensure:
 
 ## Example References
 
-- **Page Object**: `tests/e2e/pages/auth/LoginPage.ts`
-- **Test File**: `tests/e2e/auth/login.spec.ts`
-- **Project Test**: `tests/e2e/projects/create-project.spec.ts`
-- **Project Page Object**: `tests/e2e/pages/projects/ProjectListPage.ts`
--
+Study existing implementations in the codebase for patterns:
+
+- **Page Objects**: `tests/e2e/pages/` - Browse existing page object classes
+- **Test Files**: `tests/e2e/` - Review existing test scenarios
+- **Base Classes**: `tests/e2e/pages/auth/ProtectedPage.ts` - For authenticated pages
+
+## Notes
+
+### Additional Guidelines
+
+Refer to "Critical Implementation Rules" section above for:
+
+- Workflow execution requirements
+- Test implementation philosophy
+- Component modification guidelines
+
+### Common Patterns
+
+- **Reusable UI components**: If using shadcn/ui or shared components, check if they already support `data-testid` via props
+- **Dynamic elements**: Use template literals for dynamic testids (e.g., `` `feature-item-${id}` ``)
+- **State-dependent elements**: Include state in testid name (e.g., `feature-list-empty`, `feature-list-loading`)
+- **Forms**: Use consistent naming for form elements (`feature-form`, `feature-field-input`, `feature-submit-button`)

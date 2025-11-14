@@ -40,6 +40,27 @@ export class ProjectListPage extends ProtectedPage {
   }
 
   /**
+   * Click delete action in project card dropdown menu
+   */
+  async clickDeleteProject(projectId: string) {
+    // click the actions button to open dropdown
+    const actionsButton = this.page.getByTestId(`project-card-actions-${projectId}`);
+    await actionsButton.click();
+    // wait for dropdown menu to be visible
+    const menu = this.page.getByTestId(`project-card-menu-${projectId}`);
+    await menu.waitFor({ state: 'visible' });
+    // click delete menu item
+    const deleteItem = this.page.getByTestId(`project-card-delete-${projectId}`);
+    await deleteItem.click();
+    // wait for dropdown to close
+    try {
+      await menu.waitFor({ state: 'hidden' });
+    } catch {
+      // menu already closed, ignore
+    }
+  }
+
+  /**
    * Click edit action in project card dropdown menu
    */
   async clickEditProject(projectId: string) {

@@ -72,7 +72,11 @@ export function ProjectCard({ onDeleteClick, onEditClick, onNavigate, project }:
               <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive" onClick={handleDeleteClick}>
+            <DropdownMenuItem
+              className="text-destructive"
+              data-testid={`project-card-delete-${project.id}`}
+              onClick={handleDeleteClick}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
