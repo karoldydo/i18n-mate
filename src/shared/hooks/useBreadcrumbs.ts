@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { useLocation } from 'react-router';
+import { useLocation, useParams } from 'react-router';
+
+import { useProjectName } from '@/features/projects/api/useProjectName';
 
 interface BreadcrumbItem {
   href?: string;
@@ -7,14 +9,26 @@ interface BreadcrumbItem {
   label: string;
 }
 
+interface RouteParams {
+  id: string;
+}
+
 /**
  * Hook to generate breadcrumb items based on the current route
  *
- * @param projectName - Optional project name for display
+ * - Automatically extracts projectId from route params using useParams
+ * - Fetches project name from TanStack Query cache if projectId is available
+ * - Falls back to UUID if project name is not available
+ *
+ * @param projectName - Optional project name for display (overrides fetched name)
  * @returns Array of breadcrumb items
  */
-export function useBreadcrumbs(projectName?: string): BreadcrumbItem[] {
+export function useBreadcrumbs(): BreadcrumbItem[] {
   const location = useLocation();
+  const params = useParams<keyof RouteParams>();
+
+  // fetch project name from cache if projectId is available
+  const projectName = useProjectName(params.id);
 
   return useMemo(() => {
     const breadcrumbs: BreadcrumbItem[] = [];
@@ -27,14 +41,12 @@ export function useBreadcrumbs(projectName?: string): BreadcrumbItem[] {
 
     const segments = location.pathname.split('/').filter(Boolean);
 
-    // if we're on a project page
-    if (segments[0] === 'projects' && segments[1]) {
-      const projectId = segments[1];
-
+    // if we're on a project page (has id param)
+    if (segments[0] === 'projects' && params.id) {
       // add project breadcrumb
       breadcrumbs.push({
-        href: `/projects/${projectId}`,
-        label: projectName || `${projectId}`,
+        href: `/projects/${params.id}`,
+        label: projectName || params.id,
       });
 
       // add sub-page breadcrumb if exists
@@ -55,7 +67,7 @@ export function useBreadcrumbs(projectName?: string): BreadcrumbItem[] {
     }
 
     return breadcrumbs;
-  }, [location.pathname, projectName]);
+  }, [location.pathname, params.id, projectName]);
 }
 
 /**

@@ -12,27 +12,21 @@ import {
   BreadcrumbSeparator,
 } from '@/shared/ui/breadcrumb';
 
-interface BreadcrumbNavigationProps {
-  projectName?: string;
-}
-
 /**
  * BreadcrumbNavigation renders a responsive breadcrumb navigation bar
  * based on the current route hierarchy and optional project name.
  *
  * - Automatically generates breadcrumb items from the active route structure
+ * - Fetches project name from TanStack Query cache if projectId is in route params
  * - Supports displaying the current project name within the breadcrumbs
  * - Shows a home icon for the root breadcrumb
  * - Skips rendering breadcrumbs on the root/projects page (single-level path)
  * - Clearly indicates the current page (active) in the breadcrumb trail
  *
- * @param {Object} props
- * @param {string} [props.projectName] - Optional project name to display in the breadcrumbs
- *
  * @returns {JSX.Element|null} The breadcrumb navigation, or null if not required for the current route
  */
-export function BreadcrumbNavigation({ projectName }: BreadcrumbNavigationProps) {
-  const breadcrumbs = useBreadcrumbs(projectName);
+export function BreadcrumbNavigation() {
+  const breadcrumbs = useBreadcrumbs();
 
   // don't show breadcrumbs on root/projects page
   if (breadcrumbs.length <= 1) {
