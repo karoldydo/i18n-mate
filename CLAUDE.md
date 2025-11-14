@@ -189,14 +189,25 @@ Migrations are versioned and follow a strict order (extensions → tables → in
 Required in `.env`:
 
 ```env
+# Supabase
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
+# Remote migration (optional): comma-separated list of project references
+SUPABASE_PROJECT_REFS=project_ref_1,project_ref_2
+
+# OpenRouter.ai
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=model_name
 
-E2E_USERNAME=your_e2e_test_email (required for E2E tests)
-E2E_PASSWORD=your_e2e_test_password (required for E2E tests)
+# Resend (Edge Functions - email delivery)
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=your_resend_from_email
+SITE_URL=your_site_url
+
+# E2E Testing (required for E2E tests)
+E2E_USERNAME=your_e2e_test_email
+E2E_PASSWORD=your_e2e_test_password
 ```
 
 ## MVP Features

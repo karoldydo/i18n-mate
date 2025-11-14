@@ -163,12 +163,17 @@ SUPABASE_PROJECT_REFS=project_ref_1,project_ref_2
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=model_name
 
+# Resend (Edge Functions - email delivery)
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=your_resend_from_email
+SITE_URL=your_site_url
+
 # E2E Testing (required for E2E tests)
 E2E_USERNAME=your_e2e_test_email
 E2E_PASSWORD=your_e2e_test_password
 ```
 
-**Note**: Refer to [Supabase documentation](https://supabase.com/docs) and [OpenRouter documentation](https://openrouter.ai/docs) for obtaining the required credentials.
+**Note**: Refer to [Supabase documentation](https://supabase.com/docs), [OpenRouter documentation](https://openrouter.ai/docs), and [Resend documentation](https://resend.com/docs) for obtaining the required credentials.
 
 ## Available Scripts
 
