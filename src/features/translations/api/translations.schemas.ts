@@ -46,6 +46,8 @@ const UPDATE_SOURCE_SCHEMA = z.enum(TRANSLATIONS_UPDATE_SOURCE_VALUES, {
  * - value: translation value string (trimmed, no newlines, length constraints)
  *
  * @see UPDATE_TRANSLATION_REQUEST_SCHEMA for full request validation including URL params
+ *
+ * @type {z.ZodObject}
  */
 export const UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA = z.object({
   is_machine_translated: z.boolean(),
@@ -72,6 +74,8 @@ export const UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA = z.object({
  * - updated_at: optional ISO datetime string for optimistic locking
  *
  * @see UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA for body-only validation
+ *
+ * @type {z.ZodType<UpdateTranslationRequest>}
  */
 export const UPDATE_TRANSLATION_REQUEST_SCHEMA = z.object({
   is_machine_translated: z.boolean(),
@@ -99,6 +103,8 @@ export const UPDATE_TRANSLATION_REQUEST_SCHEMA = z.object({
  * - updated_by_user_id: UUID of the user (nullable)
  * - updated_source: source of the update ('user' or 'system')
  * - updated_at: ISO datetime string of last update
+ *
+ * @type {z.ZodType<TranslationResponse>}
  */
 export const TRANSLATION_RESPONSE_SCHEMA = z.object({
   is_machine_translated: z.boolean(),

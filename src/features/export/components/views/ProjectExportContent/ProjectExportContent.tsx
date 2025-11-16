@@ -13,9 +13,7 @@ interface ProjectExportContentProps {
 }
 
 /**
- * ProjectExportContent
- *
- * Suspense-enabled content component for the export translations feature.
+ * ProjectExportContent - Suspense-enabled content component for the export translations feature.
  *
  * Handles retrieval of all necessary project data—including project details,
  * locale list, and translation key count—using suspense-based queries to ensure
@@ -27,10 +25,16 @@ interface ProjectExportContentProps {
  * - Passes computed stats (locale and key count) to the export layout.
  * - Renders export controls, back navigation, and descriptive headers.
  *
- * @param {Object} props - Component properties.
- * @param {string} props.projectId - The unique identifier of the project to export.
+ * @param {ProjectExportContentProps} props - Component properties
+ * @param {string} props.projectId - The unique identifier of the project to export
  *
- * @returns {JSX.Element|null} Animated project export view, or null if project not loaded.
+ * @returns {JSX.Element | null} Animated project export view, or null if project not loaded
+ *
+ * @see {@link useProject} for project data fetching
+ * @see {@link useProjectLocales} for locale list fetching
+ * @see {@link useProjectKeyCount} for key count fetching
+ * @see {@link ExportLayout} for the layout wrapper
+ * @see {@link ExportActions} for export controls
  */
 export function ProjectExportContent({ projectId }: ProjectExportContentProps) {
   const { data: project } = useProject(projectId);

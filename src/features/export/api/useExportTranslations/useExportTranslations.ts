@@ -9,19 +9,24 @@ import { createEdgeFunctionErrorResponse } from '../export.errors';
 import { EXPORT_TRANSLATIONS_SCHEMA } from '../export.schemas';
 
 /**
- * Export project translations as ZIP file
+ * Export project translations as ZIP file.
  *
  * Triggers download of ZIP archive containing JSON files for each locale.
  * Uses browser download API to save file with auto-generated filename.
+ * The mutation automatically handles authentication, file download, and
+ * cleanup of temporary download URLs.
  *
- * @param projectId - UUID of the project to export
+ * @param {string} projectId - UUID of the project to export
+ *
+ * @returns {ReturnType<typeof useMutation<unknown, ApiErrorResponse>>} TanStack Query mutation hook for exporting translations
  *
  * @throws {ApiErrorResponse} 400 - Invalid project ID format
  * @throws {ApiErrorResponse} 401 - Authentication required
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Export generation failed
  *
- * @returns TanStack Query mutation hook for exporting translations
+ * @see {@link EXPORT_TRANSLATIONS_SCHEMA} for request validation
+ * @see {@link createEdgeFunctionErrorResponse} for error handling
  */
 export function useExportTranslations(projectId: string) {
   const supabase = useSupabase();

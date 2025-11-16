@@ -24,13 +24,11 @@ import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
  * 4. Authorization errors detected from message patterns
  * 5. Generic database errors with fallback message
  *
- * @param postgrestError - PostgrestError from Supabase containing code, message, and details
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors (defaults to DATABASE_ERROR)
+ * @param {PostgrestError} postgrestError - PostgrestError from Supabase containing code, message, and details
+ * @param {string} [context] - Optional context string for logging (e.g., hook name)
+ * @param {string} [fallbackMessage] - Optional custom fallback message for generic errors (defaults to DATABASE_ERROR)
  *
- * @returns Standardized ApiErrorResponse object with appropriate status code and message
- *
- * @throws Never throws - always returns ApiErrorResponse object
+ * @returns {ApiErrorResponse} Standardized ApiErrorResponse object with appropriate status code and message
  */
 export function createDatabaseErrorResponse(
   postgrestError: PostgrestError,

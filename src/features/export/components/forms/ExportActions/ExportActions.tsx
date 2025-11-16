@@ -14,18 +14,22 @@ interface ExportActionsProps {
 type ExportStatus = 'error' | 'exporting' | 'idle' | 'success';
 
 /**
- * ExportActions
+ * ExportActions - Form component managing export button and status feedback.
  *
  * Renders the export action area, including the export button and status feedback.
  * Handles the export translations mutation lifecycle, including validation, loading,
  * success, and error states. Provides user feedback and disables the export button
  * when exporting or when disabled by parent.
  *
- * @param {Object} props - Component props
+ * @param {ExportActionsProps} props - Component props
  * @param {boolean} props.isDisabled - If true, disables the export action (e.g., no locales or permissions)
  * @param {string} props.projectId - The unique identifier of the project to export
  *
  * @returns {JSX.Element} Export button and status feedback UI
+ *
+ * @see {@link useExportTranslations} for the underlying export mutation
+ * @see {@link ExportButton} for the export trigger button
+ * @see {@link ExportStatus} for status display component
  */
 export function ExportActions({ isDisabled, projectId }: ExportActionsProps) {
   const [exportStatus, setExportStatus] = useState<ExportStatus>('idle');

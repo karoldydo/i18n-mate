@@ -14,7 +14,7 @@ interface ExportStatusProps {
 }
 
 /**
- * ExportStatus
+ * ExportStatus - Displays the current status of the export process.
  *
  * Displays the current status of the export process with appropriate visuals and
  * messages for the user, including:
@@ -25,12 +25,12 @@ interface ExportStatusProps {
  *   optional retry action if provided.
  * - "idle": Renders nothing while no export is in progress.
  *
- * @param {Object} props - Component properties.
- * @param {ApiErrorResponse|null} props.error - The API error to display if export fails, or null otherwise.
- * @param {() => void} [props.onRetry] - Optional callback to retry the export in case of error.
- * @param {'idle'|'exporting'|'success'|'error'} props.status - The current status of the export operation.
+ * @param {ExportStatusProps} props - Component properties
+ * @param {ApiErrorResponse | null} props.error - The API error to display if export fails, or null otherwise
+ * @param {(() => void)} [props.onRetry] - Optional callback to retry the export in case of error
+ * @param {ExportStatus} props.status - The current status of the export operation
  *
- * @returns {JSX.Element|null} Status alert or null.
+ * @returns {JSX.Element | null} Status alert or null if status is idle
  */
 export function ExportStatus({ error, onRetry, status }: ExportStatusProps) {
   if (status === 'idle') {

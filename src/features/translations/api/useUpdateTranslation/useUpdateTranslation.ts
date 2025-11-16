@@ -29,7 +29,7 @@ import { TRANSLATION_RESPONSE_SCHEMA, UPDATE_TRANSLATION_REQUEST_BODY_SCHEMA } f
  * 3. Optimistic lock check if updated_at is provided (409 conflict if timestamp mismatch)
  * 4. Response validation and parsing
  *
- * @returns TanStack Query mutation hook for updating translations
+ * @returns {ReturnType<typeof useMutation<TranslationResponse, ApiErrorResponse, UpdateTranslationRequest>>} TanStack Query mutation hook for updating translations
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, locale format, value constraints)
  * @throws {ApiErrorResponse} 404 - Translation not found or no rows affected

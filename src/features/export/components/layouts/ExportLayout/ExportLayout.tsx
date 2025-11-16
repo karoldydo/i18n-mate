@@ -16,20 +16,18 @@ interface ProjectStats {
 }
 
 /**
- * ExportLayout
- *
- * Layout wrapper for the translation export view.
+ * ExportLayout - Layout wrapper for the translation export view.
  *
  * Provides a consistent, responsive structure for export-related content,
  * including a project summary section (project name, description, locale count,
  * and key count) and a dedicated actions area for export controls.
  *
- * @param {Object} props - Component properties.
- * @param {React.ReactNode} [props.children] - Export action controls or content to be rendered in the export options section.
- * @param {ProjectResponse} props.project - The project entity with metadata (name, optional description).
- * @param {ProjectStats} props.stats - Object containing summary statistics (locale and key counts) for the project.
+ * @param {ExportLayoutProps} props - Component properties
+ * @param {ReactNode} [props.children] - Export action controls or content to be rendered in the export options section
+ * @param {ProjectResponse} props.project - The project entity with metadata (name, optional description)
+ * @param {ProjectStats} props.stats - Object containing summary statistics (locale and key counts) for the project
  *
- * @returns {JSX.Element} Structured export layout with project summary and export controls.
+ * @returns {JSX.Element} Structured export layout with project summary and export controls
  */
 export function ExportLayout({ children, project, stats }: ExportLayoutProps) {
   return (
