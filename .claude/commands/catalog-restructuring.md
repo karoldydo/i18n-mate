@@ -103,16 +103,19 @@ Execute all the file movement commands from Step 3 in sequence. Run each command
 # Finally create all index.ts files for the new subdirectories with content: export * from "./FileName";
 ```
 
-### Step 7: Remove Old Index Files
+### Step 7: Remove All Old Index Files
 
-After completing the file movements and creating new index.ts files, remove the old index.ts files that were previously at the feature level (e.g., /src/features/{{feature}}/components/index.ts):
+After completing the file movements and creating new index.ts files in the subdirectories, remove **ALL** old index.ts files that were previously at higher directory levels:
+
+**Important:** Index.ts files should only exist at the level of individual components, hooks, routes, guards, forms, etc. (in the subdirectories). All index.ts files at feature level (e.g., `/src/features/{{feature}}/components/index.ts`, `/src/features/{{feature}}/routes/index.ts`, `/src/features/{{feature}}/hooks/index.ts`) must be removed.
 
 ```bash
-# Remove old index.ts files from each restructured directory level
+# Remove ALL old index.ts files from feature level directories
 rm /src/features/{{feature}}/components/index.ts
 rm /src/features/{{feature}}/routes/index.ts
 rm /src/features/{{feature}}/hooks/index.ts
-# ... remove any other old index.ts files that existed before restructuring
+rm /src/features/{{feature}}/api/index.ts
+# Remove any other old index.ts files that existed at feature level before restructuring
 ```
 
 ### Step 9: Verification Commands
