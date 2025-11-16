@@ -12,15 +12,25 @@ import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
  * that follow the format: error_code:ERROR_NAME,field:field_name,additional:metadata
  *
  * Handles all translation-related errors including:
- * - Foreign key violations (23503)
- * - Check constraint violations (23514)
- * - Trigger violations (default locale validation)
- * - Authentication and authorization errors
+ * - Foreign key violations (23503) - referenced resource not found
+ * - Check constraint violations (23514) - invalid field values
+ * - Trigger violations - default locale validation (cannot be NULL or empty)
+ * - Authentication and authorization errors - project not owned or access denied
  *
- * @param postgrestError - PostgrestError from Supabase
+ * Error handling priority:
+ * 1. Structured error codes from DETAIL field (e.g., DEFAULT_VALUE_EMPTY)
+ * 2. Trigger violations detected from error message
+ * 3. PostgreSQL error codes (check violations, foreign key violations)
+ * 4. Authorization errors detected from message patterns
+ * 5. Generic database errors with fallback message
+ *
+ * @param postgrestError - PostgrestError from Supabase containing code, message, and details
  * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object
+ * @param fallbackMessage - Optional custom fallback message for generic errors (defaults to DATABASE_ERROR)
+ *
+ * @returns Standardized ApiErrorResponse object with appropriate status code and message
+ *
+ * @throws Never throws - always returns ApiErrorResponse object
  */
 export function createDatabaseErrorResponse(
   postgrestError: PostgrestError,
