@@ -38,12 +38,12 @@ Prepare a comprehensive plan for restructuring directories for a specific featur
    - Maintain the existing nested structure for API hooks that are already restructured - only plan directory restructuring
 
 3. **Mandatory TODO List Management**:
-   - **MUST** create a comprehensive TODO list at the beginning that fully mirrors all workflow steps and planned activities
-   - **MUST** track progress through the TODO list, marking tasks as completed only after successful execution
-   - **MUST** update TODO status in real-time as each step is completed
-   - **MUST NOT** proceed to the next step until the current step's TODO item is marked as completed
-   - **MUST** include all 10 workflow steps as separate TODO items with clear descriptions
-   - **MUST** add additional TODO items for any preparatory or cleanup activities discovered during analysis
+   - **MUST** create a comprehensive TODO list at the beginning of the conversation that fully mirrors all workflow steps and planned activities as part of the model's thinking process
+   - **MUST** track progress through the TODO list during the conversation, marking tasks as completed only after successful execution
+   - **MUST** update TODO status in real-time during the conversation as each step is completed
+   - **MUST NOT** proceed to the next step until the current step's TODO item is marked as completed in the conversation
+   - **MUST** include all 10 workflow steps as separate TODO items with clear descriptions in the conversation flow
+   - **MUST** add additional TODO items for any preparatory or cleanup activities discovered during analysis as part of the conversation
 
 ## Workflow
 
