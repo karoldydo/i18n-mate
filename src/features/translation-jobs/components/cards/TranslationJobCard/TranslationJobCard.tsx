@@ -6,8 +6,8 @@ import type { TranslationJobResponse } from '@/shared/types';
 import { CardItem } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
-import { JobProgressIndicator } from '../common/JobProgressIndicator';
-import { JobStatusBadge } from '../common/JobStatusBadge';
+import { JobProgressIndicator } from '../../common/JobProgressIndicator';
+import { JobStatusBadge } from '../../common/JobStatusBadge';
 
 interface TranslationJobCardProps {
   job: TranslationJobResponse;

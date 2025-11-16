@@ -10,10 +10,10 @@ import { Label } from '@/shared/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 
-import { useKeysPerLanguageView } from '../../../keys/api/useKeysPerLanguageView';
-import { useProjectKeyCount } from '../../../keys/api/useProjectKeyCount';
-import { useProjectLocales } from '../../../locales/api/useProjectLocales';
-import { KeySelector } from '../common/KeySelector';
+import { useKeysPerLanguageView } from '../../../../keys/api/useKeysPerLanguageView';
+import { useProjectKeyCount } from '../../../../keys/api/useProjectKeyCount';
+import { useProjectLocales } from '../../../../locales/api/useProjectLocales';
+import { KeySelector } from '../../common/KeySelector/KeySelector';
 
 interface CreateTranslationJobDialogProps {
   isLoading: boolean;

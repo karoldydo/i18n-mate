@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { TRANSLATION_JOBS_POLL_INTERVALS, TRANSLATION_JOBS_POLL_MAX_ATTEMPTS } from '@/shared/constants';
 import { isActiveJob, isFinishedJob } from '@/shared/types';
 
-import { useActiveTranslationJob } from '../api';
+import { useActiveTranslationJob } from '../../api/useActiveTranslationJob';
 
 /**
  * Custom hook for polling active translation job with exponential backoff

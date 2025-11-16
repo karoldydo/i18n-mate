@@ -10,14 +10,14 @@ import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/component
 import { isActiveJob } from '@/shared/types';
 import { Button } from '@/shared/ui/button';
 
-import { useCancelTranslationJob } from '../../api/useCancelTranslationJob';
-import { useCreateTranslationJob } from '../../api/useCreateTranslationJob';
-import { useTranslationJobs } from '../../api/useTranslationJobs';
-import { useTranslationJobPolling } from '../../hooks/useTranslationJobPolling';
-import { TranslationJobCard } from '../cards/TranslationJobCard';
-import { CancelJobDialog } from '../dialogs/CancelJobDialog';
-import { CreateTranslationJobDialog } from '../dialogs/CreateTranslationJobDialog';
-import { JobProgressModal } from '../dialogs/JobProgressModal';
+import { useCancelTranslationJob } from '../../../api/useCancelTranslationJob';
+import { useCreateTranslationJob } from '../../../api/useCreateTranslationJob';
+import { useTranslationJobs } from '../../../api/useTranslationJobs';
+import { useTranslationJobPolling } from '../../../hooks/useTranslationJobPolling';
+import { TranslationJobCard } from '../../cards/TranslationJobCard';
+import { CancelJobDialog } from '../../dialogs/CancelJobDialog';
+import { CreateTranslationJobDialog } from '../../dialogs/CreateTranslationJobDialog';
+import { JobProgressModal } from '../../dialogs/JobProgressModal';
 
 interface TranslationJobsContentProps {
   projectId: string;

@@ -5,8 +5,8 @@ import type { TranslationJobResponse } from '@/shared/types';
 import { Button } from '@/shared/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 
-import { JobProgressIndicator } from '../common/JobProgressIndicator';
-import { JobStatusBadge } from '../common/JobStatusBadge';
+import { JobProgressIndicator } from '../../common/JobProgressIndicator';
+import { JobStatusBadge } from '../../common/JobStatusBadge';
 
 interface JobProgressModalProps {
   isOpen: boolean;

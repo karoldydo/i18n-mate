@@ -66,11 +66,13 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/features/feature/api/useThing.ts` - feature query/mutation hook
 - `./src/features/feature/api/useThing.test.ts` - co-located hook test
 - `./src/features/feature/routes` - feature pages/guards
-- `./src/features/feature/routes/Thing.tsx` - feature page
-- `./src/features/feature/routes/Thing.test.tsx` - co-located page test
+- `./src/features/feature/routes/Thing/Thing.tsx` - feature page in nested directory
+- `./src/features/feature/routes/Thing/index.ts` - page export with `export * from "./Thing";`
+- `./src/features/feature/routes/Thing/Thing.test.tsx` - co-located page test
 - `./src/features/feature/hooks` - feature logic and local state
-- `./src/features/feature/hooks/useThing.ts` - feature hook
-- `./src/features/feature/hooks/useThing.test.ts` - co-located hook test
+- `./src/features/feature/hooks/useThing/useThing.ts` - feature hook in nested directory
+- `./src/features/feature/hooks/useThing/index.ts` - hook export with `export * from "./useThing";`
+- `./src/features/feature/hooks/useThing/useThing.test.ts` - co-located hook test
 - `./src/test` - test setup only (Vitest)
 - `./public` - static files served 1:1 (favicon, manifest, robots)
 - `./supabase` - project backend infrastructure

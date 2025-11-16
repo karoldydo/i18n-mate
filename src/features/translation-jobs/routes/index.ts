@@ -1,1 +1,0 @@
-export { TranslationJobsPage } from './TranslationJobsPage';

@@ -10,7 +10,7 @@ import { Label } from '@/shared/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 
-import { useKeysDefaultView } from '../../../keys/api/useKeysDefaultView';
+import { useKeysDefaultView } from '../../../../keys/api/useKeysDefaultView';
 
 interface KeySelectorProps {
   mode: TranslationMode;
