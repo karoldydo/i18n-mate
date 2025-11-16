@@ -2,7 +2,13 @@
 
 ## Important Guidelines
 
-- **Strictly** follow the 10-step process below. **Do not skip, modify, or reorder any steps.**
+- **STRICTLY** follow the 10-step process outlined below
+- **DO NOT** modify any code content - only plan directory restructuring
+- **DO NOT** suggest code improvements or refactoring
+- **DO NOT** create or modify test files - only plan directory restructuring
+- Include index.ts creation for each new subdirectory with `export * from "./FileName";` syntax
+- Verify and list **ALL** documentation files that need updates
+- Maintain the existing nested structure for API hooks that are already restructured - only plan directory restructuring
 
 ## Context
 
@@ -18,7 +24,7 @@ The goal is to create a consistent nested directory structure where each compone
 
 ## Goal
 
-Prepare a comprehensive plan for restructuring directories for a specific feature module, transitioning from the current mixed flat/nested structure to a fully consistent nested structure. The plan must cover all applicable files in the feature (components, guards, forms, hooks, routes) while preserving the existing API structure that has already been restructured.
+Prepare a comprehensive plan for restructuring directories for a specific feature module, transitioning from the current mixed flat/nested structure to a fully consistent nested structure. The plan must cover all applicable files in the feature (components, routes, hooks, forms) while preserving the existing API structure that has already been restructured.
 
 ## Input Parameter
 
@@ -119,13 +125,3 @@ After updating documentation, run a final verification:
 npm run lint:fix
 npm run build
 ```
-
-## Constraints
-
-- **DO NOT** modify any code content - only plan directory restructuring
-- **DO NOT** suggest code improvements or refactoring
-- **DO NOT** create or modify test files
-- **STRICTLY** follow the 10-step process outlined above
-- Include index.ts creation for each new subdirectory with `export * from "./FileName";` syntax
-- Verify and list **ALL** documentation files that need updates
-- Maintain the existing nested structure for API hooks that are already restructured
