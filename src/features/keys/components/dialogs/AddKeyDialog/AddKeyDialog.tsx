@@ -2,10 +2,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { useCreateKey } from '@/features/keys/api/useCreateKey';
+import { KeyForm } from '@/features/keys/components/forms/KeyForm';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
-
-import { useCreateKey } from '../../api/useCreateKey';
-import { KeyForm } from '../forms/KeyForm';
 
 interface AddKeyDialogProps {
   onOpenChange: (open: boolean) => void;

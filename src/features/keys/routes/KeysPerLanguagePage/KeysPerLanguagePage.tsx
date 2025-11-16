@@ -3,8 +3,8 @@ import { useParams } from 'react-router';
 
 import { ErrorBoundary, ValidationError } from '@/shared/components';
 
-import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
-import { KeysPerLanguageContent } from '../components/views/KeysPerLanguageContent';
+import { UUID_SCHEMA } from '../../../projects/api/projects.schemas';
+import { KeysPerLanguageContent } from '../../components/views/KeysPerLanguageContent';
 
 interface RouteParams {
   id: string;

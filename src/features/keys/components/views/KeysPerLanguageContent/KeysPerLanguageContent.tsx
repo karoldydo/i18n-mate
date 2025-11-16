@@ -5,15 +5,14 @@ import { toast } from 'sonner';
 
 import type { PaginationParams } from '@/shared/types';
 
+import { useKeysPerLanguageView } from '@/features/keys/api/useKeysPerLanguageView';
+import { KeyTranslationCard } from '@/features/keys/components/cards/KeyTranslationCard';
+import { MissingFilterToggle } from '@/features/keys/components/common/MissingFilterToggle';
+import { SearchInput } from '@/features/keys/components/common/SearchInput';
+import { useKeysPerLanguageState } from '@/features/keys/hooks/useKeysPerLanguageState';
+import { useProject } from '@/features/projects/api/useProject';
+import { useUpdateTranslation } from '@/features/translations/api/useUpdateTranslation';
 import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/components';
-
-import { useProject } from '../../../projects/api/useProject';
-import { useUpdateTranslation } from '../../../translations/api/useUpdateTranslation';
-import { useKeysPerLanguageView } from '../../api/useKeysPerLanguageView';
-import { useKeysPerLanguageState } from '../../hooks/useKeysPerLanguageState';
-import { KeyTranslationCard } from '../cards/KeyTranslationCard';
-import { MissingFilterToggle } from '../common/MissingFilterToggle';
-import { SearchInput } from '../common/SearchInput';
 
 interface KeysPerLanguageContentProps {
   locale: string;

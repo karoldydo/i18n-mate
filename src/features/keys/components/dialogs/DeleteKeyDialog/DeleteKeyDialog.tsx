@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import type { KeyDefaultViewItem } from '@/shared/types';
 
+import { useDeleteKey } from '@/features/keys/api/useDeleteKey';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,8 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog';
-
-import { useDeleteKey } from '../../api/useDeleteKey';
 
 interface DeleteKeyDialogProps {
   keyData: KeyDefaultViewItem | null;

@@ -5,18 +5,17 @@ import { toast } from 'sonner';
 
 import type { KeyDefaultViewItem, PaginationParams } from '@/shared/types';
 
+import { useKeysDefaultView } from '@/features/keys/api/useKeysDefaultView';
+import { KeyCard } from '@/features/keys/components/cards/KeyCard';
+import { MissingFilterToggle } from '@/features/keys/components/common/MissingFilterToggle';
+import { SearchInput } from '@/features/keys/components/common/SearchInput';
+import { AddKeyDialog } from '@/features/keys/components/dialogs/AddKeyDialog';
+import { DeleteKeyDialog } from '@/features/keys/components/dialogs/DeleteKeyDialog';
+import { useKeysListFilters } from '@/features/keys/hooks/useKeysListFilters';
+import { useProject } from '@/features/projects/api/useProject';
+import { useUpdateTranslation } from '@/features/translations/api/useUpdateTranslation';
 import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
-
-import { useProject } from '../../../projects/api/useProject';
-import { useUpdateTranslation } from '../../../translations/api/useUpdateTranslation';
-import { useKeysDefaultView } from '../../api/useKeysDefaultView';
-import { useKeysListFilters } from '../../hooks/useKeysListFilters';
-import { KeyCard } from '../cards/KeyCard';
-import { MissingFilterToggle } from '../common/MissingFilterToggle';
-import { SearchInput } from '../common/SearchInput';
-import { AddKeyDialog } from '../dialogs/AddKeyDialog';
-import { DeleteKeyDialog } from '../dialogs/DeleteKeyDialog';
 
 interface KeysListContentProps {
   projectId: string;

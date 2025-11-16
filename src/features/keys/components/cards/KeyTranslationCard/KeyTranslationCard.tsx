@@ -1,9 +1,8 @@
 import type { KeyTranslationItem } from '@/shared/types';
 
+import { TranslationValueCell } from '@/features/keys/components/common/TranslationValueCell';
 import { CardItem } from '@/shared/components';
 import { TranslationStatus } from '@/shared/components/TranslationStatus';
-
-import { TranslationValueCell } from '../common/TranslationValueCell';
 
 interface KeyTranslationCardProps {
   editError?: string;
