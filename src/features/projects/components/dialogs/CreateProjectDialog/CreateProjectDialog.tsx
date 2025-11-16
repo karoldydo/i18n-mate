@@ -15,8 +15,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 
-import { CREATE_PROJECT_REQUEST_SCHEMA } from '../../api/projects.schemas';
-import { useCreateProject } from '../../api/useCreateProject';
+import { CREATE_PROJECT_REQUEST_SCHEMA } from '../../../api/projects.schemas';
+import { useCreateProject } from '../../../api/useCreateProject';
 
 interface CreateProjectDialogProps {
   onOpenChange: (open: boolean) => void;

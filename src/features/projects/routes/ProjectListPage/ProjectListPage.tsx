@@ -4,10 +4,10 @@ import type { ProjectResponse } from '@/shared/types';
 
 import { ErrorBoundary, PageHeader } from '@/shared/components';
 
-import { CreateProjectDialog } from '../components/dialogs/CreateProjectDialog';
-import { DeleteProjectDialog } from '../components/dialogs/DeleteProjectDialog';
-import { EditProjectDialog } from '../components/dialogs/EditProjectDialog';
-import { ProjectList } from '../components/lists/ProjectList';
+import { CreateProjectDialog } from '../../components/dialogs/CreateProjectDialog/CreateProjectDialog';
+import { DeleteProjectDialog } from '../../components/dialogs/DeleteProjectDialog/DeleteProjectDialog';
+import { EditProjectDialog } from '../../components/dialogs/EditProjectDialog/EditProjectDialog';
+import { ProjectList } from '../../components/lists/ProjectList/ProjectList';
 
 /**
  * ProjectListPage – Main page for displaying and managing all translation projects.

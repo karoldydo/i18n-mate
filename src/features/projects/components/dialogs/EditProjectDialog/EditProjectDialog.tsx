@@ -12,8 +12,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/shared/ui/input';
 import { Textarea } from '@/shared/ui/textarea';
 
-import { UPDATE_PROJECT_SCHEMA } from '../../api/projects.schemas';
-import { useUpdateProject } from '../../api/useUpdateProject';
+import { UPDATE_PROJECT_SCHEMA } from '../../../api/projects.schemas';
+import { useUpdateProject } from '../../../api/useUpdateProject';
 
 interface EditProjectDialogProps {
   onOpenChange: (open: boolean) => void;
@@ -55,7 +55,7 @@ export function EditProjectDialog({ onOpenChange, open, project }: EditProjectDi
 
   const form = useForm<UpdateProjectRequest>({
     defaultValues: {
-      description: project.description,
+      description: project.description ?? '',
       name: project.name,
     },
     mode: 'onChange',

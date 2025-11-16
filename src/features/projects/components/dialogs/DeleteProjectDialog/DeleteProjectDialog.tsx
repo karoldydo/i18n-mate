@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog';
 
-import { useDeleteProject } from '../../api/useDeleteProject';
+import { useDeleteProject } from '../../../api/useDeleteProject';
 
 interface DeleteProjectDialogProps {
   onOpenChange: (open: boolean) => void;

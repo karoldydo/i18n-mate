@@ -7,8 +7,8 @@ import type { PaginationParams, ProjectResponse } from '@/shared/types';
 import { CardList, EmptyState } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
-import { useProjects } from '../../api/useProjects';
-import { ProjectCard } from './ProjectCard';
+import { useProjects } from '../../../api/useProjects';
+import { ProjectCard } from '../ProjectCard/ProjectCard';
 
 interface ProjectListProps {
   onCreateClick: () => void;

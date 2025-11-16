@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 
-import { useProject } from '../../api/useProject';
-import { DeleteProjectDialog } from '../dialogs/DeleteProjectDialog';
-import { EditProjectDialog } from '../dialogs/EditProjectDialog';
-import { ProjectDetailsLayout } from '../layouts/ProjectDetailsLayout';
+import { useProject } from '../../../api/useProject';
+import { DeleteProjectDialog } from '../../dialogs/DeleteProjectDialog/DeleteProjectDialog';
+import { EditProjectDialog } from '../../dialogs/EditProjectDialog/EditProjectDialog';
+import { ProjectDetailsLayout } from '../../layouts/ProjectDetailsLayout/ProjectDetailsLayout';
 
 interface ProjectDetailsContentProps {
   projectId: string;

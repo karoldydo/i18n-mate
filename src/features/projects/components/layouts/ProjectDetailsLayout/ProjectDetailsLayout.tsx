@@ -2,8 +2,8 @@ import type { ProjectResponse } from '@/shared/types';
 
 import { BackButton, PageHeader } from '@/shared/components';
 
-import { ProjectActions } from './ProjectActions';
-import { ProjectMetadata } from './ProjectMetadata';
+import { ProjectActions } from '../ProjectActions/ProjectActions';
+import { ProjectMetadata } from '../ProjectMetadata/ProjectMetadata';
 
 interface ProjectDetailsLayoutProps {
   onDelete: () => void;
