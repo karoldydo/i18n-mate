@@ -2,8 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 
 import type { ApiErrorResponse } from '@/shared/types';
 
-import { useExportTranslations } from '../../api/useExportTranslations';
-import { ExportButton, ExportStatus } from '../common';
+import { useExportTranslations } from '../../../api';
+import { ExportButton } from '../../common/ExportButton';
+import { ExportStatus } from '../../common/ExportStatus';
 
 interface ExportActionsProps {
   isDisabled: boolean;

@@ -58,8 +58,10 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/features` - domain modules (feature-first)
 - `./src/features/feature` - specific feature scope
 - `./src/features/feature/components` - feature UI components
-- `./src/features/feature/components/Component.css` - co-located component CSS
-- `./src/features/feature/components/Component.test.tsx` - co-located unit test
+- `./src/features/feature/components/Component/Component.tsx` - feature component in nested directory
+- `./src/features/feature/components/Component/index.ts` - component export with `export * from "./Component";`
+- `./src/features/feature/components/Component/Component.css` - co-located component CSS
+- `./src/features/feature/components/Component/Component.test.tsx` - co-located unit test
 - `./src/features/feature/api` - queries/mutations (TanStack Query)
 - `./src/features/feature/api/useThing.ts` - feature query/mutation hook
 - `./src/features/feature/api/useThing.test.ts` - co-located hook test

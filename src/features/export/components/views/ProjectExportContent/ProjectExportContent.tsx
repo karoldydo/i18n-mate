@@ -5,8 +5,8 @@ import { useProjectLocales } from '@/features/locales/api/useProjectLocales';
 import { useProject } from '@/features/projects/api/useProject';
 import { BackButton, PageHeader } from '@/shared/components';
 
-import { ExportActions } from '../forms/ExportActions';
-import { ExportLayout } from '../layouts/ExportLayout';
+import { ExportActions } from '../../forms/ExportActions';
+import { ExportLayout } from '../../layouts/ExportLayout';
 
 interface ProjectExportContentProps {
   projectId: string;
