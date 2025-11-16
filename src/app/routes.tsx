@@ -88,7 +88,7 @@ const ProjectTelemetryPage = lazy(() =>
 );
 
 const ExportPage = lazy(() =>
-  import('../features/export/routes').then((module) => ({
+  import('../features/export/routes/ExportPage').then((module) => ({
     default: module.ExportPage,
   }))
 );

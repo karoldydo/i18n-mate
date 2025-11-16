@@ -3,8 +3,8 @@ import { useParams } from 'react-router';
 
 import { ErrorBoundary, ValidationError } from '@/shared/components';
 
-import { UUID_SCHEMA } from '../../projects/api/projects.schemas';
-import { ProjectExportContent } from '../components/views/ProjectExportContent';
+import { UUID_SCHEMA } from '../../../projects/api/projects.schemas';
+import { ProjectExportContent } from '../../components/views/ProjectExportContent';
 
 interface RouteParams {
   id: string;
