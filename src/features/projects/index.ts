@@ -10,7 +10,6 @@ export * from './api/useDeleteProject';
 
 // query hooks
 export * from './api/useProject';
-
 export * from './api/useProjectName';
 export * from './api/useProjects';
 export * from './api/useUpdateProject';
