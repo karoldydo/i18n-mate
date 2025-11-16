@@ -289,9 +289,11 @@ import { Component } from '../components/common/Component/Component';
 
 **Purpose**: Update public API to reference new nested structure.
 
-**Task**: Modify `/src/features/{{feature}}/index.ts` to export from nested paths.
+**Task**: Modify `/src/features/{{feature}}/index.ts` to export from nested paths, maintaining organized grouping with descriptive comments.
 
 **Export Pattern**:
+
+Group exports by category with descriptive comments (following the pattern established in the project):
 
 ```typescript
 // error handling
@@ -300,22 +302,29 @@ export * from './api/{{feature}}.errors';
 // schemas and types
 export * from './api/{{feature}}.schemas';
 
-// mutation hooks (API - unchanged)
+// mutation hooks
 export * from './api/useCreateHook';
 export * from './api/useUpdateHook';
 
-// component exports (updated to nested)
+// component exports
 export * from './components/cards/CardComponent';
 export * from './components/common/CommonComponent';
 
-// route exports (updated to nested)
+// route exports
 export * from './routes/ListPage';
 export * from './routes/DetailPage';
 
-// hook exports (updated to nested)
+// hook exports
 export * from './hooks/useListFilters';
 export * from './hooks/useFormState';
 ```
+
+**Requirements**:
+
+- Use descriptive comments to group exports by category
+- API exports remain unchanged (preserve existing structure)
+- Component, route, and hook exports must reference nested directory paths
+- Maintain alphabetical ordering within each group when possible
 
 **Output Format**: Show updated index.ts file content with all exports from nested paths.
 

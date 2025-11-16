@@ -1,1 +1,0 @@
-export { LocaleCard } from './LocaleCard';

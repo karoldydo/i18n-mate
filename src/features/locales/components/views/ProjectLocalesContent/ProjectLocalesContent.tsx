@@ -7,11 +7,11 @@ import type { LocaleItem } from '@/shared/types';
 import { BackButton, CardList, PageHeader } from '@/shared/components';
 import { Button } from '@/shared/ui/button';
 
-import { useProjectLocales } from '../../api/useProjectLocales';
-import { LocaleCard } from '../cards/LocaleCard';
-import { AddLocaleDialog } from '../dialogs/AddLocaleDialog';
-import { DeleteLocaleDialog } from '../dialogs/DeleteLocaleDialog';
-import { EditLocaleDialog } from '../dialogs/EditLocaleDialog';
+import { useProjectLocales } from '../../../api/useProjectLocales';
+import { LocaleCard } from '../../cards/LocaleCard';
+import { AddLocaleDialog } from '../../dialogs/AddLocaleDialog';
+import { DeleteLocaleDialog } from '../../dialogs/DeleteLocaleDialog';
+import { EditLocaleDialog } from '../../dialogs/EditLocaleDialog';
 
 interface ProjectLocalesContentProps {
   projectId: string;

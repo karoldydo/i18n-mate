@@ -13,8 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form';
 import { Input } from '@/shared/ui/input';
 
-import { CREATE_LOCALE_SCHEMA } from '../../api/locales.schemas';
-import { useCreateProjectLocale } from '../../api/useCreateProjectLocale';
+import { CREATE_LOCALE_SCHEMA } from '../../../api/locales.schemas';
+import { useCreateProjectLocale } from '../../../api/useCreateProjectLocale';
 
 interface AddLocaleDialogProps {
   onOpenChange: (open: boolean) => void;

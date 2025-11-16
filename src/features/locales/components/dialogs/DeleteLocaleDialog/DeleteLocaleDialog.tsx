@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog';
 
-import { useDeleteProjectLocale } from '../../api/useDeleteProjectLocale';
+import { useDeleteProjectLocale } from '../../../api/useDeleteProjectLocale';
 
 interface DeleteLocaleDialogProps {
   locale: LocaleItem | null;
