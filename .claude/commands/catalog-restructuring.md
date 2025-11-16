@@ -13,8 +13,9 @@ You are working on the i18n-mate project, a React 19 + TypeScript application fo
 - Currently there's an inconsistency: some parts use flat structure (files directly in subfolders) while others use nested structure (each file in its own subdirectory)
 - The API layer has already been restructured to nested format: `/api/useHook/useHook.ts` + `/api/useHook/index.ts`
 - Components, routes, and hooks still use flat structure: `/components/Component.tsx` directly in subfolders
+- Feature-level index.ts files are maintained as the public API for each feature
 
-The goal is to create a consistent nested directory structure where each component, form, guard, hook, and route gets its own subdirectory containing the main file, index.ts, and any associated test files.
+The goal is to create a consistent nested directory structure where each component, form, guard, hook, and route gets its own subdirectory containing the main file, index.ts, and any associated test files. The feature-level index.ts file is maintained as the public API for the feature and updated to reference the new nested structure.
 
 ## Goal
 
@@ -79,7 +80,11 @@ mv /path/to/source/file /path/to/destination/
 
 ### Step 4: Import/Export Verification
 
-List all files that may need import path updates after restructuring, grouped by feature areas.
+List all files that may need import path updates after restructuring, grouped by feature areas. Specifically verify:
+
+- **API folders**: Ensure each API hook directory has an `index.ts` file that properly exports using `export * from "./FileName"` pattern
+- **Feature-level imports**: Check that the main feature `index.ts` file imports from the correct nested paths
+- **Cross-feature imports**: Verify any imports from other features still work with updated paths
 
 **Output Format**: Markdown list grouped by feature areas
 
@@ -103,19 +108,31 @@ Execute all the file movement commands from Step 3 in sequence. Run each command
 # Finally create all index.ts files for the new subdirectories with content: export * from "./FileName";
 ```
 
-### Step 7: Remove All Old Index Files
+### Step 7: Update Feature-Level Index Files
 
-After completing the file movements and creating new index.ts files in the subdirectories, remove **ALL** old index.ts files that were previously at higher directory levels:
+After completing the file movements and creating new index.ts files in the subdirectories, update the main feature-level index.ts file to export from the new nested structure:
 
-**Important:** Index.ts files should only exist at the level of individual components, hooks, routes, guards, forms, etc. (in the subdirectories). All index.ts files at feature level (e.g., `/src/features/{{feature}}/components/index.ts`, `/src/features/{{feature}}/routes/index.ts`, `/src/features/{{feature}}/hooks/index.ts`) must be removed.
+**Important:** The feature-level index.ts file serves as the public API for the feature and should export all components, hooks, routes, and other public interfaces. Update the import paths to reference the new nested structure.
 
-```bash
-# Remove ALL old index.ts files from feature level directories
-rm /src/features/{{feature}}/components/index.ts
-rm /src/features/{{feature}}/routes/index.ts
-rm /src/features/{{feature}}/hooks/index.ts
-rm /src/features/{{feature}}/api/index.ts
-# Remove any other old index.ts files that existed at feature level before restructuring
+Example updated feature index.ts:
+
+```typescript
+// error handling
+export * from './api/{{feature}}.errors';
+
+// schemas and types
+export * from './api/{{feature}}.schemas';
+
+// mutation hooks (API layer already nested)
+export * from './api/useExampleHook';
+
+// component exports (updated to nested structure)
+export * from './components/common/ExampleComponent';
+export * from './components/forms/ExampleForm';
+export * from './components/layouts/ExampleLayout';
+
+// route exports (updated to nested structure)
+export * from './routes/ExamplePage';
 ```
 
 ### Step 9: Verification Commands
@@ -151,7 +168,8 @@ Before finalizing, ensure:
 - [ ] ASCII tree accurately represents current directory structure
 - [ ] All terminal commands are valid and executable
 - [ ] Index.ts files follow correct export pattern: `export * from "./FileName";`
-- [ ] Old index files are properly identified for removal
+- [ ] API folder index.ts files properly export using `export * from "./FileName"` pattern
+- [ ] Feature-level index.ts files are updated to reference new nested structure
 - [ ] Documentation files requiring updates are comprehensively listed
 - [ ] Import/export verification covers all affected files
 - [ ] Code matches existing project patterns exactly

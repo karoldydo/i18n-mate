@@ -4,11 +4,11 @@ import { toast } from 'sonner';
 
 import { AUTH_SUCCESS_MESSAGES } from '@/shared/constants';
 
-import type { RegisterFormData } from '../api/auth.schemas';
+import type { RegisterFormData } from '../../api/auth.schemas';
 
-import { useSignUp } from '../api';
-import { RegisterForm } from '../components/forms/RegisterForm';
-import { AuthLayout } from '../components/layouts/AuthLayout';
+import { useSignUp } from '../../api/useSignUp';
+import { RegisterForm } from '../../components/forms/RegisterForm';
+import { AuthLayout } from '../../components/layouts/AuthLayout';
 
 /**
  * RegisterPage - Registration page component

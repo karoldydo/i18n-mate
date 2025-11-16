@@ -1,39 +1,37 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router';
 
 import { Button } from '@/shared/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form';
 import { Input } from '@/shared/ui/input';
 
-import { type RegisterFormData, registerFormSchema } from '../../api/auth.schemas';
+import { type ResetPasswordFormData, resetPasswordFormSchema } from '../../../api/auth.schemas';
 
-interface RegisterFormProps {
+interface ResetPasswordFormProps {
   isSubmitting?: boolean;
-  onSubmit: (data: RegisterFormData) => void;
+  onSubmit: (data: ResetPasswordFormData) => void;
 }
 
 /**
- * RegisterForm - Registration form component
+ * ResetPasswordForm - Password reset form component
  *
- * Provides email, password, and password confirmation input fields with validation.
- * Ensures passwords match and meet security requirements.
+ * Provides password and password confirmation input fields for setting a new password.
+ * Used after clicking the reset link from email.
  */
-export function RegisterForm({ isSubmitting = false, onSubmit }: RegisterFormProps) {
-  const form = useForm<RegisterFormData>({
+export function ResetPasswordForm({ isSubmitting = false, onSubmit }: ResetPasswordFormProps) {
+  const form = useForm<ResetPasswordFormData>({
     defaultValues: {
       confirmPassword: '',
-      email: '',
       password: '',
     },
     mode: 'onChange',
-    resolver: zodResolver(registerFormSchema),
+    resolver: zodResolver(resetPasswordFormSchema),
   });
   const { control, formState, handleSubmit: formHandleSubmit } = form;
 
   const handleSubmit = useCallback(
-    (data: RegisterFormData) => {
+    (data: ResetPasswordFormData) => {
       onSubmit(data);
     },
     [onSubmit]
@@ -45,36 +43,16 @@ export function RegisterForm({ isSubmitting = false, onSubmit }: RegisterFormPro
         <div className="space-y-4">
           <FormField
             control={control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    aria-invalid={!!formState.errors.email}
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    type="email"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>New Password</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
                     aria-invalid={!!formState.errors.password}
                     autoComplete="new-password"
-                    placeholder="Create a password"
+                    placeholder="Create a new password"
                     type="password"
                   />
                 </FormControl>
@@ -95,7 +73,7 @@ export function RegisterForm({ isSubmitting = false, onSubmit }: RegisterFormPro
                     {...field}
                     aria-invalid={!!formState.errors.confirmPassword}
                     autoComplete="new-password"
-                    placeholder="Confirm your password"
+                    placeholder="Confirm your new password"
                     type="password"
                   />
                 </FormControl>
@@ -106,15 +84,8 @@ export function RegisterForm({ isSubmitting = false, onSubmit }: RegisterFormPro
         </div>
 
         <Button className="w-full" disabled={!formState.isValid || isSubmitting} type="submit">
-          {isSubmitting ? 'Creating account...' : 'Sign up'}
+          {isSubmitting ? 'Resetting password...' : 'Set new password'}
         </Button>
-
-        <p className="text-muted-foreground text-center text-sm">
-          Already have an account?{' '}
-          <Link className="text-primary hover:text-primary/80 underline-offset-4 hover:underline" to="/login">
-            Log in
-          </Link>
-        </p>
       </form>
     </Form>
   );

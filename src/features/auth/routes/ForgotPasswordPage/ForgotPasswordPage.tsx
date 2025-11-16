@@ -4,11 +4,11 @@ import { toast } from 'sonner';
 
 import { AUTH_SUCCESS_MESSAGES } from '@/shared/constants';
 
-import type { ForgotPasswordFormData } from '../api/auth.schemas';
+import type { ForgotPasswordFormData } from '../../api/auth.schemas';
 
-import { useResetPassword } from '../api';
-import { ForgotPasswordForm } from '../components/forms/ForgotPasswordForm';
-import { AuthLayout } from '../components/layouts/AuthLayout';
+import { useResetPassword } from '../../api/useResetPassword';
+import { ForgotPasswordForm } from '../../components/forms/ForgotPasswordForm';
+import { AuthLayout } from '../../components/layouts/AuthLayout';
 
 /**
  * ForgotPasswordPage - Password reset request page component

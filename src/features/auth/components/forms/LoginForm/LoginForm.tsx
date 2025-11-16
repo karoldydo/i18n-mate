@@ -7,7 +7,7 @@ import { Button } from '@/shared/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form';
 import { Input } from '@/shared/ui/input';
 
-import { type LoginFormData, loginFormSchema } from '../../api/auth.schemas';
+import { type LoginFormData, loginFormSchema } from '../../../api/auth.schemas';
 
 interface LoginFormProps {
   isSubmitting?: boolean;

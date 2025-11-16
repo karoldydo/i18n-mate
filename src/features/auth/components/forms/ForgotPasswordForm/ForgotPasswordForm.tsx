@@ -7,7 +7,7 @@ import { Button } from '@/shared/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/shared/ui/form';
 import { Input } from '@/shared/ui/input';
 
-import { type ForgotPasswordFormData, forgotPasswordFormSchema } from '../../api/auth.schemas';
+import { type ForgotPasswordFormData, forgotPasswordFormSchema } from '../../../api/auth.schemas';
 
 interface ForgotPasswordFormProps {
   isSubmitting?: boolean;

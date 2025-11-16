@@ -2,7 +2,7 @@ import { CircleCheckIcon } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
-import { AuthLayout } from '../components/layouts/AuthLayout';
+import { AuthLayout } from '../../components/layouts/AuthLayout';
 
 /**
  * EmailVerifiedPage

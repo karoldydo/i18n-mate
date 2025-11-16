@@ -4,11 +4,11 @@ import { toast } from 'sonner';
 
 import { useConfig } from '@/app/providers/ConfigProvider';
 
-import type { LoginFormData } from '../api/auth.schemas';
+import type { LoginFormData } from '../../api/auth.schemas';
 
-import { useSignIn } from '../api';
-import { LoginForm } from '../components/forms/LoginForm';
-import { AuthLayout } from '../components/layouts/AuthLayout';
+import { useSignIn } from '../../api/useSignIn';
+import { LoginForm } from '../../components/forms/LoginForm';
+import { AuthLayout } from '../../components/layouts/AuthLayout';
 
 /**
  * LoginPage - Login page component

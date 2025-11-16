@@ -3,9 +3,9 @@ import { useLocation } from 'react-router';
 
 import { useAuth } from '@/app/providers/AuthProvider';
 
-import { useResendVerification } from '../api';
-import { EmailVerificationScreen } from '../components/common/EmailVerificationScreen';
-import { AuthLayout } from '../components/layouts/AuthLayout';
+import { useResendVerification } from '../../api/useResendVerification';
+import { EmailVerificationScreen } from '../../components/common/EmailVerificationScreen';
+import { AuthLayout } from '../../components/layouts/AuthLayout';
 
 /**
  * VerifyEmailPage - Email verification page component

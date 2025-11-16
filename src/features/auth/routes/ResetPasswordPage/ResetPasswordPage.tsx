@@ -4,11 +4,11 @@ import { toast } from 'sonner';
 
 import { AUTH_SUCCESS_MESSAGES } from '@/shared/constants';
 
-import type { ResetPasswordFormData } from '../api/auth.schemas';
+import type { ResetPasswordFormData } from '../../api/auth.schemas';
 
-import { useUpdatePassword } from '../api';
-import { ResetPasswordForm } from '../components/forms/ResetPasswordForm';
-import { AuthLayout } from '../components/layouts/AuthLayout';
+import { useUpdatePassword } from '../../api/useUpdatePassword';
+import { ResetPasswordForm } from '../../components/forms/ResetPasswordForm';
+import { AuthLayout } from '../../components/layouts/AuthLayout';
 
 /**
  * ResetPasswordPage - Password reset page component
