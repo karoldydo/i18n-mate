@@ -1,7 +1,7 @@
 import type { TelemetryEventResponse } from '@/shared/types';
 
-import { useTelemetryKPIs } from '../../hooks/useTelemetryKPIs';
-import { KPICard } from '../cards/KPICard';
+import { useTelemetryKPIs } from '../../../hooks/useTelemetryKPIs';
+import { KPICard } from '../../cards/KPICard';
 
 interface TelemetryKPIsProps {
   projectCreatedAt: string;

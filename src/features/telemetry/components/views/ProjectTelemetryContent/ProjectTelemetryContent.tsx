@@ -6,9 +6,9 @@ import { useProject } from '@/features/projects/api/useProject';
 import { useTelemetryEvents } from '@/features/telemetry/api/useTelemetryEvents';
 import { BackButton, CardList, PageHeader } from '@/shared/components';
 
-import { useTelemetryPageState } from '../../hooks/useTelemetryPageState';
-import { TelemetryCard } from '../cards/TelemetryCard';
-import { TelemetryKPIs } from '../common/TelemetryKPIs';
+import { useTelemetryPageState } from '../../../hooks/useTelemetryPageState';
+import { TelemetryCard } from '../../cards/TelemetryCard';
+import { TelemetryKPIs } from '../../common/TelemetryKPIs';
 
 interface ProjectTelemetryContentProps {
   projectId: string;

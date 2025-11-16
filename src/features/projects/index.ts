@@ -7,8 +7,6 @@ export * from './api/projects.schemas';
 // mutation hooks
 export * from './api/useCreateProject';
 export * from './api/useDeleteProject';
-
-// query hooks
 export * from './api/useProject';
 export * from './api/useProjectName';
 export * from './api/useProjects';
