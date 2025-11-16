@@ -24,7 +24,7 @@ Prepare a comprehensive plan for restructuring directories for a specific featur
 ## Critical Implementation Rules
 
 1. **Strict Workflow Adherence**:
-   - **MUST** follow the workflow steps in the exact order specified (Step 1 → Step 2 → Step 3 → Step 4 → Step 5 → Step 6 → Step 7 → Step 9 → Step 10)
+   - **MUST** follow the workflow steps in the exact order specified (Step 1 → Step 2 → Step 3 → Step 4 → Step 5 → Step 6 → Step 7 → Step 8 → Step 9 → Step 10)
    - **DO NOT** skip steps or combine them
    - **DO NOT** proceed to the next step until the current step is fully completed
    - Each step must produce the specified output format before moving forward
@@ -36,6 +36,14 @@ Prepare a comprehensive plan for restructuring directories for a specific featur
    - Include index.ts creation for each new subdirectory with `export * from "./FileName";` syntax
    - Verify and list **ALL** documentation files that need updates
    - Maintain the existing nested structure for API hooks that are already restructured - only plan directory restructuring
+
+3. **Mandatory TODO List Management**:
+   - **MUST** create a comprehensive TODO list at the beginning that fully mirrors all workflow steps and planned activities
+   - **MUST** track progress through the TODO list, marking tasks as completed only after successful execution
+   - **MUST** update TODO status in real-time as each step is completed
+   - **MUST NOT** proceed to the next step until the current step's TODO item is marked as completed
+   - **MUST** include all 10 workflow steps as separate TODO items with clear descriptions
+   - **MUST** add additional TODO items for any preparatory or cleanup activities discovered during analysis
 
 ## Workflow
 
@@ -98,7 +106,25 @@ List all documentation files that need updates:
 
 **Output Format**: Markdown list of all files requiring updates
 
-### Step 6: Execute File Movement Commands
+### Step 6: Clean Up Existing Index Files
+
+Remove any existing index.ts files at intermediate directory levels that are not part of the nested structure. This ensures a clean transition to the new consistent structure.
+
+```bash
+# Remove index.ts files from intermediate directories that should not exist
+find /src/features/{{feature}}/components -name "index.ts" -type f -delete
+find /src/features/{{feature}}/routes -name "index.ts" -type f -delete
+find /src/features/{{feature}}/hooks -name "index.ts" -type f -delete
+# Add similar commands for any other intermediate directory levels that may exist
+```
+
+**Important**: Only remove index.ts files from intermediate directory levels. Preserve:
+
+- Feature-level index.ts (`/src/features/{{feature}}/index.ts`)
+- API subdirectory index.ts files (already properly structured)
+- Do not execute this step until after Step 5 is completed
+
+### Step 7: Execute File Movement Commands
 
 Execute all the file movement commands from Step 3 in sequence. Run each command individually and verify successful execution before proceeding to the next:
 
@@ -108,7 +134,7 @@ Execute all the file movement commands from Step 3 in sequence. Run each command
 # Finally create all index.ts files for the new subdirectories with content: export * from "./FileName";
 ```
 
-### Step 7: Update Feature-Level Index Files
+### Step 8: Update Feature-Level Index Files
 
 After completing the file movements and creating new index.ts files in the subdirectories, update the main feature-level index.ts file to export from the new nested structure:
 
