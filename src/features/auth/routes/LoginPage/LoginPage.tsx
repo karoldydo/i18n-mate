@@ -15,6 +15,8 @@ import { AuthLayout } from '../../components/layouts/AuthLayout';
  *
  * Displays the login form within the authentication layout.
  * Redirects to intended page or projects list after successful login.
+ *
+ * @returns {JSX.Element} Login page component
  */
 export function LoginPage() {
   const navigate = useNavigate();

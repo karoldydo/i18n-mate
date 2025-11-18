@@ -16,14 +16,10 @@ interface RegistrationGuardProps {
  * Redirects to login page if registration is disabled.
  * Shows loading state while config is being fetched (fail-closed approach).
  *
- * Usage:
- * ```tsx
- * <RegistrationGuard>
- *   <RegisterPage />
- * </RegistrationGuard>
- * ```
+ * @param {RegistrationGuardProps} props - Component props
+ * @param {ReactNode} props.children - Registration page content to render if registration is enabled
  *
- * @param children - Registration page content to render if registration is enabled
+ * @returns {JSX.Element} Registration page content or redirect component
  */
 export function RegistrationGuard({ children }: RegistrationGuardProps) {
   const { config, isLoading } = useConfig();

@@ -16,6 +16,8 @@ import { AuthLayout } from '../../components/layouts/AuthLayout';
  * Displays the registration form within the authentication layout.
  * Redirects to verification page after successful registration.
  * Route access is protected by RegistrationGuard component.
+ *
+ * @returns {JSX.Element} Registration page component
  */
 export function RegisterPage() {
   const navigate = useNavigate();

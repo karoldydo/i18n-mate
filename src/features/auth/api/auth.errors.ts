@@ -11,11 +11,11 @@ import { createApiErrorResponse } from '@/shared/utils';
  * Maps Supabase AuthError instances to standardized ApiErrorResponse format
  * with appropriate HTTP status codes and user-friendly error messages.
  *
- * @param authError - AuthError from Supabase Auth
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
+ * @param {AuthError} authError - AuthError from Supabase Auth
+ * @param {string} [context] - Optional context string for logging (e.g., hook name)
+ * @param {string} [fallbackMessage] - Optional custom fallback message for generic errors
  *
- * @returns Standardized ApiErrorResponse object
+ * @returns {ApiErrorResponse} Standardized ApiErrorResponse object
  */
 export function createAuthErrorResponse(
   authError: AuthError,

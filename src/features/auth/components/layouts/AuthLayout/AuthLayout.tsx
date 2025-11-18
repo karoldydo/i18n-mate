@@ -9,6 +9,11 @@ interface AuthLayoutProps {
  *
  * Provides a centered, responsive container with maximum width of 400px,
  * application branding at the top, and a neutral background with subtle gradient.
+ *
+ * @param {AuthLayoutProps} props - Component props
+ * @param {ReactNode} props.children - Content to render within the authentication layout
+ *
+ * @returns {JSX.Element} Authentication layout component
  */
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (

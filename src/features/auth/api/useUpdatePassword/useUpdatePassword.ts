@@ -18,7 +18,7 @@ import { createAuthErrorResponse } from '../auth.errors';
  * @throws {ApiErrorResponse} 401 - Token expired or invalid
  * @throws {ApiErrorResponse} 500 - Server error
  *
- * @returns TanStack Query mutation hook for password update
+ * @returns {ReturnType<typeof useMutation<undefined, ApiErrorResponse, ResetPasswordFormData>>} TanStack Query mutation hook for password update
  */
 export function useUpdatePassword() {
   const { updatePassword } = useAuth();

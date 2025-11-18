@@ -16,14 +16,10 @@ interface VerificationGuardProps {
  * Redirects to projects page if email verification is disabled.
  * Shows loading state while config is being fetched (fail-closed approach).
  *
- * Usage:
- * ```tsx
- * <VerificationGuard>
- *   <VerifyEmailPage />
- * </VerificationGuard>
- * ```
+ * @param {VerificationGuardProps} props - Component props
+ * @param {ReactNode} props.children - Verification page content to render if verification is required
  *
- * @param children - Verification page content to render if verification is required
+ * @returns {JSX.Element} Verification page content or redirect component
  */
 export function VerificationGuard({ children }: VerificationGuardProps) {
   const { config, isLoading } = useConfig();

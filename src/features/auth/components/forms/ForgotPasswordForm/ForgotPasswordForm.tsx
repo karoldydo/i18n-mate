@@ -18,6 +18,12 @@ interface ForgotPasswordFormProps {
  * ForgotPasswordForm - Password reset request form component
  *
  * Provides an email input field to request a password reset link.
+ *
+ * @param {ForgotPasswordFormProps} props - Component props
+ * @param {boolean} [props.isSubmitting] - Whether the form is currently being submitted
+ * @param {(data: ForgotPasswordFormData) => void} props.onSubmit - Callback function called when form is submitted
+ *
+ * @returns {JSX.Element} Forgot password form component
  */
 export function ForgotPasswordForm({ isSubmitting = false, onSubmit }: ForgotPasswordFormProps) {
   const form = useForm<ForgotPasswordFormData>({

@@ -20,6 +20,13 @@ interface LoginFormProps {
  *
  * Provides email and password input fields with validation.
  * Includes links to password reset and registration (if enabled).
+ *
+ * @param {LoginFormProps} props - Component props
+ * @param {boolean} [props.isSubmitting] - Whether the form is currently being submitted
+ * @param {(data: LoginFormData) => void} props.onSubmit - Callback function called when form is submitted
+ * @param {boolean} [props.registrationEnabled] - Whether registration is enabled (shows/hides sign up link)
+ *
+ * @returns {JSX.Element} Login form component
  */
 export function LoginForm({ isSubmitting = false, onSubmit, registrationEnabled = true }: LoginFormProps) {
   const form = useForm<LoginFormData>({

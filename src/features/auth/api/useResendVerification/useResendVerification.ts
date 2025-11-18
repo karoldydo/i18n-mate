@@ -9,16 +9,14 @@ import { createAuthErrorResponse } from '../auth.errors';
 /**
  * Resend verification email mutation hook
  *
- * Resends email verification to the provided email or current user.
+ * Re-sends email verification to the provided email or current user.
  * Can be used even when user is not logged in (e.g., after registration).
- *
- * @param email - Optional email address. If not provided, uses current user's email.
  *
  * @throws {ApiErrorResponse} 400 - No user email available
  * @throws {ApiErrorResponse} 429 - Rate limit exceeded
  * @throws {ApiErrorResponse} 500 - Server error
  *
- * @returns TanStack Query mutation hook for resending verification email
+ * @returns {ReturnType<typeof useMutation<undefined, ApiErrorResponse, string | undefined>>} TanStack Query mutation hook for resending verification email
  */
 export function useResendVerification() {
   const { resendVerification } = useAuth();

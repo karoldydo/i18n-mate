@@ -19,6 +19,12 @@ interface RegisterFormProps {
  *
  * Provides email, password, and password confirmation input fields with validation.
  * Ensures passwords match and meet security requirements.
+ *
+ * @param {RegisterFormProps} props - Component props
+ * @param {boolean} [props.isSubmitting] - Whether the form is currently being submitted
+ * @param {(data: RegisterFormData) => void} props.onSubmit - Callback function called when form is submitted
+ *
+ * @returns {JSX.Element} Registration form component
  */
 export function RegisterForm({ isSubmitting = false, onSubmit }: RegisterFormProps) {
   const form = useForm<RegisterFormData>({

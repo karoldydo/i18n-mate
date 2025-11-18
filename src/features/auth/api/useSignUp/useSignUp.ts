@@ -19,7 +19,7 @@ import { createAuthErrorResponse } from '../auth.errors';
  * @throws {ApiErrorResponse} 409 - Email already in use
  * @throws {ApiErrorResponse} 500 - Server error
  *
- * @returns TanStack Query mutation hook for user registration
+ * @returns {ReturnType<typeof useMutation<undefined, ApiErrorResponse, RegisterFormData>>} TanStack Query mutation hook for user registration
  */
 export function useSignUp() {
   const { signUp } = useAuth();

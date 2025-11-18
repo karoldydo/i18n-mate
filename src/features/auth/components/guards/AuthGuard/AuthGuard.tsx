@@ -18,15 +18,11 @@ interface AuthGuardProps {
  * Redirects unauthenticated users to login and unverified users to verification page.
  * Email verification requirement is controlled by app_config.email_verification_required.
  *
- * Usage:
- * ```tsx
- * <AuthGuard>
- *   <ProtectedPage />
- * </AuthGuard>
- * ```
+ * @param {AuthGuardProps} props - Component props
+ * @param {ReactNode} props.children - Protected content to render if authenticated
+ * @param {boolean} [props.requireVerified] - Override for email verification requirement (optional, defaults to config value)
  *
- * @param children - Protected content to render if authenticated
- * @param requireVerified - Override for email verification requirement (optional, defaults to config value)
+ * @returns {JSX.Element} Protected content or redirect component
  */
 export function AuthGuard({ children, requireVerified }: AuthGuardProps) {
   const { isLoading: isAuthLoading, user } = useAuth();

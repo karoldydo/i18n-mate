@@ -10,6 +10,10 @@ import {
 
 /**
  * Login form validation schema
+ *
+ * Validates email and password fields for user authentication.
+ * Email must be a valid email address with max length constraints.
+ * Password is required but format is not validated (handled by Supabase).
  */
 export const loginFormSchema = z.object({
   email: z
@@ -20,10 +24,20 @@ export const loginFormSchema = z.object({
   password: z.string().min(1, AUTH_ERROR_MESSAGES.PASSWORD_REQUIRED),
 });
 
+/**
+ * Type inferred from loginFormSchema
+ *
+ * Contains email and password fields for user authentication.
+ */
 export type LoginFormData = z.infer<typeof loginFormSchema>;
 
 /**
  * Registration form validation schema
+ *
+ * Validates email, password, and password confirmation fields for user registration.
+ * Email must be a valid email address with max length constraints.
+ * Password must meet minimum length, maximum length, and pattern requirements.
+ * Password confirmation must match the password field.
  */
 export const registerFormSchema = z
   .object({
@@ -44,10 +58,18 @@ export const registerFormSchema = z
     path: ['confirmPassword'],
   });
 
+/**
+ * Type inferred from registerFormSchema
+ *
+ * Contains email, password, and password confirmation fields for user registration.
+ */
 export type RegisterFormData = z.infer<typeof registerFormSchema>;
 
 /**
  * Forgot password form validation schema
+ *
+ * Validates email field for password reset request.
+ * Email must be a valid email address with max length constraints.
  */
 export const forgotPasswordFormSchema = z.object({
   email: z
@@ -57,10 +79,19 @@ export const forgotPasswordFormSchema = z.object({
     .email(AUTH_ERROR_MESSAGES.EMAIL_INVALID),
 });
 
+/**
+ * Type inferred from forgotPasswordFormSchema
+ *
+ * Contains email field for password reset request.
+ */
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordFormSchema>;
 
 /**
  * Reset password form validation schema
+ *
+ * Validates password and password confirmation fields for password reset.
+ * Password must meet minimum length, maximum length, and pattern requirements.
+ * Password confirmation must match the password field.
  */
 export const resetPasswordFormSchema = z
   .object({
@@ -76,4 +107,9 @@ export const resetPasswordFormSchema = z
     path: ['confirmPassword'],
   });
 
+/**
+ * Type inferred from resetPasswordFormSchema
+ *
+ * Contains password and password confirmation fields for password reset.
+ */
 export type ResetPasswordFormData = z.infer<typeof resetPasswordFormSchema>;

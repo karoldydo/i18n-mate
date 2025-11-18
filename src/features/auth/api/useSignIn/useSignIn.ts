@@ -18,7 +18,7 @@ import { createAuthErrorResponse } from '../auth.errors';
  * @throws {ApiErrorResponse} 403 - Email not confirmed
  * @throws {ApiErrorResponse} 500 - Server error
  *
- * @returns TanStack Query mutation hook for user login
+ * @returns {ReturnType<typeof useMutation<undefined, ApiErrorResponse, LoginFormData>>} TanStack Query mutation hook for user login
  */
 export function useSignIn() {
   const { signIn } = useAuth();

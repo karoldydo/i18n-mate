@@ -15,6 +15,8 @@ import { AuthLayout } from '../../components/layouts/AuthLayout';
  *
  * Displays the forgot password form within the authentication layout.
  * Shows success message after sending the reset email.
+ *
+ * @returns {JSX.Element} Forgot password page component
  */
 export function ForgotPasswordPage() {
   const [emailSent, setEmailSent] = useState(false);

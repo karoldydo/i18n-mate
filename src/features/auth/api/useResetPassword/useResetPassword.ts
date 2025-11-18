@@ -18,7 +18,7 @@ import { createAuthErrorResponse } from '../auth.errors';
  * @throws {ApiErrorResponse} 429 - Rate limit exceeded
  * @throws {ApiErrorResponse} 500 - Server error
  *
- * @returns TanStack Query mutation hook for password reset request
+ * @returns {ReturnType<typeof useMutation<undefined, ApiErrorResponse, ForgotPasswordFormData>>} TanStack Query mutation hook for password reset request
  */
 export function useResetPassword() {
   const { resetPassword } = useAuth();

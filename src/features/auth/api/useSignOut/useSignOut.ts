@@ -13,7 +13,7 @@ import { createAuthErrorResponse } from '../auth.errors';
  *
  * @throws {ApiErrorResponse} 500 - Server error
  *
- * @returns TanStack Query mutation hook for user logout
+ * @returns {ReturnType<typeof useMutation<undefined, ApiErrorResponse, undefined>>} TanStack Query mutation hook for user logout
  */
 export function useSignOut() {
   const { signOut } = useAuth();

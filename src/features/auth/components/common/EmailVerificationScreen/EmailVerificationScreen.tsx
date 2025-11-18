@@ -15,6 +15,12 @@ interface EmailVerificationScreenProps {
  *
  * Shows a message about the sent verification email with option to resend.
  * Provides feedback on resend action with success/error states.
+ *
+ * @param {EmailVerificationScreenProps} props - Component props
+ * @param {string} [props.email] - Email address to display in the message
+ * @param {() => Promise<void>} props.onResend - Callback function to resend verification email
+ *
+ * @returns {JSX.Element} Email verification screen component
  */
 export function EmailVerificationScreen({ email, onResend }: EmailVerificationScreenProps) {
   const [isResending, setIsResending] = useState(false);

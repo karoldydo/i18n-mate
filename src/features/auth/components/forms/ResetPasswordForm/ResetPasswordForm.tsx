@@ -18,6 +18,12 @@ interface ResetPasswordFormProps {
  *
  * Provides password and password confirmation input fields for setting a new password.
  * Used after clicking the reset link from email.
+ *
+ * @param {ResetPasswordFormProps} props - Component props
+ * @param {boolean} [props.isSubmitting] - Whether the form is currently being submitted
+ * @param {(data: ResetPasswordFormData) => void} props.onSubmit - Callback function called when form is submitted
+ *
+ * @returns {JSX.Element} Reset password form component
  */
 export function ResetPasswordForm({ isSubmitting = false, onSubmit }: ResetPasswordFormProps) {
   const form = useForm<ResetPasswordFormData>({

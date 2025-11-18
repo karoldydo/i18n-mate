@@ -12,6 +12,8 @@ import { AuthLayout } from '../../components/layouts/AuthLayout';
  *
  * Displays the email verification screen after registration.
  * Shows email address from navigation state or current user email.
+ *
+ * @returns {JSX.Element} Email verification page component
  */
 export function VerifyEmailPage() {
   const location = useLocation();

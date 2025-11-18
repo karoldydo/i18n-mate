@@ -16,6 +16,8 @@ import { AuthLayout } from '../../components/layouts/AuthLayout';
  * Displays the reset password form within the authentication layout.
  * Used when user clicks the reset link from email.
  * Redirects to login after successful password reset.
+ *
+ * @returns {JSX.Element} Reset password page component
  */
 export function ResetPasswordPage() {
   const navigate = useNavigate();
