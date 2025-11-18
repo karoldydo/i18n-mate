@@ -17,28 +17,20 @@ interface ProjectCardProps {
 /**
  * ProjectCard – Presents an individual project's summary and actions in a card UI.
  *
- * @param {Object} props - Component props
- * @param {ProjectResponse} props.project - The project data to display
- * @param {(projectId: string) => void} props.onNavigate - Called when the card is clicked, to navigate to the project detail route
- * @param {(project: ProjectResponse) => void} props.onEditClick - Called when the Edit action is clicked (passes the project)
- * @param {(project: ProjectResponse) => void} props.onDeleteClick - Called when the Delete action is clicked (passes the project)
- *
- * @returns {JSX.Element} Card structure displaying project name, description, key stats, and an action dropdown.
- *
- * @example
- * <ProjectCard
- *   project={project}
- *   onNavigate={handleProjectNavigate}
- *   onEditClick={openEditDialog}
- *   onDeleteClick={openDeleteDialog}
- * />
- *
  * Layout:
  * - Project name (always shown)
  * - Description (if present)
  * - Metadata: prefix, default locale
  * - Statistics: languages count, translation keys count
  * - Actions: Edit and Delete options via dropdown menu (three-dot button)
+ *
+ * @param {ProjectCardProps} props - Component props
+ * @param {ProjectResponse} props.project - The project data to display
+ * @param {(projectId: string) => void} props.onNavigate - Called when the card is clicked, to navigate to the project detail route
+ * @param {(project: ProjectResponse) => void} props.onEditClick - Called when the Edit action is clicked (passes the project)
+ * @param {(project: ProjectResponse) => void} props.onDeleteClick - Called when the Delete action is clicked (passes the project)
+ *
+ * @returns {JSX.Element} Card structure displaying project name, description, key stats, and an action dropdown
  */
 export function ProjectCard({ onDeleteClick, onEditClick, onNavigate, project }: ProjectCardProps) {
   const handleClick = useCallback(() => {

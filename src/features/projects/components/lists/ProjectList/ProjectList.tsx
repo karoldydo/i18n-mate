@@ -28,7 +28,7 @@ interface ProjectListProps {
  *
  * Integrates with TanStack Query for server-side pagination and loading state.
  *
- * @param {Object} props - Component props
+ * @param {ProjectListProps} props - Component props
  * @param {() => void} props.onCreateClick - Handler for creating a new project (opens create dialog)
  * @param {(project: ProjectResponse) => void} props.onDeleteClick - Handler for deleting a project (opens delete dialog)
  * @param {(project: ProjectResponse) => void} props.onEditClick - Handler for editing a project (opens edit dialog)

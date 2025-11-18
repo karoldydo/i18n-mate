@@ -18,7 +18,7 @@ interface RouteParams {
  * - On valid ID, renders the <ProjectDetailsContent> within an <ErrorBoundary> to gracefully handle loading and runtime errors.
  * - Error boundary is reset if the project ID changes, ensuring clean error state per project.
  *
- * @returns {JSX.Element} Detailed view for the selected project, or an error message if the project ID is invalid.
+ * @returns {JSX.Element} Detailed view for the selected project, or an error message if the project ID is invalid
  */
 export function ProjectDetailsPage() {
   const { id } = useParams<keyof RouteParams>();

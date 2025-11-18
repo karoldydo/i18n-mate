@@ -42,7 +42,7 @@ interface EditProjectDialogProps {
  * - Form resets when the modal closes and the update is not pending.
  * - Cancel button is disabled during pending mutations for safety.
  *
- * @param {Object} props - Props object
+ * @param {EditProjectDialogProps} props - Props object
  * @param {boolean} props.open - Controls whether the dialog is displayed
  * @param {(open: boolean) => void} props.onOpenChange - Callback invoked when the dialog open state changes
  * @param {ProjectResponse} props.project - The project object currently being edited

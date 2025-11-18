@@ -21,7 +21,7 @@ import { CREATE_PROJECT_RESPONSE_SCHEMA, CREATE_PROJECT_SCHEMA } from '../projec
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name or prefix for user)
  * @throws {ApiErrorResponse} 500 - Database error or no data returned
  *
- * @returns TanStack Query mutation hook for creating projects
+ * @returns {UseMutationResult<CreateProjectResponse, ApiErrorResponse, CreateProjectRequest>} TanStack Query mutation hook for creating projects
  */
 export function useCreateProject() {
   const supabase = useSupabase();

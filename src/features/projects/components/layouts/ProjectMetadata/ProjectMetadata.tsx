@@ -23,10 +23,10 @@ interface ProjectMetadataProps {
  * - Created: creation date (formatted; full timestamp shown in tooltip)
  * - Last Updated: timestamp of latest change (formatted; full timestamp shown in tooltip)
  *
- * @param {Object} props
- * @param {ProjectResponse} props.project - The project whose metadata will be displayed.
+ * @param {ProjectMetadataProps} props - Component props
+ * @param {ProjectResponse} props.project - The project whose metadata will be displayed
  *
- * @returns {JSX.Element} Card summary of key project metadata and stats.
+ * @returns {JSX.Element} Card summary of key project metadata and stats
  */
 export function ProjectMetadata({ project }: ProjectMetadataProps) {
   return (

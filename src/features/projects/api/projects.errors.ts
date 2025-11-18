@@ -11,11 +11,11 @@ import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
  * Provides consistent error handling for PostgreSQL errors using structured error details
  * that follow the format: error_code:ERROR_NAME,field:field_name,additional:metadata
  *
- * @param postgrestError - PostgrestError from Supabase
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
+ * @param {PostgrestError} postgrestError - PostgrestError from Supabase
+ * @param {string} [context] - Optional context string for logging (e.g., hook name)
+ * @param {string} [fallbackMessage] - Optional custom fallback message for generic errors
  *
- * @returns Standardized ApiErrorResponse object
+ * @returns {ApiErrorResponse} Standardized ApiErrorResponse object
  */
 export function createDatabaseErrorResponse(
   postgrestError: PostgrestError,

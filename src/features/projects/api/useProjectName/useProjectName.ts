@@ -19,10 +19,11 @@ import { createApiErrorResponse } from '@/shared/utils';
  * - Uses infinite `staleTime` and `gcTime` to always serve cached project names
  *   (since names are stable and minimize refetch/UI flicker).
  *
- * @param projectId - The UUID string of the project to fetch the name for.
- * @returns The project name as a string if found, otherwise undefined.
+ * @param {string | null | undefined} projectId - The UUID string of the project to fetch the name for
  *
- * @throws {ApiErrorResponse} 500 - On database errors (except RLS no-access).
+ * @returns {string | undefined} The project name as a string if found, otherwise undefined
+ *
+ * @throws {ApiErrorResponse} 500 - On database errors (except RLS no-access)
  */
 export function useProjectName(projectId: null | string | undefined): string | undefined {
   const supabase = useSupabase();

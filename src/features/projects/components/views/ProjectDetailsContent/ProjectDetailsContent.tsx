@@ -20,7 +20,7 @@ interface ProjectDetailsContentProps {
  * Integrates seamlessly with Suspense boundaries by relying on
  * TanStack Query's suspense-based data fetching.
  *
- * @param {Object} props - Component properties
+ * @param {ProjectDetailsContentProps} props - Component properties
  * @param {string} props.projectId - The unique identifier for the project to display
  *
  * @returns {JSX.Element | null} The rendered project details view, or null if not found

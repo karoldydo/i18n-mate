@@ -32,7 +32,14 @@ const PREFIX_SCHEMA = z
   .regex(PROJECT_PREFIX_PATTERN, PROJECTS_ERROR_MESSAGES.PREFIX_INVALID_FORMAT)
   .refine((value) => !value.endsWith('.'), PROJECTS_ERROR_MESSAGES.PREFIX_TRAILING_DOT);
 
-// list projects schema
+/**
+ * Zod schema for validating project list request parameters
+ *
+ * Validates pagination and sorting parameters for fetching a list of projects.
+ * Provides default values for limit, offset, and order when not specified.
+ *
+ * @returns {z.ZodType<ProjectsRequest>} Zod schema for projects request
+ */
 export const PROJECTS_REQUEST_SCHEMA = z.object({
   limit: z.number().int().min(1).max(PROJECTS_MAX_LIMIT).optional().default(PROJECTS_DEFAULT_LIMIT),
   offset: z.number().int().min(PROJECTS_MIN_OFFSET).optional().default(PROJECTS_MIN_OFFSET),
@@ -47,7 +54,14 @@ export const PROJECTS_REQUEST_SCHEMA = z.object({
     .default(PROJECT_SORT_OPTIONS.NAME_ASC),
 }) satisfies z.ZodType<ProjectsRequest>;
 
-// create project request schema (api input format without p_ prefix)
+/**
+ * Zod schema for validating create project request data
+ *
+ * Validates project creation input including name, description, prefix, default locale,
+ * and locale label. Enforces length constraints, format validation, and required fields.
+ *
+ * @returns {z.ZodType<CreateProjectRequest>} Zod schema for create project request
+ */
 export const CREATE_PROJECT_REQUEST_SCHEMA = z.object({
   default_locale: LOCALE_CODE_SCHEMA,
   default_locale_label: z
@@ -64,7 +78,15 @@ export const CREATE_PROJECT_REQUEST_SCHEMA = z.object({
   prefix: PREFIX_SCHEMA,
 }) satisfies z.ZodType<CreateProjectRequest>;
 
-// create project schema with rpc parameter transformation (adds p_ prefix)
+/**
+ * Zod schema for create project with RPC parameter transformation
+ *
+ * Transforms the create project request schema to match the RPC function signature
+ * by adding the `p_` prefix to all parameter names. Used when calling the database
+ * RPC function `create_project_with_default_locale`.
+ *
+ * @returns {z.ZodEffects<CreateProjectRequest, CreateProjectRpcArgs>} Zod schema with transformation
+ */
 export const CREATE_PROJECT_SCHEMA = CREATE_PROJECT_REQUEST_SCHEMA.transform(
   (data): CreateProjectRpcArgs => ({
     p_default_locale: data.default_locale,
@@ -75,7 +97,15 @@ export const CREATE_PROJECT_SCHEMA = CREATE_PROJECT_REQUEST_SCHEMA.transform(
   })
 );
 
-// update project schema
+/**
+ * Zod schema for validating update project request data
+ *
+ * Validates project update input, allowing only mutable fields (name and description).
+ * Prevents updates to immutable fields (prefix and default_locale) by using `z.never()`.
+ * Uses strict mode to reject unknown fields.
+ *
+ * @returns {z.ZodType<UpdateProjectRequest>} Zod schema for update project request
+ */
 export const UPDATE_PROJECT_SCHEMA = z
   .object({
     default_locale: z.never().optional(),
@@ -91,10 +121,24 @@ export const UPDATE_PROJECT_SCHEMA = z
   })
   .strict() satisfies z.ZodType<UpdateProjectRequest>;
 
-// UUID schema
+/**
+ * Zod schema for validating UUID strings
+ *
+ * Validates that a string is a valid UUID format. Used for project ID validation
+ * in API hooks and route parameters.
+ *
+ * @returns {z.ZodString} Zod schema for UUID validation
+ */
 export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
-// response schemas for runtime validation
+/**
+ * Zod schema for validating create project response data
+ *
+ * Validates the response structure returned from the create project RPC function.
+ * Includes all project fields with their expected types and formats.
+ *
+ * @returns {z.ZodObject} Zod schema for create project response
+ */
 export const CREATE_PROJECT_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   default_locale: z.string(),
@@ -105,6 +149,14 @@ export const CREATE_PROJECT_RESPONSE_SCHEMA = z.object({
   updated_at: z.string(),
 });
 
+/**
+ * Zod schema for validating project response data with counts
+ *
+ * Validates the response structure for a single project including aggregated
+ * counts for locales and translation keys. Used when fetching project details.
+ *
+ * @returns {z.ZodObject} Zod schema for project response with counts
+ */
 export const PROJECT_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   default_locale: z.string(),
@@ -117,6 +169,14 @@ export const PROJECT_RESPONSE_SCHEMA = z.object({
   updated_at: z.string(),
 });
 
+/**
+ * Zod schema for validating project list item response data
+ *
+ * Extends the project response schema to include total_count for pagination.
+ * Used when validating items in the paginated projects list response.
+ *
+ * @returns {z.ZodObject} Zod schema for project list item response
+ */
 export const PROJECTS_RESPONSE_ITEM_SCHEMA = PROJECT_RESPONSE_SCHEMA.extend({
   total_count: z.number(),
 });

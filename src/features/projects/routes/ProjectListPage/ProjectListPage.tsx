@@ -23,7 +23,7 @@ import { ProjectList } from '../../components/lists/ProjectList/ProjectList';
  * - Dialogs are controlled through local state; the currently selected project is tracked for edit/delete actions.
  * - After a project is created, edited, or deleted, the dialogs close and list updates (per underlying query behaviors).
  *
- * @returns {JSX.Element} The project list overview page with dialogs for CRUD operations.
+ * @returns {JSX.Element} The project list overview page with dialogs for CRUD operations
  */
 export function ProjectListPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);

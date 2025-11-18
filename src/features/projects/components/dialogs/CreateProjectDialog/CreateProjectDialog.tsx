@@ -42,16 +42,15 @@ interface CreateProjectDialogProps {
  *   - Invalidates all cached project queries for data consistency.
  *   - Displays a success toast notification.
  *   - Resets form state and closes the dialog.
- *   - Navigates the user to the newly created project’s detail page.
+ *   - Navigates the user to the newly created project's detail page.
  * - On error, displays a toast describing the failure.
  * - Resets all form fields when the dialog is closed, ensuring a fresh state for next open.
  *
- * @param {Object} props - Component props
- * @param {boolean} props.open - Whether the dialog is currently open/visible.
- * @param {(open: boolean) => void} props.onOpenChange - Called when the dialog open state changes.
- *   Passing `false` closes the dialog and resets the form; passing `true` opens the dialog.
+ * @param {CreateProjectDialogProps} props - Component props
+ * @param {boolean} props.open - Whether the dialog is currently open/visible
+ * @param {(open: boolean) => void} props.onOpenChange - Called when the dialog open state changes. Passing `false` closes the dialog and resets the form; passing `true` opens the dialog
  *
- * @returns {JSX.Element} The modal dialog containing the project creation form.
+ * @returns {JSX.Element} The modal dialog containing the project creation form
  */
 export function CreateProjectDialog({ onOpenChange, open }: CreateProjectDialogProps) {
   const navigate = useNavigate();

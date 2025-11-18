@@ -15,15 +15,15 @@ import { PROJECTS_REQUEST_SCHEMA, PROJECTS_RESPONSE_ITEM_SCHEMA } from '../proje
  * aggregated locale and key counts, plus total count for pagination. Data items
  * are validated at runtime and pagination metadata includes the total count.
  *
- * @param params - Optional listing parameters (limit, offset, order)
- * @param params.limit - Items per page (1-100, default: 50)
- * @param params.offset - Pagination offset (min: 0, default: 0)
- * @param params.order - Sort order (name.asc|desc, created_at.asc|desc, default: name.asc)
+ * @param {ProjectsRequest} [params] - Optional listing parameters (limit, offset, order)
+ * @param {number} [params.limit] - Items per page (1-100, default: 50)
+ * @param {number} [params.offset] - Pagination offset (min: 0, default: 0)
+ * @param {string} [params.order] - Sort order (name.asc|desc, created_at.asc|desc, default: name.asc)
  *
  * @throws {ApiErrorResponse} 400 - Validation error (limit > 100, negative offset)
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @returns TanStack Query result with projects data and pagination metadata
+ * @returns {UseSuspenseQueryResult<ProjectsResponse, ApiErrorResponse>} TanStack Query result with projects data and pagination metadata
  */
 export function useProjects(params: ProjectsRequest = {}) {
   const supabase = useSupabase();

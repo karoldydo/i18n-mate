@@ -19,7 +19,7 @@ import { UUID_SCHEMA } from '../projects.schemas';
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during deletion
  *
- * @returns TanStack Query mutation hook for deleting projects
+ * @returns {UseMutationResult<unknown, ApiErrorResponse, string>} TanStack Query mutation hook for deleting projects
  */
 export function useDeleteProject() {
   const supabase = useSupabase();

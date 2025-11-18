@@ -15,14 +15,14 @@ import { PROJECT_RESPONSE_SCHEMA, UPDATE_PROJECT_SCHEMA, UUID_SCHEMA } from '../
  * Updates mutable project fields (name, description only).
  * Immutable fields (prefix, default_locale) are blocked.
  *
- * @param projectId - UUID of the project to update
+ * @param {string} projectId - UUID of the project to update
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, attempt to change immutable fields)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate name for user)
  * @throws {ApiErrorResponse} 500 - Database error
  *
- * @returns TanStack Query mutation hook for updating projects
+ * @returns {UseMutationResult<UpdateProjectResponse, ApiErrorResponse, UpdateProjectRequest>} TanStack Query mutation hook for updating projects
  */
 export function useUpdateProject(projectId: string) {
   const supabase = useSupabase();

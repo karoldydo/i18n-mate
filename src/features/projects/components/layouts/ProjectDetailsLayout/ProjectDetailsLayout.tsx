@@ -23,7 +23,7 @@ interface ProjectDetailsLayoutProps {
  * Promotes a consistent and accessible page structure with logical grouping of project information
  * and actions. Designed to be used within a route/page responsible for rendering a specific project's details.
  *
- * @param {Object} props - Props for ProjectDetailsLayout
+ * @param {ProjectDetailsLayoutProps} props - Props for ProjectDetailsLayout
  * @param {() => void} props.onDelete - Callback invoked when the delete action is triggered
  * @param {() => void} props.onEdit - Callback invoked when the edit action is triggered
  * @param {ProjectResponse} props.project - The project data to render in the layout

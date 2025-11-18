@@ -13,7 +13,7 @@ interface ProjectActionsProps {
  * Renders edit and delete buttons for project management actions.
  * Buttons are accessible, clearly labeled, and visually grouped.
  *
- * @param {Object} props - Component props
+ * @param {ProjectActionsProps} props - Component props
  * @param {() => void} props.onDelete - Handler invoked when delete action is triggered
  * @param {() => void} props.onEdit - Handler invoked when edit action is triggered
  *

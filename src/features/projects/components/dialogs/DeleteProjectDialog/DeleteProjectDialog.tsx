@@ -37,13 +37,12 @@ interface DeleteProjectDialogProps {
  *     and closes the dialog.
  *   - On failure: displays the error message in a toast.
  *
- * @param {Object} props - The properties object.
- * @param {boolean} props.open - Whether the dialog is open and visible.
- * @param {(open: boolean) => void} props.onOpenChange - Callback to control dialog open state.
- *   When set to false, closes the dialog.
- * @param {ProjectResponse} props.project - The project to delete. Must contain name, locale_count, and key_count.
+ * @param {DeleteProjectDialogProps} props - The properties object
+ * @param {boolean} props.open - Whether the dialog is open and visible
+ * @param {(open: boolean) => void} props.onOpenChange - Callback to control dialog open state. When set to false, closes the dialog
+ * @param {ProjectResponse} props.project - The project to delete. Must contain name, locale_count, and key_count
  *
- * @returns {JSX.Element} Modal dialog for deleting a project.
+ * @returns {JSX.Element} Modal dialog for deleting a project
  */
 export function DeleteProjectDialog({ onOpenChange, open, project }: DeleteProjectDialogProps) {
   const queryClient = useQueryClient();

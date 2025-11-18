@@ -16,13 +16,13 @@ import { PROJECT_RESPONSE_SCHEMA, UUID_SCHEMA } from '../projects.schemas';
  * aggregated locale and key counts. Data is validated at runtime and returns a
  * 404-style error if the project is not found or the user has no access.
  *
- * @param projectId - UUID of the project to fetch
+ * @param {string} projectId - UUID of the project to fetch
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @returns TanStack Query result with the project data and counts
+ * @returns {UseSuspenseQueryResult<ProjectResponse, ApiErrorResponse>} TanStack Query result with the project data and counts
  */
 export function useProject(projectId: string) {
   const supabase = useSupabase();
