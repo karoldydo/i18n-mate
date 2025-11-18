@@ -21,7 +21,7 @@ import { CREATE_KEY_RESPONSE_SCHEMA, CREATE_KEY_SCHEMA } from '../keys.schemas';
  * @throws {ApiErrorResponse} 409 - Conflict error (duplicate key name in project)
  * @throws {ApiErrorResponse} 500 - Database error or no data returned
  *
- * @returns TanStack Query mutation hook for creating keys
+ * @returns {UseMutationResult<CreateKeyResponse, ApiErrorResponse, CreateKeyRequest>} TanStack Query mutation hook for creating keys
  */
 export function useCreateKey() {
   const supabase = useSupabase();

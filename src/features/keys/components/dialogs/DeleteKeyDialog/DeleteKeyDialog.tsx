@@ -25,7 +25,7 @@ interface DeleteKeyDialogProps {
 }
 
 /**
- * DeleteKeyDialog – Modal confirmation for permanent translation key deletion.
+ * Modal confirmation for permanent translation key deletion
  *
  * Presents a warning dialog before deleting a translation key, emphasizing the
  * irreversible, cascade nature of the operation. On confirmation, triggers a mutation
@@ -33,13 +33,13 @@ interface DeleteKeyDialogProps {
  * Handles optimistic UI updates, API errors (with toasts), and disables actions while
  * deletion is pending. Closes the dialog and invokes success callbacks upon completion.
  *
- * @param {Object}   props
+ * @param {Object} props - Component props
  * @param {KeyDefaultViewItem | null} props.keyData - Translation key to delete (or null to hide dialog)
- * @param {boolean}  props.open                     - Whether the dialog is visible
+ * @param {boolean} props.open - Whether the dialog is visible
  * @param {(open: boolean) => void} props.onOpenChange - Callback fired when open/close state changes
- * @param {() => void} props.onConfirm              - Callback fired after successful deletion
+ * @param {() => void} props.onConfirm - Callback fired after successful deletion
  *
- * @returns {JSX.Element | null} Confirmation dialog UI for deleting a translation key, or null if no key is selected.
+ * @returns {JSX.Element | null} Confirmation dialog UI for deleting a translation key, or null if no key is selected
  */
 export function DeleteKeyDialog({ keyData, onConfirm, onOpenChange, open }: DeleteKeyDialogProps) {
   const queryClient = useQueryClient();

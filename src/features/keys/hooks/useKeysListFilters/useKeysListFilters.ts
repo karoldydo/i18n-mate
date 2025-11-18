@@ -4,12 +4,21 @@ import { useSearchParams } from 'react-router';
 import { KEYS_DEFAULT_LIMIT } from '@/shared/constants';
 
 /**
- * useKeysListFilters - Manages filter state with URL synchronization
+ * Manages filter state with URL synchronization
  *
  * Provides state management for search, filtering, and pagination parameters
  * while synchronizing with URL search params for bookmarkable searches.
+ * Automatically resets to page 1 when search or filter changes.
  *
- * @returns Filter state and setter functions
+ * @returns {Object} Filter state and setter functions
+ * @returns {string} returns.searchValue - Current search query value
+ * @returns {boolean} returns.missingOnly - Whether missing-only filter is enabled
+ * @returns {number} returns.page - Current page number (1-based)
+ * @returns {number} returns.pageSize - Number of items per page
+ * @returns {(value: string) => void} returns.setSearchValue - Setter for search value (resets to page 1)
+ * @returns {(enabled: boolean) => void} returns.setMissingOnly - Setter for missing filter (resets to page 1)
+ * @returns {(newPage: number) => void} returns.setPage - Setter for page number
+ * @returns {(size: number) => void} returns.setPageSize - Setter for page size (resets to page 1)
  */
 export function useKeysListFilters() {
   const [searchParams, setSearchParams] = useSearchParams();

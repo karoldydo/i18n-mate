@@ -12,13 +12,19 @@ interface RouteParams {
 }
 
 /**
- * KeysPerLanguagePage - Main page component for keys list per-language view
+ * Main page component for keys list per-language view
  *
  * Displays translation keys for a specific non-default language in a project.
  * Users can view all keys for the selected locale, filter by missing translations,
  * search by key name, and perform inline editing with autosave functionality.
  * Provides clear metadata about translation provenance (manual vs machine-translated)
  * and timestamps.
+ *
+ * Validates the project ID and locale from route parameters and renders validation
+ * errors if either is missing or invalid. Wraps the content in an ErrorBoundary
+ * for error handling.
+ *
+ * @returns {JSX.Element} Page component with per-language keys content or validation error
  */
 export function KeysPerLanguagePage() {
   const { id, locale: languageCode } = useParams<keyof RouteParams>();

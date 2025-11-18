@@ -22,7 +22,7 @@ interface KeysListContentProps {
 }
 
 /**
- * KeysListContent – Displays the main content of the translation keys list view for a project.
+ * Displays the main content of the translation keys list view for a project
  *
  * Features:
  * - Fetches and displays translation keys and their default language values for a specific project.
@@ -37,11 +37,10 @@ interface KeysListContentProps {
  * - Shows empty state if no translation keys are present.
  * - Displays action buttons for adding keys and toggling missing translation filter.
  *
- * @param {object} props
- * @param {string} props.projectId - The ID of the project whose translation keys to display.
+ * @param {Object} props - Component props
+ * @param {string} props.projectId - The ID of the project whose translation keys to display
  *
- * @returns {JSX.Element | null} The content for the translation keys list, including add/edit/delete controls,
- * pagination, and appropriate empty state; or null while essential data loads.
+ * @returns {JSX.Element | null} The content for the translation keys list, including add/edit/delete controls, pagination, and appropriate empty state; or null while essential data loads
  */
 export function KeysListContent({ projectId }: KeysListContentProps) {
   const queryClient = useQueryClient();

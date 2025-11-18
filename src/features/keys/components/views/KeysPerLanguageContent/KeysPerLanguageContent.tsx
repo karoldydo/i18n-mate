@@ -20,10 +20,18 @@ interface KeysPerLanguageContentProps {
 }
 
 /**
- * KeysPerLanguageContent - Content component for keys list per-language view
+ * Content component for keys list per-language view
  *
  * Fetches and displays translation keys for a specific non-default language.
  * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
+ * Provides search, filtering, pagination, and inline editing capabilities for
+ * translation values in the selected locale.
+ *
+ * @param {Object} props - Component props
+ * @param {string} props.locale - Target locale code in BCP-47 format (e.g., "en", "en-US")
+ * @param {string} props.projectId - The ID of the project whose translation keys to display
+ *
+ * @returns {JSX.Element | null} The content for the per-language keys view, including search, filtering, pagination, and inline editing; or null while essential data loads
  */
 export function KeysPerLanguageContent({ locale, projectId }: KeysPerLanguageContentProps) {
   const queryClient = useQueryClient();

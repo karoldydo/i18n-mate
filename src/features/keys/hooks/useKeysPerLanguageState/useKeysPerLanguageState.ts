@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router';
 import { KEYS_DEFAULT_LIMIT } from '@/shared/constants';
 
 /**
- * useKeysPerLanguageState - Manages state for per-language keys view
+ * Manages state for per-language keys view
  *
  * Provides comprehensive state management for the per-language view including:
  * - Search and filter state with URL synchronization
@@ -12,7 +12,21 @@ import { KEYS_DEFAULT_LIMIT } from '@/shared/constants';
  * - Pagination state with URL synchronization
  * - Editing metadata (saving state, errors)
  *
- * @returns State accessors and setter functions
+ * @returns {Object} State accessors and setter functions
+ * @returns {string} returns.searchValue - Current search query value
+ * @returns {boolean} returns.missingOnly - Whether missing-only filter is enabled
+ * @returns {number} returns.page - Current page number (1-based)
+ * @returns {number} returns.pageSize - Number of items per page
+ * @returns {string | null} returns.editingKeyId - ID of the key currently being edited (null if none)
+ * @returns {boolean} returns.isSaving - Whether a save operation is in progress
+ * @returns {string | null} returns.editError - Error message from the last edit operation (null if none)
+ * @returns {(value: string) => void} returns.setSearchValue - Setter for search value (resets to page 1)
+ * @returns {(enabled: boolean) => void} returns.setMissingOnly - Setter for missing filter (resets to page 1)
+ * @returns {(newPage: number) => void} returns.setPage - Setter for page number
+ * @returns {(keyId: string) => void} returns.startEditing - Start editing a key by ID
+ * @returns {() => void} returns.cancelEditing - Cancel current editing operation
+ * @returns {(saving: boolean) => void} returns.setSavingState - Set saving state
+ * @returns {(error: string | null) => void} returns.setError - Set edit error message
  */
 export function useKeysPerLanguageState() {
   const [searchParams, setSearchParams] = useSearchParams();

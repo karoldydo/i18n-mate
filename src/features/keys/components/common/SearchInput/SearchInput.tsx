@@ -12,7 +12,7 @@ interface SearchInputProps {
 const DEBOUNCE_DELAY = 300;
 
 /**
- * SearchInput – Debounced search input with icon for filtering translation keys by name
+ * Debounced search input with icon for filtering translation keys by name
  *
  * Renders a search field with a leading search icon for filtering items by key name.
  * Utilizes a 300ms debounce to optimize API or filter calls, emitting the value to

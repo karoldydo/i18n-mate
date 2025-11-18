@@ -15,10 +15,15 @@ interface KeyTranslationCardProps {
 }
 
 /**
- * KeyTranslationCard – Presents an individual translation key's information in a card UI for per-language view.
+ * Presents an individual translation key's information in a card UI for per-language view
  *
  * Displays key name, editable translation value with inline editing, and translation metadata
  * (manual vs machine-translated, update timestamp). Supports autosave functionality for value editing.
+ *
+ * Layout:
+ * - Key name (full_key) in monospace font
+ * - Editable translation value with inline editing support
+ * - Translation metadata (manual/machine, update timestamp)
  *
  * @param {Object} props - Component props
  * @param {KeyTranslationItem} props.keyData - The translation key data to display
@@ -29,23 +34,7 @@ interface KeyTranslationCardProps {
  * @param {() => void} props.onEditEnd - Called when editing ends
  * @param {(value: string) => void} props.onValueChange - Called when the value changes (autosave)
  *
- * @returns {JSX.Element} Card structure displaying key name, editable translation value, and metadata.
- *
- * @example
- * <KeyTranslationCard
- *   keyData={key}
- *   isEditing={editingKeyId === key.key_id}
- *   isSaving={isSaving && editingKeyId === key.key_id}
- *   editError={editError}
- *   onEditStart={handleEditStart}
- *   onEditEnd={handleEditEnd}
- *   onValueChange={handleValueChange}
- * />
- *
- * Layout:
- * - Key name (full_key) in monospace font
- * - Editable translation value with inline editing support
- * - Translation metadata (manual/machine, update timestamp)
+ * @returns {JSX.Element} Card structure displaying key name, editable translation value, and metadata
  */
 export function KeyTranslationCard({
   editError,

@@ -22,7 +22,7 @@ interface KeyFormProps {
 }
 
 /**
- * KeyForm – Form for creating a new translation key within the AddKeyDialog.
+ * Form for creating a new translation key within the AddKeyDialog
  *
  * Renders inputs for key name and default value with live validation using Zod and react-hook-form.
  * The key input is split into a project prefix (disabled input) and the editable key name segment,
@@ -31,13 +31,12 @@ interface KeyFormProps {
  * invalid. Calls the onSubmit callback with the `defaultValue` and computed `fullKey` (prefix + key
  * name) on valid submit.
  *
- * @param {Object} props
- * @param {boolean} props.isSubmitting      - True if form submission is in progress; disables submit button.
- * @param {(data: { defaultValue: string; fullKey: string }) => void} props.onSubmit
- *     - Called when form submits successfully with default value and joined full key.
- * @param {string} props.projectPrefix      - The required, pre-filled key prefix for the current project.
+ * @param {Object} props - Component props
+ * @param {boolean} props.isSubmitting - True if form submission is in progress; disables submit button
+ * @param {(data: { defaultValue: string; fullKey: string }) => void} props.onSubmit - Called when form submits successfully with default value and joined full key
+ * @param {string} props.projectPrefix - The required, pre-filled key prefix for the current project
  *
- * @returns {JSX.Element} Form UI with validation and structured submission for key creation.
+ * @returns {JSX.Element} Form UI with validation and structured submission for key creation
  */
 export function KeyForm({ isSubmitting, onSubmit, projectPrefix }: KeyFormProps) {
   const form = useForm<FormData>({

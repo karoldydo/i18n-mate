@@ -20,7 +20,7 @@ import { UUID_SCHEMA } from '../keys.schemas';
  * @throws {ApiErrorResponse} 404 - Key not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during deletion
  *
- * @returns TanStack Query mutation hook for deleting keys
+ * @returns {UseMutationResult<unknown, ApiErrorResponse, string>} TanStack Query mutation hook for deleting keys
  */
 export function useDeleteKey() {
   const supabase = useSupabase();

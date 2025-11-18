@@ -26,23 +26,23 @@ type KeysPerLanguageQueryKey = [
  * specified locale. Data items are validated at runtime and pagination
  * metadata is computed from input params and result size.
  *
- * @param params - Query parameters for key listing per language
- * @param params.project_id - Project UUID to fetch keys from (required)
- * @param params.locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
- * @param params.search - Search term for key name (case-insensitive contains, optional)
- * @param params.missing_only - Filter keys with NULL values in selected locale (default: false)
- * @param params.limit - Items per page (1-100, default: 50)
- * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @param {KeyTranslationsRequest} params - Query parameters for key listing per language
+ * @param {string} params.project_id - Project UUID to fetch keys from (required)
+ * @param {string} params.locale - Target locale code in BCP-47 format (required, e.g., "en", "en-US")
+ * @param {string} [params.search] - Search term for key name (case-insensitive contains, optional)
+ * @param {boolean} [params.missing_only] - Filter keys with NULL values in selected locale (default: false)
+ * @param {number} [params.limit] - Items per page (1-100, default: 50)
+ * @param {number} [params.offset] - Pagination offset (min: 0, default: 0)
+ *
+ * @param {Object} [options] - Additional query options
+ * @param {boolean} [options.enabled] - Whether automatic fetching should be enabled (default: true)
+ * @param {boolean} [options.suspense] - Set to false to disable Suspense mode for this query (default: true)
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, malformed locale, limit > 100, negative offset)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @param options - Additional query options
- * @param options.enabled - Whether automatic fetching should be enabled (default: true)
- * @param options.suspense - Set to false to disable Suspense mode for this query (default: true)
- *
- * @returns TanStack Query result with keys data and pagination metadata
+ * @returns {UseQueryResult<KeyTranslationsResponse, ApiErrorResponse> | UseSuspenseQueryResult<KeyTranslationsResponse, ApiErrorResponse>} TanStack Query result with keys data and pagination metadata
  */
 export function useKeysPerLanguageView(
   params: KeyTranslationsRequest,

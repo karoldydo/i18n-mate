@@ -15,15 +15,15 @@ import { KEYS_SCHEMA, UUID_SCHEMA } from '../keys.schemas';
  * without fetching the actual key data. This provides efficient
  * key counting for project statistics.
  *
- * @param projectId - Project UUID to count keys for
+ * Uses useSuspenseQuery so loading states are handled by the nearest Suspense boundary.
+ *
+ * @param {string} projectId - Project UUID to count keys for
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id)
  * @throws {ApiErrorResponse} 403 - Project not owned by user
  * @throws {ApiErrorResponse} 500 - Database error during count
  *
- * Uses useSuspenseQuery so loading states are handled by the nearest Suspense boundary.
- *
- * @returns TanStack Query result with key count
+ * @returns {UseSuspenseQueryResult<KeyCountResponse, ApiErrorResponse>} TanStack Query result with key count
  */
 export function useProjectKeyCount(projectId: string) {
   const supabase = useSupabase();

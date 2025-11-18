@@ -20,10 +20,16 @@ interface KeyCardProps {
 }
 
 /**
- * KeyCard – Presents an individual translation key's information and actions in a card UI.
+ * Presents an individual translation key's information and actions in a card UI
  *
  * Displays key name, editable default value with inline editing, missing translation count,
  * and delete action. Supports autosave functionality for value editing.
+ *
+ * Layout:
+ * - Key name (full_key) in monospace font
+ * - Editable default value with inline editing support
+ * - Missing translation count
+ * - Actions: Delete option via dropdown menu
  *
  * @param {Object} props - Component props
  * @param {KeyDefaultViewItem} props.keyData - The key data to display
@@ -35,25 +41,7 @@ interface KeyCardProps {
  * @param {() => void} props.onEditEnd - Called when editing ends
  * @param {(value: string) => void} props.onValueChange - Called when the value changes (autosave)
  *
- * @returns {JSX.Element} Card structure displaying key name, editable value, missing count, and actions.
- *
- * @example
- * <KeyCard
- *   keyData={key}
- *   isEditing={editingKeyId === key.id}
- *   isSaving={isSaving && editingKeyId === key.id}
- *   editError={editError}
- *   onDelete={handleDelete}
- *   onEditStart={handleEditStart}
- *   onEditEnd={handleEditEnd}
- *   onValueChange={handleValueChange}
- * />
- *
- * Layout:
- * - Key name (full_key) in monospace font
- * - Editable default value with inline editing support
- * - Missing translation count
- * - Actions: Delete option via dropdown menu
+ * @returns {JSX.Element} Card structure displaying key name, editable value, missing count, and actions
  */
 export function KeyCard({
   editError,

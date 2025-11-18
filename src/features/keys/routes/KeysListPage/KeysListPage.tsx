@@ -11,11 +11,17 @@ interface RouteParams {
 }
 
 /**
- * KeysListPage - Main page component for keys list default view
+ * Main page component for keys list default view
  *
  * Displays translation keys for a project showing values in the default language
  * along with missing translation counts for other languages. Provides search,
  * filtering, pagination, inline editing, and key management operations.
+ *
+ * Validates the project ID from route parameters and renders validation error
+ * if the ID format is invalid. Wraps the content in an ErrorBoundary for
+ * error handling.
+ *
+ * @returns {JSX.Element} Page component with keys list content or validation error
  */
 export function KeysListPage() {
   const { id } = useParams<keyof RouteParams>();
