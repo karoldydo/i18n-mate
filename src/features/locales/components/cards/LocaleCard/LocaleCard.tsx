@@ -15,33 +15,19 @@ interface LocaleCardProps {
 }
 
 /**
- * LocaleCard – Presents an individual locale's information and actions in a card UI.
+ * LocaleCard – Presents an individual locale's information and actions in a card UI
  *
  * Displays locale code, language label, default indicator, and action dropdown.
  * Card click navigates to keys view for that locale. Edit and Delete actions
  * are available via dropdown menu, with Delete disabled for default locale.
  *
- * @param {Object} props - Component props
+ * @param {LocaleCardProps} props - Component props
  * @param {LocaleItem} props.locale - The locale data to display
  * @param {(locale: LocaleItem) => void} props.onNavigate - Called when the card is clicked, to navigate to the locale keys route
  * @param {(locale: LocaleItem) => void} props.onEdit - Called when the Edit action is clicked (passes the locale)
  * @param {(locale: LocaleItem) => void} props.onDelete - Called when the Delete action is clicked (passes the locale)
  *
- * @returns {JSX.Element} Card structure displaying locale code, label, default indicator, and action dropdown.
- *
- * @example
- * <LocaleCard
- *   locale={locale}
- *   onNavigate={handleLocaleNavigate}
- *   onEdit={openEditDialog}
- *   onDelete={openDeleteDialog}
- * />
- *
- * Layout:
- * - Locale code (BCP-47 format, e.g., "en-US")
- * - Language label (e.g., "English (United States)")
- * - Default indicator (star icon with "Default" text if is_default is true)
- * - Actions: Edit and Delete options via dropdown menu (three-dot button)
+ * @returns {JSX.Element} Card structure displaying locale code, label, default indicator, and action dropdown
  */
 export function LocaleCard({ locale, onDelete, onEdit, onNavigate }: LocaleCardProps) {
   const handleClick = useCallback(() => {

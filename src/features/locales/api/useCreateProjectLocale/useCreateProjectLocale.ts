@@ -27,15 +27,14 @@ import { CREATE_LOCALE_SCHEMA, LOCALE_RESPONSE_SCHEMA } from '../locales.schemas
  * - Atomic operation (all-or-nothing)
  * - Automatic telemetry event emission
  *
- * @param projectId - UUID of the project to add locale to
+ * @param {string} projectId - UUID of the project to add locale to
+ * @returns {ReturnType<typeof useMutation<CreateLocaleResponse, ApiErrorResponse, CreateLocaleRequest>>} TanStack Query mutation hook for adding locales
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid locale format, label constraints)
  * @throws {ApiErrorResponse} 401 - Authentication required
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 409 - Conflict error (locale already exists for project)
  * @throws {ApiErrorResponse} 500 - Database error, fan-out verification failed, or incomplete fan-out
- *
- * @returns TanStack Query mutation hook for adding locales
  */
 export function useCreateProjectLocale(projectId: string) {
   const supabase = useSupabase();

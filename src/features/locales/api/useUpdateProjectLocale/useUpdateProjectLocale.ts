@@ -14,13 +14,13 @@ import { LOCALE_RESPONSE_SCHEMA, UPDATE_LOCALE_SCHEMA, UUID_SCHEMA } from '../lo
  * Updates mutable locale fields (label only). The locale code is immutable
  * after creation and attempts to modify it will result in validation errors.
  *
- * @param localeId - UUID of the locale to update
+ * @param {string} localeId - UUID of the locale to update
+ *
+ * @returns {ReturnType<typeof useMutation<UpdateLocaleResponse, ApiErrorResponse, UpdateLocaleRequest>>} TanStack Query mutation hook for updating locale labels
  *
  * @throws {ApiErrorResponse} 400 - Validation error (attempt to change immutable locale field)
  * @throws {ApiErrorResponse} 404 - Locale not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during update
- *
- * @returns TanStack Query mutation hook for updating locale labels
  */
 export function useUpdateProjectLocale(localeId: string) {
   const supabase = useSupabase();

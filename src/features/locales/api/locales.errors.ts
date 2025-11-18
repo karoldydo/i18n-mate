@@ -16,10 +16,11 @@ import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
  * - Standard database errors (unique violations, check violations, etc.)
  * - Authentication and authorization errors
  *
- * @param postgrestError - PostgrestError from Supabase
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object
+ * @param {PostgrestError} postgrestError - PostgrestError from Supabase
+ * @param {string} [context] - Optional context string for logging (e.g., hook name)
+ * @param {string} [fallbackMessage] - Optional custom fallback message for generic errors
+ *
+ * @returns {ApiErrorResponse} Standardized ApiErrorResponse object
  */
 export function createDatabaseErrorResponse(
   postgrestError: PostgrestError,

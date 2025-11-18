@@ -37,7 +37,7 @@ interface EditLocaleDialogProps {
  * When the dialog is opened or the `locale` prop changes, resets the form to
  * reflect the current locale's label.
  *
- * @param {object} props - Dialog control and state props
+ * @param {EditLocaleDialogProps} props - Dialog control and state props
  * @param {LocaleItem | null} props.locale - The locale object to be edited; if null, dialog is hidden
  * @param {boolean} props.open - Whether the dialog is open
  * @param {(open: boolean) => void} props.onOpenChange - Callback to change dialog open state

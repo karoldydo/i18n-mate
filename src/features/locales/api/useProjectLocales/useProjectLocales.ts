@@ -18,13 +18,13 @@ import { LOCALES_RESPONSE_SCHEMA, UUID_SCHEMA } from '../locales.schemas';
  *
  * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
  *
- * @param projectId - UUID of the project to fetch locales for
+ * @param {string} projectId - UUID of the project to fetch locales for
+ *
+ * @returns {ReturnType<typeof useSuspenseQuery<LocalesResponse, ApiErrorResponse>>} TanStack Query result with array of locales including is_default flag
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID format)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during fetch
- *
- * @returns TanStack Query result with array of locales including is_default flag
  */
 export function useProjectLocales(projectId: string) {
   const supabase = useSupabase();

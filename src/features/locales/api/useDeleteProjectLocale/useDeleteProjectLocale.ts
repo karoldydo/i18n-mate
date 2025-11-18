@@ -19,11 +19,11 @@ import { UUID_SCHEMA } from '../locales.schemas';
  * 2. CASCADE delete all translation records for this locale
  * 3. Remove locale record
  *
+ * @returns {ReturnType<typeof useMutation<unknown, ApiErrorResponse, string>>} TanStack Query mutation hook for deleting locales with cascade operations
+ *
  * @throws {ApiErrorResponse} 400 - Validation error (attempt to delete default locale)
  * @throws {ApiErrorResponse} 404 - Locale not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during deletion
- *
- * @returns TanStack Query mutation hook for deleting locales with cascade operations
  */
 export function useDeleteProjectLocale() {
   const supabase = useSupabase();

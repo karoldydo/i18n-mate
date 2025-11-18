@@ -11,16 +11,14 @@ interface RouteParams {
 }
 
 /**
- * ProjectLocalesPage
+ * ProjectLocalesPage – Main route component for managing languages (locales) within a project
  *
- * Main route component for managing languages (locales) within a project.
+ * Validates the `projectId` route parameter as a UUID and displays a list of all locales
+ * associated with the specified project. Enables users to add new languages (with BCP-47
+ * code validation), edit locale display names, and delete locales (excluding the default).
+ * Handles error states and invalid project IDs via `ValidationError`.
  *
- * - Validates the `projectId` route parameter as a UUID.
- * - Displays a list of all locales associated with the specified project.
- * - Enables users to add new languages (with BCP-47 code validation), edit locale display names, and delete locales (excluding the default).
- * - Handles error states and invalid project IDs via `ValidationError`.
- *
- * @returns {JSX.Element} Renders project locales management UI or validation error.
+ * @returns {JSX.Element} Renders project locales management UI or validation error
  */
 export function ProjectLocalesPage() {
   const { id } = useParams<keyof RouteParams>();

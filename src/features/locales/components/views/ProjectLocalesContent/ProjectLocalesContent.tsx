@@ -18,7 +18,7 @@ interface ProjectLocalesContentProps {
 }
 
 /**
- * ProjectLocalesContent – Displays and manages all locales for a given project.
+ * ProjectLocalesContent – Displays and manages all locales for a given project
  *
  * Fetches the list of locales for the specified project and renders management actions
  * including adding, editing, and deleting locales. Presents each locale as a card with

@@ -36,7 +36,7 @@ interface AddLocaleDialogProps {
  *   - Provides user feedback via toast messages
  *   - Resets the form and closes the dialog
  *
- * @param {object} props - Dialog props
+ * @param {AddLocaleDialogProps} props - Dialog props
  * @param {(open: boolean) => void} props.onOpenChange - Callback to control dialog open state
  * @param {boolean} props.open - Whether the dialog is open
  * @param {string} props.projectId - Project identifier for which to add the locale
