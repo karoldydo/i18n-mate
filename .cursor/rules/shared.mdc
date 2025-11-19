@@ -54,6 +54,9 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/shared/lib` - library functions (format-date, generate-id) (alias: `@/lib`)
 - `./src/shared/utils` - utility functions (cn, clsx helpers) (alias: `@/utils`)
 - `./src/shared/hooks` - generic hooks (e.g., useDebounce) (alias: `@/hooks`)
+  - `./src/shared/hooks/useHook/useHook.ts` - shared hook in nested directory
+  - `./src/shared/hooks/useHook/index.ts` - hook export with `export * from "./useHook";`
+  - `./src/shared/hooks/useHook/useHook.test.ts` - co-located unit test
 - `./src/shared/config` - env mapping, theme, feature flags
 - `./src/shared/constants` - centralized constants, validation patterns, and error messages
 - `./src/shared/styles` - global styles
