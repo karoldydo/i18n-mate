@@ -13,14 +13,14 @@ interface PageHeaderProps {
  * content beneath it. When `children` are provided, they are rendered in place of
  * the `subHeading` text, enabling flexible header layouts (actions, descriptions, etc).
  *
- * @param {object} props - PageHeader props
- * @param {string} props.header - The main page title to display in a large heading.
- * @param {string} [props.subHeading] - Optional subheading text to display below the header.
- *   Ignored if `children` are provided.
+ * @param {PageHeaderProps} props - Component props
+ * @param {string} props.header - The main page title to display in a large heading
+ * @param {string | null} [props.subHeading] - Optional subheading text to display below the header.
+ *   Ignored if `children` are provided
  * @param {ReactNode} [props.children] - Optional custom content to display below the header.
- *   If provided, this replaces the `subHeading` text.
+ *   If provided, this replaces the `subHeading` text
  *
- * @returns {JSX.Element} The rendered page header section with title and optional content.
+ * @returns {JSX.Element} The rendered page header section with title and optional content
  */
 export function PageHeader({ children, header, subHeading }: PageHeaderProps) {
   return (

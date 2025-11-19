@@ -39,27 +39,19 @@ interface CardListProps {
  * - Displays an optional empty state when no children are provided.
  * - Responsive design with appropriate spacing and layout for modern UIs.
  *
- * @param {object} props - CardListProps
- * @param {ReactNode} [props.search] - Optional search input component.
- * @param {ReactNode} [props.actions] - Optional actions component (buttons, filters, etc.).
- * @param {ReactNode} props.children - List content; typically a set of <CardItem> or similar.
- * @param {string} [props.className] - Custom className for container layout extension.
- * @param {ReactNode} [props.emptyState] - Shown instead of children if none are provided.
- * @param {object} [props.pagination] - Optional pagination configuration.
- * @param {PaginationMetadata} props.pagination.metadata - Supabase-style metadata with total count.
- * @param {PaginationParams} props.pagination.params - Pagination offset & limit data.
- * @param {(params: PaginationParams) => void} props.pagination.onPageChange - Called when pagination is changed.
+ * @param {CardListProps} props - Component props
+ * @param {ReactNode} [props.search] - Optional search input component
+ * @param {ReactNode} [props.actions] - Optional actions component (buttons, filters, etc.)
+ * @param {ReactNode} props.children - List content; typically a set of <CardItem> or similar
+ * @param {string} [props.className] - Custom className for container layout extension
+ * @param {string} [props['data-testid']] - Optional test identifier for the container element
+ * @param {ReactNode} [props.emptyState] - Shown instead of children if none are provided
+ * @param {CardListPaginationProps} [props.pagination] - Optional pagination configuration
+ * @param {PaginationMetadata} props.pagination.metadata - Supabase-style metadata with total count
+ * @param {PaginationParams} props.pagination.params - Pagination offset & limit data
+ * @param {(params: PaginationParams) => void} props.pagination.onPageChange - Called when pagination is changed
  *
- * @example
- * <CardList
- *   search={<SearchInput onChange={handleSearch} value={searchValue} />}
- *   actions={<Button>Add Item</Button>}
- *   pagination={{ metadata, params, onPageChange }}
- * >
- *   {projects.map(project => (
- *     <ProjectCard key={project.id} project={project} />
- *   ))}
- * </CardList>
+ * @returns {JSX.Element} Container with search, actions, card list, and pagination
  */
 export function CardList({
   actions,
@@ -103,6 +95,8 @@ export function CardList({
   /**
    * Returns an array of page numbers and 'ellipsis' strings to create
    * paginated navigation with compact ellipsis as appropriate.
+   *
+   * @returns {Array<'ellipsis' | number>} Array of page numbers and ellipsis markers
    */
   const generatePageNumbers = useCallback(() => {
     const pages: ('ellipsis' | number)[] = [];

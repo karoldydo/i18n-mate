@@ -14,7 +14,7 @@ interface BackButtonProps {
  * Provides a consistent back button UI with arrow icon and customizable label.
  * Used throughout the application for navigation back to previous pages.
  *
- * @param {Object} props - Component props
+ * @param {BackButtonProps} props - Component props
  * @param {string} props.ariaLabel - Accessible label for screen readers
  * @param {string} props.buttonLabel - Visible text on the link
  * @param {string} [props.dataTestId] - Optional test ID for e2e tests

@@ -22,8 +22,9 @@ interface RouteParams {
  * - Responsive support for off-canvas/mobile and desktop layouts
  * - Active route highlighting for all navigational elements
  *
- * @param props - Props forwarded to the Sidebar component
- * @returns The main sidebar layout with navigation and user menu
+ * @param {ComponentProps<typeof Sidebar>} props - Props forwarded to the Sidebar component
+ *
+ * @returns {JSX.Element} The main sidebar layout with navigation and user menu
  */
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const { id: projectId } = useParams<keyof RouteParams>();

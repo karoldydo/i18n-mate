@@ -29,7 +29,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '../
  * - Log out triggers signOut from authentication context
  * - Responsive menu side based on mobile/desktop sidebar state
  *
- * @returns {JSX.Element|null} Sidebar menu with user actions or null if not authenticated
+ * @returns {JSX.Element | null} Sidebar menu with user actions or null if not authenticated
  */
 export function AppSidebarMenu() {
   const { signOut, user } = useAuth();

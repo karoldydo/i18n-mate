@@ -20,27 +20,14 @@ interface CardItemProps {
  * otherwise, it renders as a static container. Prevents click bubbling from
  * action elements to avoid unintended card navigation.
  *
- * @param {object} props - CardItemProps component properties
+ * @param {CardItemProps} props - Component properties
  * @param {ReactNode} props.children - Main content for the card (typically details)
  * @param {ReactNode} [props.actions] - Optional actions (e.g., menu, buttons) shown on the right; clicking an action does not trigger the card's `onClick`
  * @param {string} [props.className] - Additional className(s) for card styling
+ * @param {string} [props['data-testid']] - Optional test identifier for the card element
  * @param {() => void} [props.onClick] - If provided, makes the card clickable (button semantics) for navigation or selection
  *
- * @example
- * <CardItem
- *   onClick={() => navigate(`/projects/${project.id}`)}
- *   actions={
- *     <DropdownMenu>
- *       <DropdownMenuItem>Edit</DropdownMenuItem>
- *       <DropdownMenuItem>Delete</DropdownMenuItem>
- *     </DropdownMenu>
- *   }
- * >
- *   <div>
- *     <h3 className="font-medium">{project.name}</h3>
- *     <p className="text-muted-foreground text-sm">{project.description}</p>
- *   </div>
- * </CardItem>
+ * @returns {JSX.Element} Accessible card container with optional actions
  */
 export function CardItem({ actions, children, className, 'data-testid': dataTestId, onClick }: CardItemProps) {
   const isClickable = Boolean(onClick);

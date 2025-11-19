@@ -7,6 +7,8 @@ import { Loader2 } from 'lucide-react';
  * Used primarily for initial authentication checks in AuthGuard.
  * For route transitions, use InlineLoading instead to keep navigation visible.
  * Includes smooth fade-in animation for better UX.
+ *
+ * @returns {JSX.Element} Full-screen loading spinner with backdrop
  */
 export function Loading() {
   return (

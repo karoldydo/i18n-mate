@@ -25,10 +25,10 @@ interface AppSidebarProjectGroupProps {
  * - Each navigation item highlights as active based on the current route.
  * - Used within the main AppSidebar component to provide context-sensitive navigation.
  *
- * @param {Object} props
- * @param {string} [props.projectId] - Optional project ID used to generate project-specific navigation items.
+ * @param {AppSidebarProjectGroupProps} props - Component props
+ * @param {string} [props.projectId] - Optional project ID used to generate project-specific navigation items
  *
- * @returns {JSX.Element|null} Sidebar group with project navigation links or null if no items.
+ * @returns {JSX.Element | null} Sidebar group with project navigation links or null if no items
  */
 export function AppSidebarProjectGroup({ projectId }: AppSidebarProjectGroupProps) {
   const items = useActiveNavigation(getProjectNavigationItems(projectId));

@@ -21,7 +21,7 @@ import {
  * - Uses the shared sidebar UI components for consistency and accessibility.
  * - Intended for use as part of the primary sidebar layout.
  *
- * @returns {JSX.Element} Sidebar group containing global navigation menu items.
+ * @returns {JSX.Element} Sidebar group containing global navigation menu items
  */
 export function AppSidebarGlobalGroup() {
   const items = useActiveNavigation(GLOBAL_NAVIGATION_ITEMS);

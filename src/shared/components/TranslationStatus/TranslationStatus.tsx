@@ -18,7 +18,7 @@ interface TranslationStatusProps {
  * Provides accessible ARIA labels for badges to assist screen readers. Used in both
  * per-language and default key views to offer a consistent UI for translation status.
  *
- * @param {Object} props - Translation status props
+ * @param {TranslationStatusProps} props - Component props
  * @param {boolean | null} props.isMachineTranslated - Whether translation was machine-generated
  *   (`true` = machine/LLM, `false` = manual, `null` = not translated)
  * @param {string | null | undefined} [props.updatedAt] - ISO string of the last update timestamp, if available

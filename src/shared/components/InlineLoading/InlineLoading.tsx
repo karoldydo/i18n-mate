@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
  * App.tsx to indicate route-level loading, ensuring that global UI elements like
  * the sidebar and navigation remain visible during content updates or route transitions.
  *
- * @returns {JSX.Element} A visually centered loading spinner for inline content loading states.
+ * @returns {JSX.Element} A visually centered loading spinner for inline content loading states
  */
 export function InlineLoading() {
   return (

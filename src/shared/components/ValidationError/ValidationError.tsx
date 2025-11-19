@@ -15,7 +15,7 @@ interface ValidationErrorProps {
  * It presents a descriptive headline, supporting text, and a customizable
  * action link to guide users back or navigate to a provided route.
  *
- * @param {Object} props - ValidationError props
+ * @param {ValidationErrorProps} props - Component props
  * @param {string} props.buttonLabel - Label text for the error action link
  * @param {string} props.dataTestId - Test identifier for the root div and link
  * @param {string} props.to - Route path to navigate to

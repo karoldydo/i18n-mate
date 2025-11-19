@@ -26,6 +26,14 @@ interface InternalErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'children'
 
 /**
  * InternalErrorBoundary captures rendering errors and renders the configured fallback UI.
+ *
+ * @param {InternalErrorBoundaryProps} props - Component props
+ * @param {ReactNode} props.children - Child components to render
+ * @param {(params: { error: unknown; reset: () => void }) => ReactNode} [props.fallback] - Custom fallback UI renderer
+ * @param {unknown[]} [props.resetKeys] - Array of values that trigger error boundary reset when changed
+ * @param {() => void} [props.onReset] - Callback invoked when error boundary is reset
+ *
+ * @returns {JSX.Element | ReactNode} Rendered children or fallback UI if error occurred
  */
 class InternalErrorBoundary extends Component<InternalErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = {
@@ -38,6 +46,7 @@ class InternalErrorBoundary extends Component<InternalErrorBoundaryProps, ErrorB
   }
 
   componentDidCatch(error: unknown, info: unknown) {
+    // log error for debugging
     console.error('error boundary caught an error', error, info);
   }
 
@@ -70,6 +79,13 @@ class InternalErrorBoundary extends Component<InternalErrorBoundaryProps, ErrorB
 
 /**
  * ErrorBoundary wires together query reset handling with a class-based boundary to catch render errors.
+ *
+ * @param {ErrorBoundaryProps} props - Component props
+ * @param {ReactNode} props.children - Child components to render
+ * @param {(params: { error: unknown; reset: () => void }) => ReactNode} [props.fallback] - Custom fallback UI renderer
+ * @param {unknown[]} [props.resetKeys] - Array of values that trigger error boundary reset when changed
+ *
+ * @returns {JSX.Element} Error boundary wrapper with TanStack Query integration
  */
 export function ErrorBoundary({ children, fallback, resetKeys }: ErrorBoundaryProps) {
   return (
@@ -85,6 +101,12 @@ export function ErrorBoundary({ children, fallback, resetKeys }: ErrorBoundaryPr
 
 /**
  * DefaultFallback presents a generic error recovery UI when no bespoke fallback is provided.
+ *
+ * @param {DefaultFallbackProps} props - Component props
+ * @param {unknown} props.error - The error that was caught
+ * @param {() => void} props.onRetry - Callback to retry/reset the error boundary
+ *
+ * @returns {JSX.Element} Generic error recovery UI with retry and reload options
  */
 function DefaultFallback({ error, onRetry }: DefaultFallbackProps) {
   const message = error instanceof Error ? error.message : 'An unexpected error occurred.';
@@ -109,6 +131,11 @@ function DefaultFallback({ error, onRetry }: DefaultFallbackProps) {
 
 /**
  * haveResetKeysChanged mimics react-error-boundary semantics, allowing consumer-provided keys to drive resets.
+ *
+ * @param {unknown[]} [prevResetKeys] - Previous reset keys array
+ * @param {unknown[]} [resetKeys] - Current reset keys array
+ *
+ * @returns {boolean} True if reset keys have changed, false otherwise
  */
 function haveResetKeysChanged(prevResetKeys: unknown[] = [], resetKeys: unknown[] = []) {
   if (prevResetKeys.length !== resetKeys.length) {

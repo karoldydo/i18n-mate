@@ -17,14 +17,13 @@ interface LocaleSelectorProps {
  *
  * Integrates with shadcn/ui Select components for accessibility, form handling, and keyboard support.
  *
- * @param {object} props - Component props
- * @param {string} [props.data-testid] - Optional test ID for querying in tests
+ * @param {LocaleSelectorProps} props - Component props
+ * @param {string} [props['data-testid']] - Optional test ID for querying in tests
  * @param {boolean} [props.disabled] - Disables the selector when true
- * @param {function(string):void} props.onValueChange - Callback when a locale is selected
+ * @param {(value: string) => void} props.onValueChange - Callback when a locale is selected
  * @param {string} [props.value] - Currently selected locale code
  *
- * @example
- *   <LocaleSelector value="en-US" onValueChange={console.log} />
+ * @returns {JSX.Element} Locale selection dropdown component
  */
 export function LocaleSelector({
   'data-testid': dataTestId,

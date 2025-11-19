@@ -23,7 +23,7 @@ import {
  * - Skips rendering breadcrumbs on the root/projects page (single-level path)
  * - Clearly indicates the current page (active) in the breadcrumb trail
  *
- * @returns {JSX.Element|null} The breadcrumb navigation, or null if not required for the current route
+ * @returns {JSX.Element | null} The breadcrumb navigation, or null if not required for the current route
  */
 export function BreadcrumbNavigation() {
   const breadcrumbs = useBreadcrumbs();
