@@ -63,6 +63,10 @@ export function TelemetryCard({ event }: TelemetryCardProps) {
 
 /**
  * Get human-readable label for event type
+ *
+ * @param {string} eventName - Event type name (e.g., 'key_created', 'language_added')
+ *
+ * @returns {string} Human-readable label for the event type
  */
 function getEventTypeLabel(eventName: string): string {
   switch (eventName) {
@@ -81,6 +85,10 @@ function getEventTypeLabel(eventName: string): string {
 
 /**
  * Get appropriate badge variant for event type
+ *
+ * @param {string} eventName - Event type name (e.g., 'key_created', 'language_added')
+ *
+ * @returns {'default' | 'destructive' | 'outline' | 'secondary'} Badge variant for the event type
  */
 function getEventTypeVariant(eventName: string): 'default' | 'destructive' | 'outline' | 'secondary' {
   switch (eventName) {

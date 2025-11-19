@@ -13,10 +13,11 @@ import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
  * - Foreign key violations (23503)
  * - Partition errors
  *
- * @param error - PostgrestError from Supabase
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object
+ * @param {PostgrestError} error - PostgrestError from Supabase
+ * @param {string} [context] - Optional context string for logging (e.g., hook name)
+ * @param {string} [fallbackMessage] - Optional custom fallback message for generic errors
+ *
+ * @returns {ApiErrorResponse} Standardized ApiErrorResponse object
  */
 export function createDatabaseErrorResponse(
   error: PostgrestError,

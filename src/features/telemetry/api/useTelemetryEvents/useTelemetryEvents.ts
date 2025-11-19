@@ -15,17 +15,17 @@ import { TELEMETRY_EVENT_RESPONSE_ITEM_SCHEMA, TELEMETRY_EVENTS_SCHEMA } from '.
  * with total count for pagination. Data items are validated at runtime and pagination
  * metadata includes the total count.
  *
- * @param projectId - UUID of the project to fetch events for
- * @param params - Optional query parameters (limit, offset, order)
- * @param params.limit - Items per page (1-100, default: 50)
- * @param params.offset - Pagination offset (min: 0, default: 0)
- * @param params.order - Sort order (created_at.asc|desc, default: created_at.desc)
+ * @param {string} projectId - UUID of the project to fetch events for
+ * @param {Omit<TelemetryEventsRequest, 'project_id'>} [params] - Optional query parameters (limit, offset, order)
+ * @param {number} [params.limit] - Items per page (1-100, default: 50)
+ * @param {number} [params.offset] - Pagination offset (min: 0, default: 0)
+ * @param {'created_at.asc' | 'created_at.desc'} [params.order] - Sort order (default: created_at.desc)
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid UUID, limit too high, negative offset)
  * @throws {ApiErrorResponse} 404 - Project not found or access denied
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @returns TanStack Query result with telemetry events data and pagination metadata
+ * @returns {ReturnType<typeof useSuspenseQuery<TelemetryEventsResponse, ApiErrorResponse>>} TanStack Query result with telemetry events data and pagination metadata
  */
 export function useTelemetryEvents(projectId: string, params?: Omit<TelemetryEventsRequest, 'project_id'>) {
   const supabase = useSupabase();

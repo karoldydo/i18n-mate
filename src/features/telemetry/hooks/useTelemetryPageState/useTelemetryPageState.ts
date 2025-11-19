@@ -30,7 +30,7 @@ const INITIAL_STATE: TelemetryPageState = {
  * Manages pagination and sorting state for the telemetry events table.
  * Provides actions to update state and reset pagination when needed.
  *
- * @returns Object containing current state and action functions
+ * @returns {TelemetryPageActions & TelemetryPageState} Object containing current state and action functions
  */
 export function useTelemetryPageState(): TelemetryPageActions & TelemetryPageState {
   const [state, setState] = useState<TelemetryPageState>(INITIAL_STATE);

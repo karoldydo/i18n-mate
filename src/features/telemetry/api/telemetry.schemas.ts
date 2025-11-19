@@ -28,7 +28,14 @@ const JSON_SCHEMA: z.ZodType<Json> = z.lazy(() =>
   ])
 );
 
-// event name enum (for response validation)
+/**
+ * Zod schema for validating telemetry event names
+ *
+ * Validates that event names match one of the allowed telemetry event types:
+ * project_created, language_added, key_created, or translation_completed.
+ *
+ * @returns {z.ZodEnum<[EventType, ...EventType[]]>} Zod enum schema for event type validation
+ */
 export const EVENT_NAME_SCHEMA = z.enum([
   TELEMETRY_EVENT_TYPES.PROJECT_CREATED,
   TELEMETRY_EVENT_TYPES.LANGUAGE_ADDED,
@@ -36,10 +43,25 @@ export const EVENT_NAME_SCHEMA = z.enum([
   TELEMETRY_EVENT_TYPES.TRANSLATION_COMPLETED,
 ]) satisfies z.ZodType<EventType>;
 
-// UUID schema
+/**
+ * Zod schema for validating UUID format
+ *
+ * Validates that a string is a valid UUID v4 format. Used for validating
+ * project IDs and other UUID-based identifiers in telemetry requests.
+ *
+ * @returns {z.ZodString} Zod string schema with UUID validation
+ */
 export const UUID_SCHEMA = z.string().uuid('Invalid UUID format');
 
-// telemetry events request schema
+/**
+ * Zod schema for validating telemetry events request parameters
+ *
+ * Validates pagination and filtering parameters for fetching telemetry events.
+ * Includes limit (1-100, default: 50), offset (min: 0, default: 0), sort order,
+ * and required project_id UUID.
+ *
+ * @returns {z.ZodType<TelemetryEventsRequest>} Zod object schema for request validation
+ */
 export const TELEMETRY_EVENTS_SCHEMA = z.object({
   limit: z
     .number()
@@ -61,7 +83,15 @@ export const TELEMETRY_EVENTS_SCHEMA = z.object({
   project_id: z.string().uuid(TELEMETRY_ERROR_MESSAGES.INVALID_PROJECT_ID),
 }) satisfies z.ZodType<TelemetryEventsRequest>;
 
-// response schema for runtime validation
+/**
+ * Zod schema for validating a single telemetry event response
+ *
+ * Validates the structure of a telemetry event returned from the database,
+ * including id, created_at timestamp, event_name, project_id, and optional
+ * properties JSON object.
+ *
+ * @returns {z.ZodType<TelemetryEventResponse>} Zod object schema for event response validation
+ */
 export const TELEMETRY_EVENT_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   event_name: EVENT_NAME_SCHEMA,
@@ -70,7 +100,14 @@ export const TELEMETRY_EVENT_RESPONSE_SCHEMA = z.object({
   properties: JSON_SCHEMA.nullable(),
 }) satisfies z.ZodType<TelemetryEventResponse>;
 
-// response schema with total_count (from RPC function)
+/**
+ * Zod schema for validating telemetry event response items from RPC function
+ *
+ * Validates telemetry events returned from the `list_telemetry_events_with_count` RPC function.
+ * Includes all fields from TELEMETRY_EVENT_RESPONSE_SCHEMA plus total_count for pagination metadata.
+ *
+ * @returns {z.ZodType<TelemetryEventsResponseItem>} Zod object schema for RPC response item validation
+ */
 export const TELEMETRY_EVENT_RESPONSE_ITEM_SCHEMA = z.object({
   created_at: z.string(),
   event_name: EVENT_NAME_SCHEMA,

@@ -9,14 +9,14 @@ interface TelemetryKPIsProps {
 }
 
 /**
- * TelemetryKPIs – Displays a summary of key performance indicators for a project.
+ * TelemetryKPIs – Displays a summary of key performance indicators for a project
  *
  * Renders three KPI cards derived from telemetry events and project creation date:
- *  - Multi-language Usage: Percentage of the project's lifetime in which multiple languages were present.
- *  - Average Keys per Language: Mean number of translation keys distributed across all available languages.
- *  - LLM Translations: Percentage of completed translations performed via large language models (AI).
+ *  - Multi-language Usage: Percentage of the project's lifetime in which multiple languages were present
+ *  - Average Keys per Language: Mean number of translation keys distributed across all available languages
+ *  - LLM Translations: Percentage of completed translations performed via large language models (AI)
  *
- * @param {Object} props - Component properties
+ * @param {TelemetryKPIsProps} props - Component properties
  * @param {string} props.projectCreatedAt - ISO timestamp indicating when the project was created
  * @param {TelemetryEventResponse[]} props.telemetryEvents - Array of project telemetry events used to calculate KPIs
  *

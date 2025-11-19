@@ -15,21 +15,22 @@ interface ProjectTelemetryContentProps {
 }
 
 /**
- * Displays telemetry analytics and event logs for a specific project.
+ * Displays telemetry analytics and event logs for a specific project
  *
  * This suspense-enabled view fetches and displays project metadata and
  * telemetry events, including usage statistics and paginated event details.
  * Animates entry for a smoother navigation experience and minimizes UI blinking.
  *
- * @param {ProjectTelemetryContentProps} props - The component props.
- * @param {string} props.projectId - The ID of the project to load telemetry for.
- * @returns {JSX.Element | null} The rendered telemetry view, or null if project not found.
- *
  * Data flow:
- * - Loads project details using suspense via useProject.
- * - Loads paginated telemetry events with useTelemetryEvents.
- * - KPIs and events are rendered with accessible, styled components.
- * - Pagination logic is converted from page/limit to offset-based for API compatibility.
+ * - Loads project details using suspense via useProject
+ * - Loads paginated telemetry events with useTelemetryEvents
+ * - KPIs and events are rendered with accessible, styled components
+ * - Pagination logic is converted from page/limit to offset-based for API compatibility
+ *
+ * @param {ProjectTelemetryContentProps} props - The component props
+ * @param {string} props.projectId - The ID of the project to load telemetry for
+ *
+ * @returns {JSX.Element | null} The rendered telemetry view, or null if project not found
  */
 export function ProjectTelemetryContent({ projectId }: ProjectTelemetryContentProps) {
   const pageState = useTelemetryPageState();

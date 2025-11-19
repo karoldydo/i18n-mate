@@ -13,7 +13,7 @@ interface KPICardProps {
  * Displays the KPI title, value, and description vertically, styled for emphasis.
  * Typically used for presenting telemetry or statistical metrics.
  *
- * @param {KPICardProps} props
+ * @param {KPICardProps} props - Component props
  * @param {string} props.title - Label or name of the KPI
  * @param {string} props.value - Main numerical or string value representing the KPI
  * @param {string} props.description - Brief description or context for the KPI

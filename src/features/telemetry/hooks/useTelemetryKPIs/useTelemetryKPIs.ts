@@ -17,10 +17,11 @@ export interface TelemetryKPIsViewModel {
  * According to PRD, KPIs are measured after a cohort period (default 7 days) from project creation.
  * Events outside the cohort window are filtered out before calculations.
  *
- * @param events - Array of telemetry events for the project
- * @param projectCreatedAt - ISO date string when the project was created
- * @param cohortDays - Number of days after project creation to measure KPIs (default: 7)
- * @returns Calculated KPI metrics
+ * @param {TelemetryEventResponse[]} events - Array of telemetry events for the project
+ * @param {string} projectCreatedAt - ISO date string when the project was created
+ * @param {number} [cohortDays=7] - Number of days after project creation to measure KPIs (default: 7)
+ *
+ * @returns {TelemetryKPIsViewModel} Calculated KPI metrics
  */
 export function useTelemetryKPIs(
   events: TelemetryEventResponse[],
@@ -32,6 +33,10 @@ export function useTelemetryKPIs(
 
 /**
  * Calculate average keys per language
+ *
+ * @param {TelemetryEventResponse[]} events - Array of telemetry events
+ *
+ * @returns {number} Average number of keys per language
  */
 function calculateAverageKeysPerLanguage(events: TelemetryEventResponse[]): number {
   // Find the latest key count and locale count
@@ -55,10 +60,11 @@ function calculateAverageKeysPerLanguage(events: TelemetryEventResponse[]): numb
  * Filters events to only include those within the cohort window (projectCreatedAt + cohortDays).
  * This aligns with PRD requirement: "KPI after 7 days from project creation".
  *
- * @param events - All telemetry events for the project
- * @param projectCreatedAt - ISO date string when the project was created
- * @param cohortDays - Number of days after project creation to measure KPIs
- * @returns Calculated KPI metrics based on events within cohort window
+ * @param {TelemetryEventResponse[]} events - All telemetry events for the project
+ * @param {string} projectCreatedAt - ISO date string when the project was created
+ * @param {number} cohortDays - Number of days after project creation to measure KPIs
+ *
+ * @returns {TelemetryKPIsViewModel} Calculated KPI metrics based on events within cohort window
  */
 function calculateKPIs(
   events: TelemetryEventResponse[],
@@ -116,6 +122,10 @@ function calculateKPIs(
  * This KPI measures: (LLM translated keys) / (total possible translations) * 100
  * where total possible translations = keyCount * (localeCount - 1)
  * excluding the default locale which doesn't need translation from itself.
+ *
+ * @param {TelemetryEventResponse[]} events - Array of telemetry events
+ *
+ * @returns {number} Percentage of translations completed via LLM (0-100)
  */
 function calculateLLMTranslationsPercentage(events: TelemetryEventResponse[]): number {
   const translationEvents = events.filter((event) => event.event_name === 'translation_completed');
@@ -153,6 +163,11 @@ function calculateLLMTranslationsPercentage(events: TelemetryEventResponse[]): n
  * Once a project becomes multi-language (2+ locales), it stays multi-language.
  * This function finds when the project first reached 2+ languages and calculates
  * the percentage of time since then.
+ *
+ * @param {TelemetryEventResponse[]} events - Array of telemetry events
+ * @param {string} projectCreatedAt - ISO date string when the project was created
+ *
+ * @returns {number} Percentage of time project has had multiple languages (0-100)
  */
 function calculateMultiLanguagePercentage(events: TelemetryEventResponse[], projectCreatedAt: string): number {
   const projectStart = new Date(projectCreatedAt).getTime();
@@ -185,6 +200,11 @@ function calculateMultiLanguagePercentage(events: TelemetryEventResponse[], proj
 
 /**
  * Safely extract a property from telemetry event properties
+ *
+ * @param {Json | null} properties - Telemetry event properties object
+ * @param {string} key - Property key to extract
+ *
+ * @returns {Json | undefined} Property value or undefined if not found
  */
 function getPropertyValue(properties: Json | null, key: string): Json | undefined {
   if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
