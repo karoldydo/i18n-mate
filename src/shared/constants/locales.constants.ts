@@ -1,14 +1,5 @@
 /**
- * Locale Constants and Validation Patterns
- *
- * Centralized definitions for locale validation patterns to ensure consistency
- * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
- *
- * All patterns follow BCP-47 subset: ll or ll-CC format only.
- */
-
-/**
- * BCP-47 locale pattern - matches ll or ll-CC format only
+ * BCP-47 locale pattern - matches ll or ll-CC format only.
  * Examples: en, en-US, pl, pl-PL, es, es-ES
  *
  * Pattern breakdown:
@@ -16,40 +7,58 @@
  * - (-[A-Z]{2})? : optionally followed by dash and 2 uppercase letters (country code)
  * - $ : end of string
  *
- * Note: This pattern expects normalized input (language lowercase, country uppercase)
+ * Note: This pattern expects normalized input (language lowercase, country uppercase).
+ *
+ * @type {RegExp}
  */
 export const LOCALE_CODE_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
 
 /**
- * Raw locale pattern for input validation (before normalization)
- * Accepts mixed case input that will be normalized by database triggers
+ * Raw locale pattern for input validation (before normalization).
+ * Accepts mixed case input that will be normalized by database triggers.
  * Examples: en, EN, en-us, EN-US, En-Us
+ *
+ * @type {RegExp}
  */
 export const LOCALE_CODE_INPUT_PATTERN = /^[a-zA-Z]{2}(-[a-zA-Z]{2})?$/;
 
 /**
- * PostgreSQL domain constraint pattern (used in migrations)
- * Must match LOCALE_CODE_PATTERN exactly for consistency
+ * PostgreSQL domain constraint pattern (used in migrations).
+ * Must match LOCALE_CODE_PATTERN exactly for consistency.
+ *
+ * @type {string}
  */
 export const LOCALE_CODE_DOMAIN_PATTERN = '^[a-z]{2}(-[A-Z]{2})?$';
 
 /**
- * Maximum length for locale code (BCP-47 ll-CC format)
+ * Maximum length for locale code (BCP-47 ll-CC format).
+ *
+ * @type {number}
  */
 export const LOCALE_CODE_MAX_LENGTH = 5;
 
 /**
- * Maximum length for locale label (human-readable name)
+ * Maximum length for locale label (human-readable name).
+ *
+ * @type {number}
  */
 export const LOCALE_LABEL_MAX_LENGTH = 64;
 
 /**
- * Locale normalization patterns and utilities
+ * Locale normalization patterns and utilities.
+ *
+ * @type {Readonly<{isLanguageName: (value: string) => boolean, isValidFormatClient: (locale: string) => boolean, LANGUAGE_COUNTRY: RegExp, LANGUAGE_ONLY: RegExp, normalize: (locale: string) => string}>}
  */
 const MULTIPLE_REGION_SEPARATOR_PATTERN = /.*-.*-.*/;
 const LANGUAGE_COUNTRY_PATTERN = /^([a-zA-Z]{2})-([a-zA-Z]{2})$/;
 const LANGUAGE_ONLY_PATTERN = /^[a-zA-Z]{2}$/;
 
+/**
+ * Normalize locale string to database format.
+ *
+ * @param {string} locale - The locale string to normalize
+ * @returns {string} Normalized locale string (language lowercase, region uppercase)
+ */
 const normalizeLocale = (locale: string): string => {
   if (!locale) return locale;
 
@@ -70,7 +79,10 @@ const normalizeLocale = (locale: string): string => {
 
 export const LOCALE_NORMALIZATION = {
   /**
-   * Check if a string looks like a language name rather than code
+   * Check if a string looks like a language name rather than code.
+   *
+   * @param {string} value - The string to check
+   * @returns {boolean} True if the string appears to be a language name, false otherwise
    */
   isLanguageName: (value: string): boolean => {
     const languageNames = ['english', 'polish', 'spanish', 'french', 'german', 'italian'];
@@ -78,14 +90,17 @@ export const LOCALE_NORMALIZATION = {
   },
 
   /**
-   * Client-side locale validation (matches database rules)
-   * Use for immediate feedback, but always verify server-side for critical operations
+   * Client-side locale validation (matches database rules).
+   * Use for immediate feedback, but always verify server-side for critical operations.
    *
    * Rules implemented:
    * - Must be 2-5 characters long
    * - Format: ll or ll-CC (language-country)
    * - Only letters and one dash allowed
    * - Maximum one dash (no multiple regions)
+   *
+   * @param {string} locale - The locale code to validate
+   * @returns {boolean} True if the locale format is valid, false otherwise
    */
   isValidFormatClient: (locale: string): boolean => {
     if (!locale || typeof locale !== 'string') return false;
@@ -96,22 +111,35 @@ export const LOCALE_NORMALIZATION = {
     return LOCALE_CODE_PATTERN.test(normalized);
   },
 
-  /** Pattern for language-country format (needs normalization) */
+  /**
+   * Pattern for language-country format (needs normalization).
+   *
+   * @type {RegExp}
+   */
   LANGUAGE_COUNTRY: LANGUAGE_COUNTRY_PATTERN,
 
-  /** Pattern for language-only format */
+  /**
+   * Pattern for language-only format.
+   *
+   * @type {RegExp}
+   */
   LANGUAGE_ONLY: LANGUAGE_ONLY_PATTERN,
 
   /**
-   * Normalize function (TypeScript implementation)
-   * Converts locale to database format: language lowercase, region uppercase
+   * Normalize function (TypeScript implementation).
+   * Converts locale to database format: language lowercase, region uppercase.
    * Examples: "en-us" -> "en-US", "PL" -> "pl", "EN-GB" -> "en-GB"
+   *
+   * @param {string} locale - The locale string to normalize
+   * @returns {string} Normalized locale string
    */
   normalize: normalizeLocale,
 };
 
 /**
- * PostgreSQL error codes relevant to locale operations
+ * PostgreSQL error codes relevant to locale operations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const LOCALE_PG_ERROR_CODES = {
   CHECK_VIOLATION: '23514',
@@ -121,17 +149,21 @@ export const LOCALE_PG_ERROR_CODES = {
 } as const;
 
 /**
- * Database constraint names for locales
+ * Database constraint names for locales.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const LOCALE_CONSTRAINTS = {
   UNIQUE_PER_PROJECT: 'idx_project_locales_project_locale_unique',
 } as const;
 
 /**
- * Error messages for locale operations
+ * Error messages for locale operations.
  *
  * Note: Some error messages are API-layer only (client-side validation),
  * while others map directly to database error codes from migrations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const LOCALE_ERROR_MESSAGES = {
   ALREADY_EXISTS: 'Locale already exists for this project', // DUPLICATE_LOCALE
@@ -167,8 +199,10 @@ export const LOCALE_ERROR_MESSAGES = {
 } as const;
 
 /**
- * Common primary language sub-tags (IETF language tags)
- * Used for default locale selection in project and locale management
+ * Common primary language sub-tags (IETF language tags).
+ * Used for default locale selection in project and locale management.
+ *
+ * @type {ReadonlyArray<{code: string, label: string}>}
  */
 export const PRIMARY_LOCALES = [
   { code: 'en', label: 'English' },

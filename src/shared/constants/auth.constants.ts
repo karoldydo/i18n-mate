@@ -1,32 +1,35 @@
 /**
- * Authentication Constants and Validation Patterns
+ * Minimum password length for user authentication.
  *
- * Centralized definitions for authentication validation patterns to ensure consistency
- * between TypeScript validation (Zod schemas) and application requirements.
- */
-
-/**
- * Minimum password length
+ * @type {number}
  */
 export const AUTH_PASSWORD_MIN_LENGTH = 8;
 
 /**
- * Maximum password length
+ * Maximum password length for user authentication.
+ *
+ * @type {number}
  */
 export const AUTH_PASSWORD_MAX_LENGTH = 128;
 
 /**
- * Maximum email length (RFC 5322)
+ * Maximum email length according to RFC 5322 specification.
+ *
+ * @type {number}
  */
 export const AUTH_EMAIL_MAX_LENGTH = 320;
 
 /**
- * Password validation pattern - at least one letter and one digit
+ * Password validation pattern requiring at least one letter and one digit.
+ *
+ * @type {RegExp}
  */
 export const AUTH_PASSWORD_PATTERN = /^(?=.*[a-zA-Z])(?=.*\d).+$/;
 
 /**
- * Error messages for authentication operations
+ * Error messages for authentication operations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const AUTH_ERROR_MESSAGES = {
   EMAIL_ALREADY_IN_USE: 'An account with this email already exists',
@@ -49,7 +52,9 @@ export const AUTH_ERROR_MESSAGES = {
 } as const;
 
 /**
- * Success messages for authentication operations
+ * Success messages for authentication operations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const AUTH_SUCCESS_MESSAGES = {
   EMAIL_SENT: 'Check your email for further instructions',

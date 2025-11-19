@@ -1,73 +1,86 @@
 /**
- * Keys Constants and Validation Patterns
- *
- * Centralized definitions for key validation patterns to ensure consistency
- * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
- *
- * All patterns follow project-specific key naming conventions.
- */
-
-/**
- * Key format pattern - matches lowercase letters, numbers, dots, underscores, and hyphens
+ * Key format pattern - matches lowercase letters, numbers, dots, underscores, and hyphens.
  * Examples: user.name, auth.login-error, profile_settings, nav.menu.items
  *
  * Pattern breakdown:
  * - ^[a-z0-9._-]+ : start with allowed characters
  * - $ : end of string
  *
- * Note: Additional validation prevents consecutive dots and trailing dots
+ * Note: Additional validation prevents consecutive dots and trailing dots.
+ *
+ * @type {RegExp}
  */
 export const KEY_FORMAT_PATTERN = /^[a-z0-9._-]+$/;
 
 /**
- * Pattern to detect consecutive dots (invalid)
- * Used for validation refinement
+ * Pattern to detect consecutive dots (invalid).
+ * Used for validation refinement.
+ *
+ * @type {RegExp}
  */
 export const CONSECUTIVE_DOTS_PATTERN = /\.\./;
 
 /**
- * Pattern to detect trailing dots (invalid)
- * Used for validation refinement
+ * Pattern to detect trailing dots (invalid).
+ * Used for validation refinement.
+ *
+ * @type {RegExp}
  */
 export const KEY_TRAILING_DOT_PATTERN = /\.$/;
 
 /**
- * Maximum length for full key name (including prefix)
+ * Maximum length for full key name (including prefix).
+ *
+ * @type {number}
  */
 export const KEY_NAME_MAX_LENGTH = 256;
 
 /**
- * Minimum length for key name
+ * Minimum length for key name.
+ *
+ * @type {number}
  */
 export const KEY_NAME_MIN_LENGTH = 1;
 
 /**
- * Maximum length for translation value
+ * Maximum length for translation value.
+ *
+ * @type {number}
  */
 export const TRANSLATION_VALUE_MAX_LENGTH = 250;
 
 /**
- * Minimum length for translation value
+ * Minimum length for translation value.
+ *
+ * @type {number}
  */
 export const TRANSLATION_VALUE_MIN_LENGTH = 1;
 
 /**
- * Default pagination limit for key lists
+ * Default pagination limit for key lists.
+ *
+ * @type {number}
  */
 export const KEYS_DEFAULT_LIMIT = 50;
 
 /**
- * Maximum pagination limit for key lists
+ * Maximum pagination limit for key lists.
+ *
+ * @type {number}
  */
 export const KEYS_MAX_LIMIT = 100;
 
 /**
- * Minimum pagination offset
+ * Minimum pagination offset.
+ *
+ * @type {number}
  */
 export const KEYS_MIN_OFFSET = 0;
 
 /**
- * PostgreSQL error codes relevant to keys operations
+ * PostgreSQL error codes relevant to keys operations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const KEYS_PG_ERROR_CODES = {
   CHECK_VIOLATION: '23514',
@@ -76,7 +89,9 @@ export const KEYS_PG_ERROR_CODES = {
 } as const;
 
 /**
- * Database constraint names for keys
+ * Database constraint names for keys.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const KEYS_CONSTRAINTS = {
   PROJECT_ID_FKEY: 'keys_project_id_fkey',
@@ -84,18 +99,23 @@ export const KEYS_CONSTRAINTS = {
 } as const;
 
 /**
- * Key validation patterns and utilities
+ * Key validation patterns and utilities.
+ *
+ * @type {Readonly<{isValidFormatClient: (key: string) => boolean, isValidTranslationValue: (value: string) => boolean}>}
  */
 export const KEY_VALIDATION = {
   /**
-   * Client-side key format validation
-   * Use for immediate feedback, but always verify server-side for critical operations
+   * Client-side key format validation.
+   * Use for immediate feedback, but always verify server-side for critical operations.
    *
    * Rules implemented:
    * - Must be 1-256 characters long
    * - Only lowercase letters, numbers, dots, underscores, and hyphens
    * - Cannot contain consecutive dots
    * - Cannot end with a dot
+   *
+   * @param {string} key - The key name to validate
+   * @returns {boolean} True if the key format is valid, false otherwise
    */
   isValidFormatClient: (key: string): boolean => {
     if (!key || typeof key !== 'string') return false;
@@ -107,8 +127,11 @@ export const KEY_VALIDATION = {
   },
 
   /**
-   * Validate translation value format
-   * Checks length constraints and content rules
+   * Validate translation value format.
+   * Checks length constraints and content rules.
+   *
+   * @param {string} value - The translation value to validate
+   * @returns {boolean} True if the translation value is valid, false otherwise
    */
   isValidTranslationValue: (value: string): boolean => {
     if (!value || typeof value !== 'string') return false;
@@ -120,10 +143,12 @@ export const KEY_VALIDATION = {
 };
 
 /**
- * Error messages for key operations
+ * Error messages for key operations.
  *
  * Note: Some error messages are API-layer only (client-side validation),
  * while others map directly to database error codes from migrations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const KEYS_ERROR_MESSAGES = {
   DATABASE_ERROR: 'Database operation failed',
@@ -150,7 +175,9 @@ export const KEYS_ERROR_MESSAGES = {
 } as const;
 
 /**
- * Default query parameters for key listings
+ * Default query parameters for key listings.
+ *
+ * @type {Readonly<{LIMIT: number, MISSING_ONLY: boolean, OFFSET: number, SEARCH: undefined}>}
  */
 export const KEYS_DEFAULT_PARAMS = {
   LIMIT: KEYS_DEFAULT_LIMIT,

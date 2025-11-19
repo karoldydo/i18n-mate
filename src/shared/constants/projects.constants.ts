@@ -1,82 +1,99 @@
 /**
- * Projects Constants and Validation Patterns
- *
- * Centralized definitions for project validation patterns to ensure consistency
- * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
- *
- * All patterns follow project-specific naming and validation rules.
- */
-
-/**
- * Project prefix pattern - matches lowercase letters, numbers, dots, underscores, and hyphens
+ * Project prefix pattern - matches lowercase letters, numbers, dots, underscores, and hyphens.
  * Examples: app, api, admin, web-ui, core_app, v2.0
  *
  * Pattern breakdown:
  * - ^[a-z0-9._-]+ : start with allowed characters
  * - $ : end of string
  *
- * Note: Additional validation prevents trailing dots
+ * Note: Additional validation prevents trailing dots.
+ *
+ * @type {RegExp}
  */
 export const PROJECT_PREFIX_PATTERN = /^[a-z0-9._-]+$/;
 
 /**
- * Pattern to detect trailing dots (invalid)
- * Used for validation refinement
+ * Pattern to detect trailing dots (invalid).
+ * Used for validation refinement.
+ *
+ * @type {RegExp}
  */
 export const PROJECT_TRAILING_DOT_PATTERN = /\.$/;
 
 /**
- * Minimum length for project prefix
+ * Minimum length for project prefix.
+ *
+ * @type {number}
  */
 export const PROJECT_PREFIX_MIN_LENGTH = 2;
 
 /**
- * Maximum length for project prefix
+ * Maximum length for project prefix.
+ *
+ * @type {number}
  */
 export const PROJECT_PREFIX_MAX_LENGTH = 4;
 
 /**
- * Minimum length for project name
+ * Minimum length for project name.
+ *
+ * @type {number}
  */
 export const PROJECT_NAME_MIN_LENGTH = 1;
 
 /**
- * Maximum length for project name (CITEXT column)
+ * Maximum length for project name (CITEXT column).
+ *
+ * @type {number}
  */
 export const PROJECT_NAME_MAX_LENGTH = 255;
 
 /**
- * Maximum length for project description
+ * Maximum length for project description.
+ *
+ * @type {number}
  */
 export const PROJECT_DESCRIPTION_MAX_LENGTH = 1000;
 
 /**
- * Maximum length for locale label (human-readable name)
+ * Maximum length for locale label (human-readable name).
+ *
+ * @type {number}
  */
 export const PROJECT_LOCALE_LABEL_MAX_LENGTH = 64;
 
 /**
- * Minimum length for locale label
+ * Minimum length for locale label.
+ *
+ * @type {number}
  */
 export const PROJECT_LOCALE_LABEL_MIN_LENGTH = 1;
 
 /**
- * Default pagination limit for project lists
+ * Default pagination limit for project lists.
+ *
+ * @type {number}
  */
 export const PROJECTS_DEFAULT_LIMIT = 50;
 
 /**
- * Maximum pagination limit for project lists
+ * Maximum pagination limit for project lists.
+ *
+ * @type {number}
  */
 export const PROJECTS_MAX_LIMIT = 100;
 
 /**
- * Minimum pagination offset
+ * Minimum pagination offset.
+ *
+ * @type {number}
  */
 export const PROJECTS_MIN_OFFSET = 0;
 
 /**
- * PostgreSQL error codes relevant to projects operations
+ * PostgreSQL error codes relevant to projects operations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const PROJECTS_PG_ERROR_CODES = {
   CHECK_VIOLATION: '23514',
@@ -85,7 +102,9 @@ export const PROJECTS_PG_ERROR_CODES = {
 } as const;
 
 /**
- * Database constraint names for projects
+ * Database constraint names for projects.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const PROJECTS_CONSTRAINTS = {
   NAME_UNIQUE_PER_OWNER: 'projects_name_unique_per_owner',
@@ -93,7 +112,9 @@ export const PROJECTS_CONSTRAINTS = {
 } as const;
 
 /**
- * Available sorting options for project lists
+ * Available sorting options for project lists.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const PROJECT_SORT_OPTIONS = {
   CREATED_AT_ASC: 'created_at.asc',
@@ -103,10 +124,12 @@ export const PROJECT_SORT_OPTIONS = {
 } as const;
 
 /**
- * Error messages for project operations
+ * Error messages for project operations.
  *
  * Note: Some error messages are API-layer only (client-side validation),
  * while others map directly to database error codes from migrations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const PROJECTS_ERROR_MESSAGES = {
   AUTHENTICATION_REQUIRED: 'Authentication required',

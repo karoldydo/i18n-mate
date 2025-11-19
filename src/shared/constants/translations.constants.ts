@@ -1,26 +1,31 @@
-/**
- * Translations Constants and Validation Patterns
- *
- * Centralized definitions for translation validation patterns to ensure consistency
- * between TypeScript validation (Zod schemas) and PostgreSQL domain constraints.
- */
-
-// Re-export translation value constraints from keys constants for consistency
 import { TRANSLATION_VALUE_MAX_LENGTH, TRANSLATION_VALUE_MIN_LENGTH } from './keys.constants';
 
+// re-export translation value constraints from keys constants for consistency
 export { TRANSLATION_VALUE_MAX_LENGTH, TRANSLATION_VALUE_MIN_LENGTH };
 
-// Update source values
+/**
+ * Valid values for translation update source field.
+ *
+ * @type {ReadonlyArray<string>}
+ */
 export const TRANSLATIONS_UPDATE_SOURCE_VALUES = ['user', 'system'] as const;
 
-// PostgreSQL error codes relevant to translations
+/**
+ * PostgreSQL error codes relevant to translations operations.
+ *
+ * @type {Readonly<Record<string, string>>}
+ */
 export const TRANSLATIONS_PG_ERROR_CODES = {
   CHECK_VIOLATION: '23514',
   FOREIGN_KEY_VIOLATION: '23503',
   UNIQUE_VIOLATION: '23505',
 } as const;
 
-// Database constraint names for translations
+/**
+ * Database constraint names for translations.
+ *
+ * @type {Readonly<Record<string, string>>}
+ */
 export const TRANSLATIONS_CONSTRAINTS = {
   KEY_ID_FKEY: 'translations_key_id_fkey',
   PRIMARY_KEY: 'translations_pkey',
@@ -29,10 +34,12 @@ export const TRANSLATIONS_CONSTRAINTS = {
 } as const;
 
 /**
- * Error messages for translations validation
+ * Error messages for translations validation.
  *
  * Note: Some error messages are API-layer only (client-side validation),
  * while others map directly to database error codes from migrations.
+ *
+ * @type {Readonly<Record<string, string>>}
  */
 export const TRANSLATIONS_ERROR_MESSAGES = {
   DATABASE_ERROR: 'Database operation failed',

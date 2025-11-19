@@ -1,12 +1,7 @@
 /**
- * Export Constants and Configuration
+ * Error messages for export operations.
  *
- * Centralized definitions for export functionality to ensure consistency
- * between Edge Function implementation and frontend validation.
- */
-
-/**
- * Error messages for export operations
+ * @type {Readonly<Record<string, string>>}
  */
 export const EXPORT_ERROR_MESSAGES = {
   AUTHENTICATION_REQUIRED: 'Authentication required',
