@@ -1,5 +1,9 @@
 import { BarChart3, Download, FileText, Home, Key, Languages, type LucideIcon } from 'lucide-react';
 
+/**
+ * Represents a navigation item in the application sidebar or navigation menu.
+ * Contains properties for routing, display, and optional state indicators.
+ */
 export interface NavigationItem {
   badge?: number | string;
   href: string;
@@ -10,7 +14,9 @@ export interface NavigationItem {
 }
 
 /**
- * Global navigation items accessible from any page
+ * Global navigation items accessible from any page in the application.
+ *
+ * @returns {NavigationItem[]} Array of navigation items available globally
  */
 export const GLOBAL_NAVIGATION_ITEMS: NavigationItem[] = [
   {
@@ -22,10 +28,11 @@ export const GLOBAL_NAVIGATION_ITEMS: NavigationItem[] = [
 ];
 
 /**
- * Generate project-specific navigation items
+ * Generates project-specific navigation items based on the provided project ID.
  *
- * @param id - The UUID of the current project
- * @returns Array of navigation items for the project
+ * @param {string} [id] - The UUID of the current project
+ *
+ * @returns {NavigationItem[]} Array of navigation items for the project, or empty array if no ID is provided
  */
 export function getProjectNavigationItems(id?: string): NavigationItem[] {
   if (!id) return [];
