@@ -6,14 +6,41 @@ import * as React from 'react';
 
 import { cn } from '@/shared/utils/index';
 
+/**
+ * Sheet component root container.
+ * Built on Radix UI Dialog primitive for slide-out panels.
+ *
+ * @param {React.ComponentProps<typeof SheetPrimitive.Root>} props - Radix UI Dialog root props
+ *
+ * @returns {React.ReactElement} A sheet root element
+ */
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
+/**
+ * SheetClose component for closing the sheet.
+ * Can be used as a trigger button to close the sheet.
+ *
+ * @param {React.ComponentProps<typeof SheetPrimitive.Close>} props - Radix UI Dialog close props
+ *
+ * @returns {React.ReactElement} A sheet close button element
+ */
 function SheetClose({ ...props }: React.ComponentProps<typeof SheetPrimitive.Close>) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
+/**
+ * SheetContent component for the main sheet content area.
+ * Includes overlay, animations, and side positioning.
+ *
+ * @param {React.ReactNode} children - Content to display in the sheet
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {'bottom' | 'left' | 'right' | 'top'} [side='right'] - Side from which the sheet slides in
+ * @param {React.ComponentProps<typeof SheetPrimitive.Content>} props - Radix UI Dialog content props
+ *
+ * @returns {React.ReactElement} A sheet content container with overlay, animations, and close button
+ */
 function SheetContent({
   children,
   className,
@@ -51,6 +78,15 @@ function SheetContent({
   );
 }
 
+/**
+ * SheetDescription component for sheet description text.
+ * Provides accessible description for screen readers.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof SheetPrimitive.Description>} props - Radix UI Dialog description props
+ *
+ * @returns {React.ReactElement} A sheet description element
+ */
 function SheetDescription({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Description>) {
   return (
     <SheetPrimitive.Description
@@ -61,14 +97,41 @@ function SheetDescription({ className, ...props }: React.ComponentProps<typeof S
   );
 }
 
+/**
+ * SheetFooter component for sheet action buttons.
+ * Provides consistent spacing and layout for sheet footers.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'div'>} props - Standard div element props
+ *
+ * @returns {React.ReactElement} A sheet footer container element
+ */
 function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div className={cn('mt-auto flex flex-col gap-2 p-4', className)} data-slot="sheet-footer" {...props} />;
 }
 
+/**
+ * SheetHeader component for sheet title and description.
+ * Provides consistent spacing and layout for sheet headers.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'div'>} props - Standard div element props
+ *
+ * @returns {React.ReactElement} A sheet header container element
+ */
 function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return <div className={cn('flex flex-col gap-1.5 p-4', className)} data-slot="sheet-header" {...props} />;
 }
 
+/**
+ * SheetOverlay component for the sheet backdrop.
+ * Provides semi-transparent overlay behind the sheet with fade animations.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof SheetPrimitive.Overlay>} props - Radix UI Dialog overlay props
+ *
+ * @returns {React.ReactElement} A sheet overlay element with fade animations
+ */
 function SheetOverlay({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
   return (
     <SheetPrimitive.Overlay
@@ -82,10 +145,27 @@ function SheetOverlay({ className, ...props }: React.ComponentProps<typeof Sheet
   );
 }
 
+/**
+ * SheetPortal component for rendering sheet outside the DOM hierarchy.
+ * Ensures proper z-index stacking and accessibility.
+ *
+ * @param {React.ComponentProps<typeof SheetPrimitive.Portal>} props - Radix UI Dialog portal props
+ *
+ * @returns {React.ReactElement} A sheet portal element
+ */
 function SheetPortal({ ...props }: React.ComponentProps<typeof SheetPrimitive.Portal>) {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
+/**
+ * SheetTitle component for sheet heading.
+ * Provides accessible title for screen readers and visual hierarchy.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof SheetPrimitive.Title>} props - Radix UI Dialog title props
+ *
+ * @returns {React.ReactElement} A sheet title element
+ */
 function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Title>) {
   return (
     <SheetPrimitive.Title
@@ -96,6 +176,14 @@ function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPr
   );
 }
 
+/**
+ * SheetTrigger component for opening the sheet.
+ * Can wrap any element to make it trigger the sheet.
+ *
+ * @param {React.ComponentProps<typeof SheetPrimitive.Trigger>} props - Radix UI Dialog trigger props
+ *
+ * @returns {React.ReactElement} A sheet trigger element
+ */
 function SheetTrigger({ ...props }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }

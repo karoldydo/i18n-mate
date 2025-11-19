@@ -2,6 +2,15 @@ import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon
 import { useTheme } from 'next-themes';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
+/**
+ * Toaster component for displaying toast notifications.
+ * Integrates Sonner toast library with theme support and custom icons.
+ * Safely handles theme context with fallback to system theme.
+ *
+ * @param {ToasterProps} props - Sonner Toaster component props
+ *
+ * @returns {React.ReactElement} A Sonner toaster component with theme and icon configuration
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
   // safely get theme, fallback to 'system' if ThemeProvider is not available
   let theme: ToasterProps['theme'] = 'system';

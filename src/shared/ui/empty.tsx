@@ -2,6 +2,15 @@ import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/shared/utils/index';
 
+/**
+ * Empty component for displaying empty states.
+ * Provides a centered container for empty state content with dashed border styling.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'div'>} props - Standard div element props
+ *
+ * @returns {React.ReactElement} A div element styled for empty states
+ */
 function Empty({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -15,6 +24,15 @@ function Empty({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * EmptyHeader component for empty state header content.
+ * Provides consistent spacing for title and media in empty states.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'div'>} props - Standard div element props
+ *
+ * @returns {React.ReactElement} A div element styled for empty state headers
+ */
 function EmptyHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -25,6 +43,10 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Empty media variant styles configuration using class-variance-authority.
+ * Defines visual variants for empty state media/icons.
+ */
 const emptyMediaVariants = cva(
   'flex shrink-0 items-center justify-center mb-2 [&_svg]:pointer-events-none [&_svg]:shrink-0',
   {
@@ -40,6 +62,15 @@ const emptyMediaVariants = cva(
   }
 );
 
+/**
+ * EmptyContent component for empty state main content area.
+ * Provides consistent spacing for description and action elements.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'div'>} props - Standard div element props
+ *
+ * @returns {React.ReactElement} A div element styled for empty state content
+ */
 function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -50,6 +81,15 @@ function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * EmptyDescription component for empty state description text.
+ * Supports link styling within the description.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'p'>} props - Standard p element props
+ *
+ * @returns {React.ReactElement} A div element styled for empty state descriptions
+ */
 function EmptyDescription({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <div
@@ -63,6 +103,16 @@ function EmptyDescription({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
+/**
+ * EmptyMedia component for empty state icons or media.
+ * Supports default and icon variants for different visual styles.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {'default' | 'icon'} [variant='default'] - Visual style variant
+ * @param {React.ComponentProps<'div'>} props - Standard div element props
+ *
+ * @returns {React.ReactElement} A div element styled for empty state media/icons
+ */
 function EmptyMedia({
   className,
   variant = 'default',
@@ -78,6 +128,15 @@ function EmptyMedia({
   );
 }
 
+/**
+ * EmptyTitle component for empty state titles.
+ * Provides prominent heading styling for empty state messages.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'div'>} props - Standard div element props
+ *
+ * @returns {React.ReactElement} A div element styled for empty state titles
+ */
 function EmptyTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return <div className={cn('text-lg font-medium tracking-tight', className)} data-slot="empty-title" {...props} />;
 }

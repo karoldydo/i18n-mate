@@ -3,6 +3,15 @@ import * as React from 'react';
 
 import { cn } from '@/shared/utils/index';
 
+/**
+ * Switch component for toggle input controls.
+ * Built on Radix UI Switch primitive with animated thumb and state transitions.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof SwitchPrimitive.Root>} props - Radix UI Switch root props
+ *
+ * @returns {React.ReactElement} A switch toggle element with animated thumb
+ */
 function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
   return (
     <SwitchPrimitive.Root

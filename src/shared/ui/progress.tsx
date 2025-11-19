@@ -3,6 +3,16 @@ import * as React from 'react';
 
 import { cn } from '@/shared/utils/index';
 
+/**
+ * Progress component for displaying progress indicators.
+ * Built on Radix UI Progress primitive with animated progress bar.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {number} [value] - Progress value between 0 and 100
+ * @param {React.ComponentProps<typeof ProgressPrimitive.Root>} props - Radix UI Progress root props
+ *
+ * @returns {React.ReactElement} A progress bar element with animated indicator
+ */
 function Progress({ className, value, ...props }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
   return (
     <ProgressPrimitive.Root

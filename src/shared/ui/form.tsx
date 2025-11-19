@@ -14,8 +14,19 @@ import {
 import { Label } from '@/shared/ui/label';
 import { cn } from '@/shared/utils/index';
 
+/**
+ * Form component provider for react-hook-form integration.
+ * Wraps form components with form context from react-hook-form.
+ */
 const Form = FormProvider;
 
+/**
+ * Form field context value interface.
+ * Stores the field name for form field context.
+ *
+ * @template TFieldValues - Type of form field values
+ * @template TName - Type of field path
+ */
 interface FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -25,6 +36,16 @@ interface FormFieldContextValue<
 
 const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
+/**
+ * FormField component for controlled form fields.
+ * Integrates react-hook-form Controller with form field context.
+ *
+ * @template TFieldValues - Type of form field values
+ * @template TName - Type of field path
+ * @param {ControllerProps<TFieldValues, TName>} props - React Hook Form Controller props
+ *
+ * @returns {React.ReactElement} A form field with controller and context provider
+ */
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
@@ -38,6 +59,20 @@ const FormField = <
   );
 };
 
+/**
+ * useFormField hook for accessing form field context and state.
+ * Provides field state, validation errors, and accessibility IDs.
+ *
+ * @returns {Object} Form field context including field state, IDs, and name
+ * @returns {string} formDescriptionId - ID for form description element
+ * @returns {string} formItemId - ID for form item element
+ * @returns {string} formMessageId - ID for form message element
+ * @returns {string} id - Unique ID for the form item
+ * @returns {string} name - Field name from context
+ * @returns {FieldState} - Field state from react-hook-form (error, invalid, isDirty, isTouched)
+ *
+ * @throws {Error} If used outside of FormField component
+ */
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
   const itemContext = React.useContext(FormItemContext);
@@ -61,12 +96,24 @@ const useFormField = () => {
   };
 };
 
+/**
+ * Form item context value interface.
+ * Stores the unique ID for form item context.
+ */
 interface FormItemContextValue {
   id: string;
 }
 
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
+/**
+ * FormControl component for form input controls.
+ * Wraps form inputs with accessibility attributes and error states using Radix UI Slot.
+ *
+ * @param {React.ComponentProps<typeof Slot>} props - Radix UI Slot props
+ *
+ * @returns {React.ReactElement} A Slot element with form control accessibility attributes
+ */
 function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   const { error, formDescriptionId, formItemId, formMessageId } = useFormField();
 
@@ -81,6 +128,15 @@ function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   );
 }
 
+/**
+ * FormDescription component for form field descriptions.
+ * Provides accessible description text for form fields.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'p'>} props - Standard p element props
+ *
+ * @returns {React.ReactElement} A p element with form description styling and accessibility ID
+ */
 function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
   const { formDescriptionId } = useFormField();
 
@@ -94,6 +150,15 @@ function FormDescription({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
+/**
+ * FormItem component for form field container.
+ * Provides context and layout for form field components.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'div'>} props - Standard div element props
+ *
+ * @returns {React.ReactElement} A div element with form item styling and context provider
+ */
 function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   const id = React.useId();
 
@@ -104,6 +169,15 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * FormLabel component for form field labels.
+ * Integrates with form field context to show error states and link to form controls.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof LabelPrimitive.Root>} props - Radix UI Label root props
+ *
+ * @returns {React.ReactElement} A Label element with form label styling and error state handling
+ */
 function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) {
   const { error, formItemId } = useFormField();
 
@@ -118,6 +192,15 @@ function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPri
   );
 }
 
+/**
+ * FormMessage component for displaying form validation errors.
+ * Shows error messages from react-hook-form or custom children content.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<'p'>} props - Standard p element props
+ *
+ * @returns {React.ReactElement | null} A p element with error message styling, or null if no error or content
+ */
 function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const { error, formMessageId } = useFormField();
   const body = error ? String(error?.message ?? '') : props.children;

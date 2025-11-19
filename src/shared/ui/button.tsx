@@ -4,6 +4,10 @@ import * as React from 'react';
 
 import { cn } from '@/shared/utils/index';
 
+/**
+ * Button variant styles configuration using class-variance-authority.
+ * Defines size and variant options for button components.
+ */
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive cursor-pointer",
   {
@@ -34,6 +38,18 @@ const buttonVariants = cva(
   }
 );
 
+/**
+ * Button component with multiple variants and sizes.
+ * Supports polymorphic rendering via the asChild prop using Radix UI Slot.
+ *
+ * @param {boolean} [asChild=false] - When true, renders as a child component instead of a button element
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {'default' | 'icon' | 'icon-lg' | 'icon-sm' | 'lg' | 'sm'} [size] - Size variant of the button
+ * @param {'default' | 'destructive' | 'ghost' | 'link' | 'outline' | 'secondary'} [variant] - Visual style variant
+ * @param {React.ComponentProps<'button'>} props - Standard button element props
+ *
+ * @returns {React.ReactElement} A button element or child component with button styling
+ */
 function Button({
   asChild = false,
   className,

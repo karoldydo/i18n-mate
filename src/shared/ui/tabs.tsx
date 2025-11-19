@@ -3,14 +3,41 @@ import * as React from 'react';
 
 import { cn } from '@/shared/utils/index';
 
+/**
+ * Tabs component root container.
+ * Built on Radix UI Tabs primitive for tabbed interfaces.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof TabsPrimitive.Root>} props - Radix UI Tabs root props
+ *
+ * @returns {React.ReactElement} A tabs root element with flex layout
+ */
 function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return <TabsPrimitive.Root className={cn('flex flex-col gap-2', className)} data-slot="tabs" {...props} />;
 }
 
+/**
+ * TabsContent component for tab panel content.
+ * Displays content for the active tab.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof TabsPrimitive.Content>} props - Radix UI Tabs content props
+ *
+ * @returns {React.ReactElement} A tabs content element styled for tab panels
+ */
 function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
   return <TabsPrimitive.Content className={cn('flex-1 outline-none', className)} data-slot="tabs-content" {...props} />;
 }
 
+/**
+ * TabsList component for tab trigger container.
+ * Provides background and layout for tab buttons.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof TabsPrimitive.List>} props - Radix UI Tabs list props
+ *
+ * @returns {React.ReactElement} A tabs list element styled for tab triggers
+ */
 function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
@@ -24,6 +51,15 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
   );
 }
 
+/**
+ * TabsTrigger component for tab buttons.
+ * Provides active state styling and focus management.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof TabsPrimitive.Trigger>} props - Radix UI Tabs trigger props
+ *
+ * @returns {React.ReactElement} A tabs trigger button element with active and focus states
+ */
 function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
   return (
     <TabsPrimitive.Trigger

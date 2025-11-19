@@ -4,10 +4,28 @@ import * as React from 'react';
 
 import { cn } from '@/shared/utils/index';
 
+/**
+ * RadioGroup component container for radio button groups.
+ * Built on Radix UI RadioGroup primitive for single selection from multiple options.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof RadioGroupPrimitive.Root>} props - Radix UI RadioGroup root props
+ *
+ * @returns {React.ReactElement} A radio group container element
+ */
 function RadioGroup({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
   return <RadioGroupPrimitive.Root className={cn('grid gap-3', className)} data-slot="radio-group" {...props} />;
 }
 
+/**
+ * RadioGroupItem component for individual radio button options.
+ * Used within RadioGroup to create selectable radio options.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof RadioGroupPrimitive.Item>} props - Radix UI RadioGroup item props
+ *
+ * @returns {React.ReactElement} A radio button element with custom styling
+ */
 function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
   return (
     <RadioGroupPrimitive.Item

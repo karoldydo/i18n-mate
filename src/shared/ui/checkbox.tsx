@@ -4,6 +4,15 @@ import * as React from 'react';
 
 import { cn } from '@/shared/utils/index';
 
+/**
+ * Checkbox component for binary input selection.
+ * Built on Radix UI primitives with custom styling and validation states.
+ *
+ * @param {string} [className] - Additional CSS classes to apply
+ * @param {React.ComponentProps<typeof CheckboxPrimitive.Root>} props - Radix UI Checkbox root props
+ *
+ * @returns {React.ReactElement} A checkbox input element with custom styling
+ */
 function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
   return (
     <CheckboxPrimitive.Root
