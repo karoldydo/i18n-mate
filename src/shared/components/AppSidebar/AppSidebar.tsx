@@ -3,9 +3,9 @@ import { Link, useParams } from 'react-router';
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/shared/ui/sidebar';
 
-import { AppSidebarGlobalGroup } from './AppSidebarGlobalGroup';
-import { AppSidebarMenu } from './AppSidebarMenu';
-import { AppSidebarProjectGroup } from './AppSidebarProjectGroup';
+import { AppSidebarGlobalGroup } from '../AppSidebarGlobalGroup';
+import { AppSidebarMenu } from '../AppSidebarMenu';
+import { AppSidebarProjectGroup } from '../AppSidebarProjectGroup';
 
 interface RouteParams {
   id: string;

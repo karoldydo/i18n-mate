@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 
-import { useActiveNavigation } from '../hooks';
-import { GLOBAL_NAVIGATION_ITEMS } from '../lib/navigation';
+import { useActiveNavigation } from '../../hooks';
+import { GLOBAL_NAVIGATION_ITEMS } from '../../lib/navigation';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -9,7 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '../ui/sidebar';
+} from '../../ui/sidebar';
 
 /**
  * AppSidebarGlobalGroup - Renders the main global navigation group in the application sidebar.

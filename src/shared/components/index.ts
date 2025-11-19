@@ -1,4 +1,7 @@
 export * from './AppSidebar';
+export * from './AppSidebarGlobalGroup';
+export * from './AppSidebarMenu';
+export * from './AppSidebarProjectGroup';
 export * from './BackButton';
 export * from './BreadcrumbNavigation';
 export * from './CardItem';

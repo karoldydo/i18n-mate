@@ -46,6 +46,9 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/assets` - shared assets (icons, logo)
 - `./src/shared` - shared, domain-agnostic code
 - `./src/shared/components` - general shared components (alias: `@/components`)
+  - `./src/shared/components/Component/Component.tsx` - shared component in nested directory
+  - `./src/shared/components/Component/index.ts` - component export with `export * from "./Component";`
+  - `./src/shared/components/Component/Component.test.tsx` - co-located unit test
 - `./src/shared/ui` - shadcn/ui components and small reusable UI (alias: `@/ui`)
 - `./src/shared/api` - API clients (Supabase/OpenRouter), TanStack Query keys
 - `./src/shared/lib` - library functions (format-date, generate-id) (alias: `@/lib`)

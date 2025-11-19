@@ -60,7 +60,7 @@ The codebase follows a feature-first architecture where domain modules live in `
 - **`src/app/errors/`**: Global and per-route error boundaries
 - **`src/shared/`**: Domain-agnostic, reusable code
   - `api/`: Supabase client, TanStack Query keys, API utilities
-  - `components/`: General shared components
+  - `components/`: General shared components with nested structure (`Component/Component.tsx` + `Component/index.ts`)
   - `ui/`: Shadcn/ui components (installed via `npx shadcn@latest add`)
   - `lib/`: Library functions (format-date, generate-id, etc.)
   - `utils/`: Utility functions (cn, clsx helpers)

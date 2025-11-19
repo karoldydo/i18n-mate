@@ -1,8 +1,8 @@
 import { isEmpty } from 'lodash-es';
 import { Link } from 'react-router';
 
-import { useActiveNavigation } from '../hooks';
-import { getProjectNavigationItems } from '../lib/navigation';
+import { useActiveNavigation } from '../../hooks';
+import { getProjectNavigationItems } from '../../lib/navigation';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
-} from '../ui/sidebar';
+} from '../../ui/sidebar';
 
 interface AppSidebarProjectGroupProps {
   projectId?: string;
