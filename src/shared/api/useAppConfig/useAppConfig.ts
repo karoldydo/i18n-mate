@@ -5,8 +5,16 @@ import type { AppConfig } from '@/shared/types';
 import { useSupabase } from '@/app/providers/SupabaseProvider';
 
 /**
- * Fetches public app configuration from the database
- * @returns TanStack Query result with AppConfig object
+ * Fetches public app configuration from the database.
+ *
+ * Uses the RPC function `get_public_app_config` to retrieve application-wide
+ * configuration settings. The configuration is cached by TanStack Query using
+ * the query key `['appConfig']` and automatically refetches when the query
+ * is invalidated or the component remounts.
+ *
+ * @returns {UseQueryResult<AppConfig, Error>} TanStack Query result containing the app configuration data, loading state, and error state
+ *
+ * @throws {Error} Throws an error if the database RPC call fails
  */
 export function useAppConfig() {
   const supabase = useSupabase();
