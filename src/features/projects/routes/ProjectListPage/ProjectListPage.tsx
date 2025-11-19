@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react';
 
 import type { ProjectResponse } from '@/shared/types';
 
-import { ErrorBoundary, PageHeader } from '@/shared/components';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { PageHeader } from '@/shared/components/PageHeader';
 
 import { CreateProjectDialog } from '../../components/dialogs/CreateProjectDialog/CreateProjectDialog';
 import { DeleteProjectDialog } from '../../components/dialogs/DeleteProjectDialog/DeleteProjectDialog';

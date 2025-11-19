@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useParams } from 'react-router';
 
-import { ErrorBoundary, ValidationError } from '@/shared/components';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { ValidationError } from '@/shared/components/ValidationError';
 
 import { UUID_SCHEMA } from '../../../projects/api/projects.schemas';
 import { KeysPerLanguageContent } from '../../components/views/KeysPerLanguageContent';

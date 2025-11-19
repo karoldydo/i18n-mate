@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import type { KeyDefaultViewItem } from '@/shared/types';
 
 import { TranslationValueCell } from '@/features/keys/components/common/TranslationValueCell';
-import { CardItem } from '@/shared/components';
+import { CardItem } from '@/shared/components/CardItem';
 import { Button } from '@/shared/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
 

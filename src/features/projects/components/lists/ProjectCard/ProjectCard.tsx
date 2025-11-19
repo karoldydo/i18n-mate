@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 
 import type { ProjectResponse } from '@/shared/types';
 
-import { CardItem } from '@/shared/components';
+import { CardItem } from '@/shared/components/CardItem';
 import { Button } from '@/shared/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
 

@@ -3,7 +3,8 @@ import { useMemo } from 'react';
 import { useProjectKeyCount } from '@/features/keys/api/useProjectKeyCount';
 import { useProjectLocales } from '@/features/locales/api/useProjectLocales';
 import { useProject } from '@/features/projects/api/useProject';
-import { BackButton, PageHeader } from '@/shared/components';
+import { BackButton } from '@/shared/components/BackButton';
+import { PageHeader } from '@/shared/components/PageHeader';
 
 import { ExportActions } from '../../forms/ExportActions';
 import { ExportLayout } from '../../layouts/ExportLayout';

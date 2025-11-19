@@ -6,7 +6,10 @@ import { toast } from 'sonner';
 import type { PaginationParams, TranslationJobResponse } from '@/shared/types';
 
 import { useSupabase } from '@/app/providers/SupabaseProvider';
-import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/components';
+import { BackButton } from '@/shared/components/BackButton';
+import { CardList } from '@/shared/components/CardList';
+import { EmptyState } from '@/shared/components/EmptyState';
+import { PageHeader } from '@/shared/components/PageHeader';
 import { isActiveJob } from '@/shared/types';
 import { Button } from '@/shared/ui/button';
 

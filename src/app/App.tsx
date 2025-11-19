@@ -1,7 +1,10 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router';
 
-import { AppSidebar, BreadcrumbNavigation, ErrorBoundary, InlineLoading } from '@/shared/components';
+import { AppSidebar } from '@/shared/components/AppSidebar';
+import { BreadcrumbNavigation } from '@/shared/components/BreadcrumbNavigation';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { InlineLoading } from '@/shared/components/InlineLoading';
 
 import './App.css';
 import { Separator } from '@/shared/ui/separator';

@@ -1,6 +1,7 @@
 import type { ProjectResponse } from '@/shared/types';
 
-import { BackButton, PageHeader } from '@/shared/components';
+import { BackButton } from '@/shared/components/BackButton';
+import { PageHeader } from '@/shared/components/PageHeader';
 
 import { ProjectActions } from '../ProjectActions/ProjectActions';
 import { ProjectMetadata } from '../ProjectMetadata/ProjectMetadata';

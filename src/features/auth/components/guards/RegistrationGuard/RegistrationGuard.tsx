@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Navigate } from 'react-router';
 
 import { useConfig } from '@/app/providers/ConfigProvider';
-import { Loading } from '@/shared/components';
+import { Loading } from '@/shared/components/Loading';
 
 interface RegistrationGuardProps {
   children: ReactNode;

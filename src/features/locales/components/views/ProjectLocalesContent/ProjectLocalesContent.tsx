@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router';
 
 import type { LocaleItem } from '@/shared/types';
 
-import { BackButton, CardList, PageHeader } from '@/shared/components';
+import { BackButton } from '@/shared/components/BackButton';
+import { CardList } from '@/shared/components/CardList';
+import { PageHeader } from '@/shared/components/PageHeader';
 import { Button } from '@/shared/ui/button';
 
 import { useProjectLocales } from '../../../api/useProjectLocales';

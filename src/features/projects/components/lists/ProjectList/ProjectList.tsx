@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router';
 
 import type { PaginationParams, ProjectResponse } from '@/shared/types';
 
-import { CardList, EmptyState } from '@/shared/components';
+import { CardList } from '@/shared/components/CardList';
+import { EmptyState } from '@/shared/components/EmptyState';
 import { Button } from '@/shared/ui/button';
 
 import { useProjects } from '../../../api/useProjects';

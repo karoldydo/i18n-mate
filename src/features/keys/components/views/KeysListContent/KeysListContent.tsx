@@ -14,7 +14,10 @@ import { DeleteKeyDialog } from '@/features/keys/components/dialogs/DeleteKeyDia
 import { useKeysListFilters } from '@/features/keys/hooks/useKeysListFilters';
 import { useProject } from '@/features/projects/api/useProject';
 import { useUpdateTranslation } from '@/features/translations/api/useUpdateTranslation';
-import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/components';
+import { BackButton } from '@/shared/components/BackButton';
+import { CardList } from '@/shared/components/CardList';
+import { EmptyState } from '@/shared/components/EmptyState';
+import { PageHeader } from '@/shared/components/PageHeader';
 import { Button } from '@/shared/ui/button';
 
 interface KeysListContentProps {

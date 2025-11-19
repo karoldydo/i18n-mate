@@ -1,4 +1,4 @@
-import { CardItem } from '@/shared/components';
+import { CardItem } from '@/shared/components/CardItem';
 
 interface KPICardProps {
   description: string;

@@ -4,7 +4,9 @@ import type { PaginationParams } from '@/shared/types';
 
 import { useProject } from '@/features/projects/api/useProject';
 import { useTelemetryEvents } from '@/features/telemetry/api/useTelemetryEvents';
-import { BackButton, CardList, PageHeader } from '@/shared/components';
+import { BackButton } from '@/shared/components/BackButton';
+import { CardList } from '@/shared/components/CardList';
+import { PageHeader } from '@/shared/components/PageHeader';
 
 import { useTelemetryPageState } from '../../../hooks/useTelemetryPageState';
 import { TelemetryCard } from '../../cards/TelemetryCard';

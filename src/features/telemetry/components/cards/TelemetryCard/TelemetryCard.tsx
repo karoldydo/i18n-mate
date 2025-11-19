@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import type { TelemetryEventResponse } from '@/shared/types';
 
-import { CardItem } from '@/shared/components';
+import { CardItem } from '@/shared/components/CardItem';
 import { Badge } from '@/shared/ui/badge';
 import { formatRelativeTimestamp } from '@/shared/utils';
 

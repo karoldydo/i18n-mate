@@ -1,6 +1,6 @@
 import type { ProjectResponse } from '@/shared/types';
 
-import { CardItem } from '@/shared/components';
+import { CardItem } from '@/shared/components/CardItem';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui/tooltip';
 import { formatDate, formatDateTime } from '@/shared/utils';
 

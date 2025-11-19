@@ -12,7 +12,10 @@ import { SearchInput } from '@/features/keys/components/common/SearchInput';
 import { useKeysPerLanguageState } from '@/features/keys/hooks/useKeysPerLanguageState';
 import { useProject } from '@/features/projects/api/useProject';
 import { useUpdateTranslation } from '@/features/translations/api/useUpdateTranslation';
-import { BackButton, CardList, EmptyState, PageHeader } from '@/shared/components';
+import { BackButton } from '@/shared/components/BackButton';
+import { CardList } from '@/shared/components/CardList';
+import { EmptyState } from '@/shared/components/EmptyState';
+import { PageHeader } from '@/shared/components/PageHeader';
 
 interface KeysPerLanguageContentProps {
   locale: string;

@@ -4,7 +4,7 @@ import { Navigate, useLocation } from 'react-router';
 
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useConfig } from '@/app/providers/ConfigProvider';
-import { Loading } from '@/shared/components';
+import { Loading } from '@/shared/components/Loading';
 
 interface AuthGuardProps {
   children: ReactNode;
