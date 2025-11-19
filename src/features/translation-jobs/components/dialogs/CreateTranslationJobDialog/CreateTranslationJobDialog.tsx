@@ -38,6 +38,15 @@ interface CreateTranslationJobDialogProps {
  * - View overwrite warnings for existing translations
  *
  * Validates that no active job exists before allowing creation.
+ *
+ * @param {CreateTranslationJobDialogProps} props - Component props
+ * @param {boolean} props.isLoading - Whether the job creation is in progress
+ * @param {boolean} props.isOpen - Whether the dialog is open
+ * @param {(params: {estimatedTotalKeys: number | null, key_ids: string[], mode: TranslationMode, target_locale: string}) => void} props.onCreateJob - Callback invoked when user creates a job
+ * @param {(open: boolean) => void} props.onOpenChange - Callback invoked when dialog open state changes
+ * @param {string} props.projectId - Project UUID to create the job for
+ *
+ * @returns {JSX.Element} Job creation dialog component with form and validation
  */
 export function CreateTranslationJobDialog({
   isLoading,

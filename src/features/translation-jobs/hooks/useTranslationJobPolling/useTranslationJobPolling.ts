@@ -17,19 +17,18 @@ import { useActiveTranslationJob } from '../../api/useActiveTranslationJob';
  * - Cleans up timeouts on unmount or when polling stops
  * - Invalidates active job cache to trigger fresh data fetch
  *
- * Usage:
- * ```tsx
- * const { activeJob, isJobRunning, isPolling } = useTranslationJobPolling(projectId);
+ * @param {string} projectId - Project UUID to poll for active jobs
+ * @param {boolean} [enabled=true] - Whether polling is enabled
  *
- * // show progress ui when job is running
- * if (isJobRunning) {
- *   return <JobProgressIndicator job={activeJob} />;
- * }
- * ```
- *
- * @param projectId - Project UUID to poll for active jobs
- * @param enabled - Whether polling is enabled (default: true)
- * @returns Object with active job data and polling status
+ * @returns {Object} Object with active job data and polling status
+ * @returns {TranslationJobResponse | undefined} returns.activeJob - The active translation job, if any
+ * @returns {boolean} returns.hasActiveJob - Whether an active job exists
+ * @returns {boolean} returns.isJobFinished - Whether the active job has finished
+ * @returns {boolean} returns.isJobRunning - Whether the active job is currently running
+ * @returns {boolean} returns.isPolling - Whether polling is currently active
+ * @returns {number} returns.pollAttempt - Current poll attempt number
+ * @returns {() => void} returns.startPolling - Function to manually start polling
+ * @returns {() => void} returns.stopPolling - Function to manually stop polling
  */
 export function useTranslationJobPolling(projectId: string, enabled = true) {
   const activeJobQuery = useActiveTranslationJob(projectId);

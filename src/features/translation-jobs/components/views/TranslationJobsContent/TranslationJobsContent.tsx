@@ -28,6 +28,12 @@ interface TranslationJobsContentProps {
  *
  * Fetches and displays translation jobs with real-time status updates.
  * Uses useSuspenseQuery for automatic loading state handling via Suspense boundary.
+ * Manages job creation, cancellation, and progress monitoring with polling.
+ *
+ * @param {TranslationJobsContentProps} props - Component props
+ * @param {string} props.projectId - Project UUID to fetch and manage jobs for
+ *
+ * @returns {JSX.Element} Translation jobs management interface with list, dialogs, and progress monitoring
  */
 export function TranslationJobsContent({ projectId }: TranslationJobsContentProps) {
   const queryClient = useQueryClient();

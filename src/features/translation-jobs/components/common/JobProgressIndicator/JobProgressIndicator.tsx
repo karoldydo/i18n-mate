@@ -15,6 +15,12 @@ interface JobProgressIndicatorProps {
  * Displays a progress bar with completion statistics.
  * Progress is calculated as (translated_count / total_keys) * 100.
  * Shows detailed counts when showDetails is true.
+ *
+ * @param {JobProgressIndicatorProps} props - Component props
+ * @param {TranslationJobResponse} props.job - The translation job data to display progress for
+ * @param {boolean} [props.showDetails=true] - Whether to show detailed completion statistics
+ *
+ * @returns {JSX.Element} Progress bar component with optional detailed statistics
  */
 export function JobProgressIndicator({ job, showDetails = true }: JobProgressIndicatorProps) {
   const { completed_keys, failed_keys, status, total_keys } = job;

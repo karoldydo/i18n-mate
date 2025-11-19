@@ -19,6 +19,12 @@ interface JobStatusBadgeProps {
  * - completed: secondary with green text
  * - failed: destructive (red)
  * - cancelled: outline (muted)
+ *
+ * @param {JobStatusBadgeProps} props - Component props
+ * @param {'md' | 'sm'} [props.size='md'] - Badge size variant
+ * @param {JobStatus} props.status - The job status to display
+ *
+ * @returns {JSX.Element} Color-coded status badge component
  */
 export function JobStatusBadge({ size = 'md', status }: JobStatusBadgeProps) {
   const variant = useMemo(() => {

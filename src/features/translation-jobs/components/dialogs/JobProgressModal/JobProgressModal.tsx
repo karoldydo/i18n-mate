@@ -21,6 +21,14 @@ interface JobProgressModalProps {
  * Displays real-time progress updates with statistics and action buttons.
  * Auto-opens when active job is detected, auto-closes when job finishes.
  * Supports cancelling jobs mid-process.
+ *
+ * @param {JobProgressModalProps} props - Component props
+ * @param {boolean} props.isOpen - Whether the modal is open
+ * @param {TranslationJobResponse | null} props.job - The translation job to display, or null
+ * @param {(job: TranslationJobResponse) => void} [props.onCancelJob] - Callback invoked when user cancels the job
+ * @param {(open: boolean) => void} props.onOpenChange - Callback invoked when modal open state changes
+ *
+ * @returns {JSX.Element | null} Progress modal component, or null if no job provided
  */
 export function JobProgressModal({ isOpen, job, onCancelJob, onOpenChange }: JobProgressModalProps) {
   const canCancel = useMemo(() => job?.status === 'pending' || job?.status === 'running', [job?.status]);

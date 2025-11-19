@@ -28,6 +28,15 @@ interface CancelJobDialogProps {
  * Displays job details and warning about irreversible operation.
  * Only shown for jobs with status 'pending' or 'running'.
  * Completed translations are preserved after cancellation.
+ *
+ * @param {CancelJobDialogProps} props - Component props
+ * @param {boolean} props.isLoading - Whether the cancel operation is in progress
+ * @param {boolean} props.isOpen - Whether the dialog is open
+ * @param {TranslationJobResponse | null} props.job - The translation job to cancel, or null
+ * @param {() => void} props.onConfirmCancel - Callback invoked when user confirms cancellation
+ * @param {(open: boolean) => void} props.onOpenChange - Callback invoked when dialog open state changes
+ *
+ * @returns {JSX.Element | null} Confirmation dialog component, or null if no job provided
  */
 export function CancelJobDialog({ isLoading, isOpen, job, onConfirmCancel, onOpenChange }: CancelJobDialogProps) {
   const handleConfirm = useCallback(

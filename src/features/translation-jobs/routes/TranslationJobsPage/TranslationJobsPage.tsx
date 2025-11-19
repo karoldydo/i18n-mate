@@ -21,7 +21,7 @@ interface RouteParams {
  * - Enables monitoring and management of translation processes initiated in other areas of the application.
  * - Handles invalid or missing project IDs gracefully using `ValidationError` fallback.
  *
- * @returns {JSX.Element} Renders translation job management UI or validation error state.
+ * @returns {JSX.Element} Renders translation job management UI or validation error state
  */
 export function TranslationJobsPage() {
   const { id } = useParams<keyof RouteParams>();

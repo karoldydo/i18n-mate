@@ -29,17 +29,17 @@ import { GET_JOB_ITEMS_SCHEMA, TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA } from '../t
  * - Displaying error messages per key
  * - Monitoring job execution status
  *
- * @param params - Query parameters for job items
- * @param params.job_id - Translation job UUID to fetch items from (required)
- * @param params.status - Filter by item status (pending, completed, failed, skipped)
- * @param params.limit - Items per page (1-1000, default: 100)
- * @param params.offset - Pagination offset (min: 0, default: 0)
+ * @param {TranslationJobItemsRequest} params - Query parameters for job items
+ * @param {string} params.job_id - Translation job UUID to fetch items from (required)
+ * @param {ItemStatus} [params.status] - Filter by item status (pending, completed, failed, skipped)
+ * @param {number} [params.limit] - Items per page (1-1000, default: 100)
+ * @param {number} [params.offset] - Pagination offset (min: 0, default: 0)
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid job_id, limit > 1000, negative offset)
  * @throws {ApiErrorResponse} 403 - Job not accessible (project not owned via RLS)
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @returns TanStack Query result with job items data and pagination metadata
+ * @returns {UseQueryResult<TranslationJobItemsResponse, ApiErrorResponse>} TanStack Query result with job items data and pagination metadata
  */
 export function useTranslationJobItems(params: TranslationJobItemsRequest) {
   const supabase = useSupabase();

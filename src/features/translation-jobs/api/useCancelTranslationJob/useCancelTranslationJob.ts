@@ -31,7 +31,7 @@ import { CANCEL_TRANSLATION_JOB_SCHEMA } from '../translation-jobs.schemas';
  * @throws {ApiErrorResponse} 404 - Job not found or access denied (via RLS)
  * @throws {ApiErrorResponse} 500 - Database error during update
  *
- * @returns TanStack Query mutation hook for cancelling translation jobs
+ * @returns {UseMutationResult<TranslationJobResponse, ApiErrorResponse, CancelTranslationJobRequest>} TanStack Query mutation hook for cancelling translation jobs
  */
 export function useCancelTranslationJob() {
   const supabase = useSupabase();

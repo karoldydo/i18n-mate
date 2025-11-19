@@ -20,13 +20,13 @@ import { CHECK_ACTIVE_JOB_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '../tra
  * - UI state management (showing active job progress)
  * - Preventing multiple concurrent jobs
  *
- * @param projectId - Project UUID to check for active jobs
+ * @param {string} projectId - Project UUID to check for active jobs
  *
  * @throws {ApiErrorResponse} 400 - Invalid project ID format
  * @throws {ApiErrorResponse} 403 - Project not owned by user (via RLS)
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @returns TanStack Query result with active job array (empty if none active)
+ * @returns {UseQueryResult<TranslationJobResponse[], ApiErrorResponse>} TanStack Query result with active job array (empty if none active)
  */
 export function useActiveTranslationJob(projectId: string) {
   const supabase = useSupabase();

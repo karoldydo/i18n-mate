@@ -30,6 +30,14 @@ interface KeySelectorProps {
  * - Search/filter keys by name
  * - Scrollable list of keys
  * - Shows key count and selection status
+ *
+ * @param {KeySelectorProps} props - Component props
+ * @param {TranslationMode} props.mode - Selection mode ('selected' for multi-select, 'single' for single-select)
+ * @param {(keyIds: string[]) => void} props.onSelectionChange - Callback invoked when selection changes
+ * @param {string} props.projectId - Project UUID to fetch keys from
+ * @param {string[]} props.selectedKeyIds - Array of currently selected key IDs
+ *
+ * @returns {JSX.Element} Key selection component with search and selection UI
  */
 export function KeySelector({ mode, onSelectionChange, projectId, selectedKeyIds }: KeySelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');

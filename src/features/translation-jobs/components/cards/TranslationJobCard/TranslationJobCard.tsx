@@ -21,20 +21,6 @@ interface TranslationJobCardProps {
  * Displays job mode, target locale, status, created time, progress, and cancel action.
  * Card click opens progress modal. Cancel button is only shown for active jobs (pending/running).
  *
- * @param {Object} props - Component props
- * @param {TranslationJobResponse} props.job - The translation job data to display
- * @param {(job: TranslationJobResponse) => void} [props.onJobClick] - Called when the card is clicked, to open progress modal
- * @param {(job: TranslationJobResponse) => void} [props.onCancelJob] - Called when the Cancel button is clicked (passes the job)
- *
- * @returns {JSX.Element} Card structure displaying job information, progress, and cancel action.
- *
- * @example
- * <TranslationJobCard
- *   job={job}
- *   onJobClick={handleJobClick}
- *   onCancelJob={handleCancelJob}
- * />
- *
  * Layout:
  * - Mode (capitalized, e.g., "all", "selected", "single")
  * - Target locale (BCP-47 format)
@@ -42,6 +28,13 @@ interface TranslationJobCardProps {
  * - Created time (formatted)
  * - Progress indicator with completion stats
  * - Cancel button (only for active jobs)
+ *
+ * @param {TranslationJobCardProps} props - Component props
+ * @param {TranslationJobResponse} props.job - The translation job data to display
+ * @param {(job: TranslationJobResponse) => void} [props.onJobClick] - Called when the card is clicked, to open progress modal
+ * @param {(job: TranslationJobResponse) => void} [props.onCancelJob] - Called when the Cancel button is clicked (passes the job)
+ *
+ * @returns {JSX.Element} Card structure displaying job information, progress, and cancel action
  */
 export function TranslationJobCard({ job, onCancelJob, onJobClick }: TranslationJobCardProps) {
   const isActive = job.status === 'pending' || job.status === 'running';

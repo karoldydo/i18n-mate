@@ -33,7 +33,7 @@ import { CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA, CREATE_TRANSLATION_JOB_SCHEMA }
  * @throws {ApiErrorResponse} 429 - Rate limit exceeded
  * @throws {ApiErrorResponse} 500 - Edge Function error, OpenRouter API error
  *
- * @returns TanStack Query mutation hook for creating translation jobs
+ * @returns {UseMutationResult<CreateTranslationJobResponse, ApiErrorResponse, CreateTranslationJobRequest>} TanStack Query mutation hook for creating translation jobs
  */
 export function useCreateTranslationJob() {
   const supabase = useSupabase();

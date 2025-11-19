@@ -25,18 +25,18 @@ import { LIST_TRANSLATION_JOBS_SCHEMA, TRANSLATION_JOB_RESPONSE_SCHEMA } from '.
  * - Total count for pagination metadata
  * - Runtime validation of response data
  *
- * @param params - Query parameters for job listing
- * @param params.project_id - Project UUID to fetch jobs from (required)
- * @param params.limit - Items per page (1-100, default: 20)
- * @param params.offset - Pagination offset (min: 0, default: 0)
- * @param params.status - Filter by job status (single or array)
- * @param params.order - Sort order (default: 'created_at.desc')
+ * @param {TranslationJobsRequest} params - Query parameters for job listing
+ * @param {string} params.project_id - Project UUID to fetch jobs from (required)
+ * @param {number} [params.limit] - Items per page (1-100, default: 20)
+ * @param {number} [params.offset] - Pagination offset (min: 0, default: 0)
+ * @param {JobStatus | JobStatus[]} [params.status] - Filter by job status (single or array)
+ * @param {string} [params.order] - Sort order (default: 'created_at.desc')
  *
  * @throws {ApiErrorResponse} 400 - Validation error (invalid project_id, limit > 100, negative offset)
  * @throws {ApiErrorResponse} 403 - Project not owned by user (via RLS)
  * @throws {ApiErrorResponse} 500 - Database error during fetch
  *
- * @returns TanStack Query result with jobs data and pagination metadata
+ * @returns {UseSuspenseQueryResult<TranslationJobsResponse, ApiErrorResponse>} TanStack Query result with jobs data and pagination metadata
  */
 export function useTranslationJobs(params: TranslationJobsRequest) {
   const supabase = useSupabase();

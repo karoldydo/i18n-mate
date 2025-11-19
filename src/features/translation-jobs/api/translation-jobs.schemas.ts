@@ -28,28 +28,46 @@ import {
   TRANSLATION_JOBS_PARAMS_TEMPERATURE_MIN,
 } from '@/shared/constants';
 
-// job id validation schema
-// validates uuid format for translation job identifiers
+/**
+ * Job ID validation schema
+ *
+ * Validates UUID format for translation job identifiers.
+ *
+ * @type {z.ZodBranded<z.ZodString, 'TranslationJobId'>}
+ */
 export const JOB_ID_SCHEMA = z
   .string()
   .uuid(TRANSLATION_JOBS_ERROR_MESSAGES.INVALID_JOB_ID)
   .brand<'TranslationJobId'>();
 
-// project id validation schema
-// validates uuid format for project identifiers
+/**
+ * Project ID validation schema
+ *
+ * Validates UUID format for project identifiers.
+ *
+ * @type {z.ZodBranded<z.ZodString, 'ProjectId'>}
+ */
 export const PROJECT_ID_SCHEMA = z
   .string()
   .uuid(TRANSLATION_JOBS_ERROR_MESSAGES.INVALID_PROJECT_ID)
   .brand<'ProjectId'>();
 
-// key ids validation schema
-// validates array of uuid strings for translation key identifiers
+/**
+ * Key IDs validation schema
+ *
+ * Validates array of UUID strings for translation key identifiers.
+ *
+ * @type {z.ZodArray<z.ZodString>}
+ */
 export const KEY_IDS_SCHEMA = z.array(
   z.string().uuid(TRANSLATION_JOBS_ERROR_MESSAGES.INVALID_KEY_ID)
 ) satisfies z.ZodType<CreateTranslationJobRequest['key_ids']>;
 
-// locale code validation schema (bcp-47 format)
-// validates normalized locale codes such as en or en-us
+/**
+ * Locale code validation schema (BCP-47 format)
+ *
+ * Validates normalized locale codes such as en or en-us.
+ */
 const LOCALE_CODE_SCHEMA = z
   .string()
   .regex(/^[a-z]{2}(-[A-Z]{2})?$/, {
@@ -57,14 +75,20 @@ const LOCALE_CODE_SCHEMA = z
   })
   .brand<'LocaleCode'>();
 
-// translation mode validation schema
-// validates job execution modes: all keys, selected keys, or single key
+/**
+ * Translation mode validation schema
+ *
+ * Validates job execution modes: all keys, selected keys, or single key.
+ */
 const TRANSLATION_MODE_SCHEMA = z.enum(['all', 'selected', 'single'], {
   errorMap: () => ({ message: TRANSLATION_JOBS_ERROR_MESSAGES.INVALID_MODE }),
 }) satisfies z.ZodType<TranslationMode>;
 
-// job status validation schema
-// validates translation job lifecycle states
+/**
+ * Job status validation schema
+ *
+ * Validates translation job lifecycle states.
+ */
 const JOB_STATUS_SCHEMA = z.enum([
   'pending',
   'running',
@@ -73,12 +97,20 @@ const JOB_STATUS_SCHEMA = z.enum([
   'cancelled',
 ]) satisfies z.ZodType<JobStatus>;
 
-// item status validation schema
-// validates individual translation item states within a job
+/**
+ * Item status validation schema
+ *
+ * Validates individual translation item states within a job.
+ */
 const ITEM_STATUS_SCHEMA = z.enum(['pending', 'completed', 'failed', 'skipped']) satisfies z.ZodType<ItemStatus>;
 
-// llm parameters validation schema
-// validates optional configuration for language model translation requests
+/**
+ * LLM parameters validation schema
+ *
+ * Validates optional configuration for language model translation requests.
+ *
+ * @type {z.ZodNullable<z.ZodOptional<z.ZodObject<...>>>}
+ */
 export const TRANSLATION_JOB_PARAMS_SCHEMA = z
   .object({
     max_tokens: z
@@ -106,14 +138,24 @@ export const TRANSLATION_JOB_PARAMS_SCHEMA = z
   .optional()
   .nullable() satisfies z.ZodType<null | TranslationJobParams | undefined>;
 
-// check active job schema
-// validates parameters for checking if a project has an active translation job
+/**
+ * Check active job schema
+ *
+ * Validates parameters for checking if a project has an active translation job.
+ *
+ * @type {z.ZodObject<{project_id: z.ZodBranded<z.ZodString, 'ProjectId'>}>}
+ */
 export const CHECK_ACTIVE_JOB_SCHEMA = z.object({
   project_id: PROJECT_ID_SCHEMA,
 }) satisfies z.ZodType<Pick<CreateTranslationJobRequest, 'project_id'>>;
 
-// list translation jobs schema
-// validates parameters for fetching paginated job history with filtering and sorting
+/**
+ * List translation jobs schema
+ *
+ * Validates parameters for fetching paginated job history with filtering and sorting.
+ *
+ * @type {z.ZodObject<...>}
+ */
 export const LIST_TRANSLATION_JOBS_SCHEMA = z.object({
   limit: z
     .number()
@@ -131,8 +173,17 @@ export const LIST_TRANSLATION_JOBS_SCHEMA = z.object({
   status: z.union([JOB_STATUS_SCHEMA, z.array(JOB_STATUS_SCHEMA)]).optional(),
 }) satisfies z.ZodType<TranslationJobsRequest>;
 
-// create translation job schema
-// validates job creation requests with comprehensive mode-specific validation
+/**
+ * Create translation job schema
+ *
+ * Validates job creation requests with comprehensive mode-specific validation.
+ * Enforces mode-specific key_ids requirements:
+ * - 'all' mode: key_ids must be empty
+ * - 'selected' mode: key_ids must have at least one key
+ * - 'single' mode: key_ids must have exactly one key
+ *
+ * @type {z.ZodObject<...>}
+ */
 export const CREATE_TRANSLATION_JOB_SCHEMA = z
   .object({
     key_ids: KEY_IDS_SCHEMA,
@@ -168,15 +219,25 @@ export const CREATE_TRANSLATION_JOB_SCHEMA = z
     }
   }) satisfies z.ZodType<CreateTranslationJobRequest>;
 
-// cancel translation job schema
-// validates job cancellation requests - only allows setting status to cancelled
+/**
+ * Cancel translation job schema
+ *
+ * Validates job cancellation requests - only allows setting status to cancelled.
+ *
+ * @type {z.ZodObject<{job_id: z.ZodBranded<z.ZodString, 'TranslationJobId'>, status: z.ZodLiteral<'cancelled'>}>}
+ */
 export const CANCEL_TRANSLATION_JOB_SCHEMA = z.object({
   job_id: JOB_ID_SCHEMA,
   status: z.literal('cancelled'),
 }) satisfies z.ZodType<CancelTranslationJobRpcArgs>;
 
-// get job items schema
-// validates parameters for fetching detailed item-level status within a translation job
+/**
+ * Get job items schema
+ *
+ * Validates parameters for fetching detailed item-level status within a translation job.
+ *
+ * @type {z.ZodObject<...>}
+ */
 export const GET_JOB_ITEMS_SCHEMA = z.object({
   job_id: JOB_ID_SCHEMA,
   limit: z
@@ -190,7 +251,13 @@ export const GET_JOB_ITEMS_SCHEMA = z.object({
   status: ITEM_STATUS_SCHEMA.optional(),
 }) satisfies z.ZodType<TranslationJobItemsRequest>;
 
-// response schemas for runtime validation
+/**
+ * Translation job response schema
+ *
+ * Validates translation job response data at runtime.
+ *
+ * @type {z.ZodObject<...>}
+ */
 export const TRANSLATION_JOB_RESPONSE_SCHEMA = z.object({
   completed_keys: z.number(),
   created_at: z.string(),
@@ -226,6 +293,13 @@ export const TRANSLATION_JOB_RESPONSE_SCHEMA = z.object({
   updated_at: z.string(),
 }) satisfies z.ZodType<TranslationJobResponse>;
 
+/**
+ * Translation job item response schema
+ *
+ * Validates individual translation job item response data at runtime.
+ *
+ * @type {z.ZodObject<...>}
+ */
 export const TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA = z.object({
   created_at: z.string(),
   error_code: z.string().nullable(),
@@ -240,6 +314,13 @@ export const TRANSLATION_JOB_ITEM_RESPONSE_SCHEMA = z.object({
   updated_at: z.string(),
 }) satisfies z.ZodType<TranslationJobItemResponse>;
 
+/**
+ * Create translation job response schema
+ *
+ * Validates create translation job response data at runtime.
+ *
+ * @type {z.ZodObject<...>}
+ */
 export const CREATE_TRANSLATION_JOB_RESPONSE_SCHEMA = z.object({
   job_id: z.string().uuid(),
   message: z.string(),

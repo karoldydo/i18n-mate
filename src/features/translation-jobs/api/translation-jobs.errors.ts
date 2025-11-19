@@ -11,10 +11,11 @@ import { createApiErrorResponse, parseErrorDetail } from '@/shared/utils';
  * Converts Edge Function HTTP errors to standardized API error responses.
  * Maps common status codes to appropriate user-facing messages.
  *
- * @param message - Error message from Edge Function
- * @param statusCode - HTTP status code from Edge Function
- * @param context - Optional context string for logging
- * @returns Standardized ApiErrorResponse object
+ * @param {string} message - Error message from Edge Function
+ * @param {number} statusCode - HTTP status code from Edge Function
+ * @param {string} [context] - Optional context string for logging
+ *
+ * @returns {ApiErrorResponse} Standardized API error response object
  */
 export function createEdgeFunctionErrorResponse(
   message: string,
@@ -51,10 +52,11 @@ export function createEdgeFunctionErrorResponse(
  * - Unique constraint violations (job uniqueness)
  * - Authentication and authorization errors
  *
- * @param error - PostgrestError from Supabase
- * @param context - Optional context string for logging (e.g., hook name)
- * @param fallbackMessage - Optional custom fallback message for generic errors
- * @returns Standardized ApiErrorResponse object
+ * @param {PostgrestError} error - PostgrestError from Supabase
+ * @param {string} [context] - Optional context string for logging (e.g., hook name)
+ * @param {string} [fallbackMessage] - Optional custom fallback message for generic errors
+ *
+ * @returns {ApiErrorResponse} Standardized API error response object
  */
 export function createTranslationJobDatabaseErrorResponse(
   error: PostgrestError,
