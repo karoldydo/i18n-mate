@@ -1,7 +1,7 @@
 import { isEmpty } from 'lodash-es';
 import { Link } from 'react-router';
 
-import { useActiveNavigation } from '../../hooks';
+import { useActiveNavigation } from '../../hooks/useActiveNavigation';
 import { getProjectNavigationItems } from '../../lib/navigation';
 import {
   SidebarGroup,

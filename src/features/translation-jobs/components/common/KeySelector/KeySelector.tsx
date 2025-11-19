@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import type { TranslationMode } from '@/shared/types';
 
-import { useDebounce } from '@/shared/hooks';
+import { useDebounce } from '@/shared/hooks/useDebounce';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
