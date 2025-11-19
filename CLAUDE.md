@@ -88,7 +88,7 @@ Shadcn/ui components install to `src/shared/ui/` via `npx shadcn@latest add [com
 
 ### Supabase Integration
 
-- Use the shared `SupabaseProvider` context (`src/app/providers/SupabaseProvider.tsx`) to access the Supabase client
+- Use the shared `SupabaseProvider` context (`src/app/providers/SupabaseProvider/SupabaseProvider.tsx`) to access the Supabase client
 - Access the client via the `useSupabase` hook in components, loaders, actions, and TanStack Query hooks
 - **Never** import `@supabase/supabase-js` directly; always use `SupabaseClient` type from `src/shared/api/supabase.client.ts`
 - API layer should be in `src/features/**/api/` using TanStack Query for server state management

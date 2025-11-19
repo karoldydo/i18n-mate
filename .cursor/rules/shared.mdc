@@ -41,6 +41,10 @@ When introducing changes to the project, always follow the directory structure b
 
 - `./src` - source code
 - `./src/app` - app shell: bootstrap, providers, routing
+- `./src/app/providers` - application providers (AuthProvider, ConfigProvider, SupabaseProvider)
+  - `./src/app/providers/Provider/Provider.tsx` - provider component in nested directory
+  - `./src/app/providers/Provider/index.ts` - provider export with `export * from "./Provider";`
+  - `./src/app/providers/Provider/Provider.test.tsx` - co-located unit test
 - `./src/app/routes` - route definitions (React Router v7, lazy)
 - `./src/app/errors` - global and per-route error boundaries
 - `./src/assets` - shared assets (icons, logo)

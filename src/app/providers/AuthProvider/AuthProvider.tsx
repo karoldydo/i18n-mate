@@ -2,7 +2,7 @@ import type { User } from '@supabase/supabase-js';
 
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { useSupabase } from './SupabaseProvider';
+import { useSupabase } from '../SupabaseProvider';
 
 interface AuthContextValue {
   isLoading: boolean;

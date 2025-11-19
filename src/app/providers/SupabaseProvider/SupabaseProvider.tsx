@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
 
-import { supabaseClient, type SupabaseClient } from '../../shared/api/supabase.client';
+import { supabaseClient, type SupabaseClient } from '../../../shared/api/supabase.client';
 
 type SupabaseContextValue = SupabaseClient;
 
