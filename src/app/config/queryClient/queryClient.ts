@@ -11,9 +11,10 @@ import { createApiErrorResponse } from '@/shared/utils';
  * Converts ZodError to standardized ApiError format with detailed field information.
  * Used by global QueryClient error handler to ensure consistent validation error format.
  *
- * @param error - ZodError from schema validation
- * @param context - Optional context string for logging (e.g., hook name)
- * @returns Standardized ApiError object with validation details
+ * @param {ZodError} error - ZodError from schema validation
+ * @param {string} [context] - Optional context string for logging (e.g., hook name)
+ *
+ * @returns {ApiErrorResponse} Standardized ApiError object with validation details
  */
 function handleValidationError(error: ZodError, context?: string): ApiErrorResponse {
   const logPrefix = context ? `[${context}]` : '[handleValidationError]';
@@ -30,8 +31,9 @@ function handleValidationError(error: ZodError, context?: string): ApiErrorRespo
 /**
  * Check if an error is a Zod validation error
  *
- * @param error - Error to check
- * @returns True if error is a ZodError
+ * @param {unknown} error - Error to check
+ *
+ * @returns {error is ZodError} True if error is a ZodError
  */
 function isZodError(error: unknown): error is ZodError {
   return error instanceof ZodError;
@@ -43,26 +45,28 @@ function isZodError(error: unknown): error is ZodError {
  * This configuration intercepts all query and mutation errors and converts
  * ZodError instances to standardized ApiError format, ensuring consistent
  * error handling across the application.
+ *
+ * @type {QueryClient}
  */
 const queryClient = new QueryClient({
   defaultOptions: {
     mutations: {
       onError: (error) => {
-        // Transform Zod validation errors to ApiError format
+        // transform zod validation errors to apiError format
         if (isZodError(error)) {
           const apiError = handleValidationError(error);
-          // Re-throw as ApiError to maintain error chain
+          // re-throw as apiError to maintain error chain
           throw apiError;
         }
       },
     },
     queries: {
       retry: (failureCount, error) => {
-        // Don't retry on validation errors
+        // don't retry on validation errors
         if (isZodError(error)) {
           return false;
         }
-        // Default retry logic for other errors (max 3 attempts)
+        // default retry logic for other errors (max 3 attempts)
         return failureCount < 3;
       },
     },

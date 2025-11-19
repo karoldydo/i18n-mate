@@ -56,6 +56,7 @@ npm run test:e2e:debug     # Run E2E tests in debug mode
 The codebase follows a feature-first architecture where domain modules live in `src/features/` and shared code lives in `src/shared/`:
 
 - **`src/app/`**: Application shell, bootstrap, providers (e.g., `SupabaseProvider`), and routing
+- **`src/app/components/`**: App-level components with nested structure (`Component/Component.tsx` + `Component/index.ts`)
 - **`src/app/routes/`**: React Router v7 route definitions (lazy-loaded)
 - **`src/app/errors/`**: Global and per-route error boundaries
 - **`src/shared/`**: Domain-agnostic, reusable code

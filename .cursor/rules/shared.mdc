@@ -45,6 +45,10 @@ When introducing changes to the project, always follow the directory structure b
   - `./src/app/providers/Provider/Provider.tsx` - provider component in nested directory
   - `./src/app/providers/Provider/index.ts` - provider export with `export * from "./Provider";`
   - `./src/app/providers/Provider/Provider.test.tsx` - co-located unit test
+- `./src/app/components` - app-level components (e.g., ProtectedRoute)
+  - `./src/app/components/Component/Component.tsx` - app component in nested directory
+  - `./src/app/components/Component/index.ts` - component export with `export * from "./Component";`
+  - `./src/app/components/Component/Component.test.tsx` - co-located unit test
 - `./src/app/routes` - route definitions (React Router v7, lazy)
 - `./src/app/errors` - global and per-route error boundaries
 - `./src/assets` - shared assets (icons, logo)
